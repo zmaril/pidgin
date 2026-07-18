@@ -57,6 +57,7 @@ dependencies = [
  "anyhow",
  "atilla-agent",
  "atilla-ai",
+ "atilla-tui",
  "base64",
  "globset",
  "grep-matcher",
