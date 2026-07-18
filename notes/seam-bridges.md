@@ -1,0 +1,186 @@
+# atilla — seam bridges
+
+How a pi test's JavaScript-side mock reaches a Rust seam. This is the contract the ported-consumer threads (auth, exec tools) and the shim steward build against. It extends the one-way JSON boundary that PR #35 established for the faux provider (`crates/atilla-ai/src/providers/faux.rs` → `crates/atilla-napi/src/faux.rs` `FauxCore` → `conformance/shims/packages/ai/src/providers/faux.ts`) to the other four seams.
+
+The seam traits already exist in `crates/atilla-ai/src/seams/` with a production impl and a scripted test double each. What this doc adds is the rule that decides, for any given seam, where the JS/Rust line falls — so that pi's existing `vi.*` mock lands on the effect it already targets, with no change to pi's test.
+
+## The boundary rule
+
+PR #35 settled the shape of the boundary, and it dictates every bridge below:
+
+- **JS owns orchestration and mutable per-call state** — the async loop, the response queue, factory resolution, the `AbortSignal`, callbacks, and the passage of time.
+- **Rust owns deterministic transforms** — building requests, parsing responses, computing argv, computing backoff delays, cloning and stamping messages.
+- **Values cross as JSON strings, one way per call.** A napi method takes JSON in and returns JSON out. Rust never calls back into JS mid-call; there is no `ThreadsafeFunction`.
+
+The consequence is the single idea that makes the seams work across the FFI: **a bridge is never "Rust invokes your JS mock." It is a split of the ported module into a pure Rust half and a JS shim half, where the JS half performs the side effect that pi's mock already replaces.** When pi stubs global `fetch`, the shim is what calls `fetch`, so the stub intercepts it untouched. Rust sees only the request it asked the shim to send and the response the shim hands back.
+
+Because Rust can only return, never await, any step that needs the result of a JS effect ends the Rust call. Multi-step flows (an OAuth poll, a token refresh, an SSE retry) become a state machine: Rust returns the next action, the shim performs it, the shim re-enters Rust with the result. This is the faux queue pattern generalized — faux keeps its response queue in JS and re-enters Rust once per step; these bridges do the same for network, subprocess, filesystem, and time.
+
+## Consumer status
+
+The contracts here are written ahead of most of their consumers. Today:
+
+| Seam | Trait | Consumer in Rust today | Bridged across FFI |
+|---|---|---|---|
+| Provider | `Provider` | `FauxProvider` | yes (PR #35; flip rides PR #44) |
+| Clock | `Clock` / `Timers` | `FauxProvider` (field) | not yet |
+| HTTP transport | `HttpTransport` | none | not yet |
+| Command runner | `CommandRunner` | none | not yet |
+| Storage / env | `ExecutionEnv` | none | not yet |
+
+Only the faux provider consumes any seam, and it reads the clock only on its empty-queue and aborted paths, neither of which a pi test asserts. So no pi test exercises these seams against Rust today; each goes green when its consumer module is ported and flipped native. A bridge is proven in two earlier steps first: a Rust test over the pure half (this thread), and an FFI test over the shim once the napi core and a consumer exist (with the steward's harness). The real pi file is the third step, owned by the consumer thread.
+
+---
+
+## Bridge 1 — Clock
+
+**pi mock:** `vi.useFakeTimers`, `vi.setSystemTime`, `vi.advanceTimersByTime` (29 files); assertions on message timestamps, token expiry, SSE retry-after delays, elapsed-gated reconnects, and the timestamp embedded in a uuidv7.
+
+**Rule:** JS owns the passage of time. Under vitest, `Date.now()` and `setTimeout` are already faked; Rust in bridged code neither sleeps nor reads a wall clock. Two sub-cases cover every site:
+
+1. **Now as a value.** Any Rust computation that needs the current time takes it as a parameter. The shim reads `Date.now()` (faked by vitest) and passes it in. This covers token-expiry comparison, the uuidv7 timestamp, and a retry-after HTTP-date turned into a delay.
+2. **Scheduling.** Rust computes the delay — a pure function of the retry-after header and the current time — and returns it. The shim calls `setTimeout(delay)` (faked by vitest) and re-enters Rust for the retry. Rust owns no timer. This is what makes `expect(setTimeoutSpy).toHaveBeenCalledWith(fn, expectedDelay)` in `openai-codex-stream.test.ts` pass: the asserted delay is the one Rust computed.
+
+**Injectable Rust type:** `seams::clock::FakeClock` (settable `now`, cloneable shared state) for pure-Rust tests. Across the FFI, prefer passing `now` as a method parameter over holding a clock — it keeps each call one-way and stateless. A consumer that must hold `Arc<dyn Clock>` internally can take a `ClockCore` handle whose `now` the shim sets before the call.
+
+**napi core (spec for the steward):** `ClockCore` — `new(nowMs: i64)`, `setNowMs(nowMs: i64)`, `nowMs() -> i64`, wrapping a shared `FakeClock`. Most consumers will not need it; the parameter form is enough.
+
+**Reference proof (rides PR #44's faux flip):** the faux provider stamps its empty-queue and aborted messages from the clock. Add a `nowMs` parameter to `FauxCore.streamResolved` and `FauxCore.emptyQueueResult`; the shim passes `Date.now()`. An FFI test then sets a fake time, drives an empty-queue stream, and asserts the returned message `timestamp` equals it — proving a JS time value reaches Rust and back. This does not change any pi test; pi's faux tests stay green because they do not assert that field.
+
+**Plug your consumer in (auth token refresh):**
+
+```text
+// Rust (pure): decide, given now, whether the token is still valid.
+core.tokenState(credsJson, nowMs) -> { "valid": bool, "refreshInMs": i64 }
+```
+
+```text
+// shim
+const nowMs = Date.now();                       // vitest-faked
+const state = JSON.parse(core.tokenState(creds, nowMs));
+if (!state.valid) { /* run the refresh exchange (Bridge 2) */ }
+```
+
+---
+
+## Bridge 2 — HTTP transport
+
+**pi mock:** `vi.stubGlobal("fetch", fn)` (80 sites across 12 files — OAuth, token refresh, provider request shaping), plus a WebSocket for `openai-codex-stream`.
+
+**Rule:** `fetch` stays in JS. The shim calls the global `fetch`, so the stub intercepts it with no change. Rust is a request-builder and a response-parser. The ported module splits into:
+
+- `buildRequest(args) -> { url, method, headers, body }`
+- `consumeResponse(status, headers, bodyText) -> result | nextAction`
+
+For a single request that is one of each. For a multi-step flow (OAuth authorization poll, refresh-then-retry), `consumeResponse` returns a next-action tag — `done`, `request` with the next request descriptor, or `error` — and the shim loops. The loop, the `await fetch`, and any `setTimeout` between attempts live in JS; the decision of what to send and what a response means lives in Rust.
+
+**Streaming (SSE):** already solved for anthropic in this shape — the shim reads the response body stream and Rust parses each chunk (`anthropicParseSseStream`, `crates/atilla-napi/src/lib.rs`). A retry on a streamed 429 combines with Bridge 1: Rust computes the delay, the shim schedules it.
+
+**WebSocket:** JS owns the socket object; Rust builds the connect parameters and outgoing frames and parses incoming frames. The `connect_websocket` method on `HttpTransport` is for a future pure-Rust transport; the bridged path keeps the socket in JS, matching how `openai-codex-stream.test.ts` drives a mock WebSocket.
+
+**Injectable Rust type:** `seams::http::ScriptedTransport` (queued responses, recorded requests) for pure-Rust tests; `HostTransport` (delegates to injected fetch closures) is the production analog for a pure-Rust caller. Across the FFI, do not hold `Arc<dyn HttpTransport>` inside a bridged loop — restructure to build/consume, because a held transport would have to await JS.
+
+**napi core (spec for the steward):** no generic `HttpCore`. Request and response shapes are domain-specific, and a generic byte-level transport would force Rust to await JS, which the boundary forbids. Put the `buildX`/`consumeX` method pairs on the consumer's own core (for example `AnthropicOAuthCore`). The steward and the consumer thread own that core; this thread owns the `HttpRequest`/`HttpResponse` seam types they cross.
+
+**Plug your consumer in (anthropic OAuth login):**
+
+```text
+// Rust (pure)
+core.buildTokenRequest(codeJson) -> { url, method, headers, body }
+core.consumeTokenResponse(status, headersJson, bodyText) -> credentialsJson
+```
+
+```text
+// shim — vi.stubGlobal("fetch") lands on this fetch call
+const req = JSON.parse(core.buildTokenRequest(code));
+const res = await fetch(req.url, { method: req.method, headers: req.headers, body: req.body });
+const creds = JSON.parse(core.consumeTokenResponse(res.status, headersToJson(res.headers), await res.text()));
+```
+
+`anthropic-oauth.test.ts` passes unchanged: its `fetchMock` asserts the URL, method, and body that `buildTokenRequest` produced, and returns the token body that `consumeTokenResponse` reads.
+
+---
+
+## Bridge 3 — Command runner
+
+**pi mock:** `vi.spyOn(packageManager, "runCommand" | "runCommandCapture")` asserting exact argv (43 sites in `package-manager.test.ts`), plus one `child_process` spy for a git `symbolic-ref`.
+
+**Rule:** argv is deterministic, so Rust builds it; execution stays in JS, where the spy sits. The ported module splits into:
+
+- `plan(spec) -> { program, args, cwd }`
+- `consumeOutput(code, stdout, stderr) -> result`
+
+The shim's `runCommand(program, args, cwd)` performs the spawn — or, in a test, the spy replaces it. `expect(runCommandSpy).toHaveBeenCalledWith("mise", ["exec", "node@20", "--", "npm", "install", "@scope/pkg"], undefined)` passes because the argv is exactly what `plan` returned.
+
+**Injectable Rust type:** `seams::subprocess::ScriptedCommandRunner` (queued replies, recorded argv) for pure-Rust tests. Across the FFI, use the plan/consume split.
+
+**napi core (spec for the steward):** `CommandCore` (or methods on the package-manager core) with `planX` methods returning argv JSON and `consumeX` methods parsing captured output.
+
+**Plug your consumer in (package-manager install):**
+
+```text
+// Rust (pure)
+core.planInstall(specJson) -> { program, args, cwd }
+```
+
+```text
+// shim
+const plan = JSON.parse(core.planInstall(spec));
+await runCommand(plan.program, plan.args, plan.cwd);   // vi.spyOn(pkgMgr, "runCommand") lands here
+```
+
+---
+
+## Bridge 4 — Storage and env
+
+**pi mock:** filesystem stubs and `process.env` reads (`auth-storage.test.ts`, `first-time-setup-fork.test.ts`).
+
+**Rule:** two options, chosen per test.
+
+1. **Real files.** When the pi test writes to a real temp directory, Rust reads it directly through `SystemEnv`. No bridge state is needed.
+2. **Seeded memory.** When the pi test stubs `fs` or `process.env`, the shim seeds an in-memory env across the FFI: it passes `{ "env": { ... }, "files": { "<path>": "<contents>" } }` into the core constructor, and Rust backs `ExecutionEnv` with a `MemoryEnv` built from it. Reads and writes hit the in-memory map; the shim reads back mutations to assert on them. Prefer this when the test stubs `fs`.
+
+**Injectable Rust type:** `seams::storage::MemoryEnv` (`with_env`, `with_file` seeders, cloneable shared state) — already the right shape.
+
+**napi core (spec for the steward):** `StorageCore` — `new(seedJson)`, `readFile(path) -> string`, `writeFile(path, contents)`, `exists(path) -> bool`, `envVar(key) -> string | null`, and `dumpJson() -> string` to read written state back into JS for assertions.
+
+**Plug your consumer in (auth storage):**
+
+```text
+// shim seeds the env, runs the ported read, asserts the write
+const core = new StorageCore(JSON.stringify({ env: { HOME: "/home/u" }, files: {} }));
+core.saveCredentials(JSON.stringify(creds));                 // ported Rust write
+const written = JSON.parse(core.dumpJson()).files["/home/u/.pi/auth.json"];
+expect(JSON.parse(written).access).toBe("access-token");
+```
+
+---
+
+## Proving a bridge
+
+Each bridge is proven in three steps, and the first two are gate-free:
+
+1. **Rust half** — a unit or integration test in `crates/atilla-ai` over the injectable double (`FakeClock`, `ScriptedTransport`, `ScriptedCommandRunner`, `MemoryEnv`). Owned by this thread.
+2. **FFI half** — once the napi core exists, a focused JS test through the shim that injects a value and asserts it reached Rust and back. Run with the steward's single-file harness. Owned jointly with the steward.
+3. **Real pi file** — flips native when the consumer module is ported; the pi test then runs unchanged against Rust. Owned by the consumer thread (auth, exec tools).
+
+### Single-file harness loop
+
+From the steward, verified end to end. Rebuild the addon every time — do not trust an existing `.node`:
+
+```bash
+cd /workspace/atilla; REPO_ROOT="$(pwd)"; PI_ROOT="$REPO_ROOT/vendor/pi"
+( cd crates/atilla-napi && npx napi build --platform --release )
+ln -sfn "$REPO_ROOT/crates/atilla-napi" "$PI_ROOT/node_modules/atilla-napi"
+node "$REPO_ROOT/conformance/codegen.mjs"                       # must print "missing": 0
+( cd "$PI_ROOT/packages/ai" && npx vitest run test/<file>.test.ts --reporter=dot )
+find "$PI_ROOT/packages" -name '*.__pi_original__.ts' -delete && git -C "$PI_ROOT" checkout -- packages
+```
+
+Gotchas: codegen aborts on manifest drift (a new module file needs a manifest row); vitest is cwd-sensitive (run from the package dir); flipping an already-listed row's status needs no topology change.
+
+## Ownership
+
+- **Seam traits and doubles** — `crates/atilla-ai/src/seams/` — this thread.
+- **napi cores, shim glue, manifest flips** — the shim steward.
+- **Ported consumers (the build/consume splits)** — the auth thread and the exec-tools thread. Code to the per-bridge contract above; the seam types you cross are stable.
