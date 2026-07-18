@@ -1,0 +1,2881 @@
+[
+	{
+		"name": "resize_height_full_redraw",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "resize",
+				"set": null,
+				"force": false,
+				"columns": 40,
+				"rows": 15
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "resize",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3JLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 15,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 15,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "resize_height_termux_no_redraw",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": true,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3",
+							"Line 4",
+							"Line 5",
+							"Line 6",
+							"Line 7",
+							"Line 8",
+							"Line 9",
+							"Line 10",
+							"Line 11",
+							"Line 12",
+							"Line 13",
+							"Line 14",
+							"Line 15",
+							"Line 16",
+							"Line 17",
+							"Line 18",
+							"Line 19"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "resize",
+				"set": null,
+				"force": false,
+				"columns": 40,
+				"rows": 15
+			},
+			{
+				"op": "resize",
+				"set": null,
+				"force": false,
+				"columns": 40,
+				"rows": 8
+			},
+			{
+				"op": "resize",
+				"set": null,
+				"force": false,
+				"columns": 40,
+				"rows": 14
+			},
+			{
+				"op": "resize",
+				"set": null,
+				"force": false,
+				"columns": 40,
+				"rows": 11
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\r\nLine 4\u001b[0m\u001b]8;;\u0007\r\nLine 5\u001b[0m\u001b]8;;\u0007\r\nLine 6\u001b[0m\u001b]8;;\u0007\r\nLine 7\u001b[0m\u001b]8;;\u0007\r\nLine 8\u001b[0m\u001b]8;;\u0007\r\nLine 9\u001b[0m\u001b]8;;\u0007\r\nLine 10\u001b[0m\u001b]8;;\u0007\r\nLine 11\u001b[0m\u001b]8;;\u0007\r\nLine 12\u001b[0m\u001b]8;;\u0007\r\nLine 13\u001b[0m\u001b]8;;\u0007\r\nLine 14\u001b[0m\u001b]8;;\u0007\r\nLine 15\u001b[0m\u001b]8;;\u0007\r\nLine 16\u001b[0m\u001b]8;;\u0007\r\nLine 17\u001b[0m\u001b]8;;\u0007\r\nLine 18\u001b[0m\u001b]8;;\u0007\r\nLine 19\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 10",
+					"Line 11",
+					"Line 12",
+					"Line 13",
+					"Line 14",
+					"Line 15",
+					"Line 16",
+					"Line 17",
+					"Line 18",
+					"Line 19"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 19,
+					"hardwareCursorRow": 19,
+					"previousViewportTop": 10,
+					"maxLinesRendered": 20,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007",
+						"Line 7\u001b[0m\u001b]8;;\u0007",
+						"Line 8\u001b[0m\u001b]8;;\u0007",
+						"Line 9\u001b[0m\u001b]8;;\u0007",
+						"Line 10\u001b[0m\u001b]8;;\u0007",
+						"Line 11\u001b[0m\u001b]8;;\u0007",
+						"Line 12\u001b[0m\u001b]8;;\u0007",
+						"Line 13\u001b[0m\u001b]8;;\u0007",
+						"Line 14\u001b[0m\u001b]8;;\u0007",
+						"Line 15\u001b[0m\u001b]8;;\u0007",
+						"Line 16\u001b[0m\u001b]8;;\u0007",
+						"Line 17\u001b[0m\u001b]8;;\u0007",
+						"Line 18\u001b[0m\u001b]8;;\u0007",
+						"Line 19\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "resize",
+				"writes": "",
+				"viewport": [
+					"Line 5",
+					"Line 6",
+					"Line 7",
+					"Line 8",
+					"Line 9",
+					"Line 10",
+					"Line 11",
+					"Line 12",
+					"Line 13",
+					"Line 14",
+					"Line 15",
+					"Line 16",
+					"Line 17",
+					"Line 18",
+					"Line 19"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 19,
+					"hardwareCursorRow": 19,
+					"previousViewportTop": 5,
+					"maxLinesRendered": 20,
+					"previousWidth": 40,
+					"previousHeight": 15,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007",
+						"Line 7\u001b[0m\u001b]8;;\u0007",
+						"Line 8\u001b[0m\u001b]8;;\u0007",
+						"Line 9\u001b[0m\u001b]8;;\u0007",
+						"Line 10\u001b[0m\u001b]8;;\u0007",
+						"Line 11\u001b[0m\u001b]8;;\u0007",
+						"Line 12\u001b[0m\u001b]8;;\u0007",
+						"Line 13\u001b[0m\u001b]8;;\u0007",
+						"Line 14\u001b[0m\u001b]8;;\u0007",
+						"Line 15\u001b[0m\u001b]8;;\u0007",
+						"Line 16\u001b[0m\u001b]8;;\u0007",
+						"Line 17\u001b[0m\u001b]8;;\u0007",
+						"Line 18\u001b[0m\u001b]8;;\u0007",
+						"Line 19\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "resize",
+				"writes": "",
+				"viewport": [
+					"Line 12",
+					"Line 13",
+					"Line 14",
+					"Line 15",
+					"Line 16",
+					"Line 17",
+					"Line 18",
+					"Line 19"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 19,
+					"hardwareCursorRow": 19,
+					"previousViewportTop": 12,
+					"maxLinesRendered": 20,
+					"previousWidth": 40,
+					"previousHeight": 8,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007",
+						"Line 7\u001b[0m\u001b]8;;\u0007",
+						"Line 8\u001b[0m\u001b]8;;\u0007",
+						"Line 9\u001b[0m\u001b]8;;\u0007",
+						"Line 10\u001b[0m\u001b]8;;\u0007",
+						"Line 11\u001b[0m\u001b]8;;\u0007",
+						"Line 12\u001b[0m\u001b]8;;\u0007",
+						"Line 13\u001b[0m\u001b]8;;\u0007",
+						"Line 14\u001b[0m\u001b]8;;\u0007",
+						"Line 15\u001b[0m\u001b]8;;\u0007",
+						"Line 16\u001b[0m\u001b]8;;\u0007",
+						"Line 17\u001b[0m\u001b]8;;\u0007",
+						"Line 18\u001b[0m\u001b]8;;\u0007",
+						"Line 19\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "resize",
+				"writes": "",
+				"viewport": [
+					"Line 6",
+					"Line 7",
+					"Line 8",
+					"Line 9",
+					"Line 10",
+					"Line 11",
+					"Line 12",
+					"Line 13",
+					"Line 14",
+					"Line 15",
+					"Line 16",
+					"Line 17",
+					"Line 18",
+					"Line 19"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 19,
+					"hardwareCursorRow": 19,
+					"previousViewportTop": 6,
+					"maxLinesRendered": 20,
+					"previousWidth": 40,
+					"previousHeight": 14,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007",
+						"Line 7\u001b[0m\u001b]8;;\u0007",
+						"Line 8\u001b[0m\u001b]8;;\u0007",
+						"Line 9\u001b[0m\u001b]8;;\u0007",
+						"Line 10\u001b[0m\u001b]8;;\u0007",
+						"Line 11\u001b[0m\u001b]8;;\u0007",
+						"Line 12\u001b[0m\u001b]8;;\u0007",
+						"Line 13\u001b[0m\u001b]8;;\u0007",
+						"Line 14\u001b[0m\u001b]8;;\u0007",
+						"Line 15\u001b[0m\u001b]8;;\u0007",
+						"Line 16\u001b[0m\u001b]8;;\u0007",
+						"Line 17\u001b[0m\u001b]8;;\u0007",
+						"Line 18\u001b[0m\u001b]8;;\u0007",
+						"Line 19\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "resize",
+				"writes": "",
+				"viewport": [
+					"Line 9",
+					"Line 10",
+					"Line 11",
+					"Line 12",
+					"Line 13",
+					"Line 14",
+					"Line 15",
+					"Line 16",
+					"Line 17",
+					"Line 18",
+					"Line 19"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 19,
+					"hardwareCursorRow": 19,
+					"previousViewportTop": 9,
+					"maxLinesRendered": 20,
+					"previousWidth": 40,
+					"previousHeight": 11,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007",
+						"Line 7\u001b[0m\u001b]8;;\u0007",
+						"Line 8\u001b[0m\u001b]8;;\u0007",
+						"Line 9\u001b[0m\u001b]8;;\u0007",
+						"Line 10\u001b[0m\u001b]8;;\u0007",
+						"Line 11\u001b[0m\u001b]8;;\u0007",
+						"Line 12\u001b[0m\u001b]8;;\u0007",
+						"Line 13\u001b[0m\u001b]8;;\u0007",
+						"Line 14\u001b[0m\u001b]8;;\u0007",
+						"Line 15\u001b[0m\u001b]8;;\u0007",
+						"Line 16\u001b[0m\u001b]8;;\u0007",
+						"Line 17\u001b[0m\u001b]8;;\u0007",
+						"Line 18\u001b[0m\u001b]8;;\u0007",
+						"Line 19\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 19,
+					"hardwareCursorRow": 19,
+					"previousViewportTop": 9,
+					"maxLinesRendered": 20,
+					"previousWidth": 40,
+					"previousHeight": 11,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007",
+						"Line 7\u001b[0m\u001b]8;;\u0007",
+						"Line 8\u001b[0m\u001b]8;;\u0007",
+						"Line 9\u001b[0m\u001b]8;;\u0007",
+						"Line 10\u001b[0m\u001b]8;;\u0007",
+						"Line 11\u001b[0m\u001b]8;;\u0007",
+						"Line 12\u001b[0m\u001b]8;;\u0007",
+						"Line 13\u001b[0m\u001b]8;;\u0007",
+						"Line 14\u001b[0m\u001b]8;;\u0007",
+						"Line 15\u001b[0m\u001b]8;;\u0007",
+						"Line 16\u001b[0m\u001b]8;;\u0007",
+						"Line 17\u001b[0m\u001b]8;;\u0007",
+						"Line 18\u001b[0m\u001b]8;;\u0007",
+						"Line 19\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "resize_width_full_redraw",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "resize",
+				"set": null,
+				"force": false,
+				"columns": 60,
+				"rows": 10
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "resize",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3JLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 60,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 60,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "shrink_significant_clearonshrink",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": true,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3",
+							"Line 4",
+							"Line 5"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\r\nLine 4\u001b[0m\u001b]8;;\u0007\r\nLine 5\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"Line 4",
+					"Line 5",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 5,
+					"hardwareCursorRow": 5,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 6,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3JLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "shrink_to_single_line",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": true,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Only line"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 3,
+					"hardwareCursorRow": 3,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 4,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3JOnly line\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Only line",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 1,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Only line\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 1,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Only line\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "shrink_to_empty",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": true,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": []
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": []
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": []
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_shrink_unchanged_then_change",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3",
+							"Line 4"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"CHANGED",
+							"Line 2"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\r\nLine 4\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"Line 4",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 4,
+					"hardwareCursorRow": 4,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 5,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2A\r\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[2A\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 5,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[1A\r\u001b[2KCHANGED\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"CHANGED",
+					"Line 2",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 5,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"CHANGED\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[2B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 5,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"CHANGED\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_spinner_middle_line",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Header",
+							"Working...",
+							"Footer"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Header",
+							"Working |",
+							"Footer"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Header",
+							"Working /",
+							"Footer"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Header",
+							"Working -",
+							"Footer"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Header",
+							"Working \\",
+							"Footer"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hHeader\u001b[0m\u001b]8;;\u0007\r\nWorking...\u001b[0m\u001b]8;;\u0007\r\nFooter\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Header",
+					"Working...",
+					"Footer",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Header\u001b[0m\u001b]8;;\u0007",
+						"Working...\u001b[0m\u001b]8;;\u0007",
+						"Footer\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[1A\r\u001b[2KWorking |\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Header",
+					"Working |",
+					"Footer",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Header\u001b[0m\u001b]8;;\u0007",
+						"Working |\u001b[0m\u001b]8;;\u0007",
+						"Footer\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\r\u001b[2KWorking /\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Header",
+					"Working /",
+					"Footer",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Header\u001b[0m\u001b]8;;\u0007",
+						"Working /\u001b[0m\u001b]8;;\u0007",
+						"Footer\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\r\u001b[2KWorking -\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Header",
+					"Working -",
+					"Footer",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Header\u001b[0m\u001b]8;;\u0007",
+						"Working -\u001b[0m\u001b]8;;\u0007",
+						"Footer\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\r\u001b[2KWorking \\\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Header",
+					"Working \\",
+					"Footer",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Header\u001b[0m\u001b]8;;\u0007",
+						"Working \\\u001b[0m\u001b]8;;\u0007",
+						"Footer\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[2B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Header\u001b[0m\u001b]8;;\u0007",
+						"Working \\\u001b[0m\u001b]8;;\u0007",
+						"Footer\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_style_reset_per_line",
+		"columns": 20,
+		"rows": 6,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"\u001b[3mItalic",
+							"Plain"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[3mItalic\u001b[0m\u001b]8;;\u0007\r\nPlain\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Italic",
+					"Plain",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 20,
+					"previousHeight": 6,
+					"previousLines": [
+						"\u001b[3mItalic\u001b[0m\u001b]8;;\u0007",
+						"Plain\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 20,
+					"previousHeight": 6,
+					"previousLines": [
+						"\u001b[3mItalic\u001b[0m\u001b]8;;\u0007",
+						"Plain\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_first_line_changes",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"CHANGED",
+							"Line 1",
+							"Line 2",
+							"Line 3"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 3,
+					"hardwareCursorRow": 3,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 4,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[3A\r\u001b[2KCHANGED\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"CHANGED",
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 3,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 4,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"CHANGED\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[4B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 3,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 4,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"CHANGED\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_last_line_changes",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"CHANGED"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 3,
+					"hardwareCursorRow": 3,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 4,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\r\u001b[2KCHANGED\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"CHANGED",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 3,
+					"hardwareCursorRow": 3,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 4,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"CHANGED\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 3,
+					"hardwareCursorRow": 3,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 4,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"CHANGED\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_multiple_nonadjacent",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3",
+							"Line 4"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"CHANGED 1",
+							"Line 2",
+							"CHANGED 3",
+							"Line 4"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\r\nLine 4\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"Line 4",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 4,
+					"hardwareCursorRow": 4,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 5,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[3A\r\u001b[2KCHANGED 1\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KLine 2\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KCHANGED 3\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"CHANGED 1",
+					"Line 2",
+					"CHANGED 3",
+					"Line 4",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 4,
+					"hardwareCursorRow": 3,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 5,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"CHANGED 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"CHANGED 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[2B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 4,
+					"hardwareCursorRow": 3,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 5,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"CHANGED 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"CHANGED 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_content_empty_content",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": []
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"New Line 0",
+							"New Line 1"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2A\r\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[2A\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": []
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026hNew Line 0\u001b[0m\u001b]8;;\u0007\r\nNew Line 1\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"New Line 0",
+					"New Line 1",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"New Line 0\u001b[0m\u001b]8;;\u0007",
+						"New Line 1\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"New Line 0\u001b[0m\u001b]8;;\u0007",
+						"New Line 1\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_deleted_lines_move_viewport_up",
+		"columns": 20,
+		"rows": 5,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3",
+							"Line 4",
+							"Line 5",
+							"Line 6",
+							"Line 7",
+							"Line 8",
+							"Line 9",
+							"Line 10",
+							"Line 11"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3",
+							"Line 4",
+							"Line 5",
+							"Line 6"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\r\nLine 4\u001b[0m\u001b]8;;\u0007\r\nLine 5\u001b[0m\u001b]8;;\u0007\r\nLine 6\u001b[0m\u001b]8;;\u0007\r\nLine 7\u001b[0m\u001b]8;;\u0007\r\nLine 8\u001b[0m\u001b]8;;\u0007\r\nLine 9\u001b[0m\u001b]8;;\u0007\r\nLine 10\u001b[0m\u001b]8;;\u0007\r\nLine 11\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 7",
+					"Line 8",
+					"Line 9",
+					"Line 10",
+					"Line 11"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 11,
+					"hardwareCursorRow": 11,
+					"previousViewportTop": 7,
+					"maxLinesRendered": 12,
+					"previousWidth": 20,
+					"previousHeight": 5,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007",
+						"Line 7\u001b[0m\u001b]8;;\u0007",
+						"Line 8\u001b[0m\u001b]8;;\u0007",
+						"Line 9\u001b[0m\u001b]8;;\u0007",
+						"Line 10\u001b[0m\u001b]8;;\u0007",
+						"Line 11\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3JLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\r\nLine 4\u001b[0m\u001b]8;;\u0007\r\nLine 5\u001b[0m\u001b]8;;\u0007\r\nLine 6\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 2",
+					"Line 3",
+					"Line 4",
+					"Line 5",
+					"Line 6"
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 6,
+					"hardwareCursorRow": 6,
+					"previousViewportTop": 2,
+					"maxLinesRendered": 7,
+					"previousWidth": 20,
+					"previousHeight": 5,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 6,
+					"hardwareCursorRow": 6,
+					"previousViewportTop": 2,
+					"maxLinesRendered": 7,
+					"previousWidth": 20,
+					"previousHeight": 5,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_append_after_shrink",
+		"columns": 20,
+		"rows": 5,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2",
+							"Line 3",
+							"Line 4",
+							"Line 5",
+							"Line 6",
+							"Line 7"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Line 0",
+							"Line 1",
+							"Line 2"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\r\nLine 4\u001b[0m\u001b]8;;\u0007\r\nLine 5\u001b[0m\u001b]8;;\u0007\r\nLine 6\u001b[0m\u001b]8;;\u0007\r\nLine 7\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 3",
+					"Line 4",
+					"Line 5",
+					"Line 6",
+					"Line 7"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 7,
+					"hardwareCursorRow": 7,
+					"previousViewportTop": 3,
+					"maxLinesRendered": 8,
+					"previousWidth": 20,
+					"previousHeight": 5,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007",
+						"Line 3\u001b[0m\u001b]8;;\u0007",
+						"Line 4\u001b[0m\u001b]8;;\u0007",
+						"Line 5\u001b[0m\u001b]8;;\u0007",
+						"Line 6\u001b[0m\u001b]8;;\u0007",
+						"Line 7\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3JLine 0\u001b[0m\u001b]8;;\u0007\r\nLine 1\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 20,
+					"previousHeight": 5,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\r\n\u001b[2KLine 2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 0",
+					"Line 1",
+					"Line 2",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 20,
+					"previousHeight": 5,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 20,
+					"previousHeight": 5,
+					"previousLines": [
+						"Line 0\u001b[0m\u001b]8;;\u0007",
+						"Line 1\u001b[0m\u001b]8;;\u0007",
+						"Line 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "diff_maxlines_inflated_transient",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 2,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Chat 0",
+							"Chat 1",
+							"Chat 2",
+							"Chat 3",
+							"Chat 4",
+							"Chat 5",
+							"Chat 6",
+							"Chat 7",
+							"Chat 8",
+							"Chat 9",
+							"Chat 10",
+							"Chat 11",
+							"Chat 12",
+							"Chat 13",
+							"Chat 14"
+						]
+					},
+					{
+						"c": 1,
+						"lines": [
+							"Editor 0",
+							"Editor 1",
+							"Editor 2"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 1,
+						"lines": [
+							"Selector 0",
+							"Selector 1",
+							"Selector 2",
+							"Selector 3",
+							"Selector 4",
+							"Selector 5",
+							"Selector 6",
+							"Selector 7"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 1,
+						"lines": [
+							"Editor 0",
+							"Editor 1",
+							"Editor 2"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"Chat 0",
+							"Chat 1",
+							"Chat 2",
+							"Chat 3",
+							"Chat 4",
+							"Chat 5",
+							"Chat 6",
+							"Chat 7",
+							"Chat 8",
+							"Chat 9",
+							"Chat 10",
+							"Chat 11"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hChat 0\u001b[0m\u001b]8;;\u0007\r\nChat 1\u001b[0m\u001b]8;;\u0007\r\nChat 2\u001b[0m\u001b]8;;\u0007\r\nChat 3\u001b[0m\u001b]8;;\u0007\r\nChat 4\u001b[0m\u001b]8;;\u0007\r\nChat 5\u001b[0m\u001b]8;;\u0007\r\nChat 6\u001b[0m\u001b]8;;\u0007\r\nChat 7\u001b[0m\u001b]8;;\u0007\r\nChat 8\u001b[0m\u001b]8;;\u0007\r\nChat 9\u001b[0m\u001b]8;;\u0007\r\nChat 10\u001b[0m\u001b]8;;\u0007\r\nChat 11\u001b[0m\u001b]8;;\u0007\r\nChat 12\u001b[0m\u001b]8;;\u0007\r\nChat 13\u001b[0m\u001b]8;;\u0007\r\nChat 14\u001b[0m\u001b]8;;\u0007\r\nEditor 0\u001b[0m\u001b]8;;\u0007\r\nEditor 1\u001b[0m\u001b]8;;\u0007\r\nEditor 2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Chat 8",
+					"Chat 9",
+					"Chat 10",
+					"Chat 11",
+					"Chat 12",
+					"Chat 13",
+					"Chat 14",
+					"Editor 0",
+					"Editor 1",
+					"Editor 2"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 17,
+					"hardwareCursorRow": 17,
+					"previousViewportTop": 8,
+					"maxLinesRendered": 18,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Chat 0\u001b[0m\u001b]8;;\u0007",
+						"Chat 1\u001b[0m\u001b]8;;\u0007",
+						"Chat 2\u001b[0m\u001b]8;;\u0007",
+						"Chat 3\u001b[0m\u001b]8;;\u0007",
+						"Chat 4\u001b[0m\u001b]8;;\u0007",
+						"Chat 5\u001b[0m\u001b]8;;\u0007",
+						"Chat 6\u001b[0m\u001b]8;;\u0007",
+						"Chat 7\u001b[0m\u001b]8;;\u0007",
+						"Chat 8\u001b[0m\u001b]8;;\u0007",
+						"Chat 9\u001b[0m\u001b]8;;\u0007",
+						"Chat 10\u001b[0m\u001b]8;;\u0007",
+						"Chat 11\u001b[0m\u001b]8;;\u0007",
+						"Chat 12\u001b[0m\u001b]8;;\u0007",
+						"Chat 13\u001b[0m\u001b]8;;\u0007",
+						"Chat 14\u001b[0m\u001b]8;;\u0007",
+						"Editor 0\u001b[0m\u001b]8;;\u0007",
+						"Editor 1\u001b[0m\u001b]8;;\u0007",
+						"Editor 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2A\r\u001b[2KSelector 0\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KSelector 1\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KSelector 2\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KSelector 3\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KSelector 4\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KSelector 5\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KSelector 6\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KSelector 7\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Chat 13",
+					"Chat 14",
+					"Selector 0",
+					"Selector 1",
+					"Selector 2",
+					"Selector 3",
+					"Selector 4",
+					"Selector 5",
+					"Selector 6",
+					"Selector 7"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 22,
+					"hardwareCursorRow": 22,
+					"previousViewportTop": 13,
+					"maxLinesRendered": 23,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Chat 0\u001b[0m\u001b]8;;\u0007",
+						"Chat 1\u001b[0m\u001b]8;;\u0007",
+						"Chat 2\u001b[0m\u001b]8;;\u0007",
+						"Chat 3\u001b[0m\u001b]8;;\u0007",
+						"Chat 4\u001b[0m\u001b]8;;\u0007",
+						"Chat 5\u001b[0m\u001b]8;;\u0007",
+						"Chat 6\u001b[0m\u001b]8;;\u0007",
+						"Chat 7\u001b[0m\u001b]8;;\u0007",
+						"Chat 8\u001b[0m\u001b]8;;\u0007",
+						"Chat 9\u001b[0m\u001b]8;;\u0007",
+						"Chat 10\u001b[0m\u001b]8;;\u0007",
+						"Chat 11\u001b[0m\u001b]8;;\u0007",
+						"Chat 12\u001b[0m\u001b]8;;\u0007",
+						"Chat 13\u001b[0m\u001b]8;;\u0007",
+						"Chat 14\u001b[0m\u001b]8;;\u0007",
+						"Selector 0\u001b[0m\u001b]8;;\u0007",
+						"Selector 1\u001b[0m\u001b]8;;\u0007",
+						"Selector 2\u001b[0m\u001b]8;;\u0007",
+						"Selector 3\u001b[0m\u001b]8;;\u0007",
+						"Selector 4\u001b[0m\u001b]8;;\u0007",
+						"Selector 5\u001b[0m\u001b]8;;\u0007",
+						"Selector 6\u001b[0m\u001b]8;;\u0007",
+						"Selector 7\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[7A\r\u001b[2KEditor 0\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KEditor 1\u001b[0m\u001b]8;;\u0007\r\n\u001b[2KEditor 2\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\r\n\u001b[2K\r\n\u001b[2K\r\n\u001b[2K\r\n\u001b[2K\u001b[5A\u001b[?2026l",
+				"viewport": [
+					"Chat 13",
+					"Chat 14",
+					"Editor 0",
+					"Editor 1",
+					"Editor 2",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 17,
+					"hardwareCursorRow": 17,
+					"previousViewportTop": 13,
+					"maxLinesRendered": 23,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Chat 0\u001b[0m\u001b]8;;\u0007",
+						"Chat 1\u001b[0m\u001b]8;;\u0007",
+						"Chat 2\u001b[0m\u001b]8;;\u0007",
+						"Chat 3\u001b[0m\u001b]8;;\u0007",
+						"Chat 4\u001b[0m\u001b]8;;\u0007",
+						"Chat 5\u001b[0m\u001b]8;;\u0007",
+						"Chat 6\u001b[0m\u001b]8;;\u0007",
+						"Chat 7\u001b[0m\u001b]8;;\u0007",
+						"Chat 8\u001b[0m\u001b]8;;\u0007",
+						"Chat 9\u001b[0m\u001b]8;;\u0007",
+						"Chat 10\u001b[0m\u001b]8;;\u0007",
+						"Chat 11\u001b[0m\u001b]8;;\u0007",
+						"Chat 12\u001b[0m\u001b]8;;\u0007",
+						"Chat 13\u001b[0m\u001b]8;;\u0007",
+						"Chat 14\u001b[0m\u001b]8;;\u0007",
+						"Editor 0\u001b[0m\u001b]8;;\u0007",
+						"Editor 1\u001b[0m\u001b]8;;\u0007",
+						"Editor 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3JChat 0\u001b[0m\u001b]8;;\u0007\r\nChat 1\u001b[0m\u001b]8;;\u0007\r\nChat 2\u001b[0m\u001b]8;;\u0007\r\nChat 3\u001b[0m\u001b]8;;\u0007\r\nChat 4\u001b[0m\u001b]8;;\u0007\r\nChat 5\u001b[0m\u001b]8;;\u0007\r\nChat 6\u001b[0m\u001b]8;;\u0007\r\nChat 7\u001b[0m\u001b]8;;\u0007\r\nChat 8\u001b[0m\u001b]8;;\u0007\r\nChat 9\u001b[0m\u001b]8;;\u0007\r\nChat 10\u001b[0m\u001b]8;;\u0007\r\nChat 11\u001b[0m\u001b]8;;\u0007\r\nEditor 0\u001b[0m\u001b]8;;\u0007\r\nEditor 1\u001b[0m\u001b]8;;\u0007\r\nEditor 2\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Chat 5",
+					"Chat 6",
+					"Chat 7",
+					"Chat 8",
+					"Chat 9",
+					"Chat 10",
+					"Chat 11",
+					"Editor 0",
+					"Editor 1",
+					"Editor 2"
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 14,
+					"hardwareCursorRow": 14,
+					"previousViewportTop": 5,
+					"maxLinesRendered": 15,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Chat 0\u001b[0m\u001b]8;;\u0007",
+						"Chat 1\u001b[0m\u001b]8;;\u0007",
+						"Chat 2\u001b[0m\u001b]8;;\u0007",
+						"Chat 3\u001b[0m\u001b]8;;\u0007",
+						"Chat 4\u001b[0m\u001b]8;;\u0007",
+						"Chat 5\u001b[0m\u001b]8;;\u0007",
+						"Chat 6\u001b[0m\u001b]8;;\u0007",
+						"Chat 7\u001b[0m\u001b]8;;\u0007",
+						"Chat 8\u001b[0m\u001b]8;;\u0007",
+						"Chat 9\u001b[0m\u001b]8;;\u0007",
+						"Chat 10\u001b[0m\u001b]8;;\u0007",
+						"Chat 11\u001b[0m\u001b]8;;\u0007",
+						"Editor 0\u001b[0m\u001b]8;;\u0007",
+						"Editor 1\u001b[0m\u001b]8;;\u0007",
+						"Editor 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 14,
+					"hardwareCursorRow": 14,
+					"previousViewportTop": 5,
+					"maxLinesRendered": 15,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"Chat 0\u001b[0m\u001b]8;;\u0007",
+						"Chat 1\u001b[0m\u001b]8;;\u0007",
+						"Chat 2\u001b[0m\u001b]8;;\u0007",
+						"Chat 3\u001b[0m\u001b]8;;\u0007",
+						"Chat 4\u001b[0m\u001b]8;;\u0007",
+						"Chat 5\u001b[0m\u001b]8;;\u0007",
+						"Chat 6\u001b[0m\u001b]8;;\u0007",
+						"Chat 7\u001b[0m\u001b]8;;\u0007",
+						"Chat 8\u001b[0m\u001b]8;;\u0007",
+						"Chat 9\u001b[0m\u001b]8;;\u0007",
+						"Chat 10\u001b[0m\u001b]8;;\u0007",
+						"Chat 11\u001b[0m\u001b]8;;\u0007",
+						"Editor 0\u001b[0m\u001b]8;;\u0007",
+						"Editor 1\u001b[0m\u001b]8;;\u0007",
+						"Editor 2\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			}
+		]
+	},
+	{
+		"name": "shrink_clear_to_zero",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"first",
+							"second",
+							"third"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "clear",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hfirst\u001b[0m\u001b]8;;\u0007\r\nsecond\u001b[0m\u001b]8;;\u0007\r\nthird\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"first",
+					"second",
+					"third",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": [
+						"first\u001b[0m\u001b]8;;\u0007",
+						"second\u001b[0m\u001b]8;;\u0007",
+						"third\u001b[0m\u001b]8;;\u0007"
+					]
+				}
+			},
+			{
+				"op": "clear",
+				"writes": "\u001b[?2026h\u001b[2A\r\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[2A\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": []
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10,
+					"previousLines": []
+				}
+			}
+		]
+	}
+]

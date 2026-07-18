@@ -529,7 +529,7 @@
     {
       "package": "ai",
       "src": "packages/ai/src/providers/faux.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "ai",
@@ -1059,7 +1059,7 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/export-html/ansi-to-html.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "coding-agent",
@@ -1259,7 +1259,7 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/tools/edit-diff.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "coding-agent",
@@ -1299,7 +1299,7 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/tools/path-utils.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "coding-agent",
@@ -1319,7 +1319,7 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/tools/truncate.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "coding-agent",
@@ -1639,12 +1639,12 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/ansi.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/changelog.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "coding-agent",
@@ -1689,7 +1689,7 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/git.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "coding-agent",
@@ -1729,7 +1729,7 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/mime.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "coding-agent",
@@ -1774,7 +1774,7 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/version-check.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "coding-agent",
@@ -1985,6 +1985,24 @@
       "package": "tui",
       "src": "packages/tui/src/word-navigation.ts",
       "status": "original"
+    }
+  ],
+  "cli_repoint": [
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/test/stdout-cleanliness.test.ts"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/test/session-id-readonly.test.ts"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/test/startup-session-name.test.ts"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/test/session-file-invalid.test.ts"
     }
   ]
 }

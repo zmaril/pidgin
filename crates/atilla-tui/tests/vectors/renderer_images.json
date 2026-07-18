@@ -1,0 +1,777 @@
+[
+	{
+		"name": "kitty_clear_reserved_rows_before_draw",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": true,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"before"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"before",
+							"[Image: [image/png] 20x20]",
+							"after"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[16t\u001b[?2026hbefore\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"before",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 1,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\r\n\u001b[2K[Image: [image/png] 20x20]\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kafter\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"before",
+					"[Image: [image/png] 20x20]",
+					"after",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			}
+		]
+	},
+	{
+		"name": "kitty_pre_clear_would_scroll_full_redraw",
+		"columns": 40,
+		"rows": 2,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": true,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"before"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"before",
+							"[Image: [image/png] 30x30]",
+							"after"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[16t\u001b[?2026hbefore\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"before",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 1,
+					"previousWidth": 40,
+					"previousHeight": 2
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\r\n\u001b[2K[Image: [image/png] 30x30]\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kafter\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"[Image: [image/png] 30x30]",
+					"after"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 1,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 2
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 1,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 2
+				}
+			}
+		]
+	},
+	{
+		"name": "kitty_reserve_rows_during_full_redraw",
+		"columns": 40,
+		"rows": 5,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": true,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"l0",
+							"l1",
+							"l2",
+							"l3",
+							"l4"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"l0",
+							"l1",
+							"l2",
+							"l3",
+							"l4",
+							"[Image: [image/png] 30x30]",
+							"after"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[16t\u001b[?2026hl0\u001b[0m\u001b]8;;\u0007\r\nl1\u001b[0m\u001b]8;;\u0007\r\nl2\u001b[0m\u001b]8;;\u0007\r\nl3\u001b[0m\u001b]8;;\u0007\r\nl4\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"l0",
+					"l1",
+					"l2",
+					"l3",
+					"l4"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 4,
+					"hardwareCursorRow": 4,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 5,
+					"previousWidth": 40,
+					"previousHeight": 5
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\r\n\u001b[2K[Image: [image/png] 30x30]\u001b[0m\u001b]8;;\u0007\r\n\u001b[2Kafter\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"l2",
+					"l3",
+					"l4",
+					"[Image: [image/png] 30x30]",
+					"after"
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 6,
+					"hardwareCursorRow": 6,
+					"previousViewportTop": 2,
+					"maxLinesRendered": 7,
+					"previousWidth": 40,
+					"previousHeight": 5
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 6,
+					"hardwareCursorRow": 6,
+					"previousViewportTop": 2,
+					"maxLinesRendered": 7,
+					"previousWidth": 40,
+					"previousHeight": 5
+				}
+			}
+		]
+	},
+	{
+		"name": "kitty_taller_than_viewport_first_row_placement",
+		"columns": 40,
+		"rows": 5,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": true,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"before"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"before",
+							"[Image: [image/png] 60x60]",
+							"after"
+						]
+					}
+				],
+				"force": true,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[16t\u001b[?2026hbefore\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"before",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 1,
+					"previousWidth": 40,
+					"previousHeight": 5
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3Jbefore\u001b[0m\u001b]8;;\u0007\r\n[Image: [image/png] 60x60]\u001b[0m\u001b]8;;\u0007\r\nafter\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"before",
+					"[Image: [image/png] 60x60]",
+					"after",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 5
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 40,
+					"previousHeight": 5
+				}
+			}
+		]
+	},
+	{
+		"name": "kitty_delete_changed_before_moved_draw",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"top",
+							"\u001b_Ga=T,f=100,q=2,C=1,c=2,r=2,i=42;AAAA\u001b\\"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"\u001b_Ga=T,f=100,q=2,C=1,c=2,r=1,i=42;BBBB\u001b\\",
+							""
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026htop\u001b[0m\u001b]8;;\u0007\r\n\u001b_Ga=T,f=100,q=2,C=1,c=2,r=2,i=42;AAAA\u001b\\\u001b[?2026l",
+				"viewport": [
+					"top",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b_Ga=d,d=I,i=42,q=2\u001b\\\u001b[1A\r\u001b[2K\u001b_Ga=T,f=100,q=2,C=1,c=2,r=1,i=42;BBBB\u001b\\\r\n\u001b[2K\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			}
+		]
+	},
+	{
+		"name": "kitty_redraw_when_reserved_row_changes",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"",
+							"\u001b_Ga=T,f=100,q=2,C=1,c=2,r=2,i=88;AAAA\u001b\\"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"covered",
+							"\u001b_Ga=T,f=100,q=2,C=1,c=2,r=2,i=88;AAAA\u001b\\"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[0m\u001b]8;;\u0007\r\n\u001b_Ga=T,f=100,q=2,C=1,c=2,r=2,i=88;AAAA\u001b\\\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b_Ga=d,d=I,i=88,q=2\u001b\\\u001b[1A\r\u001b[2Kcovered\u001b[0m\u001b]8;;\u0007\r\n\u001b[2K\u001b_Ga=T,f=100,q=2,C=1,c=2,r=2,i=88;AAAA\u001b\\\u001b[?2026l",
+				"viewport": [
+					"covered",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			}
+		]
+	},
+	{
+		"name": "kitty_delete_previous_ids_during_full_redraw",
+		"columns": 40,
+		"rows": 10,
+		"showHardwareCursor": false,
+		"clearOnShrink": false,
+		"termux": false,
+		"imagesCapable": false,
+		"components": 1,
+		"steps": [
+			{
+				"op": "start",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"\u001b_Ga=T,f=100,q=2,C=1,c=2,r=2,i=77;AAAA\u001b\\"
+						]
+					}
+				],
+				"force": false,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "render",
+				"set": [
+					{
+						"c": 0,
+						"lines": [
+							"plain text"
+						]
+					}
+				],
+				"force": true,
+				"columns": null,
+				"rows": null
+			},
+			{
+				"op": "stop",
+				"set": null,
+				"force": false,
+				"columns": null,
+				"rows": null
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b_Ga=T,f=100,q=2,C=1,c=2,r=2,i=77;AAAA\u001b\\\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 1,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b_Ga=d,d=I,i=77,q=2\u001b\\\u001b[2J\u001b[H\u001b[3Jplain text\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"plain text",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 1,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 1,
+					"previousWidth": 40,
+					"previousHeight": 10
+				}
+			}
+		]
+	}
+]

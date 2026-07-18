@@ -31,13 +31,18 @@
 //!   on the URL/method/headers/body exactly as a `fetch` stub does, plus scripted
 //!   WebSocket frame sequences.
 
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::io;
 use std::sync::{Arc, Mutex};
 
 /// An HTTP request the transport is asked to perform. Mirrors the argument shape
 /// of a `fetch(url, init)` call.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Serde-serializable so the type can cross the napi JSON boundary as the
+/// argument to the host `fetch` shim: `headers` becomes a JSON object and `body`
+/// a JSON string (the boundary assumes text bodies — OAuth/JSON/SSE).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HttpRequest {
     /// HTTP method, uppercase (`GET`, `POST`, ...).
     pub method: String,
@@ -80,7 +85,11 @@ impl HttpRequest {
 /// An HTTP response. Mirrors the parts of a `fetch` `Response` the ported code
 /// reads: status, headers, and the body as text (SSE bodies are consumed as text
 /// and handed to the parser, exactly as the Stage-2 Anthropic shim does).
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Serde-serializable so the host shim can hand a `{status, headers, body}` JSON
+/// object back across the napi boundary: `headers` is a JSON object and `body`
+/// the response text.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HttpResponse {
     /// HTTP status code.
     pub status: u16,
@@ -349,6 +358,53 @@ mod tests {
             Some(WsMessage::Binary(vec![1, 2, 3]))
         );
         assert_eq!(socket.recv().unwrap(), None);
+    }
+
+    #[test]
+    fn http_request_serde_round_trips_to_json_wire_shape() {
+        // Pins the wire contract the host `fetch` shim consumes: `headers` is a
+        // JSON object and `body` a JSON string.
+        let request = HttpRequest::post("https://api.example/v1", "{\"stream\":true}")
+            .with_header("authorization", "Bearer k")
+            .with_header("content-type", "application/json");
+        let json = serde_json::to_value(&request).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "method": "POST",
+                "url": "https://api.example/v1",
+                "headers": {
+                    "authorization": "Bearer k",
+                    "content-type": "application/json"
+                },
+                "body": "{\"stream\":true}"
+            })
+        );
+        let back: HttpRequest = serde_json::from_value(json).unwrap();
+        assert_eq!(back, request);
+    }
+
+    #[test]
+    fn http_response_serde_round_trips_to_json_wire_shape() {
+        let response = HttpResponse {
+            status: 200,
+            headers: BTreeMap::from([(
+                "content-type".to_string(),
+                "text/event-stream".to_string(),
+            )]),
+            body: "event: message_start\ndata: {}\n".to_string(),
+        };
+        let json = serde_json::to_value(&response).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "status": 200,
+                "headers": { "content-type": "text/event-stream" },
+                "body": "event: message_start\ndata: {}\n"
+            })
+        );
+        let back: HttpResponse = serde_json::from_value(json).unwrap();
+        assert_eq!(back, response);
     }
 
     #[test]

@@ -8,20 +8,92 @@
 //! [`truncate_tail`] over the rolling tail.
 //!
 //! The temp-file streaming sink (pi opens a `createWriteStream` when the full
-//! output must be preserved) is deferred and injected behind the [`OutputSink`]
-//! trait: this crate has no execution environment to own the file yet. Without
-//! a sink, `full_output_path` stays `None`; the persistence *decision* is still
-//! computed and exposed so the seam can be wired later.
+//! output must be preserved) is injected behind the [`OutputSink`] trait.
+//! [`TempFileSink`] is the real, wired sink: on first persist it lazily creates
+//! `<tmpdir>/<prefix>-<random>.log` (mirroring pi's `tmpdir()/${prefix}-*.log`
+//! shape), writes the full accumulated output, and returns that path — which
+//! the caller surfaces to the user in the truncation footer ("Full output:
+//! <path>"). The file **persists** (it is not auto-deleted). Without a sink,
+//! `full_output_path` stays `None`; the persistence *decision* is still
+//! computed and exposed via [`OutputAccumulator::should_use_temp_file`].
+
+use std::io::Write;
 
 use super::truncate::{
     truncate_tail, TruncatedBy, TruncationResult, DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES,
 };
 
 /// Injected sink used to persist the full output when it must be retained.
-/// Deferred: the default accumulator has no sink and reports no path.
+/// The default accumulator has no sink and reports no path; attach
+/// [`TempFileSink`] via [`OutputAccumulator::set_sink`] to wire persistence.
 pub trait OutputSink {
     /// Persist the accumulated raw chunks and return a path identifying them.
     fn persist(&mut self, chunks: &[Vec<u8>]) -> String;
+}
+
+/// Real temp-file sink: lazily writes the full output to
+/// `<tmpdir>/<prefix>-<random>.log` and returns its path. The file persists.
+///
+/// Port note: pi names the file with a hex suffix from `crypto.randomBytes`.
+/// This uses [`tempfile::Builder`] for collision-safe atomic creation; the
+/// random component therefore comes from tempfile's charset rather than being
+/// strict hex. The observable contract — the shape `<prefix>-<random>.log`
+/// under the system temp dir, and that the file exists and persists — is
+/// preserved; the exact random characters are not asserted anywhere.
+pub struct TempFileSink {
+    prefix: String,
+}
+
+impl TempFileSink {
+    /// Create a sink whose files are named `<prefix>-<random>.log`.
+    pub fn new(prefix: impl Into<String>) -> Self {
+        Self {
+            prefix: prefix.into(),
+        }
+    }
+}
+
+impl Default for TempFileSink {
+    fn default() -> Self {
+        // Matches pi's default `tempFilePrefix` of `"pi-output"`.
+        Self::new("pi-output")
+    }
+}
+
+impl OutputSink for TempFileSink {
+    fn persist(&mut self, chunks: &[Vec<u8>]) -> String {
+        // `.tempfile()` creates in `std::env::temp_dir()` (pi's `tmpdir()`).
+        let file = tempfile::Builder::new()
+            .prefix(&format!("{}-", self.prefix))
+            .suffix(".log")
+            .rand_bytes(16)
+            .tempfile();
+
+        match file {
+            Ok(named) => {
+                {
+                    let handle = named.as_file();
+                    let mut writer = std::io::BufWriter::new(handle);
+                    for chunk in chunks {
+                        let _ = writer.write_all(chunk);
+                    }
+                    let _ = writer.flush();
+                }
+                // `keep()` persists the file (disables auto-delete on drop) and
+                // yields its final path.
+                match named.keep() {
+                    Ok((_file, path)) => path.to_string_lossy().into_owned(),
+                    Err(persist_err) => persist_err.file.path().to_string_lossy().into_owned(),
+                }
+            }
+            // Best-effort: if the temp dir is unwritable, fall back to a path
+            // string so the seam still reports something rather than panicking.
+            Err(_) => std::env::temp_dir()
+                .join(format!("{}-unavailable.log", self.prefix))
+                .to_string_lossy()
+                .into_owned(),
+        }
+    }
 }
 
 /// Options controlling the accumulator's limits.
@@ -398,5 +470,73 @@ mod tests {
         let snap = acc.snapshot(false);
         assert!(snap.content.contains('\u{FFFD}'));
         assert!(snap.content.starts_with('a'));
+    }
+
+    #[test]
+    fn temp_file_sink_persists_full_output_when_truncated() {
+        let mut acc = OutputAccumulator::new(OutputAccumulatorOptions {
+            max_lines: 2,
+            max_bytes: DEFAULT_MAX_BYTES,
+        });
+        acc.set_sink(Box::new(TempFileSink::new("atilla-oa-test")));
+
+        // Feed past the line threshold so persistence fires.
+        let full = b"line1\nline2\nline3\nline4\n";
+        acc.append(full);
+        acc.finish();
+
+        let snap = acc.snapshot(true);
+        assert!(snap.truncation.truncated);
+        // Rolling tail keeps only the last two lines for display.
+        assert_eq!(snap.content, "line3\nline4");
+
+        // A real file was created and its path reported.
+        let path = snap
+            .full_output_path
+            .as_deref()
+            .expect("truncated output should report a persisted path");
+        let path = std::path::Path::new(path);
+        assert!(path.exists(), "temp file should exist at {path:?}");
+
+        // Name shape: <prefix>-<random>.log under the system temp dir.
+        let name = path.file_name().unwrap().to_string_lossy();
+        assert!(name.starts_with("atilla-oa-test-"), "name was {name}");
+        assert!(name.ends_with(".log"), "name was {name}");
+        assert_eq!(path.parent().unwrap(), std::env::temp_dir());
+
+        // Contents are the FULL output, not the truncated tail.
+        let contents = std::fs::read(path).unwrap();
+        assert_eq!(contents, full);
+
+        // Clean up (the sink deliberately does not auto-delete).
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn temp_file_sink_not_created_when_not_truncated() {
+        let mut acc = OutputAccumulator::new(OutputAccumulatorOptions::default());
+        acc.set_sink(Box::new(TempFileSink::new("atilla-oa-test-none")));
+        acc.append(b"small\n");
+        acc.finish();
+        let snap = acc.snapshot(true);
+        assert!(!snap.truncation.truncated);
+        assert_eq!(snap.full_output_path, None);
+    }
+
+    #[test]
+    fn temp_file_sink_persist_called_once() {
+        // Two snapshots after truncation must reuse the same path (ensure_temp_file
+        // guards on full_output_path being None), not create a second file.
+        let mut acc = OutputAccumulator::new(OutputAccumulatorOptions {
+            max_lines: 1,
+            max_bytes: DEFAULT_MAX_BYTES,
+        });
+        acc.set_sink(Box::new(TempFileSink::new("atilla-oa-test-once")));
+        acc.append(b"a\nb\nc\n");
+        acc.finish();
+        let first = acc.snapshot(true).full_output_path.unwrap();
+        let second = acc.snapshot(true).full_output_path.unwrap();
+        assert_eq!(first, second);
+        std::fs::remove_file(&first).unwrap();
     }
 }

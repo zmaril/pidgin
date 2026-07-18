@@ -9,6 +9,7 @@
 //! `truncate`/`shell-output` leaves, and [`messages`] ports the synthesized
 //! harness messages and LLM conversion.
 
+pub mod compaction;
 pub mod env;
 pub mod messages;
 pub mod prompt_templates;

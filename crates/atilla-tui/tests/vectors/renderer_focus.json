@@ -1,0 +1,6273 @@
+[
+	{
+		"name": "focus_non_capturing_preserves",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "focus_transfer_and_unfocus",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "overlayFocus",
+				"handle": 0
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "overlayUnfocus",
+				"handle": 0,
+				"hasOptions": false
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayUnfocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "focus_set_hidden_no_autofocus",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "overlaySetHidden",
+				"handle": 0,
+				"hidden": true
+			},
+			{
+				"op": "overlaySetHidden",
+				"handle": 0,
+				"hidden": false
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlaySetHidden",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlaySetHidden",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "focus_hide_when_focused_restores",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "overlayFocus",
+				"handle": 0
+			},
+			{
+				"op": "overlayHide",
+				"handle": 0
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayHide",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "focus_capturing_removed_nc_below_restores_editor",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"NC"
+				]
+			},
+			{
+				"lines": [
+					"CAP"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "showOverlay",
+				"component": 3
+			},
+			{
+				"op": "overlayHide",
+				"handle": 1
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayHide",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007NC                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"NC                                                                              ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "focus_sub_overlay_cleanup_then_hideoverlay",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"TIMER"
+				]
+			},
+			{
+				"lines": [
+					"CTRL"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "showOverlay",
+				"component": 3
+			},
+			{
+				"op": "overlayHide",
+				"handle": 0
+			},
+			{
+				"op": "hideOverlay"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayHide",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "hideOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_removed_child_not_parent_fallback",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"CHILD"
+				]
+			},
+			{
+				"lines": [
+					"PARENT"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "overlayFocus",
+				"handle": 0
+			},
+			{
+				"op": "showOverlay",
+				"component": 3
+			},
+			{
+				"op": "overlayHide",
+				"handle": 0
+			},
+			{
+				"op": "overlayHide",
+				"handle": 1
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayHide",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayHide",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_redirect_skips_nc_when_invisible",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"FALLBACK"
+				]
+			},
+			{
+				"lines": [
+					"NC"
+				]
+			},
+			{
+				"lines": [
+					"PRIMARY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [
+			true
+		],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2
+			},
+			{
+				"op": "showOverlay",
+				"component": 3,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "showOverlay",
+				"component": 4,
+				"options": {
+					"visibleFlag": 0
+				}
+			},
+			{
+				"op": "setFlag",
+				"flag": 0,
+				"value": false
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 4,
+					"status": "eligible",
+					"overlay": 4,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "setFlag",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 4,
+					"status": "eligible",
+					"overlay": 4,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						2,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007NC                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"NC                                                                              ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						2,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						2,
+						"x"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_active_base_replacement_close_before_restore",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"REPLACEMENT"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [
+			{
+				"component": 3,
+				"data": "b",
+				"actions": [
+					{
+						"op": "setFocus",
+						"target": 2
+					}
+				]
+			},
+			{
+				"component": 2,
+				"data": "\r",
+				"actions": [
+					{
+						"op": "setFocus",
+						"target": 1
+					}
+				]
+			}
+		],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 3
+			},
+			{
+				"op": "sendInput",
+				"data": "b"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "sendInput",
+				"data": "\r"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "blocked",
+					"overlay": 3,
+					"blockedBy": 2,
+					"resume": "restore-overlay",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"b"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "blocked",
+					"overlay": 3,
+					"blockedBy": 2,
+					"resume": "restore-overlay",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"b"
+					]
+				]
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"b"
+					],
+					[
+						2,
+						"\r"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"b"
+					],
+					[
+						2,
+						"\r"
+					]
+				]
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"b"
+					],
+					[
+						2,
+						"\r"
+					],
+					[
+						3,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 4,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"b"
+					],
+					[
+						2,
+						"\r"
+					],
+					[
+						3,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 4,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"b"
+					],
+					[
+						2,
+						"\r"
+					],
+					[
+						3,
+						"x"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_active_replacement_other_overlay_prefocus",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"REPLACEMENT"
+				]
+			},
+			{
+				"lines": [
+					"PASSIVE"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [
+			{
+				"component": 4,
+				"data": "b",
+				"actions": [
+					{
+						"op": "setFocus",
+						"target": 2
+					}
+				]
+			},
+			{
+				"component": 2,
+				"data": "\r",
+				"actions": [
+					{
+						"op": "setFocus",
+						"target": 1
+					}
+				]
+			}
+		],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "setFocus",
+				"target": 2
+			},
+			{
+				"op": "showOverlay",
+				"component": 3,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "showOverlay",
+				"component": 4
+			},
+			{
+				"op": "sendInput",
+				"data": "b"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "sendInput",
+				"data": "1"
+			},
+			{
+				"op": "sendInput",
+				"data": "\r"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 4,
+					"status": "eligible",
+					"overlay": 4,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "blocked",
+					"overlay": 4,
+					"blockedBy": 2,
+					"resume": "restore-overlay",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "blocked",
+					"overlay": 4,
+					"blockedBy": 2,
+					"resume": "restore-overlay",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					]
+				]
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "blocked",
+					"overlay": 4,
+					"blockedBy": 2,
+					"resume": "restore-overlay",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					],
+					[
+						2,
+						"1"
+					]
+				]
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 4,
+					"status": "eligible",
+					"overlay": 4,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					],
+					[
+						2,
+						"1"
+					],
+					[
+						2,
+						"\r"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 4,
+					"status": "eligible",
+					"overlay": 4,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					],
+					[
+						2,
+						"1"
+					],
+					[
+						2,
+						"\r"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 4,
+					"status": "eligible",
+					"overlay": 4,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					],
+					[
+						2,
+						"1"
+					],
+					[
+						2,
+						"\r"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_unfocus_target_releases_blocked",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"FALLBACK"
+				]
+			},
+			{
+				"lines": [
+					"TARGET"
+				]
+			},
+			{
+				"lines": [
+					"REPLACEMENT"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [
+			{
+				"component": 4,
+				"data": "b",
+				"actions": [
+					{
+						"op": "setFocus",
+						"target": 3
+					},
+					{
+						"op": "unfocusTarget",
+						"handle": 0,
+						"target": 2
+					}
+				]
+			},
+			{
+				"component": 3,
+				"data": "\r",
+				"actions": [
+					{
+						"op": "setFocus",
+						"target": 1
+					}
+				]
+			}
+		],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 4
+			},
+			{
+				"op": "sendInput",
+				"data": "b"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "sendInput",
+				"data": "\r"
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 4,
+					"status": "eligible",
+					"overlay": 4,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "blocked",
+					"overlay": 4,
+					"blockedBy": 3,
+					"resume": "focus-target",
+					"target": 2
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "blocked",
+					"overlay": 4,
+					"blockedBy": 3,
+					"resume": "focus-target",
+					"target": 2
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					]
+				]
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					],
+					[
+						3,
+						"\r"
+					]
+				]
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					],
+					[
+						3,
+						"\r"
+					],
+					[
+						2,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					],
+					[
+						3,
+						"\r"
+					],
+					[
+						2,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						4,
+						"b"
+					],
+					[
+						3,
+						"\r"
+					],
+					[
+						2,
+						"x"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_restore_visible_overlay_after_base_steal",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"REPLACEMENT"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 3
+			},
+			{
+				"op": "setFocus",
+				"target": 2
+			},
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "blocked",
+					"overlay": 3,
+					"blockedBy": 2,
+					"resume": "restore-overlay",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY                                                                         \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY                                                                         ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 3,
+					"status": "eligible",
+					"overlay": 3,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						3,
+						"x"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_passive_nc_no_regain_input",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"NC"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007NC                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"NC                                                                              ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_explicit_nc_regains_input",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"NC"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "overlayFocus",
+				"handle": 0
+			},
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						2,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007NC                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"NC                                                                              ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						2,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						2,
+						"x"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_unfocus_prevents_regain",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"NC"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "overlayFocus",
+				"handle": 0
+			},
+			{
+				"op": "overlayUnfocus",
+				"handle": 0,
+				"hasOptions": false
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayUnfocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007NC                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"NC                                                                              ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": [
+					[
+						1,
+						"x"
+					]
+				]
+			}
+		]
+	},
+	{
+		"name": "focus_set_null_clears_visible_restore",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"NC"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "overlayFocus",
+				"handle": 0
+			},
+			{
+				"op": "setFocus",
+				"target": null
+			},
+			{
+				"op": "sendInput",
+				"data": "x"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "sendInput",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007NC                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"NC                                                                              ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "focus_hideoverlay_topmost_nc_no_reassign",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"CAP"
+				]
+			},
+			{
+				"lines": [
+					"NC"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2
+			},
+			{
+				"op": "showOverlay",
+				"component": 3,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "hideOverlay"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "hideOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007CAP                                                                             \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"CAP                                                                             ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "focus_capturing_unfocus_falls_back_prefocus",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"CAP"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2
+			},
+			{
+				"op": "overlayUnfocus",
+				"handle": 0,
+				"hasOptions": false
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayUnfocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007CAP                                                                             \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"CAP                                                                             ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "focus_noop_guards",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"EDITOR"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "setFocus",
+				"target": 1
+			},
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"nonCapturing": true
+				}
+			},
+			{
+				"op": "overlaySetHidden",
+				"handle": 0,
+				"hidden": true
+			},
+			{
+				"op": "overlayFocus",
+				"handle": 0
+			},
+			{
+				"op": "overlaySetHidden",
+				"handle": 0,
+				"hidden": false
+			},
+			{
+				"op": "overlayHide",
+				"handle": 0
+			},
+			{
+				"op": "overlayFocus",
+				"handle": 0
+			},
+			{
+				"op": "overlayUnfocus",
+				"handle": 0,
+				"hasOptions": false
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "setFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 0,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 0,
+					"previousHeight": 0
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlaySetHidden",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlaySetHidden",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayHide",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayFocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "overlayUnfocus",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	}
+]

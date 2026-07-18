@@ -1,11 +1,11 @@
 {
   "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
   "generated_by": "scripts/conformance.sh",
-  "manifest_native_modules": 3,
+  "manifest_native_modules": 13,
   "total": 3777,
-  "passing": 2910,
-  "failing": 112,
-  "skipped": 755,
+  "passing": 2905,
+  "failing": 87,
+  "skipped": 785,
   "by_package": {
     "agent": {
       "total": 180,
@@ -18,19 +18,19 @@
     },
     "ai": {
       "total": 1294,
-      "passing": 562,
-      "failing": 24,
-      "skipped": 708,
-      "native": 1,
+      "passing": 556,
+      "failing": 0,
+      "skipped": 738,
+      "native": 2,
       "status": "ok",
-      "note": "vitest run, exit 1"
+      "note": "vitest run, exit 0"
     },
     "coding-agent": {
       "total": 1625,
-      "passing": 1490,
-      "failing": 88,
+      "passing": 1491,
+      "failing": 87,
       "skipped": 47,
-      "native": 0,
+      "native": 9,
       "status": "ok",
       "note": "vitest run, exit 1"
     },
@@ -169,9 +169,9 @@
     {
       "package": "ai",
       "file": "packages/ai/test/abort.test.ts",
-      "passing": 1,
-      "failing": 2,
-      "skipped": 30
+      "passing": 0,
+      "failing": 0,
+      "skipped": 33
     },
     {
       "package": "ai",
@@ -310,8 +310,8 @@
       "package": "ai",
       "file": "packages/ai/test/bedrock-thinking-payload.test.ts",
       "passing": 10,
-      "failing": 1,
-      "skipped": 0
+      "failing": 0,
+      "skipped": 1
     },
     {
       "package": "ai",
@@ -345,15 +345,15 @@
       "package": "ai",
       "file": "packages/ai/test/context-overflow.test.ts",
       "passing": 0,
-      "failing": 1,
-      "skipped": 31
+      "failing": 0,
+      "skipped": 32
     },
     {
       "package": "ai",
       "file": "packages/ai/test/cross-provider-handoff.test.ts",
-      "passing": 1,
-      "failing": 1,
-      "skipped": 0
+      "passing": 0,
+      "failing": 0,
+      "skipped": 2
     },
     {
       "package": "ai",
@@ -365,9 +365,9 @@
     {
       "package": "ai",
       "file": "packages/ai/test/empty.test.ts",
-      "passing": 4,
+      "passing": 0,
       "failing": 0,
-      "skipped": 100
+      "skipped": 104
     },
     {
       "package": "ai",
@@ -457,8 +457,8 @@
       "package": "ai",
       "file": "packages/ai/test/image-tool-result.test.ts",
       "passing": 0,
-      "failing": 2,
-      "skipped": 36
+      "failing": 0,
+      "skipped": 38
     },
     {
       "package": "ai",
@@ -478,8 +478,8 @@
       "package": "ai",
       "file": "packages/ai/test/interleaved-thinking.test.ts",
       "passing": 0,
-      "failing": 2,
-      "skipped": 2
+      "failing": 0,
+      "skipped": 4
     },
     {
       "package": "ai",
@@ -758,8 +758,8 @@
       "package": "ai",
       "file": "packages/ai/test/stream.test.ts",
       "passing": 0,
-      "failing": 9,
-      "skipped": 205
+      "failing": 0,
+      "skipped": 214
     },
     {
       "package": "ai",
@@ -779,8 +779,8 @@
       "package": "ai",
       "file": "packages/ai/test/tokens.test.ts",
       "passing": 0,
-      "failing": 1,
-      "skipped": 25
+      "failing": 0,
+      "skipped": 26
     },
     {
       "package": "ai",
@@ -793,15 +793,15 @@
       "package": "ai",
       "file": "packages/ai/test/tool-call-without-result.test.ts",
       "passing": 0,
-      "failing": 1,
-      "skipped": 25
+      "failing": 0,
+      "skipped": 26
     },
     {
       "package": "ai",
       "file": "packages/ai/test/total-tokens.test.ts",
       "passing": 0,
-      "failing": 1,
-      "skipped": 30
+      "failing": 0,
+      "skipped": 31
     },
     {
       "package": "ai",
@@ -814,8 +814,8 @@
       "package": "ai",
       "file": "packages/ai/test/unicode-surrogate.test.ts",
       "passing": 0,
-      "failing": 3,
-      "skipped": 75
+      "failing": 0,
+      "skipped": 78
     },
     {
       "package": "ai",
@@ -1758,8 +1758,8 @@
     {
       "package": "coding-agent",
       "file": "packages/coding-agent/test/session-manager/file-operations.test.ts",
-      "passing": 20,
-      "failing": 1,
+      "passing": 21,
+      "failing": 0,
       "skipped": 0
     },
     {

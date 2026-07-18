@@ -15,13 +15,30 @@ pub mod api;
 pub mod auth;
 pub mod compat;
 pub mod cost;
+pub mod env_api_keys;
 pub mod providers;
 pub mod seams;
 pub mod types;
 pub mod utils;
 
+pub use compat::{
+    get_api_provider, get_api_providers, register_api_provider, register_builtin_api_providers,
+    register_faux_provider, reset_api_providers, unregister_api_providers, ApiProvider,
+    CompatError, FauxProviderRegistration,
+};
 pub use cost::{calculate_cost, calculate_cost_with};
+pub use env_api_keys::{find_env_keys, get_api_key_env_vars, get_env_api_key, AMBIENT_SENTINEL};
+pub use providers::{
+    builtin_models, builtin_providers, clamp_thinking_level, create_models, create_provider,
+    get_supported_thinking_levels, models_are_equal, radius_provider, ApiRouting,
+    CreateProviderOptions, Models, MutableModels, ProviderAuth, ProviderHeaders, ProviderSnapshot,
+    RefreshContext, RegistryProvider,
+};
 pub use types::*;
+pub use utils::event_stream::{
+    create_assistant_message_event_stream, AssistantMessageEventStream, EventStream,
+};
+pub use utils::retry::is_retryable_assistant_error;
 
 /// Name of the pi package this crate mirrors.
 pub const PI_PACKAGE: &str = "@earendil-works/pi-ai";

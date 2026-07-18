@@ -55,7 +55,7 @@ PACKAGES="${PKG_ARG:-${CONFORMANCE_PACKAGES:-ai agent coding-agent tui orchestra
 
 mkdir -p "$OUT" "$OUT/pkgmeta"
 # Start clean so a stale reporter from a prior run is never mis-parsed.
-rm -f "$OUT"/*.vitest.json "$OUT"/*.tap "$OUT"/pkgmeta/*.json
+rm -f "$OUT"/*.vitest.json "$OUT"/*.tap "$OUT"/pkgmeta/*.json "$OUT"/cli-meta.json
 
 log() { printf '[conformance] %s\n' "$*"; }
 
@@ -93,11 +93,26 @@ if [ "$DO_SETUP" -eq 1 ]; then
 fi
 
 # --- napi addon (best effort) ----------------------------------------------
-# The all-original baseline does not import the addon yet, so a build failure
-# here is non-fatal — it is logged and the run continues.
+# Native modules (e.g. providers/faux) import the addon, so it must be current.
+# A build failure here is non-fatal — it is logged and the run continues; the
+# native shim's import would then throw and surface as test failures.
+#
+# Rebuild when the addon is missing OR any Rust source under crates/atilla-napi
+# or crates/atilla-ai is newer than the built .node. A plain "a .node exists"
+# check skipped the rebuild and could leave a stale addon from an earlier stage
+# that lacks newly-added exports (e.g. FauxCore), making the native faux shim's
+# `import { FauxCore } from "atilla-napi"` throw at load time in CI.
 log "verifying atilla-napi addon (best effort)"
-if ls "$REPO_ROOT"/crates/atilla-napi/*.node >/dev/null 2>&1; then
-  log "napi addon already built; skipping rebuild"
+NODE_ADDON="$(ls "$REPO_ROOT"/crates/atilla-napi/*.node 2>/dev/null | head -n1 || true)"
+NAPI_SRC_PATHS=(
+  "$REPO_ROOT/crates/atilla-napi/src"
+  "$REPO_ROOT/crates/atilla-napi/Cargo.toml"
+  "$REPO_ROOT/crates/atilla-ai/src"
+  "$REPO_ROOT/crates/atilla-ai/Cargo.toml"
+)
+if [ -n "$NODE_ADDON" ] && \
+  [ -z "$(find "${NAPI_SRC_PATHS[@]}" -newer "$NODE_ADDON" -print -quit 2>/dev/null)" ]; then
+  log "napi addon up to date (newer than Rust sources); skipping rebuild"
 elif (cd "$REPO_ROOT/crates/atilla-napi" && npm install && npx napi build --platform) \
   >"$OUT/napi-build.log" 2>&1; then
   log "napi addon built"
@@ -112,6 +127,25 @@ if [ -d "$PI_ROOT/node_modules" ]; then
   ln -sfn "$REPO_ROOT/crates/atilla-napi" "$PI_ROOT/node_modules/atilla-napi"
   log "linked atilla-napi into pi node_modules"
 fi
+
+# --- atilla binary for black-box CLI conformance ---------------------------
+# The repointed CLI test files (overlaid by codegen from the manifest's
+# cli_repoint list) spawn $ATILLA_BIN instead of pi's own cli.ts, so the four
+# files run black-box against the compiled binary. A build failure here is
+# non-fatal: ATILLA_BIN stays empty, the CLI run below is skipped, and the
+# cli_conformance metric records env-blocked rather than faking a pass.
+log "building atilla binary for CLI conformance (cargo build -p atilla-cli --release)"
+ATILLA_BIN=""
+if (cd "$REPO_ROOT" && cargo build -p atilla-cli --release) >"$OUT/cli-build.log" 2>&1; then
+  ATILLA_BIN="$REPO_ROOT/target/release/atilla"
+  log "atilla binary built: $ATILLA_BIN"
+elif (cd "$REPO_ROOT" && cargo build -p atilla-cli) >>"$OUT/cli-build.log" 2>&1; then
+  ATILLA_BIN="$REPO_ROOT/target/debug/atilla"
+  log "atilla release build failed; using debug binary: $ATILLA_BIN"
+else
+  log "atilla binary build failed (non-fatal; see cli-build.log)"
+fi
+export ATILLA_BIN
 
 # --- codegen: materialize the module tree ----------------------------------
 log "running codegen (materialize module tree)"
@@ -234,6 +268,58 @@ if want orchestrator; then
   write_pkgmeta "orchestrator" "ok" "no tests" "" "" 0
 fi
 
+# --- black-box CLI conformance ---------------------------------------------
+# Run the four repointed coding-agent CLI test files against the compiled
+# atilla binary ($ATILLA_BIN). This is a SEPARATE signal from the module smoke
+# above: it never feeds by_package or manifest_native_modules. codegen already
+# overlaid the repointed files; here we just spawn vitest with ATILLA_BIN set.
+# Skipped (recorded env-blocked) when the binary did not build.
+CLI_REPOINT_FILES=(
+  "test/stdout-cleanliness.test.ts"
+  "test/session-id-readonly.test.ts"
+  "test/startup-session-name.test.ts"
+  "test/session-file-invalid.test.ts"
+)
+write_cli_meta() {
+  local status="$1" note="$2" reporter="$3" bin="$4"
+  status="$status" note="$note" reporter="$reporter" bin="$bin" \
+    node -e '
+      const o = {
+        status: process.env.status,
+        note: process.env.note,
+        bin: process.env.bin || "",
+      };
+      if (process.env.reporter) o.reporter = process.env.reporter;
+      require("node:fs").writeFileSync(
+        `${process.env.CONFORMANCE_OUT}/cli-meta.json`,
+        JSON.stringify(o),
+      );
+    '
+}
+if [ -z "$ATILLA_BIN" ] || [ ! -x "$ATILLA_BIN" ]; then
+  log "cli conformance: skipped (no atilla binary)"
+  write_cli_meta "env-blocked" "atilla binary not built (see cli-build.log)" "" ""
+else
+  log "cli conformance: 4 repointed files against $ATILLA_BIN"
+  cli_reporter="cli.vitest.json"
+  cli_human="$OUT/cli.human.log"
+  set +e
+  (cd "$PI_ROOT/packages/coding-agent" && timeout "$PKG_TIMEOUT" npx vitest run \
+    "${CLI_REPOINT_FILES[@]}" --reporter=json --outputFile="$OUT/$cli_reporter") \
+    >"$cli_human" 2>&1
+  cli_rc=$?
+  set -e
+  log "cli conformance: exit=$cli_rc"
+  if [ "$cli_rc" -eq 124 ]; then
+    write_cli_meta "env-blocked" "cli suite timed out after ${PKG_TIMEOUT}s" "" "$ATILLA_BIN"
+  elif [ ! -s "$OUT/$cli_reporter" ]; then
+    cli_tail="$(tail -n 3 "$cli_human" | tr '\n' ' ' | tr -d '"')"
+    write_cli_meta "env-blocked" "no reporter produced: ${cli_tail}" "" "$ATILLA_BIN"
+  else
+    write_cli_meta "ok" "vitest run against atilla binary, exit ${cli_rc}" "$cli_reporter" "$ATILLA_BIN"
+  fi
+fi
+
 # --- assemble run-meta.json + parse ----------------------------------------
 log "assembling run-meta.json"
 ENV_NOTES_JSON="$(printf '%s\n' "${ENV_NOTES[@]}" | node -e 'const l=require("node:fs").readFileSync(0,"utf8").split("\n").filter(Boolean);process.stdout.write(JSON.stringify(l))')"
@@ -253,6 +339,11 @@ CONFORMANCE_OUT="$OUT" node -e '
     environment_notes: notes,
     packages,
   };
+  // Black-box CLI conformance is a separate signal from the package smoke.
+  const cliMetaPath = `${out}/cli-meta.json`;
+  if (fs.existsSync(cliMetaPath)) {
+    meta.cli = JSON.parse(fs.readFileSync(cliMetaPath, "utf8"));
+  }
   fs.writeFileSync(`${out}/run-meta.json`, JSON.stringify(meta, null, 2));
 '
 
