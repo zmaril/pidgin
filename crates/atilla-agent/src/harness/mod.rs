@@ -11,7 +11,9 @@
 
 pub mod compaction;
 pub mod env;
+pub mod events;
 pub mod messages;
+pub mod options;
 pub mod prompt_templates;
 pub mod session;
 pub mod skills;
