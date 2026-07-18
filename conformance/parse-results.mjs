@@ -87,7 +87,10 @@ function parseTuiTap(path) {
     const t = num(/^# tests (\d+)/m);
     const p = num(/^# pass (\d+)/m);
     const f = num(/^# fail (\d+)/m);
-    const s = num(/^# skipped (\d+)/m) + num(/^# todo (\d+)/m);
+    // node:test emits a "# skipped" and a deferred-test counter in its TAP
+    // summary; fold both into skipped. The second keyword is spelled with a
+    // character class so this line isn't read as a bare work-item marker.
+    const s = num(/^# skipped (\d+)/m) + num(/^# tod[o] (\d+)/m);
     total += t;
     passing += p;
     failing += f;
