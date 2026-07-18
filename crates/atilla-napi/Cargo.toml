@@ -10,6 +10,7 @@ repository.workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
+atilla-agent = { path = "../atilla-agent" }
 atilla-ai = { path = "../atilla-ai" }
 atilla-coding = { path = "../atilla-coding" }
 atilla-tui = { path = "../atilla-tui" }

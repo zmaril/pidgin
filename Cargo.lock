@@ -101,6 +101,7 @@ dependencies = [
 name = "atilla-napi"
 version = "0.1.0"
 dependencies = [
+ "atilla-agent",
  "atilla-ai",
  "atilla-coding",
  "atilla-tui",

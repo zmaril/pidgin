@@ -54,6 +54,10 @@ pub fn bash_tool_execute(cwd: String, input_json: String) -> napi::Result<String
     tools::bash_execute(cwd, input_json)
 }
 
+// Bridge slice 1: the first Rust→JS blocking callback bridge (`AgentBridge`),
+// driving the Rust agent loop while live JS closures fire mid-run. Additive.
+mod agent_bridge;
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `atillaNativeVersion`.
