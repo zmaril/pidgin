@@ -19,6 +19,7 @@ icu_segmenter = "2"
 # (CrosstermTerminal / ProcessTerminal): raw mode, terminal size, event source.
 # All key decoding stays in keys.rs; all diff/layout logic is our own port.
 crossterm = "0.29"
+fancy-regex = "0.18"
 
 # macOS-only: replaces pi's darwin-modifiers.c native addon. Used to poll live
 # modifier flags for the Apple Terminal Shift+Enter path (see terminal/modifiers.rs).

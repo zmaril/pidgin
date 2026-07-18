@@ -12,6 +12,7 @@ pub mod fuzzy;
 pub mod keybindings;
 pub mod keys;
 pub mod kill_ring;
+pub mod markdown;
 pub mod overlay;
 pub mod renderer;
 pub mod terminal;
@@ -32,6 +33,7 @@ pub use keys::{
     is_kitty_protocol_active, matches_key, parse_key, set_kitty_protocol_active, KeyEventType,
 };
 pub use kill_ring::{KillRing, PushOpts};
+pub use markdown::{DefaultTextStyle, Markdown, MarkdownOptions, MarkdownTheme, StyleFn};
 pub use overlay::{
     ComponentId, MarginSpec, OverlayAnchor, OverlayHandleId, OverlayMargin, OverlayOptions,
     ReactionAction, SizeValue,
