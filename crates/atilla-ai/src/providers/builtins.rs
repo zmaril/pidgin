@@ -315,4 +315,142 @@ mod tests {
         assert_eq!(catalog().provider_count(), 35);
         assert_eq!(builtin_providers().len(), 36);
     }
+
+    /// Assert that `models.get_model(provider, id)` carries a `compat` blob whose
+    /// `key` equals `expected` verbatim — the invariant pi's conformance fixtures
+    /// depend on for per-model compat flags.
+    fn assert_compat_flag(
+        models: &Models,
+        provider: &str,
+        id: &str,
+        key: &str,
+        expected: serde_json::Value,
+    ) {
+        let model = models
+            .get_model(provider, id)
+            .unwrap_or_else(|| panic!("{provider}/{id} should resolve"));
+        let compat = model
+            .compat
+            .as_ref()
+            .unwrap_or_else(|| panic!("{provider}/{id} should carry a compat blob"));
+        assert_eq!(
+            compat.get(key),
+            Some(&expected),
+            "{provider}/{id} compat.{key} must survive the catalog->Model mapping verbatim"
+        );
+    }
+
+    // The catalog->Model mapping must not drop per-model compat flags: pi's
+    // downstream conformance fixtures read forceAdaptiveThinking /
+    // supportsTemperature / supportsLongCacheRetention straight out of `compat`.
+    // The mapping carries `compat: model.compat.clone()` verbatim, so each flag
+    // must equal its catalog JSON value exactly.
+    #[test]
+    fn catalog_compat_flags_survive_mapping() {
+        use serde_json::json;
+        let models = builtin_models();
+
+        // forceAdaptiveThinking (reasoning-related) — anthropic + kimi-coding.
+        assert_compat_flag(
+            &models,
+            "anthropic",
+            "claude-opus-4-8",
+            "forceAdaptiveThinking",
+            json!(true),
+        );
+        assert_compat_flag(
+            &models,
+            "anthropic",
+            "claude-fable-5",
+            "forceAdaptiveThinking",
+            json!(true),
+        );
+        assert_compat_flag(
+            &models,
+            "kimi-coding",
+            "k3",
+            "forceAdaptiveThinking",
+            json!(true),
+        );
+        assert_compat_flag(
+            &models,
+            "kimi-coding",
+            "k2p7",
+            "forceAdaptiveThinking",
+            json!(true),
+        );
+        assert_compat_flag(
+            &models,
+            "kimi-coding",
+            "kimi-for-coding-highspeed",
+            "forceAdaptiveThinking",
+            json!(true),
+        );
+        // kimi k3 also carries allowEmptySignature alongside it.
+        assert_compat_flag(
+            &models,
+            "kimi-coding",
+            "k3",
+            "allowEmptySignature",
+            json!(true),
+        );
+
+        // supportsTemperature — anthropic opus-4-8 pins it to false.
+        assert_compat_flag(
+            &models,
+            "anthropic",
+            "claude-opus-4-8",
+            "supportsTemperature",
+            json!(false),
+        );
+
+        // supportsLongCacheRetention — opencode deepseek-v4-flash pins it to false.
+        assert_compat_flag(
+            &models,
+            "opencode",
+            "deepseek-v4-flash",
+            "supportsLongCacheRetention",
+            json!(false),
+        );
+    }
+
+    // Enumerating the whole builtin catalog, the set of (provider, id) whose
+    // compat carries `forceAdaptiveThinking == true` must be non-empty and must
+    // include the known adaptive-thinking models. Guards against the mapping
+    // silently dropping the flag for the enumerated (non-lookup) path.
+    #[test]
+    fn adaptive_thinking_set_from_enumeration() {
+        let models = builtin_models();
+        let adaptive: std::collections::BTreeSet<(String, String)> = models
+            .get_models(None)
+            .into_iter()
+            .filter(|m| {
+                m.compat
+                    .as_ref()
+                    .and_then(|c| c.get("forceAdaptiveThinking"))
+                    == Some(&serde_json::Value::Bool(true))
+            })
+            .map(|m| (m.provider.clone(), m.id.clone()))
+            .collect();
+
+        assert!(
+            !adaptive.is_empty(),
+            "expected some forceAdaptiveThinking models"
+        );
+        for expected in [
+            ("anthropic", "claude-opus-4-8"),
+            ("anthropic", "claude-fable-5"),
+            ("kimi-coding", "k3"),
+            ("kimi-coding", "k2p7"),
+            ("kimi-coding", "kimi-for-coding-highspeed"),
+        ] {
+            let key = (expected.0.to_string(), expected.1.to_string());
+            assert!(
+                adaptive.contains(&key),
+                "{}/{} should be in the forceAdaptiveThinking set",
+                expected.0,
+                expected.1
+            );
+        }
+    }
 }
