@@ -845,14 +845,7 @@ mod tests {
 
     impl TempPromptDir {
         fn new() -> Self {
-            let path = std::env::temp_dir().join(format!(
-                "atilla-prompts-{}-{}",
-                std::process::id(),
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos()
-            ));
+            let path = crate::core::tools::test_support::unique_temp_path("atilla-prompts");
             fs::create_dir_all(&path).unwrap();
             TempPromptDir { path }
         }
