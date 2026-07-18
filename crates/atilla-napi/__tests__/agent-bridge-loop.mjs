@@ -1,3 +1,4 @@
+// straitjacket-allow-file:duplication
 // Bridge slice 1 — STEP B: run the Rust agent loop through the bridge.
 //
 // Registers a JS `streamFn` (returns an eager StreamResult) and a `convertToLlm`

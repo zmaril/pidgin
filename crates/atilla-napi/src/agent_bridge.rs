@@ -546,13 +546,7 @@ fn error_stream_result(model: &Model, message: &str, aborted: bool) -> StreamRes
             cache_write_1h: None,
             reasoning: None,
             total_tokens: 0,
-            cost: UsageCost {
-                input: 0.0,
-                output: 0.0,
-                cache_read: 0.0,
-                cache_write: 0.0,
-                total: 0.0,
-            },
+            cost: UsageCost::default(),
         },
         stop_reason: if aborted {
             StopReason::Aborted
