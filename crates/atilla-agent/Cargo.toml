@@ -1,9 +1,11 @@
 [package]
 name = "atilla-agent"
-description = "Rust mirror of @earendil-works/pi-agent-core — the agent loop and harness (scaffold)."
+description = "Rust mirror of @earendil-works/pi-agent-core — the agent loop and harness."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
 [dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }

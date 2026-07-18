@@ -1,0 +1,2 @@
+{"type":"session","id":"ffae836b-9420-4060-ac13-7745215f90ff","timestamp":"2025-12-09T00:53:29.825Z","cwd":"/Users/badlogic/workspaces/pi-mono","provider":"anthropic","modelId":"claude-opus-4-5","thinkingLevel":"off"}
+{"type":"message","timestamp":"2025-12-09T00:53:29.825Z","message":{"role":"user","content":[{"type":"text","text":"/mode"}],"timestamp":1763681581544}}
