@@ -21,7 +21,7 @@ The five upstream packages, in dependency order:
 
 **Two stable, documented, language-agnostic boundaries** matter most for a mirror:
 1. **The RPC protocol** (`pi --mode rpc`) — a fully documented JSONL request/response/event protocol over stdio. It is the recommended non-Node integration path today.
-2. **The version-3 JSONL session file format** — a documented, append-only, tree-structured on-disk schema.
+2. **The version-3 JSONL session file format** — a documented, append-only, tree-structured on-disk schema. atilla mirrors it **byte-for-byte**: an exact mirror of version-3 (same tree shape, field names, and ordering), not a re-designed equivalent.
 
 Both are ideal cross-language conformance anchors. A third anchor is the `pi-ai` wire schema (`Message`, `AssistantMessageEvent`, `Tool`, `Model`, `Usage`) shared by every layer.
 
@@ -29,13 +29,13 @@ Both are ideal cross-language conformance anchors. A third anchor is the `pi-ai`
 
 ## Prior art and related work
 
-Roughly ten prior pi-to-Rust ports already exist; none is a model we build on. The full survey is [`notes/prior-art.md`](notes/prior-art.md) (PR #4) — read it before writing code. Three findings feed this plan. First, mature and permissively-licensed Rust building blocks are worth reusing rather than re-inventing: **[`rust-genai`](https://github.com/jeremychone/rust-genai)** (MIT/Apache-2.0) reportedly covers pi's providers natively (OpenAI, Anthropic, Gemini, Bedrock, Mistral) and is a candidate for the provider layer (§5, §8, M5), and **[`codex-rs`](https://github.com/openai/codex)** (Apache-2.0) is a solid architecture reference for a Rust agent CLI. Second, ports that pin a specific upstream version — **[`c4pt0r/pie`](https://github.com/c4pt0r/pie)** and **[`nktkt/pi`](https://github.com/nktkt/pi)** — are precedent for the version-pinning mirror strategy (§7). Third, upstream has no Rust plans (a "rewrite in Rust" issue was opened and closed as a joke), so atilla is an independent effort.
+Roughly ten prior pi-to-Rust ports already exist; none is a model we build on. The full survey is [`notes/prior-art.md`](notes/prior-art.md) (PR #4) — read it before writing code. Three findings feed this plan. First, mature and permissively-licensed Rust building blocks are worth reusing rather than re-inventing: **[`codex-rs`](https://github.com/openai/codex)** (Apache-2.0) is a solid architecture reference for a Rust agent CLI. (**[`rust-genai`](https://github.com/jeremychone/rust-genai)** was weighed for the provider layer and rejected in favour of hand-rolled thin per-provider clients — see §4, §8, M5, and [`notes/communications.md`](notes/communications.md).) Second, ports that pin a specific upstream version — **[`c4pt0r/pie`](https://github.com/c4pt0r/pie)** and **[`nktkt/pi`](https://github.com/nktkt/pi)** — are precedent for the version-pinning mirror strategy (§7). Third, upstream has no Rust plans (a "rewrite in Rust" issue was opened and closed as a joke), so atilla is an independent effort.
 
 ## 2. Goal and guiding constraints
 
 The goal is **not a one-time port** but a **continually-updating mirror** that exposes `pi` as **native extensions in as many host languages as possible** while tracking upstream at its high release cadence. **PHP is the first target, and Node compatibility is maintained as a first-class target** — not a later add-on. Two hard constraints shape every decision:
 
-- **C1 — Conformance is defined as passing pi's own test suite.** atilla must be exercised by (a Rust-adapted form of) upstream's existing tests, not only by bespoke tests. A sibling workstream (**"Design: pass pi's own test suite"**) owns that harness design; this plan references it and does not duplicate it. See §6.
+- **C1 — Conformance is defined as passing pi's own tests, literally.** pi's existing unit-test suites run **unmodified** against napi-rs Node packages that present pi's exact module surface (backed by the Rust core), and pi's black-box CLI tests run against the `atilla` binary. Bespoke tests supplement but never replace this bar. See §6.
 - **C2 — Bindings are native extensions per language, decided.** PHP gets a real native extension (ext-php-rs, a `.so` loaded via `php.ini`), not a C-ABI/FFI-loaded library, and Node is maintained as a first-class native extension (napi-rs). Further languages likewise get first-class native extensions (PyO3, magnus, …). See §5.
 
 A corollary of C1 + the mirror goal (C3): **atilla's module structure stays deliberately close to pi's**, so that an upstream diff maps to a tractable atilla diff. We optimise for *diff-portability*, not for the most idiomatic-from-scratch Rust layout.
@@ -56,7 +56,7 @@ atilla/                          # repo root (zmaril/atilla)
 │   ├── atilla-core/             # EXISTS on main — grows into the FACADE crate: the single binding-facing API
 │   │                            #   (re-exports the above, in a binding-friendly shape). All native bindings depend ONLY on this.
 │   ├── atilla-cli/              # EXISTS on main — ⇔ the `pi` binary: argument parsing + run modes (print, rpc; TUI later)
-│   └── atilla-tui/              # ⇔ pi-tui (LATER; terminal UI — deferred, see §4/§8) (NEW)
+│   └── atilla-tui/              # ⇔ pi-tui (terminal UI — tracked as an open sibling workstream, see §4/§8) (NEW)
 ├── bindings/
 │   ├── php/                     # atilla-php  : ext-php-rs native extension (cdylib), PECL/composer packaging
 │   ├── node/                    # atilla-node : napi-rs (first-class, with PHP)
@@ -81,14 +81,16 @@ Not all 95k lines are equally load-bearing across the binding boundary. Priority
 
 **Mirror early (the interoperable core, ~33k upstream LOC of portable logic):**
 - `pi-ai` wire types + `Usage`/cost math + the `AssistantMessageEvent` streaming union.
-- The version-3 JSONL **session format** (parse, tree-walk, append, migrate) — pure, deterministic, fixture-rich.
+- The version-3 JSONL **session format** (parse, tree-walk, append, migrate) — an **exact byte-compatible mirror** of pi's on-disk format, pure, deterministic, fixture-rich.
 - The **agent loop**, tool abstraction, `ExecutionEnv` (already `Result`-returning and Rust-shaped), compaction.
 - Built-in **tools** (bash/read/write/edit/grep/find/ls) and the **RPC protocol**.
 - The **JS/TS extension plane** — pi's own TypeScript extensions run inside atilla on an **embedded `deno_core`** runtime (§8). Passing pi's extension tests is a hard requirement (§6), so this is in scope, not deferred.
-- Provider APIs — **evaluate [`rust-genai`](https://github.com/jeremychone/rust-genai)** as a native multi-provider dependency; otherwise port per provider starting with **Anthropic Messages** (best-documented), then OpenAI, Google (§8).
+- Provider APIs — **hand-rolled thin per-provider HTTP + SSE clients** (`reqwest` + `eventsource-stream`), one per wire dialect, owning our own wire rather than inheriting a third-party provider model across the FFI boundary (rationale in [`notes/communications.md`](notes/communications.md)). Start with **Anthropic Messages** (best-documented), then OpenAI, Google, Mistral, Bedrock (§8).
+
+**No MCP.** pi ships **no MCP integration**; atilla adds none. We mirror upstream's surface exactly and do not introduce Model Context Protocol support (confirmed in [`notes/communications.md`](notes/communications.md)).
 
 **Defer (terminal-specific or orthogonal to the binding boundary):**
-- The **interactive TUI** (~16.7k upstream LOC; grapheme-width/ANSI-diff contract is a correctness minefield). The RPC boundary lets a host build its own UI.
+- The **interactive TUI** (~16.7k upstream LOC; grapheme-width/ANSI-diff contract is a correctness minefield) — an **open sibling workstream** is investigating a ratatui recreation (§8); this plan targets the RPC boundary so a host can build its own UI in the meantime.
 - The **orchestrator** daemon.
 - Exotic providers, OAuth loopback flows, Bedrock SigV4 (until a later provider milestone).
 
@@ -126,20 +128,20 @@ Not all 95k lines are equally load-bearing across the binding boundary. Priority
 | **Node** (first-class, with PHP) | napi-rs | npm packages | Uses the callback/channel form + N-API ThreadsafeFunction; maps naturally to async iterators. Also the natural host for pi's JS/TS extension conformance. |
 | Ruby | magnus | RubyGems (precompiled) | Blocking form. |
 
-**Cost we accept (and track):** native extensions add **per-language maintenance cost** — each new façade method must be surfaced in every binding, and each language has its own build/ABI/packaging matrix (PHP's ZTS/NTS × versions, Python abi3, Node N-API versions). We mitigate with the thin-by-construction façade rule, a shared conformance suite every binding must pass (§6), and codegen where practical (a manifest of façade methods → generated binding stubs is an open option, see §9).
+**Cost we accept (and track):** native extensions add **per-language maintenance cost** — each new façade method must be surfaced in every binding, and each language has its own build/ABI/packaging matrix (PHP's ZTS/NTS × versions, Python abi3, Node N-API versions). We mitigate with the thin-by-construction façade rule, a shared conformance suite every binding must pass (§6), and codegen where practical (a manifest of façade methods → generated binding stubs is an open option, see §11).
 
 **Rejected:** a single C-ABI + per-language FFI wrapper. It would minimise Rust-side work but yields non-idiomatic, hand-marshalled APIs in each language, loses type safety at the boundary, and is exactly what the user ruled out. Native extensions cost more to maintain but deliver first-class ergonomics and are the decided path.
 
-## 6. Conformance: pass pi's own test suite (referenced, not duplicated)
+## 6. Conformance: pass pi's own tests (the literal bar)
 
-**The bar (C1): atilla must pass pi's own tests.** The dedicated sibling workstream *"Design: pass pi's own test suite"* owns the harness; this plan defers to its output (expected in `notes/` / `conformance/`) and only records how atilla is *built to be testable* by it:
+**The bar (C1): pi's own tests pass, unmodified, against atilla.** This is a concrete mechanism, not an aspiration:
 
-- **Faux-provider parity.** pi ships a scripted, deterministic `fauxProvider` (`ai/src/providers/faux.ts`) that replays predefined content blocks / tool calls / stop reasons through the real event protocol — no API keys. atilla-ai implements a **byte-compatible faux provider** so the same scripted scenarios drive identical agent-loop runs. This is the single most valuable conformance mechanism.
-- **Golden vectors from two stable boundaries.** (1) **Session JSONL**: run identical faux-driven scenarios in pi and atilla; diff the resulting version-3 JSONL trees. (2) **RPC**: drive `pi --mode rpc` and `atilla --mode rpc` with identical command sequences; diff the event streams line-for-line. Both are deterministic and language-agnostic.
-- **Shared `conformance/` vectors.** Test vectors live as JSON in `conformance/` and are consumed by (a) the Rust core tests and (b) **every native binding's test suite** — so PHP, Python, etc. each prove *identical* observable behaviour, not just that they load. A binding is "done" only when it passes the shared vectors.
-- **Adapters over upstream tests.** Where pi's vitest tests encode behaviour we must match (stream decoding, session-manager edge cases, tool semantics, compaction cut-points), the sibling harness defines how those assertions are re-expressed against atilla (via the RPC/JSONL boundary or a thin test shim). We keep atilla's module structure close to pi's (C3) specifically so these test intents map over with minimal translation.
-
-**Open dependency:** the exact re-execution mechanism (port vitest cases → Rust `#[test]` vs. black-box RPC diffing vs. a Node harness driving the atilla binary) is the sibling's call. Flagged in §9.
+- **Drop-in Node packages.** atilla compiles **Node packages that present pi's exact TypeScript module surface** — napi-rs packages that re-export pi's public API shape, backed by the Rust core. pi's existing **unit-test suites run unmodified against these packages**, as a drop-in replacement for the real `@earendil-works/pi-*` packages. This is the literal conformance bar: pi's own tests must pass against the Rust-backed packages, extension tests included.
+- **The Node bridge does double duty.** This napi-rs Node bridge is a **deliverable in its own right** — Node is a first-class target language (§2, §5) — so a shipping binding and the conformance harness are the same artifact.
+- **Black-box CLI tests repointed.** pi's **4 black-box CLI / end-to-end tests** are repointed to run against the Rust **`atilla` binary** in place of the Node `pi` binary.
+- **Byte-compatible faux provider.** pi ships a scripted, deterministic `fauxProvider` (`ai/src/providers/faux.ts`) that replays predefined content blocks / tool calls / stop reasons through the real event protocol — no API keys. atilla-ai implements a **byte-compatible faux provider**, so the same scripted scenarios drive identical agent-loop runs and pi's tests pass deterministically.
+- **Exact-mirror session format.** atilla's session file format is a **byte-compatible exact mirror** of pi's version-3 JSONL — same tree shape, field names, and ordering — not a re-designed equivalent (§1). Golden vectors run identical faux-driven scenarios in pi and atilla and diff the resulting version-3 JSONL trees.
+- **Shared `conformance/` vectors for the non-Node bindings.** The Node bridge carries the primary bar; a complementary, language-agnostic layer keeps JSON test vectors in `conformance/`, consumed by every non-Node binding's test suite (PHP, later Python and Ruby) — so each proves *identical* observable behaviour, not just that it loads. A binding is "done" only when it passes the shared vectors (and, where the language hosts them, pi's own tests). We keep atilla's module structure close to pi's (C3) so these test intents map over with minimal translation.
 
 ## 7. Upstream-tracking / mirror strategy
 
@@ -156,10 +158,10 @@ Keeping atilla a *living* mirror of a fast-moving upstream is a first-class conc
 
 | Risk | Why hard | Plan |
 |---|---|---|
-| **JS/TS extension system** | Extensions are TypeScript modules run **in-process** via `jiti`, mutating agent control flow through a ~30-event API. | **Decided: embed `deno_core`** as the JS/TS compatibility plane so pi's own extensions run inside atilla. **Passing pi's extension tests is a hard requirement (§6).** The open part is only scoping and sequencing of the ~30-event surface (§11). |
+| **JS/TS extension system** | Extensions are TypeScript modules run **in-process** via `jiti`, mutating agent control flow through a ~30-event API. | **Decided: embed `deno_core`** as the JS/TS compatibility plane so pi's own extensions run inside atilla. **Passing pi's extension tests is a hard requirement (§6).** A separate sibling session researches how deep these in-process hooks reach across host languages (how they map when the host is PHP/Python rather than Node), feeding the extension design. The open part here is scoping and sequencing the ~30-event surface (§11). |
 | **Streaming async iterators** | Everything is `AssistantMessageEventStream` / `EventStream`; ordering (interleaved content-block deltas keyed by `contentIndex`, parallel tool completion order) must be bit-for-bit. | Façade owns the Tokio runtime; exposes blocking-iterator + callback forms; conformance vectors assert exact event ordering. |
-| **Provider SDKs** | pi leans on 5 official SDKs; **Bedrock SigV4 + AWS credential chain** is the worst to replicate. | **Evaluate [`rust-genai`](https://github.com/jeremychone/rust-genai)** as a native multi-provider dependency (it reportedly already covers pi's providers), which could sharply cut per-provider porting cost; **fall back to** porting raw HTTP+SSE per provider if its event model doesn't map cleanly to pi's `AssistantMessageEvent` union. Anthropic first; Bedrock late. `codex-rs` (Apache-2.0) is an architecture reference. |
-| **TUI grapheme-width contract** | Rendered line width must exactly equal terminal grapheme width or the renderer aborts; JS `get-east-asian-width` vs Rust parity is fragile. | Defer the TUI entirely; target the RPC boundary. Revisit with `unicode-width` + golden render tests only if we rebuild the UI. |
+| **Provider SDKs** | pi leans on 5 official SDKs; **Bedrock SigV4 + AWS credential chain** is the worst to replicate. | **Hand-roll thin per-provider clients**: one `reqwest` + `eventsource-stream` driver per wire dialect (`anthropic-messages`, `openai-completions`/`-responses`, `google-generative-ai`, `mistral-conversations`, `bedrock-converse-stream`), each decoding into pi's `AssistantMessageEvent` union. Own the wire; don't inherit a third-party provider model across the FFI boundary ([`notes/communications.md`](notes/communications.md)). Anthropic first; Bedrock SigV4 late. `codex-rs` (Apache-2.0) is an architecture reference. |
+| **TUI grapheme-width contract** | Rendered line width must exactly equal terminal grapheme width or the renderer aborts; JS `get-east-asian-width` vs Rust parity is fragile. | The TUI is an **open sibling workstream** — a separate session is investigating recreating pi's TUI with **ratatui** — referenced here, not owned by this plan. The grapheme-width contract (`get-east-asian-width` vs Rust `unicode-width` parity, with golden render tests) is the hard part that workstream carries. This plan targets the RPC boundary so hosts can build their own UI regardless. |
 | **`typebox` / `partial-json`** | JSON-Schema tool params + tolerant streaming-JSON parsing of partial tool args. | Rust equivalents exist (`schemars`/`jsonschema`, a tolerant JSON parser); conformance vectors cover partial-parse edge cases. |
 | **Native `rg`/`fd` download** | grep/find shell out to ripgrep/fd auto-downloaded from GitHub releases. | Use Rust-native `grep`/`ignore` crates (same authors as ripgrep) — removes the download+subprocess dependency. |
 
@@ -188,22 +190,22 @@ Implement `atilla --mode rpc` (a subset of commands: prompt/steer/abort/get_stat
 *Done:* an identical RPC command script produces byte-identical event streams from `pi` and `atilla` for faux-driven runs.
 
 **M5 — First real provider (Anthropic Messages).**
-Evaluate `rust-genai` first; if its event model maps to pi's `AssistantMessageEvent` union, adopt it, otherwise decode a raw HTTP+SSE Anthropic provider into that union.
+Hand-roll a thin `reqwest` + `eventsource-stream` Anthropic `messages` driver that decodes SSE into pi's `AssistantMessageEvent` union — the pattern every later provider follows ([`notes/communications.md`](notes/communications.md)).
 *Done:* live smoke test streams a real completion; SSE→event decoding matches pi's decoder on captured-fixture SSE streams (no key needed for the fixture test).
 
 **M6 — Extension plane (embedded `deno_core`).**
 Embed `deno_core` so pi's own TypeScript extensions run inside atilla, driving the agent through the ~30-event extension API.
 *Done:* pi's own extension test suite passes against atilla's embedded `deno_core` plane — the §6 hard requirement.
 
-**M7 — Node binding (napi-rs), first-class alongside PHP.**
-Stand up `bindings/node` over the *same* `atilla-core` façade, using the callback/async-iterator form; it must pass the *same* `conformance/` vectors as PHP.
-*Done:* Node passes M1–M4 shared vectors unchanged — proving the façade keeps bindings thin and that Node is a maintained first-class target.
+**M7 — Node binding (napi-rs), first-class alongside PHP, and the primary conformance harness.**
+Stand up `bindings/node` over the *same* `atilla-core` façade (callback/async-iterator form), shaped as napi-rs packages that present pi's exact module surface as a drop-in for `@earendil-works/pi-*`. It must pass the *same* `conformance/` vectors as PHP **and** run pi's own unit-test suites unmodified (§6).
+*Done:* Node passes M1–M4 shared vectors unchanged, and pi's own unit tests pass against the Rust-backed packages — proving the façade keeps bindings thin, that Node is a maintained first-class target, and that the literal conformance bar (§6) holds.
 
 **M8 — Upstream-tracking automation live.**
 `UPSTREAM_COMMIT` pin + correspondence map + scheduled drift-detection CI job.
 *Done:* the weekly job runs, produces a diff report against a newer upstream commit, and opens a tracking issue.
 
-**M9+ — Breadth:** more languages (Python/PyO3, Ruby/magnus), more providers (OpenAI, Google, Bedrock), then the deferred TUI as a separate epic.
+**M9+ — Breadth:** more languages (Python/PyO3, Ruby/magnus), more providers (OpenAI, Google, Mistral, Bedrock). The TUI is not sequenced here — it's an open sibling workstream (ratatui recreation, §8).
 
 ## 10. CI strategy (correctness)
 
@@ -215,12 +217,10 @@ Stand up `bindings/node` over the *same* `atilla-core` façade, using the callba
 
 ## 11. Risks and open questions for the user
 
-1. **Extension system — decided, scoping still open.** pi's power comes largely from in-process JS/TS extensions (custom providers, tools, UI, control-flow hooks). **Decision:** embed `deno_core` as the JS/TS compatibility plane so pi's own extensions run inside atilla, and **passing pi's extension tests is a hard requirement** (§6, §8). Still open: how much of the ~30-event extension API to cover in the first cut, and how to sequence it against the provider and RPC work.
-2. **How literal must "pass pi's own test suite" be?** Re-execute upstream's vitest cases directly (needs a Node harness driving atilla), or match behaviour via black-box RPC/JSONL golden diffs generated *from* those tests? The sibling harness workstream owns this; **the user should confirm the intended strictness** (bit-identical outputs vs. behavioural equivalence).
-3. **Interactive TUI — mirror it or not?** It's ~17k LOC of terminal-specific code with a fragile grapheme-width contract, orthogonal to bindings. *Recommendation: defer; expose RPC and let hosts build UIs.* Confirm this is acceptable for the product vision.
-4. **Provider breadth vs. depth.** ~40 providers upstream. Which handful must the mirror support first? *Recommendation: Anthropic → OpenAI → Google; Bedrock later due to SigV4.*
-5. **Language priority.** PHP is first and Node is maintained first-class alongside it (§2, M7); Python and Ruby follow (M9+). Confirm this ordering, or reprioritise.
-6. **Binding codegen.** Should we invest early in generating binding stubs from a façade-method manifest to cut per-language maintenance, or hand-write bindings until the surface stabilises? *Recommendation: hand-write through M7, then evaluate codegen.*
-7. **Upstream TS→Rust porting notes.** The upstream TS→Rust porting notes are being relocated into `notes/` (as `notes/ts-to-rust.md`) by the transpilation workstream; reconcile this plan with them once landed.
-8. **Two upstream session-tree implementations** (`agent-core` `Session` vs `coding-agent` `SessionManager`) both claim version-3; field-for-field parity is unverified. We'll diff them before treating them as one schema for shared vectors.
-9. **Provider layer — adopt `rust-genai` or hand-port providers?** Depends on whether its streaming event model maps cleanly to pi's `AssistantMessageEvent` contract (conformance-critical). Evaluated at M5; hand-porting raw HTTP+SSE per provider is the fallback.
+1. **Extension system — deno_core confirmed, two open threads.** pi's power comes largely from in-process JS/TS extensions (custom providers, tools, UI, control-flow hooks). **Decision:** embed `deno_core` as the JS/TS compatibility plane so pi's own extensions run inside atilla, and **passing pi's extension tests is a hard requirement** (§6, §8). Open: (a) how much of the ~30-event extension API to cover in the first cut and how to sequence it against provider and RPC work; (b) **how deep these in-process hooks reach across host languages** — a separate sibling session is researching how pi's hooks map when the host is PHP/Python rather than Node, feeding the extension design.
+2. **Interactive TUI — ownership and timing.** An **open sibling workstream** is investigating a ratatui recreation of pi's TUI (§8); it is referenced here, not owned by this plan. Open: whether and when atilla should absorb that work, given the fragile grapheme-width contract, or keep exposing only RPC and let hosts build their own UIs.
+3. **Provider breadth vs. depth.** ~40 providers upstream, each a hand-rolled thin client (decided, §8). Which handful must the mirror support first? *Recommendation: Anthropic → OpenAI → Google → Mistral; Bedrock later due to SigV4.*
+4. **Language priority.** PHP is first and Node is maintained first-class alongside it (§2, M7); Python and Ruby follow (M9+). Confirm this ordering, or reprioritise.
+5. **Binding codegen.** Should we invest early in generating binding stubs from a façade-method manifest to cut per-language maintenance, or hand-write bindings until the surface stabilises? *Recommendation: hand-write through M7, then evaluate codegen.*
+6. **Upstream TS→Rust porting notes.** The upstream TS→Rust porting notes are being relocated into `notes/` (as `notes/ts-to-rust.md`) by the transpilation workstream; reconcile this plan with them once landed.
+7. **Two upstream session-tree implementations** (`agent-core` `Session` vs `coding-agent` `SessionManager`) both claim version-3; field-for-field parity is unverified. We'll diff them before treating them as one schema for shared vectors.
