@@ -17,6 +17,8 @@ mod lexer;
 mod tables;
 
 use crate::renderer::is_image_line;
+use crate::terminal_image::hyperlink;
+use crate::text_util::apply_background_to_line;
 use crate::width::{visible_width, wrap_text_with_ansi};
 use lexer::{Kind, Lexer, Token};
 
@@ -572,19 +574,6 @@ impl Markdown {
     }
 
     // table rendering lives in `tables.rs` (impl Markdown)
-}
-
-/// pi's `hyperlink()` (OSC 8).
-fn hyperlink(text: &str, url: &str) -> String {
-    format!("\x1b]8;;{url}\x1b\\{text}\x1b]8;;\x1b\\")
-}
-
-/// pi's `applyBackgroundToLine` from `utils.ts`.
-fn apply_background_to_line(line: &str, width: usize, bg: &StyleFn) -> String {
-    let visible_len = visible_width(line);
-    let pad = width.saturating_sub(visible_len);
-    let with_padding = format!("{line}{}", " ".repeat(pad));
-    bg(&with_padding)
 }
 
 /// pi's `trimPartialClosingFences`: trim streamed partial closing fences so code
