@@ -20,13 +20,13 @@ pub fn calculate_cost<C>(model: &Model<C>, usage: &Usage) -> UsageCost {
     let input_tokens = usage.input + usage.cache_read + usage.cache_write;
 
     let mut rates: ModelCostRates = model.cost.base_rates();
-    let mut matched_threshold: i64 = -1;
+    let mut matched_threshold: Option<u64> = None;
     if let Some(tiers) = &model.cost.tiers {
         for tier in tiers {
             let above = tier.input_tokens_above;
-            if input_tokens > above && (above as i64) > matched_threshold {
+            if input_tokens > above && matched_threshold.is_none_or(|m| above > m) {
                 rates = tier.rates();
-                matched_threshold = above as i64;
+                matched_threshold = Some(above);
             }
         }
     }

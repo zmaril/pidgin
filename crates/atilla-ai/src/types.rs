@@ -102,7 +102,6 @@ pub enum ContentBlock {
     Image { data: String, mime_type: String },
     /// `types.ts:349` — a tool invocation. `arguments` stays an opaque JSON
     /// value because it is provider-shaped and repaired incrementally mid-stream.
-    #[serde(rename = "toolCall")]
     ToolCall {
         id: String,
         name: String,
@@ -321,7 +320,6 @@ pub enum AssistantMessageEvent {
     },
     ToolcallEnd {
         content_index: u32,
-        #[serde(rename = "toolCall")]
         tool_call: ContentBlock,
         partial: AssistantMessage,
     },
@@ -436,7 +434,6 @@ pub struct Model<C = Value> {
 #[serde(rename_all = "kebab-case")]
 pub enum SessionAffinityFormat {
     Openai,
-    #[serde(rename = "openai-nosession")]
     OpenaiNosession,
     Openrouter,
 }
