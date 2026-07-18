@@ -1,3 +1,8 @@
+// straitjacket-allow-file[:duplication] — the inline `#[cfg(test)] mod tests`
+// rebuilds the same poll scaffold (FakeClock + recording sleeper + poll closure)
+// per case so each interval/timeout path is exercised in isolation. The clone
+// detector reads the repeated test setup as duplication; it is deliberate,
+// load-bearing per-case fixtures.
 //! RFC 8628 device-code poller, ported from pi-ai's
 //! `packages/ai/src/auth/oauth/device-code.ts` at pinned commit `3da591ab`.
 //!

@@ -1,3 +1,7 @@
+// straitjacket-allow-file[:duplication] — the inline `#[cfg(test)] mod tests`
+// rebuilds the same `modify`/`read` fixture closures per case (each exercises a
+// distinct store path in isolation). The clone detector reads the repeated test
+// setup as duplication; it is deliberate, load-bearing per-case fixtures.
 //! Credential storage, ported from pi-ai's
 //! `packages/ai/src/auth/credential-store.ts` (the `InMemoryCredentialStore`)
 //! and the `CredentialStore` interface in `types.ts:60-88`, at pinned commit
