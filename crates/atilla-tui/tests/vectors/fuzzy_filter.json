@@ -1,0 +1,171 @@
+[
+	{
+		"items": [
+			"apple",
+			"banana",
+			"cherry"
+		],
+		"query": "",
+		"result": [
+			"apple",
+			"banana",
+			"cherry"
+		]
+	},
+	{
+		"items": [
+			"apple",
+			"banana",
+			"cherry"
+		],
+		"query": "an",
+		"result": [
+			"banana"
+		]
+	},
+	{
+		"items": [
+			"a_p_p",
+			"app",
+			"application"
+		],
+		"query": "app",
+		"result": [
+			"app",
+			"application",
+			"a_p_p"
+		]
+	},
+	{
+		"items": [
+			"clone",
+			"cl"
+		],
+		"query": "cl",
+		"result": [
+			"cl",
+			"clone"
+		]
+	},
+	{
+		"items": [
+			"foo",
+			"bar",
+			"foobar"
+		],
+		"query": "foo",
+		"result": [
+			"foo",
+			"foobar"
+		]
+	},
+	{
+		"items": [
+			"gpt-5.5 openai-codex"
+		],
+		"query": "openai-codex/gpt-5.5",
+		"result": [
+			"gpt-5.5 openai-codex"
+		]
+	},
+	{
+		"items": [
+			"apple",
+			"banana",
+			"cherry"
+		],
+		"query": "   ",
+		"result": [
+			"apple",
+			"banana",
+			"cherry"
+		]
+	},
+	{
+		"items": [
+			"one",
+			"two",
+			"three"
+		],
+		"query": "e",
+		"result": [
+			"one",
+			"three"
+		]
+	},
+	{
+		"items": [
+			"cat",
+			"car",
+			"cart",
+			"card"
+		],
+		"query": "ca",
+		"result": [
+			"cat",
+			"car",
+			"cart",
+			"card"
+		]
+	},
+	{
+		"items": [
+			"gpt-4o",
+			"gpt-4.1",
+			"gpt-5",
+			"gpt-5-codex",
+			"o1",
+			"o3"
+		],
+		"query": "gpt5",
+		"result": [
+			"gpt-5",
+			"gpt-5-codex"
+		]
+	},
+	{
+		"items": [
+			"file.ts",
+			"file.test.ts",
+			"index.ts"
+		],
+		"query": "test",
+		"result": [
+			"file.test.ts"
+		]
+	},
+	{
+		"items": [
+			"a b c",
+			"abc",
+			"a-b-c"
+		],
+		"query": "abc",
+		"result": [
+			"abc",
+			"a b c",
+			"a-b-c"
+		]
+	},
+	{
+		"items": [
+			"read file",
+			"write file",
+			"read line"
+		],
+		"query": "read file",
+		"result": [
+			"read file"
+		]
+	},
+	{
+		"items": [
+			"provider/model",
+			"other/thing"
+		],
+		"query": "provider model",
+		"result": [
+			"provider/model"
+		]
+	}
+]

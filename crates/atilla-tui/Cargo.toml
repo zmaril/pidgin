@@ -8,6 +8,10 @@ repository.workspace = true
 
 [dependencies]
 unicode-segmentation = "1.12"
+# ICU4X word segmentation. Backs the word segmenter used by word-navigation;
+# reconciled to pi's ICU4C `Intl.Segmenter` via a colon tailoring in
+# text_util.rs (see that module and tests/word_segmentation.json).
+icu_segmenter = "2"
 # crossterm is used strictly as the OS backend for the real terminal
 # (CrosstermTerminal / ProcessTerminal): raw mode, terminal size, event source.
 # All key decoding stays in keys.rs; all diff/layout logic is our own port.

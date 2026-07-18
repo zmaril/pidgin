@@ -1,0 +1,1388 @@
+[
+	{
+		"text": "hello world",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello world",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello world",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello world",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello world",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello world",
+		"cursor": 5,
+		"backward": 0,
+		"forward": 11
+	},
+	{
+		"text": "hello world",
+		"cursor": 6,
+		"backward": 0,
+		"forward": 11
+	},
+	{
+		"text": "hello world",
+		"cursor": 7,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "hello world",
+		"cursor": 8,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "hello world",
+		"cursor": 9,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "hello world",
+		"cursor": 10,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "hello world",
+		"cursor": 11,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "foo.bar",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo.bar",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo.bar",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo.bar",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "foo.bar",
+		"cursor": 4,
+		"backward": 3,
+		"forward": 7
+	},
+	{
+		"text": "foo.bar",
+		"cursor": 5,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "foo.bar",
+		"cursor": 6,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "foo.bar",
+		"cursor": 7,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "foo:bar",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo:bar",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo:bar",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo:bar",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "foo:bar",
+		"cursor": 4,
+		"backward": 3,
+		"forward": 7
+	},
+	{
+		"text": "foo:bar",
+		"cursor": 5,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "foo:bar",
+		"cursor": 6,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "foo:bar",
+		"cursor": 7,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 5,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 6,
+		"backward": 5,
+		"forward": 7
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 7,
+		"backward": 5,
+		"forward": 8
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 8,
+		"backward": 7,
+		"forward": 12
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 9,
+		"backward": 8,
+		"forward": 12
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 10,
+		"backward": 8,
+		"forward": 12
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 11,
+		"backward": 8,
+		"forward": 12
+	},
+	{
+		"text": "path/to/file",
+		"cursor": 12,
+		"backward": 8,
+		"forward": 12
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 3,
+		"backward": 2,
+		"forward": 4
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 4,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 5,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 6,
+		"backward": 5,
+		"forward": 9
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 7,
+		"backward": 5,
+		"forward": 9
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 8,
+		"backward": 5,
+		"forward": 9
+	},
+	{
+		"text": "你好世界 test",
+		"cursor": 9,
+		"backward": 5,
+		"forward": 9
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 7
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 7
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 7
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 3,
+		"backward": 2,
+		"forward": 7
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 4,
+		"backward": 2,
+		"forward": 7
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 5,
+		"backward": 2,
+		"forward": 7
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 6,
+		"backward": 2,
+		"forward": 7
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 7,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 8,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "  hello  ",
+		"cursor": 9,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 6
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 4,
+		"backward": 3,
+		"forward": 6
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 5,
+		"backward": 3,
+		"forward": 6
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 6,
+		"backward": 3,
+		"forward": 9
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 7,
+		"backward": 6,
+		"forward": 9
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 8,
+		"backward": 6,
+		"forward": 9
+	},
+	{
+		"text": "foo...bar",
+		"cursor": 9,
+		"backward": 6,
+		"forward": 9
+	},
+	{
+		"text": "hello",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "hello",
+		"cursor": 5,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "a:b:c",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 1
+	},
+	{
+		"text": "a:b:c",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "a:b:c",
+		"cursor": 2,
+		"backward": 1,
+		"forward": 3
+	},
+	{
+		"text": "a:b:c",
+		"cursor": 3,
+		"backward": 2,
+		"forward": 4
+	},
+	{
+		"text": "a:b:c",
+		"cursor": 4,
+		"backward": 3,
+		"forward": 5
+	},
+	{
+		"text": "a:b:c",
+		"cursor": 5,
+		"backward": 4,
+		"forward": 5
+	},
+	{
+		"text": "ab:cd:ef",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "ab:cd:ef",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "ab:cd:ef",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "ab:cd:ef",
+		"cursor": 3,
+		"backward": 2,
+		"forward": 5
+	},
+	{
+		"text": "ab:cd:ef",
+		"cursor": 4,
+		"backward": 3,
+		"forward": 5
+	},
+	{
+		"text": "ab:cd:ef",
+		"cursor": 5,
+		"backward": 3,
+		"forward": 6
+	},
+	{
+		"text": "ab:cd:ef",
+		"cursor": 6,
+		"backward": 5,
+		"forward": 8
+	},
+	{
+		"text": "ab:cd:ef",
+		"cursor": 7,
+		"backward": 6,
+		"forward": 8
+	},
+	{
+		"text": "ab:cd:ef",
+		"cursor": 8,
+		"backward": 6,
+		"forward": 8
+	},
+	{
+		"text": "你:好",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 1
+	},
+	{
+		"text": "你:好",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "你:好",
+		"cursor": 2,
+		"backward": 1,
+		"forward": 3
+	},
+	{
+		"text": "你:好",
+		"cursor": 3,
+		"backward": 2,
+		"forward": 3
+	},
+	{
+		"text": "foo;bar",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo;bar",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo;bar",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "foo;bar",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "foo;bar",
+		"cursor": 4,
+		"backward": 3,
+		"forward": 7
+	},
+	{
+		"text": "foo;bar",
+		"cursor": 5,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "foo;bar",
+		"cursor": 6,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "foo;bar",
+		"cursor": 7,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "snake_case",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 5,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 6,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 7,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 8,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 9,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "snake_case",
+		"cursor": 10,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 5,
+		"backward": 0,
+		"forward": 6
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 6,
+		"backward": 5,
+		"forward": 10
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 7,
+		"backward": 6,
+		"forward": 10
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 8,
+		"backward": 6,
+		"forward": 10
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 9,
+		"backward": 6,
+		"forward": 10
+	},
+	{
+		"text": "kebab-case",
+		"cursor": 10,
+		"backward": 6,
+		"forward": 10
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 5,
+		"backward": 0,
+		"forward": 11
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 6,
+		"backward": 0,
+		"forward": 11
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 7,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 8,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 9,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 10,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "a_p_p world",
+		"cursor": 11,
+		"backward": 6,
+		"forward": 11
+	},
+	{
+		"text": "one two three",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "one two three",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "one two three",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "one two three",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 7
+	},
+	{
+		"text": "one two three",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 7
+	},
+	{
+		"text": "one two three",
+		"cursor": 5,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "one two three",
+		"cursor": 6,
+		"backward": 4,
+		"forward": 7
+	},
+	{
+		"text": "one two three",
+		"cursor": 7,
+		"backward": 4,
+		"forward": 13
+	},
+	{
+		"text": "one two three",
+		"cursor": 8,
+		"backward": 4,
+		"forward": 13
+	},
+	{
+		"text": "one two three",
+		"cursor": 9,
+		"backward": 8,
+		"forward": 13
+	},
+	{
+		"text": "one two three",
+		"cursor": 10,
+		"backward": 8,
+		"forward": 13
+	},
+	{
+		"text": "one two three",
+		"cursor": 11,
+		"backward": 8,
+		"forward": 13
+	},
+	{
+		"text": "one two three",
+		"cursor": 12,
+		"backward": 8,
+		"forward": 13
+	},
+	{
+		"text": "one two three",
+		"cursor": 13,
+		"backward": 8,
+		"forward": 13
+	},
+	{
+		"text": "  leading",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 9
+	},
+	{
+		"text": "  leading",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 9
+	},
+	{
+		"text": "  leading",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 9
+	},
+	{
+		"text": "  leading",
+		"cursor": 3,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "  leading",
+		"cursor": 4,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "  leading",
+		"cursor": 5,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "  leading",
+		"cursor": 6,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "  leading",
+		"cursor": 7,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "  leading",
+		"cursor": 8,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "  leading",
+		"cursor": 9,
+		"backward": 2,
+		"forward": 9
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 8
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 8
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 8
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 8
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 8
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 5,
+		"backward": 0,
+		"forward": 8
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 6,
+		"backward": 0,
+		"forward": 8
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 7,
+		"backward": 0,
+		"forward": 8
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 8,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 9,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "trailing  ",
+		"cursor": 10,
+		"backward": 0,
+		"forward": 10
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 3
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 4,
+		"backward": 3,
+		"forward": 5
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 5,
+		"backward": 4,
+		"forward": 6
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 6,
+		"backward": 5,
+		"forward": 7
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 7,
+		"backward": 6,
+		"forward": 8
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 8,
+		"backward": 7,
+		"forward": 13
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 9,
+		"backward": 8,
+		"forward": 13
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 10,
+		"backward": 8,
+		"forward": 13
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 11,
+		"backward": 8,
+		"forward": 13
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 12,
+		"backward": 8,
+		"forward": 13
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 13,
+		"backward": 8,
+		"forward": 19
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 14,
+		"backward": 8,
+		"forward": 19
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 15,
+		"backward": 14,
+		"forward": 19
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 16,
+		"backward": 14,
+		"forward": 19
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 17,
+		"backward": 14,
+		"forward": 19
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 18,
+		"backward": 14,
+		"forward": 19
+	},
+	{
+		"text": "gpt-5.2-codex model",
+		"cursor": 19,
+		"backward": 14,
+		"forward": 19
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 5
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 5,
+		"backward": 4,
+		"forward": 9
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 6,
+		"backward": 5,
+		"forward": 9
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 7,
+		"backward": 5,
+		"forward": 9
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 8,
+		"backward": 5,
+		"forward": 9
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 9,
+		"backward": 5,
+		"forward": 10
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 10,
+		"backward": 9,
+		"forward": 13
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 11,
+		"backward": 10,
+		"forward": 13
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 12,
+		"backward": 10,
+		"forward": 13
+	},
+	{
+		"text": "user@host.com",
+		"cursor": 13,
+		"backward": 10,
+		"forward": 13
+	},
+	{
+		"text": "a.b.c.d",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 1
+	},
+	{
+		"text": "a.b.c.d",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "a.b.c.d",
+		"cursor": 2,
+		"backward": 1,
+		"forward": 3
+	},
+	{
+		"text": "a.b.c.d",
+		"cursor": 3,
+		"backward": 2,
+		"forward": 4
+	},
+	{
+		"text": "a.b.c.d",
+		"cursor": 4,
+		"backward": 3,
+		"forward": 5
+	},
+	{
+		"text": "a.b.c.d",
+		"cursor": 5,
+		"backward": 4,
+		"forward": 6
+	},
+	{
+		"text": "a.b.c.d",
+		"cursor": 6,
+		"backward": 5,
+		"forward": 7
+	},
+	{
+		"text": "a.b.c.d",
+		"cursor": 7,
+		"backward": 6,
+		"forward": 7
+	},
+	{
+		"text": "  ",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "  ",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "  ",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 2
+	},
+	{
+		"text": "",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 0
+	},
+	{
+		"text": "café résumé",
+		"cursor": 0,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "café résumé",
+		"cursor": 1,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "café résumé",
+		"cursor": 2,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "café résumé",
+		"cursor": 3,
+		"backward": 0,
+		"forward": 4
+	},
+	{
+		"text": "café résumé",
+		"cursor": 4,
+		"backward": 0,
+		"forward": 11
+	},
+	{
+		"text": "café résumé",
+		"cursor": 5,
+		"backward": 0,
+		"forward": 11
+	},
+	{
+		"text": "café résumé",
+		"cursor": 6,
+		"backward": 5,
+		"forward": 11
+	},
+	{
+		"text": "café résumé",
+		"cursor": 7,
+		"backward": 5,
+		"forward": 11
+	},
+	{
+		"text": "café résumé",
+		"cursor": 8,
+		"backward": 5,
+		"forward": 11
+	},
+	{
+		"text": "café résumé",
+		"cursor": 9,
+		"backward": 5,
+		"forward": 11
+	},
+	{
+		"text": "café résumé",
+		"cursor": 10,
+		"backward": 5,
+		"forward": 11
+	},
+	{
+		"text": "café résumé",
+		"cursor": 11,
+		"backward": 5,
+		"forward": 11
+	}
+]

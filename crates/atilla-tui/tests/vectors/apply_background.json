@@ -1,0 +1,52 @@
+[
+	{
+		"line": "",
+		"width": 0,
+		"result": "\u001b[41m\u001b[49m"
+	},
+	{
+		"line": "",
+		"width": 5,
+		"result": "\u001b[41m     \u001b[49m"
+	},
+	{
+		"line": "abc",
+		"width": 5,
+		"result": "\u001b[41mabc  \u001b[49m"
+	},
+	{
+		"line": "abc",
+		"width": 3,
+		"result": "\u001b[41mabc\u001b[49m"
+	},
+	{
+		"line": "abc",
+		"width": 2,
+		"result": "\u001b[41mabc\u001b[49m"
+	},
+	{
+		"line": "hello",
+		"width": 10,
+		"result": "\u001b[41mhello     \u001b[49m"
+	},
+	{
+		"line": "\u001b[1mbold\u001b[0m",
+		"width": 8,
+		"result": "\u001b[41m\u001b[1mbold\u001b[0m    \u001b[49m"
+	},
+	{
+		"line": "你好",
+		"width": 6,
+		"result": "\u001b[41m你好  \u001b[49m"
+	},
+	{
+		"line": "tab\there",
+		"width": 12,
+		"result": "\u001b[41mtab\there  \u001b[49m"
+	},
+	{
+		"line": "🙂x",
+		"width": 6,
+		"result": "\u001b[41m🙂x   \u001b[49m"
+	}
+]

@@ -1,0 +1,718 @@
+[
+	{
+		"text": "hello world",
+		"segments": [
+			{
+				"segment": "hello",
+				"isWordLike": true
+			},
+			{
+				"segment": " ",
+				"isWordLike": false
+			},
+			{
+				"segment": "world",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "foo.bar",
+		"segments": [
+			{
+				"segment": "foo.bar",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "foo:bar",
+		"segments": [
+			{
+				"segment": "foo:bar",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "foo;bar",
+		"segments": [
+			{
+				"segment": "foo",
+				"isWordLike": true
+			},
+			{
+				"segment": ";",
+				"isWordLike": false
+			},
+			{
+				"segment": "bar",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "path/to/file",
+		"segments": [
+			{
+				"segment": "path",
+				"isWordLike": true
+			},
+			{
+				"segment": "/",
+				"isWordLike": false
+			},
+			{
+				"segment": "to",
+				"isWordLike": true
+			},
+			{
+				"segment": "/",
+				"isWordLike": false
+			},
+			{
+				"segment": "file",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "path/to",
+		"segments": [
+			{
+				"segment": "path",
+				"isWordLike": true
+			},
+			{
+				"segment": "/",
+				"isWordLike": false
+			},
+			{
+				"segment": "to",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "/to/file",
+		"segments": [
+			{
+				"segment": "/",
+				"isWordLike": false
+			},
+			{
+				"segment": "to",
+				"isWordLike": true
+			},
+			{
+				"segment": "/",
+				"isWordLike": false
+			},
+			{
+				"segment": "file",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "你好世界 test",
+		"segments": [
+			{
+				"segment": "你好",
+				"isWordLike": true
+			},
+			{
+				"segment": "世界",
+				"isWordLike": true
+			},
+			{
+				"segment": " ",
+				"isWordLike": false
+			},
+			{
+				"segment": "test",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "你好世界",
+		"segments": [
+			{
+				"segment": "你好",
+				"isWordLike": true
+			},
+			{
+				"segment": "世界",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "  hello  ",
+		"segments": [
+			{
+				"segment": "  ",
+				"isWordLike": false
+			},
+			{
+				"segment": "hello",
+				"isWordLike": true
+			},
+			{
+				"segment": "  ",
+				"isWordLike": false
+			}
+		]
+	},
+	{
+		"text": "foo...bar",
+		"segments": [
+			{
+				"segment": "foo",
+				"isWordLike": true
+			},
+			{
+				"segment": ".",
+				"isWordLike": false
+			},
+			{
+				"segment": ".",
+				"isWordLike": false
+			},
+			{
+				"segment": ".",
+				"isWordLike": false
+			},
+			{
+				"segment": "bar",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "hello",
+		"segments": [
+			{
+				"segment": "hello",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "[paste #1 +5 lines]",
+		"segments": [
+			{
+				"segment": "[",
+				"isWordLike": false
+			},
+			{
+				"segment": "paste",
+				"isWordLike": true
+			},
+			{
+				"segment": " ",
+				"isWordLike": false
+			},
+			{
+				"segment": "#",
+				"isWordLike": false
+			},
+			{
+				"segment": "1",
+				"isWordLike": true
+			},
+			{
+				"segment": " ",
+				"isWordLike": false
+			},
+			{
+				"segment": "+",
+				"isWordLike": false
+			},
+			{
+				"segment": "5",
+				"isWordLike": true
+			},
+			{
+				"segment": " ",
+				"isWordLike": false
+			},
+			{
+				"segment": "lines",
+				"isWordLike": true
+			},
+			{
+				"segment": "]",
+				"isWordLike": false
+			}
+		]
+	},
+	{
+		"text": "gpt-5.2-codex",
+		"segments": [
+			{
+				"segment": "gpt",
+				"isWordLike": true
+			},
+			{
+				"segment": "-",
+				"isWordLike": false
+			},
+			{
+				"segment": "5.2",
+				"isWordLike": true
+			},
+			{
+				"segment": "-",
+				"isWordLike": false
+			},
+			{
+				"segment": "codex",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "a_p_p",
+		"segments": [
+			{
+				"segment": "a_p_p",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "openai-codex",
+		"segments": [
+			{
+				"segment": "openai",
+				"isWordLike": true
+			},
+			{
+				"segment": "-",
+				"isWordLike": false
+			},
+			{
+				"segment": "codex",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "foo-bar",
+		"segments": [
+			{
+				"segment": "foo",
+				"isWordLike": true
+			},
+			{
+				"segment": "-",
+				"isWordLike": false
+			},
+			{
+				"segment": "bar",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "a:b:c",
+		"segments": [
+			{
+				"segment": "a:b:c",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "ab:cd:ef",
+		"segments": [
+			{
+				"segment": "ab:cd:ef",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "你:好",
+		"segments": [
+			{
+				"segment": "你",
+				"isWordLike": true
+			},
+			{
+				"segment": ":",
+				"isWordLike": false
+			},
+			{
+				"segment": "好",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "1:2",
+		"segments": [
+			{
+				"segment": "1",
+				"isWordLike": true
+			},
+			{
+				"segment": ":",
+				"isWordLike": false
+			},
+			{
+				"segment": "2",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "12:30",
+		"segments": [
+			{
+				"segment": "12",
+				"isWordLike": true
+			},
+			{
+				"segment": ":",
+				"isWordLike": false
+			},
+			{
+				"segment": "30",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "a::b",
+		"segments": [
+			{
+				"segment": "a",
+				"isWordLike": true
+			},
+			{
+				"segment": ":",
+				"isWordLike": false
+			},
+			{
+				"segment": ":",
+				"isWordLike": false
+			},
+			{
+				"segment": "b",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "C:\\Users",
+		"segments": [
+			{
+				"segment": "C",
+				"isWordLike": true
+			},
+			{
+				"segment": ":",
+				"isWordLike": false
+			},
+			{
+				"segment": "\\",
+				"isWordLike": false
+			},
+			{
+				"segment": "Users",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "http://x",
+		"segments": [
+			{
+				"segment": "http",
+				"isWordLike": true
+			},
+			{
+				"segment": ":",
+				"isWordLike": false
+			},
+			{
+				"segment": "/",
+				"isWordLike": false
+			},
+			{
+				"segment": "/",
+				"isWordLike": false
+			},
+			{
+				"segment": "x",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "snake_case",
+		"segments": [
+			{
+				"segment": "snake_case",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "kebab-case",
+		"segments": [
+			{
+				"segment": "kebab",
+				"isWordLike": true
+			},
+			{
+				"segment": "-",
+				"isWordLike": false
+			},
+			{
+				"segment": "case",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "CamelCase",
+		"segments": [
+			{
+				"segment": "CamelCase",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "file.tar.gz",
+		"segments": [
+			{
+				"segment": "file.tar.gz",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "user@host",
+		"segments": [
+			{
+				"segment": "user",
+				"isWordLike": true
+			},
+			{
+				"segment": "@",
+				"isWordLike": false
+			},
+			{
+				"segment": "host",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "don't",
+		"segments": [
+			{
+				"segment": "don't",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "café",
+		"segments": [
+			{
+				"segment": "café",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "naïve",
+		"segments": [
+			{
+				"segment": "naïve",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "2024-01-02",
+		"segments": [
+			{
+				"segment": "2024",
+				"isWordLike": true
+			},
+			{
+				"segment": "-",
+				"isWordLike": false
+			},
+			{
+				"segment": "01",
+				"isWordLike": true
+			},
+			{
+				"segment": "-",
+				"isWordLike": false
+			},
+			{
+				"segment": "02",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "v1.2.3",
+		"segments": [
+			{
+				"segment": "v1.2.3",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "emoji 🙂 x",
+		"segments": [
+			{
+				"segment": "emoji",
+				"isWordLike": true
+			},
+			{
+				"segment": " ",
+				"isWordLike": false
+			},
+			{
+				"segment": "🙂",
+				"isWordLike": false
+			},
+			{
+				"segment": " ",
+				"isWordLike": false
+			},
+			{
+				"segment": "x",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "",
+		"segments": []
+	},
+	{
+		"text": " ",
+		"segments": [
+			{
+				"segment": " ",
+				"isWordLike": false
+			}
+		]
+	},
+	{
+		"text": "   ",
+		"segments": [
+			{
+				"segment": "   ",
+				"isWordLike": false
+			}
+		]
+	},
+	{
+		"text": "a b\tc",
+		"segments": [
+			{
+				"segment": "a",
+				"isWordLike": true
+			},
+			{
+				"segment": " ",
+				"isWordLike": false
+			},
+			{
+				"segment": "b",
+				"isWordLike": true
+			},
+			{
+				"segment": "\t",
+				"isWordLike": false
+			},
+			{
+				"segment": "c",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "foo!bar",
+		"segments": [
+			{
+				"segment": "foo",
+				"isWordLike": true
+			},
+			{
+				"segment": "!",
+				"isWordLike": false
+			},
+			{
+				"segment": "bar",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "foo?bar",
+		"segments": [
+			{
+				"segment": "foo",
+				"isWordLike": true
+			},
+			{
+				"segment": "?",
+				"isWordLike": false
+			},
+			{
+				"segment": "bar",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "word:",
+		"segments": [
+			{
+				"segment": "word",
+				"isWordLike": true
+			},
+			{
+				"segment": ":",
+				"isWordLike": false
+			}
+		]
+	},
+	{
+		"text": ":word",
+		"segments": [
+			{
+				"segment": ":",
+				"isWordLike": false
+			},
+			{
+				"segment": "word",
+				"isWordLike": true
+			}
+		]
+	},
+	{
+		"text": "αβ:γδ",
+		"segments": [
+			{
+				"segment": "αβ:γδ",
+				"isWordLike": true
+			}
+		]
+	}
+]

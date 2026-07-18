@@ -1,0 +1,183 @@
+[
+	{
+		"name": "push/pop LIFO",
+		"ops": [
+			{
+				"op": "push",
+				"value": "a"
+			},
+			{
+				"op": "push",
+				"value": "b"
+			},
+			{
+				"op": "push",
+				"value": "c"
+			},
+			{
+				"op": "pop"
+			},
+			{
+				"op": "pop"
+			},
+			{
+				"op": "pop"
+			},
+			{
+				"op": "pop"
+			}
+		],
+		"states": [
+			{
+				"op": "push",
+				"popped": null,
+				"length": 1
+			},
+			{
+				"op": "push",
+				"popped": null,
+				"length": 2
+			},
+			{
+				"op": "push",
+				"popped": null,
+				"length": 3
+			},
+			{
+				"op": "pop",
+				"popped": "c",
+				"length": 2
+			},
+			{
+				"op": "pop",
+				"popped": "b",
+				"length": 1
+			},
+			{
+				"op": "pop",
+				"popped": "a",
+				"length": 0
+			},
+			{
+				"op": "pop",
+				"popped": null,
+				"length": 0
+			}
+		]
+	},
+	{
+		"name": "clear empties",
+		"ops": [
+			{
+				"op": "push",
+				"value": "x"
+			},
+			{
+				"op": "push",
+				"value": "y"
+			},
+			{
+				"op": "clear"
+			},
+			{
+				"op": "pop"
+			}
+		],
+		"states": [
+			{
+				"op": "push",
+				"popped": null,
+				"length": 1
+			},
+			{
+				"op": "push",
+				"popped": null,
+				"length": 2
+			},
+			{
+				"op": "clear",
+				"popped": null,
+				"length": 0
+			},
+			{
+				"op": "pop",
+				"popped": null,
+				"length": 0
+			}
+		]
+	},
+	{
+		"name": "pop empty returns undefined",
+		"ops": [
+			{
+				"op": "pop"
+			}
+		],
+		"states": [
+			{
+				"op": "pop",
+				"popped": null,
+				"length": 0
+			}
+		]
+	},
+	{
+		"name": "interleaved",
+		"ops": [
+			{
+				"op": "push",
+				"value": "1"
+			},
+			{
+				"op": "pop"
+			},
+			{
+				"op": "push",
+				"value": "2"
+			},
+			{
+				"op": "push",
+				"value": "3"
+			},
+			{
+				"op": "pop"
+			},
+			{
+				"op": "push",
+				"value": "4"
+			}
+		],
+		"states": [
+			{
+				"op": "push",
+				"popped": null,
+				"length": 1
+			},
+			{
+				"op": "pop",
+				"popped": "1",
+				"length": 0
+			},
+			{
+				"op": "push",
+				"popped": null,
+				"length": 1
+			},
+			{
+				"op": "push",
+				"popped": null,
+				"length": 2
+			},
+			{
+				"op": "pop",
+				"popped": "3",
+				"length": 1
+			},
+			{
+				"op": "push",
+				"popped": null,
+				"length": 2
+			}
+		]
+	}
+]
