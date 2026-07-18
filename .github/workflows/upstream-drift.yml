@@ -1,0 +1,40 @@
+# Upstream-tracking / drift workflow (design.md, PLAN.md section 7).
+#
+# Weekly, and on manual dispatch, this job fetches upstream pi, compares the
+# pinned commit in UPSTREAM_COMMIT against upstream HEAD, and opens-or-updates a
+# single tracking issue (label upstream-drift) summarizing the drift: how many
+# commits behind, which mirrored crate modules were touched, new upstream test
+# files, and new source modules missing from conformance/manifest.json.
+#
+# Non-gating: this job only reports. It never fails PRs or the build. The heavy
+# logic lives in scripts/upstream-drift.sh, which always exits 0; the step also
+# carries continue-on-error as a second guard.
+
+name: upstream-drift
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"  # weekly, Monday 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write  # open-or-update the single tracking issue
+
+jobs:
+  drift:
+    name: upstream drift report
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        # The script clones upstream pi itself and reads UPSTREAM_COMMIT, the
+        # correspondence map, and the manifest from this repo, so vendor/pi is
+        # not needed here. No submodule checkout keeps this fast.
+
+      - name: Compute drift and update tracking issue
+        continue-on-error: true  # belt-and-suspenders; the script already exits 0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: scripts/upstream-drift.sh --emit-issue

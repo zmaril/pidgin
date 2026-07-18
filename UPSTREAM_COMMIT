@@ -1,0 +1,4 @@
+# Pinned upstream commit for the pi mirror (earendil-works/pi).
+# Machine-readable source of truth for the upstream tracking automation.
+# Keep this identical to the vendor/pi submodule pin. See notes/upstream-tracking.md.
+3da591ab74ab9ab407e72ed882600b2c851fae21

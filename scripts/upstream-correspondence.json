@@ -1,0 +1,63 @@
+{
+  "note": "Machine-usable correspondence map: upstream pi source directories to atilla crates and modules, at directory granularity. Hand-kept alongside notes/upstream-tracking.md and consumed by scripts/upstream-drift.sh. Match rule: a mapping with prefix P matches an upstream path X when X equals P or X begins with P followed by a slash. When several prefixes match, the longest wins. mirrored=true means an atilla crate for that path already exists; mirrored=false marks a planned package with no crate yet.",
+  "upstream": {
+    "repo": "https://github.com/earendil-works/pi",
+    "pinned_commit": "3da591ab74ab9ab407e72ed882600b2c851fae21"
+  },
+  "packages": {
+    "ai": {
+      "npm": "@earendil-works/pi-ai",
+      "crate": "atilla-ai",
+      "mirrored": true
+    },
+    "agent": {
+      "npm": "@earendil-works/pi-agent-core",
+      "crate": "atilla-agent",
+      "mirrored": true
+    },
+    "coding-agent": {
+      "npm": "@earendil-works/pi-coding-agent",
+      "crate": "atilla-coding",
+      "mirrored": true
+    },
+    "tui": {
+      "npm": "@earendil-works/pi-tui",
+      "crate": null,
+      "mirrored": false
+    },
+    "orchestrator": {
+      "npm": "@earendil-works/pi-orchestrator",
+      "crate": null,
+      "mirrored": false
+    }
+  },
+  "mappings": [
+    { "upstream": "packages/ai/src/api", "crate": "atilla-ai", "module": "api", "target": "crates/atilla-ai/src/api.rs", "mirrored": true },
+    { "upstream": "packages/ai/src/auth", "crate": "atilla-ai", "module": "auth", "target": "crates/atilla-ai/src/auth.rs", "mirrored": true },
+    { "upstream": "packages/ai/src/providers", "crate": "atilla-ai", "module": "providers", "target": "crates/atilla-ai/src/providers.rs", "mirrored": true },
+    { "upstream": "packages/ai/src/utils", "crate": "atilla-ai", "module": "utils", "target": "crates/atilla-ai/src/utils.rs", "mirrored": true },
+    { "upstream": "packages/ai/src/compat", "crate": "atilla-ai", "module": "compat", "target": "crates/atilla-ai/src/compat.rs", "mirrored": true },
+    { "upstream": "packages/ai/src/compat.ts", "crate": "atilla-ai", "module": "compat", "target": "crates/atilla-ai/src/compat.rs", "mirrored": true },
+    { "upstream": "packages/ai/src", "crate": "atilla-ai", "module": "", "target": "crates/atilla-ai/src", "mirrored": true },
+
+    { "upstream": "packages/agent/src/harness", "crate": "atilla-agent", "module": "harness", "target": "crates/atilla-agent/src/harness.rs", "mirrored": true },
+    { "upstream": "packages/agent/src/agent-loop.ts", "crate": "atilla-agent", "module": "agent_loop", "target": "crates/atilla-agent/src/agent_loop.rs", "mirrored": true },
+    { "upstream": "packages/agent/src/agent.ts", "crate": "atilla-agent", "module": "agent", "target": "crates/atilla-agent/src/agent.rs", "mirrored": true },
+    { "upstream": "packages/agent/src/node.ts", "crate": "atilla-agent", "module": "node", "target": "crates/atilla-agent/src/node.rs", "mirrored": true },
+    { "upstream": "packages/agent/src/proxy.ts", "crate": "atilla-agent", "module": "proxy", "target": "crates/atilla-agent/src/proxy.rs", "mirrored": true },
+    { "upstream": "packages/agent/src/types.ts", "crate": "atilla-agent", "module": "types", "target": "crates/atilla-agent/src/types.rs", "mirrored": true },
+    { "upstream": "packages/agent/src", "crate": "atilla-agent", "module": "", "target": "crates/atilla-agent/src", "mirrored": true },
+
+    { "upstream": "packages/coding-agent/src/bun", "crate": "atilla-coding", "module": "bun", "target": "crates/atilla-coding/src/bun.rs", "mirrored": true },
+    { "upstream": "packages/coding-agent/src/cli", "crate": "atilla-coding", "module": "cli", "target": "crates/atilla-coding/src/cli.rs", "mirrored": true },
+    { "upstream": "packages/coding-agent/src/cli.ts", "crate": "atilla-coding", "module": "cli", "target": "crates/atilla-coding/src/cli.rs", "mirrored": true },
+    { "upstream": "packages/coding-agent/src/core", "crate": "atilla-coding", "module": "core", "target": "crates/atilla-coding/src/core.rs", "mirrored": true },
+    { "upstream": "packages/coding-agent/src/extensions", "crate": "atilla-coding", "module": "extensions", "target": "crates/atilla-coding/src/extensions.rs", "mirrored": true },
+    { "upstream": "packages/coding-agent/src/modes", "crate": "atilla-coding", "module": "modes", "target": "crates/atilla-coding/src/modes.rs", "mirrored": true },
+    { "upstream": "packages/coding-agent/src/utils", "crate": "atilla-coding", "module": "utils", "target": "crates/atilla-coding/src/utils.rs", "mirrored": true },
+    { "upstream": "packages/coding-agent/src", "crate": "atilla-coding", "module": "", "target": "crates/atilla-coding/src", "mirrored": true },
+
+    { "upstream": "packages/tui/src", "crate": null, "module": "", "target": "crates/atilla-tui (planned)", "mirrored": false },
+    { "upstream": "packages/orchestrator/src", "crate": null, "module": "", "target": "crates/atilla-orchestrator (planned)", "mirrored": false }
+  ]
+}
