@@ -4,6 +4,7 @@
 //! remaining sibling submodules land later.
 
 pub mod command_flow;
+pub mod compaction;
 pub mod defaults;
 pub mod experimental;
 pub mod export_html;
