@@ -38,6 +38,9 @@ jobs:
     name: napi build + conformance smoke
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: write  # sticky conformance comment on PRs
     steps:
       - uses: actions/checkout@v7
         with:
@@ -68,9 +71,32 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
         continue-on-error: true
 
+      # Snapshot the committed baseline before the run overwrites conformance.json,
+      # so the PR comment can diff the fresh smoke results against it like-for-like.
+      - name: Snapshot committed conformance baseline
+        if: github.event_name == 'pull_request'
+        run: cp conformance.json "$RUNNER_TEMP/conformance-baseline.json"
+
       - name: Conformance smoke (agent + tui)
         run: CONFORMANCE_PACKAGES="agent tui" scripts/conformance.sh --setup
         continue-on-error: true
+
+      # Render the sticky-comment body: fresh agent+tui totals plus the passing/
+      # failing delta versus the committed baseline snapshot taken above.
+      - name: Build conformance PR comment
+        if: always() && github.event_name == 'pull_request'
+        run: node conformance/pr-comment.mjs conformance.json "$RUNNER_TEMP/conformance-baseline.json" > "$RUNNER_TEMP/conformance-comment.md"
+        continue-on-error: true
+
+      # Non-gating: post/update one sticky comment per PR. Fork PRs get a
+      # read-only token and cannot comment, so degrade gracefully.
+      - name: Post conformance sticky comment
+        if: always() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        continue-on-error: true
+        with:
+          header: conformance
+          path: ${{ runner.temp }}/conformance-comment.md
 
       - name: Upload conformance results
         if: always()
