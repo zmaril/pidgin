@@ -8,17 +8,15 @@ use std::fmt;
 use serde_json::{json, Value};
 
 use atilla_ai::seams::AbortSignal;
-use atilla_ai::{AssistantMessage, ContentBlock, Context, Message, Model, StopReason};
+use atilla_ai::{Context, Message, Model, StopReason};
 
 use super::compaction::{estimate_tokens, CompletionOptions, Models, SUMMARIZATION_SYSTEM_PROMPT};
 use super::utils::{
-    compute_file_lists, convert_to_llm, create_file_ops, extract_file_ops_from_message,
-    format_file_operations, serialize_conversation, FileOperations,
+    compute_file_lists, convert_to_llm, create_file_ops, error_message_or,
+    extract_file_ops_from_details, extract_file_ops_from_message, format_file_operations,
+    message_from_structural_entry, response_text, serialize_conversation, FileOperations,
 };
-use crate::harness::session::{
-    create_branch_summary_message, create_compaction_summary_message, create_custom_message,
-    Session,
-};
+use crate::harness::session::Session;
 use crate::harness::types::{AgentMessage, SessionError, SessionErrorCode, SessionTreeEntry};
 
 // ---------------------------------------------------------------------------
@@ -194,24 +192,7 @@ fn get_message_from_entry(entry: &SessionTreeEntry) -> Option<AgentMessage> {
             }
             Some(e.message.clone())
         }
-        SessionTreeEntry::CustomMessage(e) => Some(create_custom_message(
-            &e.custom_type,
-            &e.content,
-            e.display,
-            e.details.as_ref(),
-            &e.timestamp,
-        )),
-        SessionTreeEntry::BranchSummary(e) => Some(create_branch_summary_message(
-            &e.summary,
-            &e.from_id,
-            &e.timestamp,
-        )),
-        SessionTreeEntry::Compaction(e) => Some(create_compaction_summary_message(
-            &e.summary,
-            e.tokens_before,
-            &e.timestamp,
-        )),
-        _ => None,
+        other => message_from_structural_entry(other),
     }
 }
 
@@ -229,16 +210,7 @@ pub fn prepare_branch_entries(
         if let SessionTreeEntry::BranchSummary(e) = entry {
             if !matches!(e.from_hook, Some(true)) {
                 if let Some(details) = &e.details {
-                    if let Some(read_files) = details.get("readFiles").and_then(Value::as_array) {
-                        for f in read_files.iter().filter_map(Value::as_str) {
-                            file_ops.read.insert(f.to_string());
-                        }
-                    }
-                    if let Some(modified) = details.get("modifiedFiles").and_then(Value::as_array) {
-                        for f in modified.iter().filter_map(Value::as_str) {
-                            file_ops.edited.insert(f.to_string());
-                        }
-                    }
+                    extract_file_ops_from_details(details, &mut file_ops);
                 }
             }
         }
@@ -318,25 +290,6 @@ Keep each section concise. Preserve exact file paths, function names, and error 
 // ---------------------------------------------------------------------------
 // Branch summary generation.
 // ---------------------------------------------------------------------------
-
-fn response_text(response: &AssistantMessage) -> String {
-    response
-        .content
-        .iter()
-        .filter_map(|c| match c {
-            ContentBlock::Text { text, .. } => Some(text.as_str()),
-            _ => None,
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-fn error_message_or(response: &AssistantMessage, fallback: &str) -> String {
-    match &response.error_message {
-        Some(m) if !m.is_empty() => m.clone(),
-        _ => fallback.to_string(),
-    }
-}
 
 /// Generate a summary for abandoned branch entries. Mirrors pi's
 /// `generateBranchSummary`.

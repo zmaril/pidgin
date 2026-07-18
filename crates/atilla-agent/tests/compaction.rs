@@ -127,6 +127,49 @@ fn entry_id(entry: &SessionTreeEntry) -> String {
     entry.id().to_string()
 }
 
+fn branch_summary_entry(parent_id: Option<&str>) -> SessionTreeEntry {
+    SessionTreeEntry::BranchSummary(BranchSummaryEntry {
+        id: create_id(),
+        parent_id: parent_id.map(str::to_string),
+        timestamp: TS.to_string(),
+        from_id: "branch".to_string(),
+        summary: "branch summary".to_string(),
+        details: None,
+        from_hook: None,
+    })
+}
+
+fn custom_message_entry(parent_id: Option<&str>) -> SessionTreeEntry {
+    SessionTreeEntry::CustomMessage(CustomMessageEntry {
+        id: create_id(),
+        parent_id: parent_id.map(str::to_string),
+        timestamp: TS.to_string(),
+        custom_type: "note".to_string(),
+        content: json!("custom content"),
+        display: true,
+        details: None,
+    })
+}
+
+/// A split-turn `CompactionPreparation` carrying only `turn_prefix_messages`,
+/// shared by the turn-prefix summarization tests.
+fn split_turn_prefix_preparation(turn_prefix_messages: Vec<Value>) -> CompactionPreparation {
+    CompactionPreparation {
+        first_kept_entry_id: "entry-keep".to_string(),
+        messages_to_summarize: vec![],
+        turn_prefix_messages,
+        is_split_turn: true,
+        tokens_before: 100,
+        previous_summary: None,
+        file_ops: FileOperations::default(),
+        settings: CompactionSettings {
+            enabled: true,
+            reserve_tokens: 2000,
+            keep_recent_tokens: 20,
+        },
+    }
+}
+
 // ---------------------------------------------------------------------------
 // FauxModels: the test stand-in for pi's createModels() + fauxProvider().
 // ---------------------------------------------------------------------------
@@ -288,24 +331,8 @@ fn covers_cut_point_and_turn_start_edge_cases() {
         }
     );
 
-    let branch_summary = SessionTreeEntry::BranchSummary(BranchSummaryEntry {
-        id: create_id(),
-        parent_id: Some(entry_id(&model_change)),
-        timestamp: TS.to_string(),
-        from_id: "branch".to_string(),
-        summary: "branch summary".to_string(),
-        details: None,
-        from_hook: None,
-    });
-    let custom_message = SessionTreeEntry::CustomMessage(CustomMessageEntry {
-        id: create_id(),
-        parent_id: Some(entry_id(&branch_summary)),
-        timestamp: TS.to_string(),
-        custom_type: "note".to_string(),
-        content: json!("custom content"),
-        display: true,
-        details: None,
-    });
+    let branch_summary = branch_summary_entry(Some(&entry_id(&model_change)));
+    let custom_message = custom_message_entry(Some(&entry_id(&branch_summary)));
 
     assert_eq!(
         find_turn_start_index(&[thinking.clone(), branch_summary.clone()], 1, 0),
@@ -576,24 +603,8 @@ fn prepares_split_turn_compaction_with_prior_file_operation_details() {
 /// pi: "prepares custom and branch summary entries for summarization"
 #[test]
 fn prepares_custom_and_branch_summary_entries_for_summarization() {
-    let branch_summary = SessionTreeEntry::BranchSummary(BranchSummaryEntry {
-        id: create_id(),
-        parent_id: None,
-        timestamp: TS.to_string(),
-        from_id: "branch".to_string(),
-        summary: "branch summary".to_string(),
-        details: None,
-        from_hook: None,
-    });
-    let custom_message = SessionTreeEntry::CustomMessage(CustomMessageEntry {
-        id: create_id(),
-        parent_id: Some(entry_id(&branch_summary)),
-        timestamp: TS.to_string(),
-        custom_type: "note".to_string(),
-        content: json!("custom content"),
-        display: true,
-        details: None,
-    });
+    let branch_summary = branch_summary_entry(None);
+    let custom_message = custom_message_entry(Some(&entry_id(&branch_summary)));
     let user = message_entry(
         create_user_message("keep"),
         Some(&entry_id(&custom_message)),
@@ -869,20 +880,7 @@ fn passes_reasoning_through_turn_prefix_summaries_when_enabled() {
         "## Original Request\nTest summary",
     )]);
     let model = create_faux_model(true, 8192);
-    let preparation = CompactionPreparation {
-        first_kept_entry_id: "entry-keep".to_string(),
-        messages_to_summarize: vec![],
-        turn_prefix_messages: messages,
-        is_split_turn: true,
-        tokens_before: 100,
-        previous_summary: None,
-        file_ops: FileOperations::default(),
-        settings: CompactionSettings {
-            enabled: true,
-            reserve_tokens: 2000,
-            keep_recent_tokens: 20,
-        },
-    };
+    let preparation = split_turn_prefix_preparation(messages);
 
     compact(&preparation, &models, &model, None, None, Some("high")).unwrap();
     assert_eq!(
@@ -895,20 +893,7 @@ fn passes_reasoning_through_turn_prefix_summaries_when_enabled() {
 #[test]
 fn returns_turn_prefix_compaction_errors_without_throwing() {
     let messages = vec![create_user_message("Summarize this.")];
-    let preparation = CompactionPreparation {
-        first_kept_entry_id: "entry-keep".to_string(),
-        messages_to_summarize: vec![],
-        turn_prefix_messages: messages,
-        is_split_turn: true,
-        tokens_before: 100,
-        previous_summary: None,
-        file_ops: FileOperations::default(),
-        settings: CompactionSettings {
-            enabled: true,
-            reserve_tokens: 2000,
-            keep_recent_tokens: 20,
-        },
-    };
+    let preparation = split_turn_prefix_preparation(messages);
     let models = FauxModels::new();
     models.set_responses(vec![FauxModels::error_response(
         StopReason::Error,

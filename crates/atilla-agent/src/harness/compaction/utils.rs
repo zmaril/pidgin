@@ -10,7 +10,12 @@ use std::collections::BTreeSet;
 
 use serde_json::Value;
 
-use crate::harness::types::AgentMessage;
+use atilla_ai::{AssistantMessage, ContentBlock};
+
+use crate::harness::session::{
+    create_branch_summary_message, create_compaction_summary_message, create_custom_message,
+};
+use crate::harness::types::{AgentMessage, SessionTreeEntry};
 
 /// File paths touched by a session branch or compaction range. Mirrors pi's
 /// `FileOperations`. pi uses `Set<string>` (insertion order); this port uses
@@ -69,6 +74,73 @@ pub fn extract_file_ops_from_message(message: &AgentMessage, file_ops: &mut File
             }
             _ => {}
         }
+    }
+}
+
+/// Accumulate `readFiles`/`modifiedFiles` from a compaction or branch-summary
+/// entry's `details` payload. Both `extractFileOperations` (compaction.ts) and
+/// `prepareBranchEntries` (branch-summarization.ts) walk the same `details`
+/// shape, so this port shares one helper for both.
+pub(crate) fn extract_file_ops_from_details(details: &Value, file_ops: &mut FileOperations) {
+    if let Some(read_files) = details.get("readFiles").and_then(Value::as_array) {
+        for f in read_files.iter().filter_map(Value::as_str) {
+            file_ops.read.insert(f.to_string());
+        }
+    }
+    if let Some(modified) = details.get("modifiedFiles").and_then(Value::as_array) {
+        for f in modified.iter().filter_map(Value::as_str) {
+            file_ops.edited.insert(f.to_string());
+        }
+    }
+}
+
+/// Project the non-`message` session entry variants to the agent message they
+/// contribute. Shared by the compaction and branch-summarization copies of
+/// `getMessageFromEntry`, which handle these three variants identically and
+/// differ only in how they treat plain `message` entries.
+pub(crate) fn message_from_structural_entry(entry: &SessionTreeEntry) -> Option<AgentMessage> {
+    match entry {
+        SessionTreeEntry::CustomMessage(e) => Some(create_custom_message(
+            &e.custom_type,
+            &e.content,
+            e.display,
+            e.details.as_ref(),
+            &e.timestamp,
+        )),
+        SessionTreeEntry::BranchSummary(e) => Some(create_branch_summary_message(
+            &e.summary,
+            &e.from_id,
+            &e.timestamp,
+        )),
+        SessionTreeEntry::Compaction(e) => Some(create_compaction_summary_message(
+            &e.summary,
+            e.tokens_before,
+            &e.timestamp,
+        )),
+        _ => None,
+    }
+}
+
+/// Join the text blocks of an assistant response with newlines. Shared by the
+/// compaction and branch-summarization summary generators.
+pub(crate) fn response_text(response: &AssistantMessage) -> String {
+    response
+        .content
+        .iter()
+        .filter_map(|c| match c {
+            ContentBlock::Text { text, .. } => Some(text.as_str()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// pi's `errorMessage || fallback`: an absent or empty message uses `fallback`.
+/// Shared by the compaction and branch-summarization summary generators.
+pub(crate) fn error_message_or(response: &AssistantMessage, fallback: &str) -> String {
+    match &response.error_message {
+        Some(m) if !m.is_empty() => m.clone(),
+        _ => fallback.to_string(),
     }
 }
 
@@ -174,6 +246,15 @@ fn join_text_content(content: &Value) -> String {
     out
 }
 
+/// The text content of a `user`/`toolResult` message, or the empty string when
+/// absent. Both roles read content identically in `serializeConversation`.
+fn message_text_content(msg: &AgentMessage) -> String {
+    match msg.get("content") {
+        Some(c) => join_text_content(c),
+        None => String::new(),
+    }
+}
+
 /// Serialize LLM messages to plain text for summarization prompts. Mirrors pi's
 /// `serializeConversation`. pi takes `Message[]` (the output of `convertToLlm`,
 /// which only produces `user`/`assistant`/`toolResult` roles); this port reads
@@ -184,10 +265,7 @@ pub fn serialize_conversation(messages: &[AgentMessage]) -> String {
     for msg in messages {
         match msg.get("role").and_then(Value::as_str) {
             Some("user") => {
-                let content = match msg.get("content") {
-                    Some(c) => join_text_content(c),
-                    None => String::new(),
-                };
+                let content = message_text_content(msg);
                 if !content.is_empty() {
                     parts.push(format!("[User]: {content}"));
                 }
@@ -242,10 +320,7 @@ pub fn serialize_conversation(messages: &[AgentMessage]) -> String {
                 }
             }
             Some("toolResult") => {
-                let content = match msg.get("content") {
-                    Some(c) => join_text_content(c),
-                    None => String::new(),
-                };
+                let content = message_text_content(msg);
                 if !content.is_empty() {
                     parts.push(format!(
                         "[Tool result]: {}",

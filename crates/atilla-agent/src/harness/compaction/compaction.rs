@@ -21,16 +21,15 @@ use std::fmt;
 use serde_json::{json, Value};
 
 use atilla_ai::seams::AbortSignal;
-use atilla_ai::{AssistantMessage, ContentBlock, Context, Message, Model, StopReason, Usage};
+use atilla_ai::{AssistantMessage, Context, Message, Model, StopReason, Usage};
 
 use super::utils::{
-    compute_file_lists, convert_to_llm, create_file_ops, extract_file_ops_from_message,
-    format_file_operations, js_len, safe_json_stringify, serialize_conversation, FileOperations,
+    compute_file_lists, convert_to_llm, create_file_ops, error_message_or,
+    extract_file_ops_from_details, extract_file_ops_from_message, format_file_operations, js_len,
+    message_from_structural_entry, response_text, safe_json_stringify, serialize_conversation,
+    FileOperations,
 };
-use crate::harness::session::{
-    build_session_context, create_branch_summary_message, create_compaction_summary_message,
-    create_custom_message, SessionContextBuildOptions,
-};
+use crate::harness::session::{build_session_context, SessionContextBuildOptions};
 use crate::harness::types::{AgentMessage, SessionTreeEntry};
 
 // ---------------------------------------------------------------------------
@@ -230,16 +229,7 @@ fn extract_file_operations(
             // pi: !prevCompaction.fromHook && prevCompaction.details
             if !matches!(prev.from_hook, Some(true)) {
                 if let Some(details) = &prev.details {
-                    if let Some(read_files) = details.get("readFiles").and_then(Value::as_array) {
-                        for f in read_files.iter().filter_map(Value::as_str) {
-                            file_ops.read.insert(f.to_string());
-                        }
-                    }
-                    if let Some(modified) = details.get("modifiedFiles").and_then(Value::as_array) {
-                        for f in modified.iter().filter_map(Value::as_str) {
-                            file_ops.edited.insert(f.to_string());
-                        }
-                    }
+                    extract_file_ops_from_details(details, &mut file_ops);
                 }
             }
         }
@@ -255,24 +245,7 @@ fn extract_file_operations(
 fn get_message_from_entry(entry: &SessionTreeEntry) -> Option<AgentMessage> {
     match entry {
         SessionTreeEntry::Message(e) => Some(e.message.clone()),
-        SessionTreeEntry::CustomMessage(e) => Some(create_custom_message(
-            &e.custom_type,
-            &e.content,
-            e.display,
-            e.details.as_ref(),
-            &e.timestamp,
-        )),
-        SessionTreeEntry::BranchSummary(e) => Some(create_branch_summary_message(
-            &e.summary,
-            &e.from_id,
-            &e.timestamp,
-        )),
-        SessionTreeEntry::Compaction(e) => Some(create_compaction_summary_message(
-            &e.summary,
-            e.tokens_before,
-            &e.timestamp,
-        )),
-        _ => None,
+        other => message_from_structural_entry(other),
     }
 }
 
@@ -416,7 +389,13 @@ pub fn estimate_tokens(message: &AgentMessage) -> i64 {
             .unwrap_or(0),
         Some("assistant") => {
             let mut chars = 0;
+            // Faithful mirror of pi's separate estimateTokens (compaction.ts) and
+            // serializeConversation (utils.ts): both walk assistant content blocks,
+            // but this one sums a char budget while the other builds
+            // text/thinking/tool-call strings. Sharing an iterator would obscure
+            // the 1:1 map to pi's two functions.
             if let Some(blocks) = message.get("content").and_then(Value::as_array) {
+                // straitjacket-allow:duplication
                 for block in blocks {
                     match block.get("type").and_then(Value::as_str) {
                         Some("text") => {
@@ -732,25 +711,45 @@ fn summarization_options(
     }
 }
 
-/// Join the text blocks of an assistant response with newlines.
-fn response_text(response: &AssistantMessage) -> String {
-    response
-        .content
-        .iter()
-        .filter_map(|c| match c {
-            ContentBlock::Text { text, .. } => Some(text.as_str()),
-            _ => None,
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
+/// Run a summarization completion and map its stop reason to a
+/// [`CompactionError`], returning the joined response text on success. Shared by
+/// [`generate_summary`] and [`generate_turn_prefix_summary`], which build
+/// different prompts but drive the model call and error mapping identically.
+#[allow(clippy::too_many_arguments)]
+fn run_summarization(
+    models: &dyn Models,
+    model: &Model,
+    prompt_text: String,
+    max_tokens: i64,
+    signal: Option<&AbortSignal>,
+    thinking_level: Option<&str>,
+    aborted_message: &str,
+    failed_label: &str,
+) -> Result<String, CompactionError> {
+    let context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt_text);
+    let options = summarization_options(max_tokens, model, signal, thinking_level);
 
-/// pi's `errorMessage || fallback`: an absent or empty message uses `fallback`.
-fn error_message_or(response: &AssistantMessage, fallback: &str) -> String {
-    match &response.error_message {
-        Some(m) if !m.is_empty() => m.clone(),
-        _ => fallback.to_string(),
+    let response = models.complete_simple(model, &context, &options);
+    match response.stop_reason {
+        StopReason::Aborted => {
+            return Err(CompactionError::new(
+                CompactionErrorCode::Aborted,
+                error_message_or(&response, aborted_message),
+            ));
+        }
+        StopReason::Error => {
+            return Err(CompactionError::new(
+                CompactionErrorCode::SummarizationFailed,
+                format!(
+                    "{failed_label}: {}",
+                    error_message_or(&response, "Unknown error")
+                ),
+            ));
+        }
+        _ => {}
     }
+
+    Ok(response_text(&response))
 }
 
 /// Generate or update a conversation summary for compaction. Mirrors pi's
@@ -785,30 +784,16 @@ pub fn generate_summary(
     }
     prompt_text.push_str(&base_prompt);
 
-    let context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt_text);
-    let options = summarization_options(max_tokens, model, signal, thinking_level);
-
-    let response = models.complete_simple(model, &context, &options);
-    match response.stop_reason {
-        StopReason::Aborted => {
-            return Err(CompactionError::new(
-                CompactionErrorCode::Aborted,
-                error_message_or(&response, "Summarization aborted"),
-            ));
-        }
-        StopReason::Error => {
-            return Err(CompactionError::new(
-                CompactionErrorCode::SummarizationFailed,
-                format!(
-                    "Summarization failed: {}",
-                    error_message_or(&response, "Unknown error")
-                ),
-            ));
-        }
-        _ => {}
-    }
-
-    Ok(response_text(&response))
+    run_summarization(
+        models,
+        model,
+        prompt_text,
+        max_tokens,
+        signal,
+        thinking_level,
+        "Summarization aborted",
+        "Summarization failed",
+    )
 }
 
 /// Prepare session entries for compaction, or return `None` when compaction is
@@ -992,28 +977,14 @@ fn generate_turn_prefix_summary(
         "<conversation>\n{conversation_text}\n</conversation>\n\n{TURN_PREFIX_SUMMARIZATION_PROMPT}"
     );
 
-    let context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt_text);
-    let options = summarization_options(max_tokens, model, signal, thinking_level);
-
-    let response = models.complete_simple(model, &context, &options);
-    match response.stop_reason {
-        StopReason::Aborted => {
-            return Err(CompactionError::new(
-                CompactionErrorCode::Aborted,
-                error_message_or(&response, "Turn prefix summarization aborted"),
-            ));
-        }
-        StopReason::Error => {
-            return Err(CompactionError::new(
-                CompactionErrorCode::SummarizationFailed,
-                format!(
-                    "Turn prefix summarization failed: {}",
-                    error_message_or(&response, "Unknown error")
-                ),
-            ));
-        }
-        _ => {}
-    }
-
-    Ok(response_text(&response))
+    run_summarization(
+        models,
+        model,
+        prompt_text,
+        max_tokens,
+        signal,
+        thinking_level,
+        "Turn prefix summarization aborted",
+        "Turn prefix summarization failed",
+    )
 }
