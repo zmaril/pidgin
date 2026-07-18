@@ -112,15 +112,17 @@ On the fluessig side, the changes this needs:
    call, `Session::open` returns an opaque handle (a `ctor`-shaped op),
    and agent runs emit a streaming event union (a `stream`-shaped op).
    Confirming, and where needed extending, the shape model and type map to
-   carry opaque handles and event-union streams is the main design risk
-   this direction has to retire.
+   carry opaque handles and event-union streams is a core design risk.
+3. Reproduce pi's Node return shapes exactly. This is the second half of
+   the work and has its own section, because atilla's Node binding is also
+   its conformance harness (section 4).
 
 On the atilla side:
 
 1. Provide a describable surface. Today the façade is only
    `atilla_core::version()`; `Session::open` and the agent loop are not
    built yet, so the surface fluessig would generate from grows with
-   atilla's milestones (section 4).
+   atilla's milestones (section 5).
 2. Choose the source of truth. Because fluessig's front end is going
    Rust-first, the natural model is to annotate the façade types in
    `atilla-core` with fluessig derives, or to keep a small schema crate
@@ -134,7 +136,75 @@ On the atilla side:
 
 ---
 
-## 4. Milestone gate and a sequencing that de-risks A
+## 4. Reproducing pi's Node return shapes
+
+Direction A's harder half is not the PHP back-end; it is making fluessig's
+Node back-end emit pi's Node API return shapes exactly, because atilla's
+Node binding is also its conformance harness and must pass pi's own test
+suite unmodified. Two facts frame this:
+
+- No Arrow, either side of the real surface. pi returns only plain JS
+  objects and JSON-like values; there is no columnar, Arrow, or IPC
+  representation anywhere in pi or in atilla's design (session data is
+  version-3 JSONL; cross-FFI events are a small struct or a JSON string).
+  fluessig does use Arrow, but only for one thing: a DTO field typed
+  `ArrowBatch` (its columnar data-plane carrier, for example entl's
+  `ChangeBatch.ipc`), surfaced in Node as lazy Arrow-IPC `Buffer` bytes.
+  So Arrow is a fluessig feature atilla's surface must stay off: atilla
+  ops must avoid the `ArrowBatch` and `bytes` carriers and ride fluessig's
+  plain-`#[napi(object)]` path. The Arrow question resolves to "do not use
+  it here," not "wire it up."
+- pi's own `.d.ts` fronts the surface. Conformance requires pi's exact
+  TypeScript module surface: pi's hand-written `.d.ts` files front the
+  Rust exports (napi's generated types cannot express pi's discriminated
+  unions or string-literal tags), and a generated `src`-tree swap
+  intercepts the deep `../src/*` imports pi's tests use. fluessig
+  generating the `.node` addon is only the runtime-export half; the public
+  typing half is pi-specific.
+
+Where fluessig's Node back-end, as it stands, does not yet produce what pi
+needs:
+
+1. Exact export and field names. fluessig applies a fixed
+   snake-case-to-camelCase transform on `#[napi(object)]` fields and
+   derives enum wire tokens by lowercasing catalog names. pi's `.d.ts`
+   dictates specific spellings (`contentIndex`, `toolCallId`, `stopReason`,
+   `isError`); a near-miss is a silent import mismatch. fluessig needs a
+   per-symbol name-pinning hook (emit `#[napi(js_name = ...)]` from the
+   schema) rather than a fixed casing rule.
+2. Discriminated unions as objects, not JSON strings. fluessig lowers a
+   union return to a `String` carrying a `{"kind": tag, "payload": body}`
+   envelope that the caller parses. pi's `AssistantMessageEvent` must be a
+   real discriminated union of object types keyed on a literal `type` tag.
+   fluessig would need to project unions as structured values and, because
+   its generated `.d.ts` cannot express them, keep those types internal and
+   let pi's hand-written `.d.ts` front them.
+3. Async-iterable streams, not a poll cursor. fluessig's `stream` shape
+   emits a `#[napi]` cursor class with `next(): Promise<T | null>`, a
+   poll-based cursor. pi requires a real JS async-iterable
+   (`Symbol.asyncIterator`) `AssistantMessageEventStream`. fluessig needs
+   to generate the async-iterable adapter (a ThreadsafeFunction-backed
+   surface) over the core's blocking `next_event()`, not merely expose the
+   poll cursor.
+4. The non-throwing in-stream error contract. After a stream starts, pi
+   encodes failures as an `error` event in the stream, never thrown;
+   non-streaming calls instead surface an error as a thrown JS exception.
+   fluessig's Node back-end currently maps every `compute()` error to a
+   thrown napi error uniformly. It would need the two-mode error model:
+   errors-as-events for streams, exception for unary calls.
+
+The parts that already fit: fluessig's default plain-object path (`unary`
+returning `#[napi(object)]` as `Promise<T>`) matches pi's plain-object
+returns for the simple cases, such as `Session::open` giving a message
+list plus stats, or `calculateCost` giving numbers, provided the naming in
+item 1 is controllable. So the Node work is targeted, not a rewrite: name
+pinning, union projection with external `.d.ts` fronting, an async-iterable
+stream variant, and a dual error model. The same union and naming levers
+carry over to the PHP back-end when it lands.
+
+---
+
+## 5. Milestone gate and a sequencing that de-risks A
 
 The link itself is buildable today, and the payoff grows with atilla's
 façade:
@@ -142,20 +212,21 @@ façade:
 | Step | atilla surface | fluessig work | Gated at |
 | --- | --- | --- | --- |
 | Regenerate today's `Atilla::version()` from a schema, byte-comparable to the hand-written binding | `atilla_core::version()` | `src/bindgen/php.rs` MVP | M0 (today) |
-| First non-trivial generated binding | `Session::open(path)` -> messages plus stats | handle plus struct lowering | M1 |
-| Generate over the agent surface | agent loop, event stream | stream-shape lowering | M3 |
-| Replace the hand-written napi harness with generated napi | napi conformance surface | node back-end parity | M7 |
+| First non-trivial generated binding | `Session::open(path)` -> messages plus stats | handle plus struct lowering; Node name pinning (section 4) | M1 |
+| Generate over the agent surface | agent loop, event stream | union-as-object projection, async-iterable stream, dual error model (section 4) | M3 |
+| Replace the hand-written napi harness with generated napi | napi conformance surface | node back-end parity with pi's `.d.ts` fronting | M7 |
 
 Recommended first move, doable now: build the PHP back-end far enough to
 regenerate the existing M0 `Atilla::version()` binding and diff it against
-the hand-written one. That proves the whole direction end-to-end against a
+the hand-written one. That proves the direction end-to-end against a
 trivial surface before atilla's API grows, and it is the concrete answer
 to "what needs to happen with fluessig to enable atilla": a `php.rs` back
-end is step one.
+end is step one, and the Node return-shape work in section 4 is the larger
+follow-on.
 
 ---
 
-## 5. What atilla exposes today versus what is needed
+## 6. What atilla exposes today versus what is needed
 
 Today (M0, merged): `atilla_core::version()` and PHP `Atilla::version():
 string` via ext-php-rs `=0.13.1` targeting PHP 8.4 NTS. `Session::open`
@@ -170,17 +241,22 @@ napi harness swap.
 
 ---
 
-## 6. Open questions now that A is chosen
+## 7. Open questions now that A is chosen
 
 1. Source of truth: does atilla describe its façade with fluessig derives
    inside `atilla-core`, or in a separate schema crate? The first is
    tighter but couples the core to a fluessig ref.
 2. Op-model fit: can fluessig's `ctor | unary | stream | manual` shapes
    and type map carry atilla's opaque session handles and streaming event
-   unions as they stand, or does the op model need extending first? This
-   is the key design risk.
-3. Ownership: the PHP back-end lives in the fluessig repo. Does atilla
-   drive that work upstream in fluessig, and on whose milestone?
-4. Harness swap: `atilla-napi` is the conformance harness. At which
+   unions as they stand, or does the op model need extending first?
+3. Node return fidelity (section 4): does the fluessig Node back-end grow
+   the four capabilities pi needs (name pinning, union-as-object,
+   async-iterable streams, dual error model), or do those stay atilla-side
+   behind the `@manual` escape hatch until they generalize? This decides
+   how much of the conformance surface is generated versus hand-written.
+4. Ownership: the PHP and Node back-end changes live in the fluessig repo.
+   Does atilla drive that work upstream in fluessig, and on whose
+   milestone?
+5. Harness swap: `atilla-napi` is the conformance harness. At which
    milestone does generated napi replace the hand-written harness without
    regressing pi's test suite, before or after M7?
