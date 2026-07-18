@@ -19,13 +19,16 @@
 // (`id`/`parentId`/`timestamp`) removed; the parallel field shapes mirror
 // `harness/types.rs` by construction, not by extractable duplication.
 
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt;
+use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use atilla_ai::Model;
+use atilla_ai::seams::{AbortSignal, StreamResult};
+use atilla_ai::{Context, Model};
 
 use crate::harness::compaction::Models;
 use crate::harness::env::ExecutionEnv;
@@ -278,6 +281,59 @@ impl fmt::Debug for SystemPromptSource {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Provider streaming seam (`createStreamFn` → `models.streamSimple`).
+// ---------------------------------------------------------------------------
+
+/// A provider-streaming request assembled by the harness for a single turn,
+/// mirroring the option bag pi hands to `this.models.streamSimple(model,
+/// context, { … })` inside `createStreamFn`.
+///
+/// atilla-ai's [`StreamOptions`](atilla_ai::StreamOptions) is a narrow subset
+/// (only `sessionId`/`cacheRetention`), so the richer pi request fields
+/// (`headers`, `metadata`, `timeoutMs`, `maxRetries`, `maxRetryDelayMs`,
+/// `transport`, `cacheRetention`) travel on the fully-merged
+/// [`AgentHarnessStreamOptions`] in [`options`](Self::options) — the value
+/// produced after the harness applies every `before_provider_request` patch.
+/// The two callbacks mirror pi's `onPayload`/`onResponse`: [`on_payload`] runs
+/// the `before_provider_payload` hook chain over a provider payload (returning
+/// the possibly-replaced payload), and [`on_response`] delivers the provider
+/// status line to the `after_provider_response` subscribers.
+///
+/// [`on_payload`]: Self::on_payload
+/// [`on_response`]: Self::on_response
+pub struct ProviderStreamRequest<'a> {
+    /// Model to stream.
+    pub model: &'a Model,
+    /// LLM-ready context (already converted by the loop's `convertToLlm`).
+    pub context: &'a Context,
+    /// Session id forwarded for session-scoped caching (pi's `sessionId`).
+    pub session_id: &'a str,
+    /// Requested reasoning level for this turn (pi's `reasoning`), or `None`
+    /// when thinking is off.
+    pub reasoning: Option<ThinkingLevel>,
+    /// Fully-merged request options after `before_provider_request` patching.
+    pub options: &'a AgentHarnessStreamOptions,
+    /// Cooperative abort signal for this turn (pi's `signal`).
+    pub signal: Option<&'a AbortSignal>,
+    /// Runs the `before_provider_payload` hook chain (pi's `onPayload`).
+    pub on_payload: &'a dyn Fn(Value) -> Value,
+    /// Delivers the provider response status/headers to subscribers (pi's
+    /// `onResponse`).
+    pub on_response: &'a dyn Fn(i64, BTreeMap<String, String>),
+}
+
+/// The harness's provider-streaming seam — the eager analog of pi's
+/// `models.streamSimple`. It turns a [`ProviderStreamRequest`] into an eager
+/// [`StreamResult`] (`{ events, message }`), exactly as the low-level loop's
+/// [`StreamFn`](crate::types::StreamFn) does.
+///
+/// Held behind the harness's single-threaded interior (never sent across
+/// threads), so it is a plain `Rc<dyn Fn>` and need not be `Send + Sync`; a
+/// test fake can therefore capture `Rc`/`RefCell` recorders and forward to a
+/// `FauxProvider`.
+pub type ProviderStream = Rc<dyn for<'a> Fn(ProviderStreamRequest<'a>) -> StreamResult>;
+
 /// AgentHarness construction options. Mirrors pi's `AgentHarnessOptions`
 /// (specialized to the crate's concrete [`Skill`](crate::harness::skills::Skill)/
 /// [`PromptTemplate`](crate::harness::prompt_templates::PromptTemplate)/
@@ -291,10 +347,14 @@ pub struct AgentHarnessOptions {
     pub env: Box<dyn ExecutionEnv>,
     /// The conversation session the harness drives.
     pub session: Session,
-    /// Provider collection used for all model requests (turn streaming,
-    /// compaction, branch summarization). Auth resolves through the providers'
-    /// auth. Reuses the compaction [`Models`] seam.
+    /// Provider collection used for compaction and branch summarization
+    /// (`completeSimple`). Reuses the compaction [`Models`] seam.
     pub models: Box<dyn Models>,
+    /// Provider streaming seam used to drive each turn's assistant response —
+    /// the eager analog of routing turns through `models.streamSimple`. Kept
+    /// separate because atilla-ai does not (yet) wrap `streamSimple`, and the
+    /// compaction [`Models`] trait ports only `completeSimple`.
+    pub stream: ProviderStream,
     /// Tools available to the model. Defaults to none.
     pub tools: Option<Vec<AgentTool>>,
     /// Concrete resources available to explicit invocation methods and
