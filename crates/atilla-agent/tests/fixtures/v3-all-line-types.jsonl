@@ -1,0 +1,18 @@
+{"type":"session","version":3,"id":"019de8c2-de29-73e9-ae0c-e134db34c447","timestamp":"2026-07-18T00:00:00.000Z","cwd":"/workspace/proj","parentSession":"/home/u/.pi/agent/sessions/--workspace-proj--/2026-07-18T00-00-00-000Z_parent.jsonl","metadata":{"profile":"reviewer","tags":["a","b"]}}
+{"type":"message","id":"root0001","parentId":null,"timestamp":"2026-07-18T00:00:01.000Z","message":{"role":"user","content":[{"type":"text","text":"hello"}],"timestamp":1}}
+{"type":"thinking_level_change","id":"tlc00001","parentId":"root0001","timestamp":"2026-07-18T00:00:02.000Z","thinkingLevel":"high"}
+{"type":"model_change","id":"mdc00001","parentId":"tlc00001","timestamp":"2026-07-18T00:00:03.000Z","provider":"anthropic","modelId":"claude-opus-4-5"}
+{"type":"active_tools_change","id":"atc00001","parentId":"mdc00001","timestamp":"2026-07-18T00:00:04.000Z","activeToolNames":["read","bash"]}
+{"type":"message","id":"asst0001","parentId":"atc00001","timestamp":"2026-07-18T00:00:05.000Z","message":{"role":"assistant","content":[{"type":"text","text":"hi"}],"provider":"anthropic","model":"claude-opus-4-5"}}
+{"type":"compaction","id":"cmp00001","parentId":"asst0001","timestamp":"2026-07-18T00:00:06.000Z","summary":"did stuff","firstKeptEntryId":"asst0001","tokensBefore":4096,"details":{"reason":"auto"},"fromHook":true}
+{"type":"compaction","id":"cmp00002","parentId":"cmp00001","timestamp":"2026-07-18T00:00:07.000Z","summary":"min","firstKeptEntryId":"root0001","tokensBefore":10}
+{"type":"branch_summary","id":"brs00001","parentId":"cmp00002","timestamp":"2026-07-18T00:00:08.000Z","fromId":"root0001","summary":"branch summary","details":{"k":1},"fromHook":false}
+{"type":"custom","id":"cst00001","parentId":"brs00001","timestamp":"2026-07-18T00:00:09.000Z","customType":"chat_message","data":{"text":"note"}}
+{"type":"custom","id":"cst00002","parentId":"cst00001","timestamp":"2026-07-18T00:00:10.000Z","customType":"marker"}
+{"type":"custom_message","id":"csm00001","parentId":"cst00002","timestamp":"2026-07-18T00:00:11.000Z","customType":"banner","content":"hello world","display":true,"details":{"ok":true}}
+{"type":"label","id":"lbl00001","parentId":"csm00001","timestamp":"2026-07-18T00:00:12.000Z","targetId":"root0001","label":"checkpoint"}
+{"type":"label","id":"lbl00002","parentId":"lbl00001","timestamp":"2026-07-18T00:00:13.000Z","targetId":"root0001"}
+{"type":"session_info","id":"sni00001","parentId":"lbl00002","timestamp":"2026-07-18T00:00:14.000Z","name":"my session"}
+{"type":"session_info","id":"sni00002","parentId":"sni00001","timestamp":"2026-07-18T00:00:15.000Z"}
+{"type":"leaf","id":"lef00001","parentId":"sni00002","timestamp":"2026-07-18T00:00:16.000Z","targetId":"root0001"}
+{"type":"leaf","id":"lef00002","parentId":"lef00001","timestamp":"2026-07-18T00:00:17.000Z","targetId":null}

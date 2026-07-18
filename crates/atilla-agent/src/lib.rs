@@ -6,7 +6,9 @@
 //! below mirror that split: everything is portable except [`node`], which
 //! carries the Node-only surface. Port order runs `types` first, then the
 //! `agent`/`agent_loop`/`harness` core, then `proxy`, then `node`. Every
-//! module here is an empty stub — no logic is ported yet.
+//! module here is an empty stub except [`harness`], whose `session` subtree
+//! ports pi's version-3 JSONL session-tree format (types, uuidv7, storage,
+//! session, and repo).
 
 pub mod agent;
 pub mod agent_loop;
