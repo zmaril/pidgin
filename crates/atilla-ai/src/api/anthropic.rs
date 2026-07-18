@@ -1,3 +1,10 @@
+// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// `anthropic-messages.ts` dispatch: the per-block `content_block_start` arms
+// (`thinking` / `redacted_thinking` both build a Thinking block then push a
+// matching `ThinkingStart` event) and the parallel `dispatch_content_block_*`
+// helpers share pi's hand-rolled event-guard + `match` shape by design. The
+// clone detector reads these mirrored arms as duplicates; factoring them would
+// distort the byte-faithful port, so the repetition is intentional.
 //! Anthropic Messages SSE streaming parser, ported from pi-ai's
 //! `packages/ai/src/api/anthropic-messages.ts` at pinned commit `3da591ab`.
 //!
