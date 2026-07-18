@@ -15,6 +15,7 @@ pub mod api;
 pub mod auth;
 pub mod compat;
 pub mod cost;
+pub mod env_api_keys;
 pub mod providers;
 pub mod seams;
 pub mod types;
@@ -26,6 +27,13 @@ pub use compat::{
     CompatError, FauxProviderRegistration,
 };
 pub use cost::{calculate_cost, calculate_cost_with};
+pub use env_api_keys::{find_env_keys, get_api_key_env_vars, get_env_api_key, AMBIENT_SENTINEL};
+pub use providers::{
+    builtin_models, builtin_providers, clamp_thinking_level, create_models, create_provider,
+    get_supported_thinking_levels, models_are_equal, radius_provider, ApiRouting,
+    CreateProviderOptions, Models, MutableModels, ProviderAuth, ProviderHeaders, ProviderSnapshot,
+    RefreshContext, RegistryProvider,
+};
 pub use types::*;
 pub use utils::event_stream::{
     create_assistant_message_event_stream, AssistantMessageEventStream, EventStream,

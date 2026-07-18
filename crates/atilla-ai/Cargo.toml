@@ -15,6 +15,7 @@ serde_json = { workspace = true }
 # WHATWG-compatible URL parsing/normalization for utils/node_http_proxy.rs, so
 # target parsing and the proxy URL's string form match pi's `URL` byte-for-byte.
 url = "2"
+atilla-model-catalog = { path = "../atilla-model-catalog" }
 
 [dev-dependencies]
 serde_json = { workspace = true }
