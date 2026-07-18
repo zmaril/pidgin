@@ -18,6 +18,7 @@
 
 use std::collections::BTreeMap;
 
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::types::{
@@ -93,7 +94,7 @@ fn js_len(text: &str) -> i64 {
 }
 
 /// pi's `safeJsonStringify` (`estimate.ts:27`): compact JSON, or a placeholder.
-fn safe_json_stringify(value: &Value) -> String {
+fn safe_json_stringify<T: Serialize + ?Sized>(value: &T) -> String {
     serde_json::to_string(value).unwrap_or_else(|_| "[unserializable]".to_string())
 }
 
@@ -223,7 +224,7 @@ fn estimate_tools_tokens(tools: &[Value]) -> i64 {
     if tools.is_empty() {
         return 0;
     }
-    estimate_text_tokens(&safe_json_stringify(&Value::Array(tools.to_vec())))
+    estimate_text_tokens(&safe_json_stringify(tools))
 }
 
 /// pi's `estimateContextTokens` for a `Context` (`estimate.ts:139`).
