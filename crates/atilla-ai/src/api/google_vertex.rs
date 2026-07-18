@@ -63,9 +63,7 @@ pub struct GoogleVertexClientOptions {
 /// scoped override map. (The process-env and Bun-sandbox fallbacks pi layers on
 /// belong to the host / auth sibling and are out of scope here.)
 fn get_provider_env_value<'a>(name: &str, env: &'a ProviderEnv) -> Option<&'a str> {
-    env.get(name)
-        .map(String::as_str)
-        .filter(|s| !s.is_empty())
+    env.get(name).map(String::as_str).filter(|s| !s.is_empty())
 }
 
 /// `google-vertex.ts:417` — a `<placeholder>` api key: `^<[^>]+>$`.
@@ -194,7 +192,10 @@ fn is_api_version_segment(segment: &str) -> bool {
 /// `google-vertex.ts:368` — build the `httpOptions` for the client, or `None`
 /// when empty. Handles custom base URL (with `COLLECTION` resource scope and
 /// `apiVersion` suppression) and merged headers.
-fn build_http_options(model: &GoogleModel, option_headers: &BTreeMap<String, String>) -> Option<Value> {
+fn build_http_options(
+    model: &GoogleModel,
+    option_headers: &BTreeMap<String, String>,
+) -> Option<Value> {
     let mut http_options = Map::new();
     if let Some(base_url) = resolve_custom_base_url(&model.base_url) {
         http_options.insert("baseUrl".to_string(), json!(base_url));

@@ -12,8 +12,8 @@
 
 use super::*;
 use crate::types::{
-    AssistantMessage, AssistantRole, Context, Message, ModelCost, StopReason,
-    ToolResultMessage, ToolResultRole, Usage, UsageCost, UserContent, UserMessage, UserRole,
+    AssistantMessage, AssistantRole, Context, Message, ModelCost, StopReason, ToolResultMessage,
+    ToolResultRole, Usage, UsageCost, UserContent, UserMessage, UserRole,
 };
 use serde_json::json;
 
@@ -151,7 +151,10 @@ fn strips_meta_keys_from_parameters_when_use_parameters_true() {
         })
     );
     for key in ["$schema", "$id", "$comment", "$defs", "definitions"] {
-        assert!(decl["parameters"].get(key).is_none(), "expected {key} stripped");
+        assert!(
+            decl["parameters"].get(key).is_none(),
+            "expected {key} stripped"
+        );
     }
 }
 
@@ -270,19 +273,25 @@ fn returns_none_for_empty_tool_list() {
 #[test]
 fn treats_thought_true_as_thinking() {
     assert!(is_thinking_part(&json!({ "thought": true })));
-    assert!(is_thinking_part(&json!({ "thought": true, "thoughtSignature": "opaque" })));
+    assert!(is_thinking_part(
+        &json!({ "thought": true, "thoughtSignature": "opaque" })
+    ));
 }
 
 #[test]
 fn does_not_treat_signature_alone_as_thinking() {
     assert!(!is_thinking_part(&json!({ "thoughtSignature": "opaque" })));
-    assert!(!is_thinking_part(&json!({ "thought": false, "thoughtSignature": "opaque" })));
+    assert!(!is_thinking_part(
+        &json!({ "thought": false, "thoughtSignature": "opaque" })
+    ));
 }
 
 #[test]
 fn does_not_treat_empty_or_missing_signatures_as_thinking() {
     assert!(!is_thinking_part(&json!({})));
-    assert!(!is_thinking_part(&json!({ "thought": false, "thoughtSignature": "" })));
+    assert!(!is_thinking_part(
+        &json!({ "thought": false, "thoughtSignature": "" })
+    ));
 }
 
 #[test]
@@ -323,7 +332,12 @@ fn image_routing_context(model: &GoogleModel) -> Context {
                 &model.id,
             ),
             tool_result("call_a", "read", vec![text_block("alpha text")], false),
-            tool_result("call_img", "read", vec![image_block("abc", "image/png")], false),
+            tool_result(
+                "call_img",
+                "read",
+                vec![image_block("abc", "image/png")],
+                false,
+            ),
             tool_result("call_b", "read", vec![text_block("beta text")], false),
         ],
         tools: None,
@@ -410,7 +424,12 @@ fn function_call_parts(model_turn: &Value) -> Vec<Value> {
 
 #[test]
 fn no_skip_validator_for_unsigned_genai_tool_calls() {
-    let model = make_model("google-generative-ai", "google", "gemini-3-pro-preview", vec![Modality::Text]);
+    let model = make_model(
+        "google-generative-ai",
+        "google",
+        "gemini-3-pro-preview",
+        vec![Modality::Text],
+    );
     // assistant message is from a different model id ("other-model")
     let contents = convert_messages(
         &model,
@@ -423,7 +442,9 @@ fn no_skip_validator_for_unsigned_genai_tool_calls() {
     assert_eq!(fc.len(), 2);
     assert!(fc[0].get("thoughtSignature").is_none());
     assert!(fc[1].get("thoughtSignature").is_none());
-    assert!(!serde_json::to_string(&turn).unwrap().contains("skip_thought_signature_validator"));
+    assert!(!serde_json::to_string(&turn)
+        .unwrap()
+        .contains("skip_thought_signature_validator"));
 
     let historical = turn["parts"]
         .as_array()
@@ -441,10 +462,20 @@ fn no_skip_validator_for_unsigned_genai_tool_calls() {
 
 #[test]
 fn no_skip_validator_for_unsigned_vertex_tool_calls() {
-    let model = make_model("google-vertex", "google-vertex", "gemini-3-pro-preview", vec![Modality::Text]);
+    let model = make_model(
+        "google-vertex",
+        "google-vertex",
+        "gemini-3-pro-preview",
+        vec![Modality::Text],
+    );
     let contents = convert_messages(
         &model,
-        &gemini3_context("google-vertex", "google-vertex", "gemini-3-pro-preview", None),
+        &gemini3_context(
+            "google-vertex",
+            "google-vertex",
+            "gemini-3-pro-preview",
+            None,
+        ),
         0,
     );
 
@@ -453,16 +484,28 @@ fn no_skip_validator_for_unsigned_vertex_tool_calls() {
     assert_eq!(fc.len(), 2);
     assert!(fc[0].get("thoughtSignature").is_none());
     assert!(fc[1].get("thoughtSignature").is_none());
-    assert!(!serde_json::to_string(&turn).unwrap().contains("skip_thought_signature_validator"));
+    assert!(!serde_json::to_string(&turn)
+        .unwrap()
+        .contains("skip_thought_signature_validator"));
 }
 
 #[test]
 fn preserves_valid_signature_for_same_provider_and_model() {
-    let model = make_model("google-generative-ai", "google", "gemini-3-pro-preview", vec![Modality::Text]);
+    let model = make_model(
+        "google-generative-ai",
+        "google",
+        "gemini-3-pro-preview",
+        vec![Modality::Text],
+    );
     let valid_sig = "AAAAAAAAAAAAAAAAAAAAAA==";
     let contents = convert_messages(
         &model,
-        &gemini3_context("google-generative-ai", "google", "gemini-3-pro-preview", Some(valid_sig)),
+        &gemini3_context(
+            "google-generative-ai",
+            "google",
+            "gemini-3-pro-preview",
+            Some(valid_sig),
+        ),
         0,
     );
 
@@ -475,7 +518,12 @@ fn preserves_valid_signature_for_same_provider_and_model() {
 
 #[test]
 fn no_signature_for_non_gemini_3_models() {
-    let model = make_model("google-generative-ai", "google", "gemini-2.5-flash", vec![Modality::Text]);
+    let model = make_model(
+        "google-generative-ai",
+        "google",
+        "gemini-2.5-flash",
+        vec![Modality::Text],
+    );
     let contents = convert_messages(
         &model,
         &gemini3_context("google-generative-ai", "google", "other-model", None),
@@ -513,7 +561,12 @@ fn event_kinds(outcome: &StreamOutcome) -> Vec<&'static str> {
 }
 
 fn decode_model() -> GoogleModel {
-    make_model("google-generative-ai", "google", "gemini-2.5-flash", vec![Modality::Text])
+    make_model(
+        "google-generative-ai",
+        "google",
+        "gemini-2.5-flash",
+        vec![Modality::Text],
+    )
 }
 
 #[test]
@@ -566,13 +619,24 @@ fn decodes_tool_call_with_synthesized_id() {
     let outcome = parse_google_stream(&chunks, &decode_model(), API, 0);
     assert_eq!(
         event_kinds(&outcome),
-        ["start", "toolcall_start", "toolcall_delta", "toolcall_end", "done"]
+        [
+            "start",
+            "toolcall_start",
+            "toolcall_delta",
+            "toolcall_end",
+            "done"
+        ]
     );
     let msg = &outcome.message;
     // Any tool call forces stopReason toolUse.
     assert_eq!(msg.stop_reason, StopReason::ToolUse);
     match &msg.content[0] {
-        ContentBlock::ToolCall { id, name, arguments, .. } => {
+        ContentBlock::ToolCall {
+            id,
+            name,
+            arguments,
+            ..
+        } => {
             assert_eq!(name, "read");
             assert_eq!(arguments, &json!({ "path": "a.txt" }));
             // synthesized: `${name}_${now}_${counter}`

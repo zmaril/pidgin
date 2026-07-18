@@ -36,7 +36,9 @@ fn vertex_model(base_url: &str) -> GoogleModel {
 /// The default Vertex model base URL still carries the `{location}` template
 /// placeholder, so it resolves to no custom base URL (httpOptions omitted).
 fn default_model() -> GoogleModel {
-    vertex_model("https://{location}-aiplatform.googleapis.com/v1/projects/{project}/locations/{location}")
+    vertex_model(
+        "https://{location}-aiplatform.googleapis.com/v1/projects/{project}/locations/{location}",
+    )
 }
 
 fn opts() -> GoogleVertexClientOptions {
@@ -96,7 +98,10 @@ fn uses_api_key_client_for_real_api_keys() {
 
     let config = build_client_config(&default_model(), &options).expect("config");
     assert_eq!(config["vertexai"], json!(true));
-    assert_eq!(config["apiKey"], json!("AIzaSyExampleRealisticLookingApiKey123456"));
+    assert_eq!(
+        config["apiKey"],
+        json!("AIzaSyExampleRealisticLookingApiKey123456")
+    );
     assert_eq!(config["apiVersion"], json!("v1"));
     assert!(config.get("project").is_none());
     assert!(config.get("location").is_none());
@@ -138,7 +143,10 @@ fn forwards_custom_base_url_to_api_key_client() {
     let config =
         build_client_config(&vertex_model("https://proxy.example.com"), &options).expect("config");
     assert_eq!(config["vertexai"], json!(true));
-    assert_eq!(config["apiKey"], json!("AIzaSyExampleRealisticLookingApiKey123456"));
+    assert_eq!(
+        config["apiKey"],
+        json!("AIzaSyExampleRealisticLookingApiKey123456")
+    );
     assert_eq!(config["apiVersion"], json!("v1"));
     let http = &config["httpOptions"];
     assert_eq!(http["baseUrl"], json!("https://proxy.example.com"));
@@ -204,12 +212,14 @@ fn adc_path_errors_without_project_or_location() {
 #[test]
 fn adc_reads_project_location_and_credentials_from_env() {
     let mut options = opts();
-    options
-        .env
-        .insert("GOOGLE_CLOUD_PROJECT".to_string(), "env-project".to_string());
-    options
-        .env
-        .insert("GOOGLE_CLOUD_LOCATION".to_string(), "europe-west4".to_string());
+    options.env.insert(
+        "GOOGLE_CLOUD_PROJECT".to_string(),
+        "env-project".to_string(),
+    );
+    options.env.insert(
+        "GOOGLE_CLOUD_LOCATION".to_string(),
+        "europe-west4".to_string(),
+    );
     options.env.insert(
         "GOOGLE_APPLICATION_CREDENTIALS".to_string(),
         "/creds/key.json".to_string(),
@@ -218,5 +228,8 @@ fn adc_reads_project_location_and_credentials_from_env() {
     let config = build_client_config(&default_model(), &options).expect("config");
     assert_eq!(config["project"], json!("env-project"));
     assert_eq!(config["location"], json!("europe-west4"));
-    assert_eq!(config["googleAuthOptions"], json!({ "keyFilename": "/creds/key.json" }));
+    assert_eq!(
+        config["googleAuthOptions"],
+        json!({ "keyFilename": "/creds/key.json" })
+    );
 }

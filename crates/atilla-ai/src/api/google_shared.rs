@@ -85,7 +85,10 @@ pub fn is_thinking_part(part: &Value) -> bool {
 /// `google-shared.ts:46` — preserve the last non-empty thought signature for the
 /// current streamed block; an omitted or empty incoming signature keeps the
 /// existing one.
-pub fn retain_thought_signature(existing: Option<String>, incoming: Option<&str>) -> Option<String> {
+pub fn retain_thought_signature(
+    existing: Option<String>,
+    incoming: Option<&str>,
+) -> Option<String> {
     match incoming {
         Some(s) if !s.is_empty() => Some(s.to_string()),
         _ => existing,
@@ -197,7 +200,10 @@ const NON_VISION_TOOL_IMAGE_PLACEHOLDER: &str =
 
 /// `transform-messages.ts:15` — replace image blocks with a single placeholder
 /// text block, collapsing runs of adjacent images.
-fn replace_images_with_placeholder(content: &[ContentBlock], placeholder: &str) -> Vec<ContentBlock> {
+fn replace_images_with_placeholder(
+    content: &[ContentBlock],
+    placeholder: &str,
+) -> Vec<ContentBlock> {
     let mut result: Vec<ContentBlock> = Vec::new();
     let mut previous_was_placeholder = false;
 
@@ -416,7 +422,10 @@ fn transform_messages(
                     &mut existing_tool_result_ids,
                     now_ms,
                 );
-                if matches!(assistant.stop_reason, StopReason::Error | StopReason::Aborted) {
+                if matches!(
+                    assistant.stop_reason,
+                    StopReason::Error | StopReason::Aborted
+                ) {
                     continue;
                 }
                 let tool_calls: Vec<(String, String)> = assistant
