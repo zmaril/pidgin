@@ -45,6 +45,36 @@ function manifestNativeByPackage() {
   return counts;
 }
 
+/**
+ * Per-package set of test-file basenames the manifest attributes to a native
+ * (Rust addon) module — the "rust-backed" files. A pi test FILE is rust-backed
+ * iff its module-under-test is a native module; each native manifest row lists
+ * exactly those files in its `tests` array. The list is curated conservatively:
+ * a file that also substantially tests an original module (mixed) or a native
+ * module with no dedicated test carries an empty `tests` array and contributes
+ * nothing, so rust-backed counts under-report rather than over-claim. Keyed by
+ * package; values are Sets of basenames (matched against the per-file results).
+ */
+function manifestRustBackedFiles() {
+  const byPackage = {};
+  try {
+    const manifest = JSON.parse(readFileSync(join(here, "manifest.json"), "utf8"));
+    for (const m of manifest.modules ?? []) {
+      if (m.status !== "native" || !Array.isArray(m.tests)) continue;
+      const set = (byPackage[m.package] ??= new Set());
+      for (const t of m.tests) set.add(t.split("/").pop());
+    }
+  } catch {
+    // fall through: no manifest means nothing to attribute as rust-backed
+  }
+  return byPackage;
+}
+
+/** rust-backed passing / total as a percent, one decimal; 0 when total is 0. */
+function rustBackedPercent(passing, total) {
+  return total > 0 ? Number(((passing / total) * 100).toFixed(1)) : 0;
+}
+
 // Failure classification: coding-agent failures that are shaped by the sandbox
 // environment rather than by a real behavioral divergence. Conservative — used
 // only to populate environment_failures, and the basis is recorded in
@@ -168,6 +198,7 @@ function main() {
   const meta = readJson(metaPath);
   const environmentNotes = [...(meta.environment_notes ?? [])];
   const nativeByPackage = manifestNativeByPackage();
+  const rustBackedByPackage = manifestRustBackedFiles();
 
   const byPackage = {};
   const byFile = [];
@@ -175,6 +206,7 @@ function main() {
   let passing = 0;
   let failing = 0;
   let skipped = 0;
+  let rustBackedPassing = 0;
   let environmentFailures = 0;
 
   for (const [pkg, info] of Object.entries(meta.packages ?? {})) {
@@ -184,6 +216,12 @@ function main() {
     // Env-blocked or test-less packages contribute zero and keep their note.
     if (status !== "ok" || !info.reporter) {
       byPackage[pkg] = {
+        // rust-backed is the headline signal: passing cases in files whose
+        // module-under-test is a native (Rust addon) module. raw passing/failing
+        // are kept but secondary — they are inflated by unflipped TypeScript
+        // fallthrough that passes without touching any Rust.
+        rust_backed_passing: 0,
+        rust_backed_percent: 0,
         total: info.total ?? 0,
         passing: 0,
         failing: 0,
@@ -198,6 +236,8 @@ function main() {
     const reporterPath = join(OUT, info.reporter);
     if (!existsSync(reporterPath)) {
       byPackage[pkg] = {
+        rust_backed_passing: 0,
+        rust_backed_percent: 0,
         total: 0,
         passing: 0,
         failing: 0,
@@ -212,7 +252,21 @@ function main() {
     const parsed =
       info.format === "tap" ? parseTuiTap(reporterPath) : parseVitest(reporterPath);
 
+    // Rust-backed passing: sum passing cases in this package's rust-backed files
+    // (per the manifest's per-native-row `tests` lists). Files are matched by
+    // basename so tui's `test/x.test.ts` and vitest's `packages/pkg/test/x.test.ts`
+    // both resolve against the same manifest entry.
+    const rustSet = rustBackedByPackage[pkg];
+    let pkgRustBacked = 0;
+    if (rustSet) {
+      for (const bf of parsed.byFile) {
+        if (rustSet.has((bf.file || "").split("/").pop())) pkgRustBacked += bf.passing;
+      }
+    }
+
     byPackage[pkg] = {
+      rust_backed_passing: pkgRustBacked,
+      rust_backed_percent: rustBackedPercent(pkgRustBacked, parsed.total),
       total: parsed.total,
       passing: parsed.passing,
       failing: parsed.failing,
@@ -225,6 +279,7 @@ function main() {
     passing += parsed.passing;
     failing += parsed.failing;
     skipped += parsed.skipped;
+    rustBackedPassing += pkgRustBacked;
 
     for (const bf of parsed.byFile) byFile.push({ package: pkg, ...bf });
 
@@ -250,6 +305,15 @@ function main() {
     pi_sha: PI_SHA,
     generated_by: "scripts/conformance.sh",
     manifest_native_modules: manifestNativeModules(),
+    // rust_backed is the headline rollup: total passing cases whose
+    // module-under-test is a native (Rust addon) module, over all tests run.
+    // The raw total/passing/failing below are kept but secondary — the raw
+    // all-pass count is inflated by unflipped TypeScript fallthrough.
+    rust_backed: {
+      passing: rustBackedPassing,
+      total,
+      percent: rustBackedPercent(rustBackedPassing, total),
+    },
     total,
     passing,
     failing,
@@ -266,7 +330,18 @@ function main() {
   console.log(`wrote ${outPath}`);
   console.log(
     JSON.stringify(
-      { total, passing, failing, skipped, environment_failures: environmentFailures },
+      {
+        rust_backed: {
+          passing: rustBackedPassing,
+          total,
+          percent: rustBackedPercent(rustBackedPassing, total),
+        },
+        total,
+        passing,
+        failing,
+        skipped,
+        environment_failures: environmentFailures,
+      },
       null,
       2,
     ),

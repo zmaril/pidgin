@@ -33,12 +33,76 @@ function pkgStats(doc, pkg) {
   const p = doc?.by_package?.[pkg];
   if (!p) return null;
   return {
+    rustBackedPassing: p.rust_backed_passing ?? 0,
+    rustBackedPercent: p.rust_backed_percent ?? 0,
     total: p.total ?? 0,
     passing: p.passing ?? 0,
     failing: p.failing ?? 0,
     skipped: p.skipped ?? 0,
     native: p.native ?? 0,
   };
+}
+
+/**
+ * The attribution note, printed verbatim in the sticky comment so the
+ * rust-backed number can't be misread. The definition and the per-file
+ * counted / mixed-excluded / no-test list are pinned here.
+ */
+function attributionSection(lines) {
+  lines.push("### Attribution");
+  lines.push("");
+  lines.push(
+    "A pi test **file** is *rust-backed* iff the module it primarily exercises — its " +
+      "module-under-test — is `status=native` in `conformance/manifest.json`. A package's " +
+      "rust-backed count is the passing cases in its rust-backed files. Transitive or " +
+      "infrastructure use does not count (e.g. ~30 ai files construct the native faux " +
+      "provider but test other things — only `faux-provider.test.ts`, whose subject is " +
+      "faux, counts). A file that substantially tests both a native and an original module " +
+      "is excluded rather than counted, so the number under-reports rather than over-claims.",
+  );
+  lines.push("");
+  lines.push("Per-file decisions (from each native manifest row's `tests` list):");
+  lines.push("");
+  lines.push("| Native module | Test file | Decision |");
+  lines.push("| --- | --- | --- |");
+  const rows = [
+    ["ai/api/anthropic-messages.ts", "test/anthropic-sse-parsing.test.ts", "counted"],
+    ["ai/providers/faux.ts", "test/faux-provider.test.ts", "counted"],
+    ["coding-agent/utils/ansi.ts", "test/ansi-utils.test.ts", "counted"],
+    ["coding-agent/utils/changelog.ts", "test/changelog.test.ts", "counted"],
+    ["coding-agent/utils/git.ts", "test/git-ssh-url.test.ts", "counted"],
+    ["coding-agent/core/tools/path-utils.ts", "test/path-utils.test.ts", "counted"],
+    ["tui/keys.ts", "test/keys.test.ts", "counted"],
+    ["tui/utils.ts", "test/truncate-to-width.test.ts, test/regression-regional-indicator-width.test.ts", "counted"],
+    [
+      "coding-agent/utils/mime.ts",
+      "test/image-process.test.ts",
+      "mixed — excluded (2 of 3 cases test processImage/original)",
+    ],
+    [
+      "coding-agent/utils/version-check.ts",
+      "test/version-check.test.ts",
+      "mixed — excluded (fetch cases mock the original; not separable per-file)",
+    ],
+    [
+      "coding-agent/core/export-html/ansi-to-html.ts",
+      "test/export-html-whitespace.test.ts",
+      "mixed — excluded (asset-grep + tool-renderer/original dominate)",
+    ],
+    [
+      "coding-agent/core/tools/truncate.ts",
+      "—",
+      "no dedicated test (exercised via tools.test.ts, subject is the read/edit factory/original)",
+    ],
+    [
+      "coding-agent/core/tools/edit-diff.ts",
+      "—",
+      "no dedicated test (edit-tool tests' subject is the edit tool/original)",
+    ],
+  ];
+  for (const [mod, file, decision] of rows) {
+    lines.push(`| \`${mod}\` | ${file} | ${decision} |`);
+  }
 }
 
 /**
@@ -122,42 +186,39 @@ function main() {
   lines.push("");
 
   lines.push(
-    "| Package | Total | Passing | Failing | Skipped | Native | pass delta | fail delta |",
+    "Headline is **rust-backed**: passing cases in files whose module-under-test is a " +
+      "native (Rust addon) module. Raw all-pass is shown secondary — it is inflated by " +
+      "unflipped TypeScript that passes without touching any Rust.",
   );
-  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
+  lines.push("");
+  lines.push(
+    "| Package | rust-backed | Native modules | raw pass (secondary) | Failing | Skipped |",
+  );
+  lines.push("| --- | --- | --- | --- | --- | --- |");
 
-  const sumCur = { total: 0, passing: 0, failing: 0, skipped: 0, native: 0 };
-  const sumBase = { passing: 0, failing: 0 };
+  const sumCur = { rustBackedPassing: 0, total: 0, passing: 0, failing: 0, skipped: 0, native: 0 };
   const compact = [];
 
   for (const pkg of packages) {
     const cur = pkgStats(current, pkg);
     if (!cur) continue;
-    const base = pkgStats(baseline, pkg);
-    const passDelta = base ? cur.passing - base.passing : null;
-    const failDelta = base ? cur.failing - base.failing : null;
-    const passCell = passDelta === null ? "n/a" : signed(passDelta);
-    const failCell = failDelta === null ? "n/a" : signed(failDelta);
+    const rustCell = `${cur.rustBackedPassing}/${cur.total} (${cur.rustBackedPercent.toFixed(1)}%)`;
     lines.push(
-      `| ${pkg} | ${cur.total} | ${cur.passing} | ${cur.failing} | ${cur.skipped} | ${cur.native} | ${passCell} | ${failCell} |`,
+      `| ${pkg} | **${rustCell}** | ${cur.native} | ${cur.passing}/${cur.total} | ${cur.failing} | ${cur.skipped} |`,
     );
-    const nativeNote = cur.native > 0 ? `, ${cur.native} native` : "";
-    compact.push(`${pkg}: ${cur.passing}/${cur.total} pass (${passCell})${nativeNote}`);
+    compact.push(`${pkg}: ${rustCell}`);
+    sumCur.rustBackedPassing += cur.rustBackedPassing;
     sumCur.total += cur.total;
     sumCur.passing += cur.passing;
     sumCur.failing += cur.failing;
     sumCur.skipped += cur.skipped;
     sumCur.native += cur.native;
-    if (base) {
-      sumBase.passing += base.passing;
-      sumBase.failing += base.failing;
-    }
   }
 
-  const totalPassDelta = signed(sumCur.passing - sumBase.passing);
-  const totalFailDelta = signed(sumCur.failing - sumBase.failing);
+  const rollupPercent = sumCur.total > 0 ? ((sumCur.rustBackedPassing / sumCur.total) * 100).toFixed(1) : "0.0";
+  const rollupCell = `${sumCur.rustBackedPassing}/${sumCur.total} (${rollupPercent}%)`;
   lines.push(
-    `| smoke total | ${sumCur.total} | ${sumCur.passing} | ${sumCur.failing} | ${sumCur.skipped} | ${sumCur.native} | ${totalPassDelta} | ${totalFailDelta} |`,
+    `| smoke total | **${rollupCell}** | ${sumCur.native} | ${sumCur.passing}/${sumCur.total} | ${sumCur.failing} | ${sumCur.skipped} |`,
   );
   lines.push("");
   if (compact.length > 0) {
@@ -165,11 +226,14 @@ function main() {
     lines.push("");
   }
   lines.push(
-    "Deltas compare this run against the committed baseline for the same packages. " +
-      "The Native column counts modules served by the Rust addon (from the conformance " +
-      `manifest). This is the ${packages.join("+")} smoke subset; the full five-package ` +
-      "baseline lives in committed `conformance.json`.",
+    "rust-backed = passing / total tests run, per the manifest's per-native-row `tests` " +
+      "lists. The Native modules column counts modules served by the Rust addon. This is the " +
+      `${packages.join("+")} smoke subset; the full baseline lives in committed ` +
+      "`conformance.json`.",
   );
+  lines.push("");
+
+  attributionSection(lines);
 
   cliSection(lines, current, baseline);
 

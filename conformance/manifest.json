@@ -134,7 +134,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/api/anthropic-messages.ts",
-      "status": "native"
+      "status": "native",
+      "tests": [
+        "test/anthropic-sse-parsing.test.ts"
+      ]
     },
     {
       "package": "ai",
@@ -529,7 +532,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/providers/faux.ts",
-      "status": "native"
+      "status": "native",
+      "tests": [
+        "test/faux-provider.test.ts"
+      ]
     },
     {
       "package": "ai",
@@ -1059,7 +1065,8 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/export-html/ansi-to-html.ts",
-      "status": "native"
+      "status": "native",
+      "tests": []
     },
     {
       "package": "coding-agent",
@@ -1259,7 +1266,8 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/tools/edit-diff.ts",
-      "status": "native"
+      "status": "native",
+      "tests": []
     },
     {
       "package": "coding-agent",
@@ -1299,7 +1307,10 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/tools/path-utils.ts",
-      "status": "native"
+      "status": "native",
+      "tests": [
+        "test/path-utils.test.ts"
+      ]
     },
     {
       "package": "coding-agent",
@@ -1319,7 +1330,8 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/tools/truncate.ts",
-      "status": "native"
+      "status": "native",
+      "tests": []
     },
     {
       "package": "coding-agent",
@@ -1639,12 +1651,18 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/ansi.ts",
-      "status": "native"
+      "status": "native",
+      "tests": [
+        "test/ansi-utils.test.ts"
+      ]
     },
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/changelog.ts",
-      "status": "native"
+      "status": "native",
+      "tests": [
+        "test/changelog.test.ts"
+      ]
     },
     {
       "package": "coding-agent",
@@ -1689,7 +1707,10 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/git.ts",
-      "status": "native"
+      "status": "native",
+      "tests": [
+        "test/git-ssh-url.test.ts"
+      ]
     },
     {
       "package": "coding-agent",
@@ -1729,7 +1750,8 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/mime.ts",
-      "status": "native"
+      "status": "native",
+      "tests": []
     },
     {
       "package": "coding-agent",
@@ -1774,7 +1796,8 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/utils/version-check.ts",
-      "status": "native"
+      "status": "native",
+      "tests": []
     },
     {
       "package": "coding-agent",
@@ -1934,7 +1957,10 @@
     {
       "package": "tui",
       "src": "packages/tui/src/keys.ts",
-      "status": "native"
+      "status": "native",
+      "tests": [
+        "test/keys.test.ts"
+      ]
     },
     {
       "package": "tui",
@@ -1979,7 +2005,11 @@
     {
       "package": "tui",
       "src": "packages/tui/src/utils.ts",
-      "status": "native"
+      "status": "native",
+      "tests": [
+        "test/truncate-to-width.test.ts",
+        "test/regression-regional-indicator-width.test.ts"
+      ]
     },
     {
       "package": "tui",
