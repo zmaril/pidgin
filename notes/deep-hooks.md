@@ -119,7 +119,7 @@ just one the core owns rather than one the host owns.
 Four mechanisms are on the table. They are not mutually exclusive; the
 recommendation in section 4 assigns each host class the one that fits.
 
-### (a) Direct trampoline
+### Option A: direct trampoline
 
 The core, on a tokio worker thread, blocks the current task and dispatches
 the closure onto the host thread, then resumes when the answer returns.
@@ -137,7 +137,7 @@ call and is parked inside `block_on`, and the core then tries to trampoline
 back to that same thread, the thread is not listening. It is blocked on the
 core, and the core is blocked on it.
 
-### (b) Inversion / pull model
+### Option B: inversion / pull model
 
 Flip ownership of the wait. The host thread does not block idly inside the
 core; it runs a pump loop that pulls hook requests out of the core and
@@ -160,11 +160,11 @@ FFI call that reenters the core runs the same pull loop internally until
 its sub-operation finishes, so nested hook requests are still serviced. The
 pump is a stack, not a flat loop.
 
-### (c) Dedicated dispatcher thread plus marshalling
+### Option C: dedicated dispatcher thread plus marshalling
 
 Give each host VM one dedicated OS thread that owns the interpreter, and
 route every hook call to it through a queue, marshalling arguments and
-results as `serde_json::Value`. This is really (b) with an explicit owner
+results as `serde_json::Value`. This is really Option B with an explicit owner
 thread rather than borrowing the host's entry thread, and it is the honest
 description of what a rendezvous is underneath. It buys a clean ownership
 story at the cost of one parked thread per host VM and a marshalling hop on
@@ -173,18 +173,18 @@ owns; for PHP under php-fpm the "dedicated thread" is just the request
 thread. It is most useful as the mental model, less so as a separate
 implementation.
 
-### (d) Timeouts and fallback policy
+### Option D: timeouts and fallback policy
 
 Independent of the transport, a host closure can hang or panic. Every hook
 dispatch is wrapped in `tokio::time::timeout` with a per-hook fallback:
 fail-open (`Continue`) for advisory hooks, fail-closed (`Block`) for the
 permission gate. A closure that panics is caught at the boundary and mapped
-to the same fallback. This is policy layered on top of (a) or (b), not an
+to the same fallback. This is policy layered on top of A or B, not an
 alternative to them.
 
 ### Deadlock and re-entrancy summary
 
-| Concern | Trampoline (a) | Inversion (b) |
+| Concern | Trampoline (A) | Inversion (B) |
 |---|---|---|
 | Host thread parked in core | Deadlock for PHP / Ruby | Safe — host runs the pump |
 | Closure calls back into core | Fine (Python GIL is reentrant) | Needs a reentrant pump |
