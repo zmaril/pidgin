@@ -525,16 +525,8 @@ impl DefaultResourceLoader {
 mod tests {
     use super::*;
     use crate::core::source_info::{SourceOrigin, SourceScope};
-    use crate::core::test_support::{s, scratch_dir};
+    use crate::core::test_support::{s, scratch_dir, write};
     use std::fs;
-    use std::path::Path;
-
-    fn write(path: &str, contents: &str) {
-        if let Some(parent) = Path::new(path).parent() {
-            fs::create_dir_all(parent).unwrap();
-        }
-        fs::write(path, contents).unwrap();
-    }
 
     /// Scratch root with `project/` (cwd) and `agent/` subdirs.
     fn roots(tag: &str) -> (std::path::PathBuf, String, String) {
