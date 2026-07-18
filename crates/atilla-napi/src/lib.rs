@@ -694,6 +694,17 @@ pub fn is_config_value_configured(config: String, env: Option<String>) -> napi::
     )
 }
 
+/// Serialize a resolved header map to pi's `Record<string,string>` JSON, mapping
+/// `None` to a JS `null`. Shared tail of the `resolveHeaders` wrappers.
+fn headers_json(resolved: Option<HashMap<String, String>>) -> napi::Result<Option<String>> {
+    match resolved {
+        None => Ok(None),
+        Some(map) => serde_json::to_string(&map)
+            .map(Some)
+            .map_err(|e| napi::Error::from_reason(e.to_string())),
+    }
+}
+
 /// `resolveHeaders` (resolve-config-value.ts): resolve each header value,
 /// dropping empties. Returns pi's `Record<string,string>` as JSON, or `null`.
 #[napi(js_name = "resolveHeaders")]
@@ -703,13 +714,10 @@ pub fn resolve_headers(
 ) -> napi::Result<Option<String>> {
     let headers = parse_config_env(headers)?;
     let env = parse_config_env(env)?;
-    match atilla_coding::core::resolve_config_value::resolve_headers(headers.as_ref(), env.as_ref())
-    {
-        None => Ok(None),
-        Some(map) => serde_json::to_string(&map)
-            .map(Some)
-            .map_err(|e| napi::Error::from_reason(e.to_string())),
-    }
+    headers_json(atilla_coding::core::resolve_config_value::resolve_headers(
+        headers.as_ref(),
+        env.as_ref(),
+    ))
 }
 
 /// `resolveHeadersOrThrow` (resolve-config-value.ts): resolve each header value
@@ -728,12 +736,7 @@ pub fn resolve_headers_or_throw(
         env.as_ref(),
     )
     .map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    match resolved {
-        None => Ok(None),
-        Some(map) => serde_json::to_string(&map)
-            .map(Some)
-            .map_err(|e| napi::Error::from_reason(e.to_string())),
-    }
+    headers_json(resolved)
 }
 
 /// `clearConfigValueCache` (resolve-config-value.ts): clear the process-lifetime
