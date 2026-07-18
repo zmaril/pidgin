@@ -17,6 +17,13 @@ pub mod node;
 pub mod proxy;
 pub mod types;
 
+// Crate-root re-exports of the tool-facing boundary types, so downstream crates
+// (e.g. atilla-coding's tool wrappers) can reach them by the shorter path.
+pub use types::{
+    AgentTool, AgentToolCall, AgentToolExecute, AgentToolResult, AgentToolUpdateCallback,
+    PrepareArguments, ToolExecutionMode,
+};
+
 /// Name of the pi package this crate mirrors.
 pub const PI_PACKAGE: &str = "@earendil-works/pi-agent-core";
 
