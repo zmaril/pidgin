@@ -1,0 +1,10 @@
+{
+  "type": "toolCall",
+  "id": "tool-fixed-2",
+  "name": "search",
+  "arguments": {
+    "query": "rust serde",
+    "limit": 5
+  },
+  "thoughtSignature": "google-thought-sig"
+}

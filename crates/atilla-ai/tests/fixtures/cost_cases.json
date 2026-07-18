@@ -1,0 +1,201 @@
+[
+  {
+    "name": "base_rates_with_1h_cache",
+    "model": {
+      "id": "claude-opus-4-8",
+      "name": "Claude Opus 4.8",
+      "api": "anthropic-messages",
+      "provider": "anthropic",
+      "baseUrl": "https://api.anthropic.com",
+      "reasoning": true,
+      "thinkingLevelMap": {
+        "off": null,
+        "low": "low",
+        "high": "high"
+      },
+      "input": [
+        "text",
+        "image"
+      ],
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cacheRead": 0.3,
+        "cacheWrite": 3.75,
+        "tiers": [
+          {
+            "inputTokensAbove": 200000,
+            "input": 6,
+            "output": 22.5,
+            "cacheRead": 0.6,
+            "cacheWrite": 7.5
+          }
+        ]
+      },
+      "contextWindow": 200000,
+      "maxTokens": 64000,
+      "headers": {
+        "anthropic-beta": "context-1m"
+      },
+      "compat": {
+        "supportsEagerToolInputStreaming": true,
+        "supportsLongCacheRetention": true,
+        "supportsTemperature": false
+      }
+    },
+    "usage": {
+      "input": 1000,
+      "output": 500,
+      "cacheRead": 200,
+      "cacheWrite": 100,
+      "cacheWrite1h": 40,
+      "totalTokens": 1800,
+      "cost": {
+        "input": 0.003,
+        "output": 0.007500000000000001,
+        "cacheRead": 0.000059999999999999995,
+        "cacheWrite": 0.000465,
+        "total": 0.011025
+      }
+    },
+    "cost": {
+      "input": 0.003,
+      "output": 0.007500000000000001,
+      "cacheRead": 0.000059999999999999995,
+      "cacheWrite": 0.000465,
+      "total": 0.011025
+    }
+  },
+  {
+    "name": "tiered_above_threshold",
+    "model": {
+      "id": "claude-opus-4-8",
+      "name": "Claude Opus 4.8",
+      "api": "anthropic-messages",
+      "provider": "anthropic",
+      "baseUrl": "https://api.anthropic.com",
+      "reasoning": true,
+      "thinkingLevelMap": {
+        "off": null,
+        "low": "low",
+        "high": "high"
+      },
+      "input": [
+        "text",
+        "image"
+      ],
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cacheRead": 0.3,
+        "cacheWrite": 3.75,
+        "tiers": [
+          {
+            "inputTokensAbove": 200000,
+            "input": 6,
+            "output": 22.5,
+            "cacheRead": 0.6,
+            "cacheWrite": 7.5
+          }
+        ]
+      },
+      "contextWindow": 200000,
+      "maxTokens": 64000,
+      "headers": {
+        "anthropic-beta": "context-1m"
+      },
+      "compat": {
+        "supportsEagerToolInputStreaming": true,
+        "supportsLongCacheRetention": true,
+        "supportsTemperature": false
+      }
+    },
+    "usage": {
+      "input": 300000,
+      "output": 1000,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "totalTokens": 301000,
+      "cost": {
+        "input": 1.8,
+        "output": 0.022500000000000003,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 1.8225
+      }
+    },
+    "cost": {
+      "input": 1.8,
+      "output": 0.022500000000000003,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 1.8225
+    }
+  },
+  {
+    "name": "no_cache",
+    "model": {
+      "id": "claude-opus-4-8",
+      "name": "Claude Opus 4.8",
+      "api": "anthropic-messages",
+      "provider": "anthropic",
+      "baseUrl": "https://api.anthropic.com",
+      "reasoning": true,
+      "thinkingLevelMap": {
+        "off": null,
+        "low": "low",
+        "high": "high"
+      },
+      "input": [
+        "text",
+        "image"
+      ],
+      "cost": {
+        "input": 3,
+        "output": 15,
+        "cacheRead": 0.3,
+        "cacheWrite": 3.75,
+        "tiers": [
+          {
+            "inputTokensAbove": 200000,
+            "input": 6,
+            "output": 22.5,
+            "cacheRead": 0.6,
+            "cacheWrite": 7.5
+          }
+        ]
+      },
+      "contextWindow": 200000,
+      "maxTokens": 64000,
+      "headers": {
+        "anthropic-beta": "context-1m"
+      },
+      "compat": {
+        "supportsEagerToolInputStreaming": true,
+        "supportsLongCacheRetention": true,
+        "supportsTemperature": false
+      }
+    },
+    "usage": {
+      "input": 500,
+      "output": 250,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "totalTokens": 750,
+      "cost": {
+        "input": 0.0015,
+        "output": 0.0037500000000000003,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "total": 0.00525
+      }
+    },
+    "cost": {
+      "input": 0.0015,
+      "output": 0.0037500000000000003,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "total": 0.00525
+    }
+  }
+]
