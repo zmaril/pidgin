@@ -1,0 +1,122 @@
+[
+	{
+		"text": " ",
+		"isWhitespace": true,
+		"isPunctuation": false
+	},
+	{
+		"text": "  ",
+		"isWhitespace": true,
+		"isPunctuation": false
+	},
+	{
+		"text": "\t",
+		"isWhitespace": true,
+		"isPunctuation": false
+	},
+	{
+		"text": "\n",
+		"isWhitespace": true,
+		"isPunctuation": false
+	},
+	{
+		"text": "a",
+		"isWhitespace": false,
+		"isPunctuation": false
+	},
+	{
+		"text": "ab",
+		"isWhitespace": false,
+		"isPunctuation": false
+	},
+	{
+		"text": " a",
+		"isWhitespace": true,
+		"isPunctuation": false
+	},
+	{
+		"text": "a ",
+		"isWhitespace": true,
+		"isPunctuation": false
+	},
+	{
+		"text": ".",
+		"isWhitespace": false,
+		"isPunctuation": true
+	},
+	{
+		"text": ":",
+		"isWhitespace": false,
+		"isPunctuation": true
+	},
+	{
+		"text": "foo",
+		"isWhitespace": false,
+		"isPunctuation": false
+	},
+	{
+		"text": "foo.",
+		"isWhitespace": false,
+		"isPunctuation": true
+	},
+	{
+		"text": "!",
+		"isWhitespace": false,
+		"isPunctuation": true
+	},
+	{
+		"text": "",
+		"isWhitespace": false,
+		"isPunctuation": false
+	},
+	{
+		"text": "你",
+		"isWhitespace": false,
+		"isPunctuation": false
+	},
+	{
+		"text": "1",
+		"isWhitespace": false,
+		"isPunctuation": false
+	},
+	{
+		"text": "_",
+		"isWhitespace": false,
+		"isPunctuation": false
+	},
+	{
+		"text": "-",
+		"isWhitespace": false,
+		"isPunctuation": true
+	},
+	{
+		"text": "/",
+		"isWhitespace": false,
+		"isPunctuation": true
+	},
+	{
+		"text": " ",
+		"isWhitespace": true,
+		"isPunctuation": false
+	},
+	{
+		"text": "　",
+		"isWhitespace": true,
+		"isPunctuation": false
+	},
+	{
+		"text": "﻿",
+		"isWhitespace": true,
+		"isPunctuation": false
+	},
+	{
+		"text": "a.b",
+		"isWhitespace": false,
+		"isPunctuation": true
+	},
+	{
+		"text": "   x   ",
+		"isWhitespace": true,
+		"isPunctuation": false
+	}
+]

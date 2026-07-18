@@ -1,0 +1,308 @@
+[
+	{
+		"name": "basic push + peek",
+		"ops": [
+			{
+				"op": "push",
+				"text": "hello",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "push",
+				"text": "world",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "peek"
+			}
+		],
+		"states": [
+			{
+				"peek": "hello",
+				"length": 1
+			},
+			{
+				"peek": "world",
+				"length": 2
+			},
+			{
+				"peek": "world",
+				"length": 2
+			}
+		]
+	},
+	{
+		"name": "empty text ignored",
+		"ops": [
+			{
+				"op": "push",
+				"text": "",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "push",
+				"text": "x",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "push",
+				"text": "",
+				"prepend": true,
+				"accumulate": true
+			}
+		],
+		"states": [
+			{
+				"peek": null,
+				"length": 0
+			},
+			{
+				"peek": "x",
+				"length": 1
+			},
+			{
+				"peek": "x",
+				"length": 1
+			}
+		]
+	},
+	{
+		"name": "accumulate append (forward delete)",
+		"ops": [
+			{
+				"op": "push",
+				"text": "foo",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "push",
+				"text": "bar",
+				"prepend": false,
+				"accumulate": true
+			},
+			{
+				"op": "push",
+				"text": "baz",
+				"prepend": false,
+				"accumulate": true
+			}
+		],
+		"states": [
+			{
+				"peek": "foo",
+				"length": 1
+			},
+			{
+				"peek": "foobar",
+				"length": 1
+			},
+			{
+				"peek": "foobarbaz",
+				"length": 1
+			}
+		]
+	},
+	{
+		"name": "accumulate prepend (backward delete)",
+		"ops": [
+			{
+				"op": "push",
+				"text": "foo",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "push",
+				"text": "bar",
+				"prepend": true,
+				"accumulate": true
+			},
+			{
+				"op": "push",
+				"text": "baz",
+				"prepend": true,
+				"accumulate": true
+			}
+		],
+		"states": [
+			{
+				"peek": "foo",
+				"length": 1
+			},
+			{
+				"peek": "barfoo",
+				"length": 1
+			},
+			{
+				"peek": "bazbarfoo",
+				"length": 1
+			}
+		]
+	},
+	{
+		"name": "accumulate on empty ring creates entry",
+		"ops": [
+			{
+				"op": "push",
+				"text": "solo",
+				"prepend": true,
+				"accumulate": true
+			}
+		],
+		"states": [
+			{
+				"peek": "solo",
+				"length": 1
+			}
+		]
+	},
+	{
+		"name": "rotate cycles entries",
+		"ops": [
+			{
+				"op": "push",
+				"text": "a",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "push",
+				"text": "b",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "push",
+				"text": "c",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "rotate"
+			},
+			{
+				"op": "peek"
+			},
+			{
+				"op": "rotate"
+			},
+			{
+				"op": "peek"
+			}
+		],
+		"states": [
+			{
+				"peek": "a",
+				"length": 1
+			},
+			{
+				"peek": "b",
+				"length": 2
+			},
+			{
+				"peek": "c",
+				"length": 3
+			},
+			{
+				"peek": "b",
+				"length": 3
+			},
+			{
+				"peek": "b",
+				"length": 3
+			},
+			{
+				"peek": "a",
+				"length": 3
+			},
+			{
+				"peek": "a",
+				"length": 3
+			}
+		]
+	},
+	{
+		"name": "rotate single entry no-op",
+		"ops": [
+			{
+				"op": "push",
+				"text": "only",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "rotate"
+			},
+			{
+				"op": "peek"
+			}
+		],
+		"states": [
+			{
+				"peek": "only",
+				"length": 1
+			},
+			{
+				"peek": "only",
+				"length": 1
+			},
+			{
+				"peek": "only",
+				"length": 1
+			}
+		]
+	},
+	{
+		"name": "rotate empty no-op",
+		"ops": [
+			{
+				"op": "rotate"
+			},
+			{
+				"op": "peek"
+			}
+		],
+		"states": [
+			{
+				"peek": null,
+				"length": 0
+			},
+			{
+				"peek": null,
+				"length": 0
+			}
+		]
+	},
+	{
+		"name": "no accumulate makes new entries",
+		"ops": [
+			{
+				"op": "push",
+				"text": "x",
+				"prepend": false,
+				"accumulate": false
+			},
+			{
+				"op": "push",
+				"text": "y",
+				"prepend": true,
+				"accumulate": false
+			}
+		],
+		"states": [
+			{
+				"peek": "x",
+				"length": 1
+			},
+			{
+				"peek": "y",
+				"length": 2
+			}
+		]
+	}
+]

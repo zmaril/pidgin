@@ -1,0 +1,338 @@
+[
+	{
+		"query": "",
+		"text": "anything",
+		"matches": true,
+		"score": 0,
+		"bits": "0"
+	},
+	{
+		"query": "longquery",
+		"text": "short",
+		"matches": false,
+		"score": 0,
+		"bits": "0"
+	},
+	{
+		"query": "test",
+		"text": "test",
+		"matches": true,
+		"score": -159.4,
+		"bits": "13863184442329976013"
+	},
+	{
+		"query": "abc",
+		"text": "aXbXc",
+		"matches": true,
+		"score": -10.4,
+		"bits": "13845416334425115853"
+	},
+	{
+		"query": "abc",
+		"text": "cba",
+		"matches": false,
+		"score": 0,
+		"bits": "0"
+	},
+	{
+		"query": "ABC",
+		"text": "abc",
+		"matches": true,
+		"score": -139.7,
+		"bits": "13862491310199826022"
+	},
+	{
+		"query": "abc",
+		"text": "ABC",
+		"matches": true,
+		"score": -139.7,
+		"bits": "13862491310199826022"
+	},
+	{
+		"query": "foo",
+		"text": "foobar",
+		"matches": true,
+		"score": -39.699999999999996,
+		"bits": "13854156132451981721"
+	},
+	{
+		"query": "foo",
+		"text": "f_o_o_bar",
+		"matches": true,
+		"score": -30.400000000000002,
+		"bits": "13852622093828908647"
+	},
+	{
+		"query": "fb",
+		"text": "foo-bar",
+		"matches": true,
+		"score": -18.6,
+		"bits": "13849300689103722906"
+	},
+	{
+		"query": "fb",
+		"text": "afbx",
+		"matches": true,
+		"score": -4.7,
+		"bits": "13840349784844324045"
+	},
+	{
+		"query": "codex52",
+		"text": "gpt-5.2-codex",
+		"matches": true,
+		"score": -64.99999999999999,
+		"bits": "13857646422163193855"
+	},
+	{
+		"query": "an",
+		"text": "apple",
+		"matches": false,
+		"score": 0,
+		"bits": "0"
+	},
+	{
+		"query": "an",
+		"text": "banana",
+		"matches": true,
+		"score": -4.7,
+		"bits": "13840349784844324045"
+	},
+	{
+		"query": "an",
+		"text": "cherry",
+		"matches": false,
+		"score": 0,
+		"bits": "0"
+	},
+	{
+		"query": "app",
+		"text": "a_p_p",
+		"matches": true,
+		"score": -30.400000000000002,
+		"bits": "13852622093828908647"
+	},
+	{
+		"query": "app",
+		"text": "app",
+		"matches": true,
+		"score": -139.7,
+		"bits": "13862491310199826022"
+	},
+	{
+		"query": "app",
+		"text": "application",
+		"matches": true,
+		"score": -39.699999999999996,
+		"bits": "13854156132451981721"
+	},
+	{
+		"query": "cl",
+		"text": "clone",
+		"matches": true,
+		"score": -24.9,
+		"bits": "13851073981457000038"
+	},
+	{
+		"query": "cl",
+		"text": "cl",
+		"matches": true,
+		"score": -124.9,
+		"bits": "13861861509939435930"
+	},
+	{
+		"query": "foo",
+		"text": "foo",
+		"matches": true,
+		"score": -139.7,
+		"bits": "13862491310199826022"
+	},
+	{
+		"query": "foo",
+		"text": "bar",
+		"matches": false,
+		"score": 0,
+		"bits": "0"
+	},
+	{
+		"query": "foo",
+		"text": "foobar",
+		"matches": true,
+		"score": -39.699999999999996,
+		"bits": "13854156132451981721"
+	},
+	{
+		"query": "a",
+		"text": "abc",
+		"matches": true,
+		"score": -15,
+		"bits": "13848005904210853888"
+	},
+	{
+		"query": "c",
+		"text": "abc",
+		"matches": true,
+		"score": 0.2,
+		"bits": "4596373779694328218"
+	},
+	{
+		"query": "ab",
+		"text": "a.b",
+		"matches": true,
+		"score": -22.8,
+		"bits": "13850482884005907661"
+	},
+	{
+		"query": "ab",
+		"text": "a-b",
+		"matches": true,
+		"score": -22.8,
+		"bits": "13850482884005907661"
+	},
+	{
+		"query": "ab",
+		"text": "a_b",
+		"matches": true,
+		"score": -22.8,
+		"bits": "13850482884005907661"
+	},
+	{
+		"query": "ab",
+		"text": "a/b",
+		"matches": true,
+		"score": -22.8,
+		"bits": "13850482884005907661"
+	},
+	{
+		"query": "ab",
+		"text": "a:b",
+		"matches": true,
+		"score": -22.8,
+		"bits": "13850482884005907661"
+	},
+	{
+		"query": "ab",
+		"text": "axb",
+		"matches": true,
+		"score": -12.8,
+		"bits": "13846767414313327002"
+	},
+	{
+		"query": "ac",
+		"text": "abc",
+		"matches": true,
+		"score": -12.8,
+		"bits": "13846767414313327002"
+	},
+	{
+		"query": "xyz",
+		"text": "xyz",
+		"matches": true,
+		"score": -139.7,
+		"bits": "13862491310199826022"
+	},
+	{
+		"query": "xyz",
+		"text": "x-y-z",
+		"matches": true,
+		"score": -30.400000000000002,
+		"bits": "13852622093828908647"
+	},
+	{
+		"query": "gpt5",
+		"text": "gpt-5",
+		"matches": true,
+		"score": -47.3,
+		"bits": "13855225737363482214"
+	},
+	{
+		"query": "5gpt",
+		"text": "gpt-5",
+		"matches": true,
+		"score": -42.3,
+		"bits": "13854522049921705574"
+	},
+	{
+		"query": "52codex",
+		"text": "gpt-5.2-codex",
+		"matches": true,
+		"score": -69.99999999999999,
+		"bits": "13857998265884082175"
+	},
+	{
+		"query": "abc123",
+		"text": "abc-123",
+		"matches": true,
+		"score": -61.199999999999996,
+		"bits": "13857181988451621273"
+	},
+	{
+		"query": "123abc",
+		"text": "abc-123",
+		"matches": true,
+		"score": -56.199999999999996,
+		"bits": "13856478301009844633"
+	},
+	{
+		"query": "o1",
+		"text": "gpt-4o",
+		"matches": false,
+		"score": 0,
+		"bits": "0"
+	},
+	{
+		"query": "k",
+		"text": "key",
+		"matches": true,
+		"score": -15,
+		"bits": "13848005904210853888"
+	},
+	{
+		"query": "key",
+		"text": "keybinding",
+		"matches": true,
+		"score": -39.699999999999996,
+		"bits": "13854156132451981721"
+	},
+	{
+		"query": "kb",
+		"text": "keybinding",
+		"matches": true,
+		"score": -10.7,
+		"bits": "13845585219411142246"
+	},
+	{
+		"query": "hello",
+		"text": "hello world",
+		"matches": true,
+		"score": -84,
+		"bits": "13858983428302569472"
+	},
+	{
+		"query": "world",
+		"text": "hello world",
+		"matches": true,
+		"score": -56.00000000000001,
+		"bits": "13856450153512173569"
+	},
+	{
+		"query": "hw",
+		"text": "hello world",
+		"matches": true,
+		"score": -14.4,
+		"bits": "13847668134238801101"
+	},
+	{
+		"query": "中文",
+		"text": "中文测试",
+		"matches": true,
+		"score": -24.9,
+		"bits": "13851073981457000038"
+	},
+	{
+		"query": "ab",
+		"text": "ＡＢ",
+		"matches": false,
+		"score": 0,
+		"bits": "0"
+	}
+]
