@@ -8,6 +8,10 @@
 
 use napi_derive::napi;
 
+// Stage 3: the faux-provider surface (`FauxCore`), driving the Rust faux
+// provider's deterministic streaming and cache accounting from JS. Additive.
+mod faux;
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `atillaNativeVersion`.

@@ -6,13 +6,17 @@
 //! `compat`. Stage 1 ports the boundary types (`types.ts`) and cost math
 //! (`models.ts`'s `calculateCost`); Stage 2 ports the Anthropic Messages SSE
 //! streaming parser (`api/anthropic.rs`) and its JSON-repair helpers
-//! (`utils/json_parse.rs`). The remaining modules are still stubs.
+//! (`utils/json_parse.rs`). Stage 3 defines the injection seams
+//! (`seams/`, the production-grade trait boundaries the core is built on) and
+//! ports pi's faux provider (`providers/faux.rs`). The remaining modules are
+//! still stubs.
 
 pub mod api;
 pub mod auth;
 pub mod compat;
 pub mod cost;
 pub mod providers;
+pub mod seams;
 pub mod types;
 pub mod utils;
 

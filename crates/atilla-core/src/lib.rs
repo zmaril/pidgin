@@ -9,6 +9,13 @@ pub use atilla_agent as agent;
 pub use atilla_ai as ai;
 pub use atilla_coding as coding;
 
+/// The injection seams (provider, HTTP transport, clock, storage env,
+/// subprocess). Defined in the leaf `atilla-ai` crate to avoid a dependency
+/// cycle with the faux provider that implements the provider seam, and re-exported
+/// here so they are reachable as part of the core surface. See
+/// [`atilla_ai::seams`] for the rationale.
+pub use atilla_ai::seams;
+
 use anyhow::Result;
 
 /// The atilla engine version. This is the workspace version, surfaced through
