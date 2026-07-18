@@ -5,14 +5,14 @@
 //! project context files, and skills, in the exact order pi's tests pin.
 //!
 //! NOTE: pi computes the pi documentation paths at runtime via
-//! `getReadmePath`/`getDocsPath`/`getExamplesPath` (from `config.ts`) and
-//! formats skills via `formatSkillsForPrompt` (from `skills.ts`). Neither
-//! collaborator is ported yet, so the doc paths are taken as an input
-//! ([`PiDocPaths`]) and the pure skill-formatting slice is inlined here
-//! ([`format_skills_for_prompt`]) against a minimal [`SystemPromptSkill`] input.
-//! When `config`/`skills` land these seams should delegate to them.
+//! `getReadmePath`/`getDocsPath`/`getExamplesPath` (from `config.ts`), which is
+//! not yet ported, so the doc paths are taken as an input ([`PiDocPaths`]).
+//! Skill formatting delegates to [`crate::core::skills::format_skills_for_prompt`],
+//! mirroring pi's `system-prompt.ts`, which imports it from `skills.ts`.
 
 use std::collections::HashSet;
+
+use crate::core::skills::{format_skills_for_prompt, Skill};
 
 /// Absolute paths to the bundled pi documentation, examples, and README.
 ///
@@ -36,22 +36,6 @@ pub struct ContextFile {
     pub content: String,
 }
 
-/// Minimal skill input for prompt formatting.
-///
-/// NOTE: mirrors the fields of `skills.ts`'s `Skill` that
-/// `formatSkillsForPrompt` reads. The full skill loader lands separately.
-#[derive(Debug, Clone)]
-pub struct SystemPromptSkill {
-    /// Skill name.
-    pub name: String,
-    /// Skill description.
-    pub description: String,
-    /// Absolute path to the skill's `SKILL.md`.
-    pub file_path: String,
-    /// When true the skill is hidden from the prompt (invoke-only).
-    pub disable_model_invocation: bool,
-}
-
 /// Options for [`build_system_prompt`].
 #[derive(Debug, Clone, Default)]
 pub struct BuildSystemPromptOptions {
@@ -71,7 +55,7 @@ pub struct BuildSystemPromptOptions {
     /// Pre-loaded project context files.
     pub context_files: Vec<ContextFile>,
     /// Pre-loaded skills.
-    pub skills: Vec<SystemPromptSkill>,
+    pub skills: Vec<Skill>,
     /// Bundled pi documentation paths (see [`PiDocPaths`]).
     pub doc_paths: PiDocPaths,
 }
@@ -81,57 +65,6 @@ fn snippet_for<'a>(snippets: &'a [(String, String)], name: &str) -> Option<&'a s
         .iter()
         .find(|(key, _)| key == name)
         .map(|(_, value)| value.as_str())
-}
-
-/// Escape the five XML metacharacters, mirroring `skills.ts`'s `escapeXml`.
-fn escape_xml(input: &str) -> String {
-    input
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
-}
-
-/// Format skills as an `<available_skills>` block for the system prompt.
-///
-/// Skills with `disable_model_invocation == true` are excluded. Returns an
-/// empty string when no visible skills remain. Mirrors `skills.ts`'s
-/// `formatSkillsForPrompt`.
-pub fn format_skills_for_prompt(skills: &[SystemPromptSkill]) -> String {
-    let visible: Vec<&SystemPromptSkill> = skills
-        .iter()
-        .filter(|s| !s.disable_model_invocation)
-        .collect();
-
-    if visible.is_empty() {
-        return String::new();
-    }
-
-    let mut lines: Vec<String> = vec![
-        "\n\nThe following skills provide specialized instructions for specific tasks.".to_string(),
-        "Use the read tool to load a skill's file when the task matches its description.".to_string(),
-        "When a skill file references a relative path, resolve it against the skill directory (parent of SKILL.md / dirname of the path) and use that absolute path in tool commands.".to_string(),
-        String::new(),
-        "<available_skills>".to_string(),
-    ];
-
-    for skill in visible {
-        lines.push("  <skill>".to_string());
-        lines.push(format!("    <name>{}</name>", escape_xml(&skill.name)));
-        lines.push(format!(
-            "    <description>{}</description>",
-            escape_xml(&skill.description)
-        ));
-        lines.push(format!(
-            "    <location>{}</location>",
-            escape_xml(&skill.file_path)
-        ));
-        lines.push("  </skill>".to_string());
-    }
-
-    lines.push("</available_skills>".to_string());
-    lines.join("\n")
 }
 
 /// Append the `<project_context>` block for `context_files` to `prompt`.
@@ -377,31 +310,41 @@ mod tests {
     }
 
     #[test]
-    fn formats_visible_skills_only() {
-        let skills = vec![
-            SystemPromptSkill {
-                name: "alpha".to_string(),
-                description: "First skill".to_string(),
-                file_path: "/skills/alpha/SKILL.md".to_string(),
-                disable_model_invocation: false,
-            },
-            SystemPromptSkill {
-                name: "hidden".to_string(),
-                description: "Invoke-only".to_string(),
-                file_path: "/skills/hidden/SKILL.md".to_string(),
-                disable_model_invocation: true,
-            },
-        ];
-        let formatted = format_skills_for_prompt(&skills);
+    fn includes_skills_section_when_read_tool_present() {
+        // The `<available_skills>` rendering itself is covered by
+        // `core::skills`; here we only pin that `build_system_prompt` delegates
+        // to it (gated on the read tool) and splices the result in.
+        use crate::core::skills::{create_synthetic_source_info, SyntheticSourceOptions};
+        let path = "/skills/alpha/SKILL.md";
+        let alpha = Skill {
+            name: "alpha".to_string(),
+            description: "First skill".to_string(),
+            file_path: path.to_string(),
+            base_dir: "/skills/alpha".to_string(),
+            source_info: create_synthetic_source_info(path, SyntheticSourceOptions::default()),
+            disable_model_invocation: false,
+        };
+
+        let with_read = build_system_prompt(&BuildSystemPromptOptions {
+            selected_tools: tools(&["read"]),
+            skills: vec![alpha.clone()],
+            ..base_opts()
+        });
         assert_all_contain(
-            &formatted,
+            &with_read,
             &[
                 "<available_skills>",
                 "<name>alpha</name>",
                 "<location>/skills/alpha/SKILL.md</location>",
             ],
         );
-        assert!(!formatted.contains("hidden"));
-        assert!(format_skills_for_prompt(&[]).is_empty());
+
+        // Without the read tool the skills section is omitted entirely.
+        let without_read = build_system_prompt(&BuildSystemPromptOptions {
+            selected_tools: tools(&["bash"]),
+            skills: vec![alpha],
+            ..base_opts()
+        });
+        assert!(!without_read.contains("<available_skills>"));
     }
 }
