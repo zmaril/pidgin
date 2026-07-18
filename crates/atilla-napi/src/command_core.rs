@@ -45,15 +45,14 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::json;
 
-use atilla_ai::seams::subprocess::{CommandOutput, CommandRequest};
+use atilla_ai::seams::subprocess::CommandOutput;
 use atilla_coding::core::command_flow::{CommandFlowMachine, CommandStep};
 use atilla_coding::core::package_manager::{
-    git_dependency_install, npm_install, npm_uninstall, parse_npm_view_version, GitCloneMachine,
-    GitEnsureRefMachine, GitHasUpdateMachine, GitLocalUpdateTargetMachine, GitRemoteHeadMachine,
-    GlobalNpmRootMachine, InstallScope, PackageManagerConfig, PnpmGlobalListMachine,
-    NETWORK_TIMEOUT_MS,
+    git_dependency_install, npm_install, npm_uninstall, GitCloneMachine, GitEnsureRefMachine,
+    GitHasUpdateMachine, GitLocalUpdateTargetMachine, GitRemoteHeadMachine, GlobalNpmRootMachine,
+    InstallScope, PackageManagerConfig, PnpmGlobalListMachine,
 };
 
 /// JSON shape of the package-manager config the command argv depends on
@@ -80,8 +79,6 @@ struct ParamsJson {
     name: Option<String>,
     scope: Option<String>,
     package_name: Option<String>,
-    view_spec: Option<String>,
-    range: Option<String>,
     target_dir: Option<String>,
     repo: Option<String>,
     #[serde(rename = "ref")]
@@ -91,6 +88,11 @@ struct ParamsJson {
     #[serde(default)]
     has_package_json: bool,
     installed_path: Option<String>,
+    // Note: the `npm view` version probe (pi's getLatestNpmVersion) is
+    // deliberately not an op here. pi's parseSource expands version ranges into
+    // node-semver syntax (e.g. `>=1.0.0 <2.0.0-0`), which the machines'
+    // Cargo-style `semver::VersionReq` cannot parse; the shim keeps that method
+    // on pi's original rather than silently mis-select versions.
 }
 
 impl ParamsJson {
@@ -115,54 +117,6 @@ impl ParamsJson {
         field
             .cloned()
             .ok_or_else(|| Error::from_reason(format!("missing `{name}` for op")))
-    }
-}
-
-/// pi's `getLatestNpmVersion` command flow: plan a single
-/// `<npm> view <spec> version --json` capture (timed, pinned to `cwd`), then
-/// parse the reported version out of the JSON. `Done` carries the version string
-/// or `null` (pi throws in that case; the shim maps `null` back to a throw).
-struct NpmViewMachine {
-    request: Option<CommandRequest>,
-    range: Option<String>,
-}
-
-impl NpmViewMachine {
-    fn new(cfg: &PackageManagerConfig, view_spec: &str, range: Option<String>) -> Self {
-        let sub_args = vec![
-            "view".to_string(),
-            view_spec.to_string(),
-            "version".to_string(),
-            "--json".to_string(),
-        ];
-        let request = cfg
-            .npm_command_request(&sub_args, Some(&cfg.cwd))
-            .with_timeout(NETWORK_TIMEOUT_MS);
-        Self {
-            request: Some(request),
-            range,
-        }
-    }
-}
-
-impl CommandFlowMachine for NpmViewMachine {
-    fn start(&mut self) -> CommandStep {
-        match self.request.take() {
-            Some(request) => CommandStep::Run { request },
-            None => CommandStep::Done {
-                result: Value::Null,
-            },
-        }
-    }
-
-    fn advance(&mut self, output: CommandOutput) -> CommandStep {
-        let result = parse_npm_view_version(&output.stdout, self.range.as_deref());
-        CommandStep::Done {
-            result: match result {
-                Some(version) => json!(version),
-                None => Value::Null,
-            },
-        }
     }
 }
 
@@ -193,11 +147,6 @@ fn build_machine(op: &str, params: &ParamsJson) -> Result<Box<dyn CommandFlowMac
             let cfg = params.config()?;
             let package_name = params.require(params.package_name.as_ref(), "packageName")?;
             Ok(Box::new(PnpmGlobalListMachine::new(&cfg, package_name)))
-        }
-        "npmView" => {
-            let cfg = params.config()?;
-            let view_spec = params.require(params.view_spec.as_ref(), "viewSpec")?;
-            Ok(Box::new(NpmViewMachine::new(&cfg, &view_spec, params.range.clone())))
         }
         "gitEnsureRef" => {
             let cfg = params.config()?;
