@@ -15,10 +15,18 @@
 //!   is streamed to the `on_stdout`/`on_stderr` callbacks concurrently using
 //!   reader [`std::thread`]s that pipe raw chunks back to the calling thread,
 //!   which invokes the (non-`Send`, borrowing) callbacks in order.
-//! - **No `AbortSignal`.** The contract drops pi's cooperative-cancellation
-//!   parameter, so the `aborted`-on-signal branches of `exec`/the cancellable
-//!   file operations are unreachable. The [`ExecutionErrorCode::Aborted`] and
-//!   [`FileErrorCode::Aborted`] codes remain part of the enum surface.
+//! - **Cooperative `AbortSignal`.** The contract carries pi's
+//!   `signal: Option<&AbortSignal>` (and `ShellExecOptions.abort_signal` for
+//!   `exec`) and checks it at pi's exact check points — the entry guard of
+//!   `read_text_file`/`read_text_lines`/`read_binary_file`/`write_file`/
+//!   `list_dir`/`exec`, plus `write_file`'s after-`mkdir` re-check, `list_dir`'s
+//!   per-entry re-check, and `exec`'s after-run re-check — returning the stable
+//!   [`FileErrorCode::Aborted`]/[`ExecutionErrorCode::Aborted`] codes. The
+//!   signal is cooperative (an `Arc<AtomicBool>`): it is *not* wired to real
+//!   syscall/process cancellation (pi's `readFile({ signal })` /
+//!   `addEventListener("abort", killProcessTree)`); those async-interrupt hooks
+//!   have no analog in the eager, synchronous port, so `read_text_lines`'s
+//!   mid-stream re-checks collapse into the entry guard.
 //! - **No callback errors.** pi's stream callbacks may `throw`, producing a
 //!   `callback_error`. The Rust callback type is `FnMut(&str)` with no error
 //!   channel, so that branch cannot occur; the [`ExecutionErrorCode::CallbackError`]
@@ -43,9 +51,12 @@ use std::sync::mpsc::{self, RecvTimeoutError};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use atilla_ai::seams::AbortSignal;
+
 use super::{
-    ExecutionError, ExecutionErrorCode, FileContent, FileError, FileErrorCode, FileInfo, FileKind,
-    FileSystem, Shell, ShellExecOptions, ShellExecOutput,
+    aborted_execution_error, aborted_file_error, ExecutionError, ExecutionErrorCode, FileContent,
+    FileError, FileErrorCode, FileInfo, FileKind, FileSystem, Shell, ShellExecOptions,
+    ShellExecOutput,
 };
 
 /// Largest timeout accepted, mirroring pi's `MAX_TIMEOUT_MS` (`2**31 - 1`).
@@ -471,16 +482,31 @@ impl FileSystem for NodeExecutionEnv {
         self.cwd.clone()
     }
 
-    fn absolute_path(&self, path: &str) -> Result<String, FileError> {
+    fn absolute_path(
+        &self,
+        path: &str,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         Ok(self.resolved(path))
     }
 
-    fn join_path(&self, parts: &[&str]) -> Result<String, FileError> {
+    fn join_path(
+        &self,
+        parts: &[&str],
+        _signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         Ok(join_parts(parts))
     }
 
-    fn read_text_file(&self, path: &str) -> Result<String, FileError> {
+    fn read_text_file(
+        &self,
+        path: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         let resolved = self.resolved(path);
+        if let Some(error) = aborted_file_error(signal, &resolved) {
+            return Err(error);
+        }
         match fs::read(&resolved) {
             Ok(bytes) => Ok(String::from_utf8_lossy(&bytes).into_owned()),
             Err(error) => Err(to_file_error(&error, Some(&resolved))),
@@ -491,8 +517,12 @@ impl FileSystem for NodeExecutionEnv {
         &self,
         path: &str,
         max_lines: Option<usize>,
+        signal: Option<&AbortSignal>,
     ) -> Result<Vec<String>, FileError> {
         let resolved = self.resolved(path);
+        if let Some(error) = aborted_file_error(signal, &resolved) {
+            return Err(error);
+        }
         if max_lines == Some(0) {
             return Ok(Vec::new());
         }
@@ -514,21 +544,45 @@ impl FileSystem for NodeExecutionEnv {
         Ok(lines)
     }
 
-    fn read_binary_file(&self, path: &str) -> Result<Vec<u8>, FileError> {
+    fn read_binary_file(
+        &self,
+        path: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<Vec<u8>, FileError> {
         let resolved = self.resolved(path);
+        if let Some(error) = aborted_file_error(signal, &resolved) {
+            return Err(error);
+        }
         fs::read(&resolved).map_err(|error| to_file_error(&error, Some(&resolved)))
     }
 
-    fn write_file(&self, path: &str, content: FileContent<'_>) -> Result<(), FileError> {
+    fn write_file(
+        &self,
+        path: &str,
+        content: FileContent<'_>,
+        signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError> {
         let resolved = self.resolved(path);
+        if let Some(error) = aborted_file_error(signal, &resolved) {
+            return Err(error);
+        }
         if let Some(parent) = Path::new(&resolved).parent() {
             fs::create_dir_all(parent).map_err(|error| to_file_error(&error, Some(&resolved)))?;
+        }
+        // pi re-checks the signal after the parent `mkdir`, before the write.
+        if let Some(error) = aborted_file_error(signal, &resolved) {
+            return Err(error);
         }
         fs::write(&resolved, content.as_bytes())
             .map_err(|error| to_file_error(&error, Some(&resolved)))
     }
 
-    fn append_file(&self, path: &str, content: FileContent<'_>) -> Result<(), FileError> {
+    fn append_file(
+        &self,
+        path: &str,
+        content: FileContent<'_>,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError> {
         let resolved = self.resolved(path);
         if let Some(parent) = Path::new(&resolved).parent() {
             fs::create_dir_all(parent).map_err(|error| to_file_error(&error, Some(&resolved)))?;
@@ -542,19 +596,30 @@ impl FileSystem for NodeExecutionEnv {
             .map_err(|error| to_file_error(&error, Some(&resolved)))
     }
 
-    fn file_info(&self, path: &str) -> Result<FileInfo, FileError> {
+    fn file_info(&self, path: &str, _signal: Option<&AbortSignal>) -> Result<FileInfo, FileError> {
         let resolved = self.resolved(path);
         let metadata = fs::symlink_metadata(&resolved)
             .map_err(|error| to_file_error(&error, Some(&resolved)))?;
         file_info_from_stats(&resolved, &metadata)
     }
 
-    fn list_dir(&self, path: &str) -> Result<Vec<FileInfo>, FileError> {
+    fn list_dir(
+        &self,
+        path: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<Vec<FileInfo>, FileError> {
         let resolved = self.resolved(path);
+        if let Some(error) = aborted_file_error(signal, &resolved) {
+            return Err(error);
+        }
         let entries =
             fs::read_dir(&resolved).map_err(|error| to_file_error(&error, Some(&resolved)))?;
         let mut infos = Vec::new();
         for entry in entries {
+            // pi re-checks the signal on each directory entry.
+            if let Some(error) = aborted_file_error(signal, &resolved) {
+                return Err(error);
+            }
             let entry = entry.map_err(|error| to_file_error(&error, Some(&resolved)))?;
             let entry_path = resolve_path(&resolved, &entry.file_name().to_string_lossy());
             let metadata = fs::symlink_metadata(&entry_path)
@@ -566,22 +631,31 @@ impl FileSystem for NodeExecutionEnv {
         Ok(infos)
     }
 
-    fn canonical_path(&self, path: &str) -> Result<String, FileError> {
+    fn canonical_path(
+        &self,
+        path: &str,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         let resolved = self.resolved(path);
         fs::canonicalize(&resolved)
             .map(|canonical| canonical.to_string_lossy().into_owned())
             .map_err(|error| to_file_error(&error, Some(&resolved)))
     }
 
-    fn exists(&self, path: &str) -> Result<bool, FileError> {
-        match self.file_info(path) {
+    fn exists(&self, path: &str, signal: Option<&AbortSignal>) -> Result<bool, FileError> {
+        match self.file_info(path, signal) {
             Ok(_) => Ok(true),
             Err(error) if error.code == FileErrorCode::NotFound => Ok(false),
             Err(error) => Err(error),
         }
     }
 
-    fn create_dir(&self, path: &str, recursive: bool) -> Result<(), FileError> {
+    fn create_dir(
+        &self,
+        path: &str,
+        recursive: bool,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError> {
         let resolved = self.resolved(path);
         let result = if recursive {
             fs::create_dir_all(&resolved)
@@ -591,7 +665,13 @@ impl FileSystem for NodeExecutionEnv {
         result.map_err(|error| to_file_error(&error, Some(&resolved)))
     }
 
-    fn remove(&self, path: &str, recursive: bool, force: bool) -> Result<(), FileError> {
+    fn remove(
+        &self,
+        path: &str,
+        recursive: bool,
+        force: bool,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError> {
         let resolved = self.resolved(path);
         let metadata = match fs::symlink_metadata(&resolved) {
             Ok(metadata) => metadata,
@@ -614,7 +694,11 @@ impl FileSystem for NodeExecutionEnv {
         }
     }
 
-    fn create_temp_dir(&self, prefix: &str) -> Result<String, FileError> {
+    fn create_temp_dir(
+        &self,
+        prefix: &str,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         let base = tmpdir();
         let base = base.trim_end_matches('/');
         for _ in 0..1000 {
@@ -631,8 +715,13 @@ impl FileSystem for NodeExecutionEnv {
         ))
     }
 
-    fn create_temp_file(&self, prefix: &str, suffix: &str) -> Result<String, FileError> {
-        let dir = self.create_temp_dir("tmp-")?;
+    fn create_temp_file(
+        &self,
+        prefix: &str,
+        suffix: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
+        let dir = self.create_temp_dir("tmp-", signal)?;
         let file_path = format!(
             "{}/{prefix}{}{suffix}",
             dir.trim_end_matches('/'),
@@ -651,6 +740,10 @@ impl Shell for NodeExecutionEnv {
         command: &str,
         mut options: ShellExecOptions<'_>,
     ) -> Result<ShellExecOutput, ExecutionError> {
+        // pi's `exec` entry guard (`options?.abortSignal?.aborted`).
+        if let Some(error) = aborted_execution_error(options.abort_signal) {
+            return Err(error);
+        }
         let timeout_ms = resolve_timeout_ms(options.timeout)?;
         let cwd = match &options.cwd {
             Some(cwd) => resolve_path(&self.cwd, cwd),
@@ -756,6 +849,13 @@ impl Shell for NodeExecutionEnv {
                 ExecutionErrorCode::Timeout,
                 format!("timeout:{seconds}"),
             ));
+        }
+
+        // pi's post-run guard: after the process settles (and after the timeout
+        // branch), a tripped signal yields an `aborted` error. The signal is
+        // cooperative here — unlike pi it is not wired to kill the child mid-run.
+        if let Some(error) = aborted_execution_error(options.abort_signal) {
+            return Err(error);
         }
 
         let exit_code = match status {

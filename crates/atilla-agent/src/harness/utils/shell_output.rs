@@ -112,7 +112,9 @@ impl Capture<'_> {
             return;
         }
         let path = self.full_output_path.clone().unwrap();
-        if let Err(error) = self.env.append_file(&path, FileContent::Text(text)) {
+        // This consumer carries no abort signal (see the module divergence note),
+        // so `None` is passed where pi threads `options?.abortSignal`.
+        if let Err(error) = self.env.append_file(&path, FileContent::Text(text), None) {
             self.write_error = Some(file_error_to_execution_error(error.message));
         }
     }
@@ -126,7 +128,7 @@ impl Capture<'_> {
         {
             return;
         }
-        let temp_file = match self.env.create_temp_file("bash-", ".log") {
+        let temp_file = match self.env.create_temp_file("bash-", ".log", None) {
             Ok(path) => path,
             Err(error) => {
                 self.write_error = Some(file_error_to_execution_error(error.message));
@@ -134,9 +136,9 @@ impl Capture<'_> {
             }
         };
         self.full_output_path = Some(temp_file.clone());
-        if let Err(error) = self
-            .env
-            .append_file(&temp_file, FileContent::Text(initial_content))
+        if let Err(error) =
+            self.env
+                .append_file(&temp_file, FileContent::Text(initial_content), None)
         {
             self.write_error = Some(file_error_to_execution_error(error.message));
         }
@@ -201,6 +203,7 @@ pub fn execute_shell_with_capture(
         cwd,
         env: env_vars,
         timeout,
+        abort_signal: None,
         on_stdout: Some(Box::new(move |chunk: &str| {
             stdout_capture.borrow_mut().on_chunk(chunk)
         })),
@@ -311,7 +314,7 @@ mod tests {
         let result = execute_shell_with_capture(&env, "yes line | head -n 15000", None).unwrap();
         assert!(result.truncated);
         let full_path = result.full_output_path.clone().expect("spill file created");
-        let full_output = env.read_text_file(&full_path).unwrap();
+        let full_output = env.read_text_file(&full_path, None).unwrap();
         assert!(full_output.split('\n').count() > 10_000);
         assert!(result.output.len() < full_output.len());
     }
