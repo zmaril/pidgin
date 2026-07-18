@@ -195,6 +195,7 @@ mod tests {
     // decision precedence directly against stub seams, which pi's suite does not
     // pin but which keep the port self-contained and regression-guarded.
     use super::*;
+    use crate::core::test_support::{s, scratch_dir};
     use std::cell::RefCell;
     use std::path::{Path, PathBuf};
 
@@ -223,24 +224,6 @@ mod tests {
         }
     }
 
-    fn scratch_dir(tag: &str) -> PathBuf {
-        let base = std::env::temp_dir().join(format!(
-            "atilla-project-trust-{}-{}-{}",
-            std::process::id(),
-            tag,
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&base).unwrap();
-        base
-    }
-
-    fn s(path: &Path) -> String {
-        path.to_string_lossy().into_owned()
-    }
-
     /// A project directory that carries a trust-requiring resource (`.pi/settings.json`).
     fn trust_requiring_project(temp: &Path) -> PathBuf {
         let cwd = temp.join("project");
@@ -258,19 +241,64 @@ mod tests {
         }
     }
 
+    /// Baseline resolve options: no override, no policy, no extensions, no error
+    /// sink. Each test overrides only the fields it exercises via struct-update
+    /// syntax (`..base_opts(..)`), so the option literal is not copy-pasted per
+    /// case.
+    fn base_opts<'a>(
+        cwd: &'a str,
+        trust_store: &'a ProjectTrustStore,
+        context: &'a dyn ProjectTrustContext,
+    ) -> ResolveProjectTrustedOptions<'a> {
+        ResolveProjectTrustedOptions {
+            cwd,
+            trust_store,
+            trust_override: None,
+            default_project_trust: None,
+            extensions: None,
+            context,
+            on_extension_error: None,
+        }
+    }
+
+    /// Stand up a trust-requiring project directory, its persistent store, and a
+    /// stub UI context in one throwaway temp root. Returns `(temp, cwd, store,
+    /// ctx)`; the test removes `temp` when done.
+    fn trust_fixture(
+        tag: &str,
+        has_ui: bool,
+        pick: Option<&str>,
+    ) -> (PathBuf, PathBuf, ProjectTrustStore, StubContext) {
+        let temp = scratch_dir(tag);
+        let cwd = trust_requiring_project(&temp);
+        let store = ProjectTrustStore::new(&s(&temp.join("agent")));
+        let ctx = context(has_ui, pick);
+        (temp, cwd, store, ctx)
+    }
+
+    /// Resolve trust for `cwd` under an explicit `default_project_trust` policy
+    /// (no override, no extensions) — the shape most policy tests exercise.
+    fn resolve_with_policy(
+        cwd: &str,
+        store: &ProjectTrustStore,
+        ctx: &dyn ProjectTrustContext,
+        policy: DefaultProjectTrust,
+    ) -> bool {
+        let opts = ResolveProjectTrustedOptions {
+            default_project_trust: Some(policy),
+            ..base_opts(cwd, store, ctx)
+        };
+        resolve_project_trusted(&opts).unwrap()
+    }
+
     #[test]
     fn override_short_circuits_everything() {
         let temp = scratch_dir("override");
         let store = ProjectTrustStore::new(&s(&temp.join("agent")));
         let ctx = context(false, None);
         let opts = ResolveProjectTrustedOptions {
-            cwd: "/nonexistent/path/xyz",
-            trust_store: &store,
             trust_override: Some(true),
-            default_project_trust: None,
-            extensions: None,
-            context: &ctx,
-            on_extension_error: None,
+            ..base_opts("/nonexistent/path/xyz", &store, &ctx)
         };
         assert!(resolve_project_trusted(&opts).unwrap());
         std::fs::remove_dir_all(&temp).ok();
@@ -283,25 +311,15 @@ mod tests {
         std::fs::create_dir_all(&bare).unwrap();
         let store = ProjectTrustStore::new(&s(&temp.join("agent")));
         let ctx = context(false, None);
-        let opts = ResolveProjectTrustedOptions {
-            cwd: &s(&bare),
-            trust_store: &store,
-            trust_override: None,
-            default_project_trust: None,
-            extensions: None,
-            context: &ctx,
-            on_extension_error: None,
-        };
+        let bare_cwd = s(&bare);
+        let opts = base_opts(&bare_cwd, &store, &ctx);
         assert!(resolve_project_trusted(&opts).unwrap());
         std::fs::remove_dir_all(&temp).ok();
     }
 
     #[test]
     fn extension_decision_is_honored_and_can_be_remembered() {
-        let temp = scratch_dir("ext");
-        let cwd = trust_requiring_project(&temp);
-        let store = ProjectTrustStore::new(&s(&temp.join("agent")));
-        let ctx = context(false, None);
+        let (temp, cwd, store, ctx) = trust_fixture("ext", false, None);
         let extensions = StubExtensions(ProjectTrustExtensionOutcome {
             result: Some(ProjectTrustExtensionResult {
                 trusted: true,
@@ -309,27 +327,20 @@ mod tests {
             }),
             errors: vec![],
         });
+        let cwd_str = s(&cwd);
         let opts = ResolveProjectTrustedOptions {
-            cwd: &s(&cwd),
-            trust_store: &store,
-            trust_override: None,
-            default_project_trust: None,
             extensions: Some(&extensions),
-            context: &ctx,
-            on_extension_error: None,
+            ..base_opts(&cwd_str, &store, &ctx)
         };
         assert!(resolve_project_trusted(&opts).unwrap());
         // remember == true persisted the decision.
-        assert_eq!(store.get(&s(&cwd)).unwrap(), Some(true));
+        assert_eq!(store.get(&cwd_str).unwrap(), Some(true));
         std::fs::remove_dir_all(&temp).ok();
     }
 
     #[test]
     fn extension_errors_are_forwarded_to_the_sink() {
-        let temp = scratch_dir("exterr");
-        let cwd = trust_requiring_project(&temp);
-        let store = ProjectTrustStore::new(&s(&temp.join("agent")));
-        let ctx = context(false, None);
+        let (temp, cwd, store, ctx) = trust_fixture("exterr", false, None);
         let extensions = StubExtensions(ProjectTrustExtensionOutcome {
             result: None,
             errors: vec![ProjectTrustExtensionError {
@@ -339,14 +350,12 @@ mod tests {
         });
         let messages = RefCell::new(Vec::new());
         let sink = |message: &str| messages.borrow_mut().push(message.to_string());
+        let cwd_str = s(&cwd);
         let opts = ResolveProjectTrustedOptions {
-            cwd: &s(&cwd),
-            trust_store: &store,
-            trust_override: None,
             default_project_trust: Some(DefaultProjectTrust::Never),
             extensions: Some(&extensions),
-            context: &ctx,
             on_extension_error: Some(&sink),
+            ..base_opts(&cwd_str, &store, &ctx)
         };
         // Undecided extension -> falls through to default policy (Never).
         assert!(!resolve_project_trusted(&opts).unwrap());
@@ -359,84 +368,56 @@ mod tests {
 
     #[test]
     fn stored_decision_beats_default_policy() {
-        let temp = scratch_dir("stored");
-        let cwd = trust_requiring_project(&temp);
-        let store = ProjectTrustStore::new(&s(&temp.join("agent")));
+        let (temp, cwd, store, ctx) = trust_fixture("stored", true, Some("Trust"));
         store.set(&s(&cwd), Some(false)).unwrap();
-        let ctx = context(true, Some("Trust"));
-        let opts = ResolveProjectTrustedOptions {
-            cwd: &s(&cwd),
-            trust_store: &store,
-            trust_override: None,
-            default_project_trust: Some(DefaultProjectTrust::Always),
-            extensions: None,
-            context: &ctx,
-            on_extension_error: None,
-        };
-        assert!(!resolve_project_trusted(&opts).unwrap());
+        // A stored `false` decision beats the `Always` default policy.
+        assert!(!resolve_with_policy(
+            &s(&cwd),
+            &store,
+            &ctx,
+            DefaultProjectTrust::Always
+        ));
         std::fs::remove_dir_all(&temp).ok();
     }
 
     #[test]
     fn default_policy_applies_when_no_decision_recorded() {
-        let temp = scratch_dir("policy");
-        let cwd = trust_requiring_project(&temp);
-        let store = ProjectTrustStore::new(&s(&temp.join("agent")));
-        let ctx = context(false, None);
+        let (temp, cwd, store, ctx) = trust_fixture("policy", false, None);
 
         for (policy, expected) in [
             (DefaultProjectTrust::Always, true),
             (DefaultProjectTrust::Never, false),
         ] {
-            let opts = ResolveProjectTrustedOptions {
-                cwd: &s(&cwd),
-                trust_store: &store,
-                trust_override: None,
-                default_project_trust: Some(policy),
-                extensions: None,
-                context: &ctx,
-                on_extension_error: None,
-            };
-            assert_eq!(resolve_project_trusted(&opts).unwrap(), expected);
+            assert_eq!(
+                resolve_with_policy(&s(&cwd), &store, &ctx, policy),
+                expected
+            );
         }
         std::fs::remove_dir_all(&temp).ok();
     }
 
     #[test]
     fn ask_without_ui_defaults_to_untrusted() {
-        let temp = scratch_dir("noui");
-        let cwd = trust_requiring_project(&temp);
-        let store = ProjectTrustStore::new(&s(&temp.join("agent")));
-        let ctx = context(false, None);
-        let opts = ResolveProjectTrustedOptions {
-            cwd: &s(&cwd),
-            trust_store: &store,
-            trust_override: None,
-            default_project_trust: Some(DefaultProjectTrust::Ask),
-            extensions: None,
-            context: &ctx,
-            on_extension_error: None,
-        };
-        assert!(!resolve_project_trusted(&opts).unwrap());
+        let (temp, cwd, store, ctx) = trust_fixture("noui", false, None);
+        // `Ask` with no UI available cannot prompt, so it resolves to untrusted.
+        assert!(!resolve_with_policy(
+            &s(&cwd),
+            &store,
+            &ctx,
+            DefaultProjectTrust::Ask
+        ));
         std::fs::remove_dir_all(&temp).ok();
     }
 
     #[test]
     fn ask_with_ui_prompts_and_persists_selection() {
-        let temp = scratch_dir("prompt");
-        let cwd = trust_requiring_project(&temp);
-        let store = ProjectTrustStore::new(&s(&temp.join("agent")));
-        let ctx = context(true, Some("Trust"));
-        let opts = ResolveProjectTrustedOptions {
-            cwd: &s(&cwd),
-            trust_store: &store,
-            trust_override: None,
-            default_project_trust: Some(DefaultProjectTrust::Ask),
-            extensions: None,
-            context: &ctx,
-            on_extension_error: None,
-        };
-        assert!(resolve_project_trusted(&opts).unwrap());
+        let (temp, cwd, store, ctx) = trust_fixture("prompt", true, Some("Trust"));
+        assert!(resolve_with_policy(
+            &s(&cwd),
+            &store,
+            &ctx,
+            DefaultProjectTrust::Ask
+        ));
         // The "Trust" option persisted a positive decision.
         assert_eq!(store.get(&s(&cwd)).unwrap(), Some(true));
         // The prompt offered the session-only variants.
@@ -450,20 +431,14 @@ mod tests {
 
     #[test]
     fn ask_with_ui_dismissed_defaults_to_untrusted() {
-        let temp = scratch_dir("dismiss");
-        let cwd = trust_requiring_project(&temp);
-        let store = ProjectTrustStore::new(&s(&temp.join("agent")));
-        let ctx = context(true, None);
-        let opts = ResolveProjectTrustedOptions {
-            cwd: &s(&cwd),
-            trust_store: &store,
-            trust_override: None,
-            default_project_trust: Some(DefaultProjectTrust::Ask),
-            extensions: None,
-            context: &ctx,
-            on_extension_error: None,
-        };
-        assert!(!resolve_project_trusted(&opts).unwrap());
+        let (temp, cwd, store, ctx) = trust_fixture("dismiss", true, None);
+        // `Ask` with a UI that dismisses the prompt resolves to untrusted.
+        assert!(!resolve_with_policy(
+            &s(&cwd),
+            &store,
+            &ctx,
+            DefaultProjectTrust::Ask
+        ));
         std::fs::remove_dir_all(&temp).ok();
     }
 }

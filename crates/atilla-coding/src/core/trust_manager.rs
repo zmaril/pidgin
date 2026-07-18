@@ -371,24 +371,7 @@ impl ProjectTrustStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn scratch_dir(tag: &str) -> PathBuf {
-        let base = std::env::temp_dir().join(format!(
-            "atilla-trust-{}-{}-{}",
-            std::process::id(),
-            tag,
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&base).unwrap();
-        base
-    }
-
-    fn s(path: &Path) -> String {
-        path.to_string_lossy().into_owned()
-    }
+    use crate::core::test_support::{s, scratch_dir};
 
     #[test]
     fn stores_decisions_and_inherits_from_parent_directories() {

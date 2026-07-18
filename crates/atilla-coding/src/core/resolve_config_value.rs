@@ -403,6 +403,28 @@ mod tests {
             .collect()
     }
 
+    /// Stand up an isolated counter file for a command-execution test. Returns
+    /// the scratch dir, the counter's path, and a shell-safe rendering of that
+    /// path for interpolation into a `!command`.
+    fn counter_fixture(tag: &str) -> (std::path::PathBuf, std::path::PathBuf, String) {
+        let dir = std::env::temp_dir().join(format!(
+            "atilla-config-value-{}-{}",
+            std::process::id(),
+            tag
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let counter = dir.join("counter");
+        std::fs::write(&counter, "0").unwrap();
+        let path = counter.to_string_lossy().replace('"', "\\\"");
+        (dir, counter, path)
+    }
+
+    /// A `!command` that bumps the counter at `path`, then runs `tail`
+    /// (e.g. `echo value` for success or `exit 1` for failure).
+    fn increment_command(path: &str, tail: &str) -> String {
+        format!("!sh -c 'count=$(cat \"{path}\"); echo $((count + 1)) > \"{path}\"; {tail}'")
+    }
+
     #[test]
     fn resolves_literals_environment_templates_and_escapes() {
         let _guard = ENV_TEST_LOCK.lock().unwrap();
@@ -485,18 +507,8 @@ mod tests {
     fn caches_successful_and_failed_commands_until_cleared() {
         let _guard = ENV_TEST_LOCK.lock().unwrap();
         clear_config_value_cache();
-        let dir = std::env::temp_dir().join(format!(
-            "atilla-config-value-{}-{}",
-            std::process::id(),
-            "cache"
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        let counter = dir.join("counter");
-        std::fs::write(&counter, "0").unwrap();
-        let path = counter.to_string_lossy().replace('"', "\\\"");
-        let success = format!(
-            "!sh -c 'count=$(cat \"{path}\"); echo $((count + 1)) > \"{path}\"; echo value'"
-        );
+        let (dir, counter, path) = counter_fixture("cache");
+        let success = increment_command(&path, "echo value");
 
         assert_eq!(
             resolve_config_value(&success, None).as_deref(),
@@ -515,8 +527,7 @@ mod tests {
         );
         assert_eq!(std::fs::read_to_string(&counter).unwrap().trim(), "2");
 
-        let failure =
-            format!("!sh -c 'count=$(cat \"{path}\"); echo $((count + 1)) > \"{path}\"; exit 1'");
+        let failure = increment_command(&path, "exit 1");
         assert_eq!(resolve_config_value(&failure, None), None);
         assert_eq!(resolve_config_value(&failure, None), None);
         assert_eq!(std::fs::read_to_string(&counter).unwrap().trim(), "3");
@@ -545,18 +556,8 @@ mod tests {
     fn uncached_resolution_executes_a_command_on_every_call() {
         let _guard = ENV_TEST_LOCK.lock().unwrap();
         clear_config_value_cache();
-        let dir = std::env::temp_dir().join(format!(
-            "atilla-config-value-{}-{}",
-            std::process::id(),
-            "uncached"
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        let counter = dir.join("uncached-counter");
-        std::fs::write(&counter, "0").unwrap();
-        let path = counter.to_string_lossy().replace('"', "\\\"");
-        let command = format!(
-            "!sh -c 'count=$(cat \"{path}\"); echo $((count + 1)) > \"{path}\"; echo value'"
-        );
+        let (dir, counter, path) = counter_fixture("uncached");
+        let command = increment_command(&path, "echo value");
 
         assert_eq!(
             resolve_config_value_uncached(&command, None).as_deref(),

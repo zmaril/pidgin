@@ -13,3 +13,6 @@ pub mod radius;
 pub mod resolve_config_value;
 pub mod tools;
 pub mod trust_manager;
+
+#[cfg(test)]
+mod test_support;
