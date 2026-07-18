@@ -212,6 +212,57 @@ fn pre_aborted_signal_yields_aborted_error() {
     }
 }
 
+/// Clock bridge reference proof (notes/seam-bridges.md Bridge 1): a
+/// JS-injectable `now` reaches the faux output timestamp through the Clock seam.
+///
+/// The napi layer will hold a shared [`FakeClock`] alongside the provider and
+/// expose `setNowMs`; this proves the same handle controls the `now` Rust reads
+/// on both the empty-queue and aborted message paths, including after a mutation
+/// performed through the shared handle after construction.
+#[test]
+fn injected_clock_controls_faux_timestamp() {
+    const PINNED_MS: i64 = 1_700_000_000_123;
+    const NEXT_MS: i64 = 1_700_000_000_456;
+
+    let (provider, clock) = FauxProvider::with_fake_clock(RegisterFauxProviderOptions {
+        api: Some("faux".to_string()),
+        provider: Some("faux".to_string()),
+        ..RegisterFauxProviderOptions::default()
+    });
+    let model = provider.get_model(None).unwrap();
+    let context = Context {
+        messages: vec![user_message("hi", 0)],
+        ..Context::default()
+    };
+
+    // Empty-queue path: no responses queued, so the error message is stamped
+    // unconditionally from the clock's `now`.
+    clock.set_now_ms(PINNED_MS);
+    let result = provider.stream(&model, &context, None, None);
+    assert_eq!(result.message.stop_reason, StopReason::Error);
+    assert_eq!(result.message.timestamp, PINNED_MS);
+
+    // Mutating the shared handle after construction is reflected on the next
+    // read — the napi layer's `setNowMs` really controls Rust's clock reads.
+    clock.set_now_ms(NEXT_MS);
+    let result = provider.stream(&model, &context, None, None);
+    assert_eq!(result.message.timestamp, NEXT_MS);
+
+    // Aborted path: a queued response plus a pre-aborted signal yields an aborted
+    // message stamped from the same shared clock.
+    clock.set_now_ms(PINNED_MS);
+    provider.set_responses([faux_assistant_message(
+        vec![faux_text("answer")],
+        FauxAssistantOptions::default(),
+        PINNED_MS,
+    )
+    .into()]);
+    let signal = AbortSignal::aborted();
+    let result = provider.stream(&model, &context, None, Some(&signal));
+    assert_eq!(result.message.stop_reason, StopReason::Aborted);
+    assert_eq!(result.message.timestamp, PINNED_MS);
+}
+
 #[test]
 fn session_cache_accounts_prefix_on_second_call() {
     // First call with a session id writes the whole prompt to cache; the second
