@@ -1,0 +1,4262 @@
+[
+	{
+		"input": "\u0000",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+space"
+	},
+	{
+		"input": "\u0001",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+a"
+	},
+	{
+		"input": "\u0002",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+b"
+	},
+	{
+		"input": "\u0003",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u0004",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+d"
+	},
+	{
+		"input": "\u0005",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+e"
+	},
+	{
+		"input": "\u0006",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+f"
+	},
+	{
+		"input": "\u0007",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+g"
+	},
+	{
+		"input": "\b",
+		"kitty": false,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "\t",
+		"kitty": false,
+		"wt": false,
+		"expected": "tab"
+	},
+	{
+		"input": "\n",
+		"kitty": false,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u000b",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+k"
+	},
+	{
+		"input": "\f",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+l"
+	},
+	{
+		"input": "\r",
+		"kitty": false,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u000e",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+n"
+	},
+	{
+		"input": "\u000f",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+o"
+	},
+	{
+		"input": "\u0010",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+p"
+	},
+	{
+		"input": "\u0011",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+q"
+	},
+	{
+		"input": "\u0012",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+r"
+	},
+	{
+		"input": "\u0013",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+s"
+	},
+	{
+		"input": "\u0014",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+t"
+	},
+	{
+		"input": "\u0015",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+u"
+	},
+	{
+		"input": "\u0016",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+v"
+	},
+	{
+		"input": "\u0017",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+w"
+	},
+	{
+		"input": "\u0018",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+x"
+	},
+	{
+		"input": "\u0019",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+y"
+	},
+	{
+		"input": "\u001a",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+z"
+	},
+	{
+		"input": "\u001b",
+		"kitty": false,
+		"wt": false,
+		"expected": "escape"
+	},
+	{
+		"input": "\u001c",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+\\"
+	},
+	{
+		"input": "\u001d",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+]"
+	},
+	{
+		"input": "\u001e",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001f",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+-"
+	},
+	{
+		"input": "",
+		"kitty": false,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "a",
+		"kitty": false,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "c",
+		"kitty": false,
+		"wt": false,
+		"expected": "c"
+	},
+	{
+		"input": "z",
+		"kitty": false,
+		"wt": false,
+		"expected": "z"
+	},
+	{
+		"input": "A",
+		"kitty": false,
+		"wt": false,
+		"expected": "A"
+	},
+	{
+		"input": "Z",
+		"kitty": false,
+		"wt": false,
+		"expected": "Z"
+	},
+	{
+		"input": "0",
+		"kitty": false,
+		"wt": false,
+		"expected": "0"
+	},
+	{
+		"input": "1",
+		"kitty": false,
+		"wt": false,
+		"expected": "1"
+	},
+	{
+		"input": "9",
+		"kitty": false,
+		"wt": false,
+		"expected": "9"
+	},
+	{
+		"input": "`",
+		"kitty": false,
+		"wt": false,
+		"expected": "`"
+	},
+	{
+		"input": "-",
+		"kitty": false,
+		"wt": false,
+		"expected": "-"
+	},
+	{
+		"input": "[",
+		"kitty": false,
+		"wt": false,
+		"expected": "["
+	},
+	{
+		"input": "]",
+		"kitty": false,
+		"wt": false,
+		"expected": "]"
+	},
+	{
+		"input": "\\",
+		"kitty": false,
+		"wt": false,
+		"expected": "\\"
+	},
+	{
+		"input": ";",
+		"kitty": false,
+		"wt": false,
+		"expected": ";"
+	},
+	{
+		"input": "/",
+		"kitty": false,
+		"wt": false,
+		"expected": "/"
+	},
+	{
+		"input": "_",
+		"kitty": false,
+		"wt": false,
+		"expected": "_"
+	},
+	{
+		"input": "+",
+		"kitty": false,
+		"wt": false,
+		"expected": "+"
+	},
+	{
+		"input": "~",
+		"kitty": false,
+		"wt": false,
+		"expected": "~"
+	},
+	{
+		"input": "<",
+		"kitty": false,
+		"wt": false,
+		"expected": "<"
+	},
+	{
+		"input": "?",
+		"kitty": false,
+		"wt": false,
+		"expected": "?"
+	},
+	{
+		"input": " ",
+		"kitty": false,
+		"wt": false,
+		"expected": "space"
+	},
+	{
+		"input": "\u001b\u001b",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+["
+	},
+	{
+		"input": "\u001b\r",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+enter"
+	},
+	{
+		"input": "\u001b\n",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+j"
+	},
+	{
+		"input": "\u001b ",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+space"
+	},
+	{
+		"input": "\u001b",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+backspace"
+	},
+	{
+		"input": "\u001b\b",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+backspace"
+	},
+	{
+		"input": "\u001bOM",
+		"kitty": false,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u001ba",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+a"
+	},
+	{
+		"input": "\u001bb",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+left"
+	},
+	{
+		"input": "\u001by",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+y"
+	},
+	{
+		"input": "\u001bz",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+z"
+	},
+	{
+		"input": "\u001b1",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+1"
+	},
+	{
+		"input": "\u001b,",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+,"
+	},
+	{
+		"input": "\u001b.",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+."
+	},
+	{
+		"input": "\u001bB",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+left"
+	},
+	{
+		"input": "\u001bF",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+right"
+	},
+	{
+		"input": "\u001bf",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+right"
+	},
+	{
+		"input": "\u001bp",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+up"
+	},
+	{
+		"input": "\u001bn",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+down"
+	},
+	{
+		"input": "\u001b\u0001",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+a"
+	},
+	{
+		"input": "\u001b\u0002",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+b"
+	},
+	{
+		"input": "\u001b\u0003",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+c"
+	},
+	{
+		"input": "\u001b\u0004",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+d"
+	},
+	{
+		"input": "\u001b\u001a",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+z"
+	},
+	{
+		"input": "\u001b\u001c",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+\\"
+	},
+	{
+		"input": "\u001b\u001d",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+]"
+	},
+	{
+		"input": "\u001b\u001f",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+-"
+	},
+	{
+		"input": "\u001b[A",
+		"kitty": false,
+		"wt": false,
+		"expected": "up"
+	},
+	{
+		"input": "\u001bOA",
+		"kitty": false,
+		"wt": false,
+		"expected": "up"
+	},
+	{
+		"input": "\u001b[B",
+		"kitty": false,
+		"wt": false,
+		"expected": "down"
+	},
+	{
+		"input": "\u001bOB",
+		"kitty": false,
+		"wt": false,
+		"expected": "down"
+	},
+	{
+		"input": "\u001b[C",
+		"kitty": false,
+		"wt": false,
+		"expected": "right"
+	},
+	{
+		"input": "\u001bOC",
+		"kitty": false,
+		"wt": false,
+		"expected": "right"
+	},
+	{
+		"input": "\u001b[D",
+		"kitty": false,
+		"wt": false,
+		"expected": "left"
+	},
+	{
+		"input": "\u001bOD",
+		"kitty": false,
+		"wt": false,
+		"expected": "left"
+	},
+	{
+		"input": "\u001bOH",
+		"kitty": false,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001bOF",
+		"kitty": false,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001b[H",
+		"kitty": false,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001b[F",
+		"kitty": false,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001b[E",
+		"kitty": false,
+		"wt": false,
+		"expected": "clear"
+	},
+	{
+		"input": "\u001bOP",
+		"kitty": false,
+		"wt": false,
+		"expected": "f1"
+	},
+	{
+		"input": "\u001bOQ",
+		"kitty": false,
+		"wt": false,
+		"expected": "f2"
+	},
+	{
+		"input": "\u001bOR",
+		"kitty": false,
+		"wt": false,
+		"expected": "f3"
+	},
+	{
+		"input": "\u001bOS",
+		"kitty": false,
+		"wt": false,
+		"expected": "f4"
+	},
+	{
+		"input": "\u001bOa",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+up"
+	},
+	{
+		"input": "\u001bOb",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+down"
+	},
+	{
+		"input": "\u001bOc",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+right"
+	},
+	{
+		"input": "\u001bOd",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+left"
+	},
+	{
+		"input": "\u001bOe",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+clear"
+	},
+	{
+		"input": "\u001b[1;2A",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+up"
+	},
+	{
+		"input": "\u001b[1;2B",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+down"
+	},
+	{
+		"input": "\u001b[1;2C",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+right"
+	},
+	{
+		"input": "\u001b[1;2D",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+left"
+	},
+	{
+		"input": "\u001b[1;2H",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+home"
+	},
+	{
+		"input": "\u001b[1;2F",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+end"
+	},
+	{
+		"input": "\u001b[1;3A",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+up"
+	},
+	{
+		"input": "\u001b[1;3B",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+down"
+	},
+	{
+		"input": "\u001b[1;3C",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+right"
+	},
+	{
+		"input": "\u001b[1;3D",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+left"
+	},
+	{
+		"input": "\u001b[1;3H",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+home"
+	},
+	{
+		"input": "\u001b[1;3F",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+end"
+	},
+	{
+		"input": "\u001b[1;5A",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+up"
+	},
+	{
+		"input": "\u001b[1;5B",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+down"
+	},
+	{
+		"input": "\u001b[1;5C",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+right"
+	},
+	{
+		"input": "\u001b[1;5D",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+left"
+	},
+	{
+		"input": "\u001b[1;5H",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+home"
+	},
+	{
+		"input": "\u001b[1;5F",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+end"
+	},
+	{
+		"input": "\u001b[1;3:2A",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+up"
+	},
+	{
+		"input": "\u001b[1~",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[2~",
+		"kitty": false,
+		"wt": false,
+		"expected": "insert"
+	},
+	{
+		"input": "\u001b[3~",
+		"kitty": false,
+		"wt": false,
+		"expected": "delete"
+	},
+	{
+		"input": "\u001b[4~",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[5~",
+		"kitty": false,
+		"wt": false,
+		"expected": "pageUp"
+	},
+	{
+		"input": "\u001b[6~",
+		"kitty": false,
+		"wt": false,
+		"expected": "pageDown"
+	},
+	{
+		"input": "\u001b[7~",
+		"kitty": false,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001b[8~",
+		"kitty": false,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001b[11~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f1"
+	},
+	{
+		"input": "\u001b[12~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f2"
+	},
+	{
+		"input": "\u001b[13~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f3"
+	},
+	{
+		"input": "\u001b[14~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f4"
+	},
+	{
+		"input": "\u001b[15~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f5"
+	},
+	{
+		"input": "\u001b[17~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f6"
+	},
+	{
+		"input": "\u001b[18~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f7"
+	},
+	{
+		"input": "\u001b[19~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f8"
+	},
+	{
+		"input": "\u001b[20~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f9"
+	},
+	{
+		"input": "\u001b[21~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f10"
+	},
+	{
+		"input": "\u001b[23~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f11"
+	},
+	{
+		"input": "\u001b[24~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f12"
+	},
+	{
+		"input": "\u001b[3;2~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+delete"
+	},
+	{
+		"input": "\u001b[5;2~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+pageUp"
+	},
+	{
+		"input": "\u001b[3;3~",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+delete"
+	},
+	{
+		"input": "\u001b[5;3~",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+pageUp"
+	},
+	{
+		"input": "\u001b[3;5~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+delete"
+	},
+	{
+		"input": "\u001b[5;5~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+pageUp"
+	},
+	{
+		"input": "\u001b[3;5:3~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+delete"
+	},
+	{
+		"input": "\u001b[[A",
+		"kitty": false,
+		"wt": false,
+		"expected": "f1"
+	},
+	{
+		"input": "\u001b[[B",
+		"kitty": false,
+		"wt": false,
+		"expected": "f2"
+	},
+	{
+		"input": "\u001b[[C",
+		"kitty": false,
+		"wt": false,
+		"expected": "f3"
+	},
+	{
+		"input": "\u001b[[D",
+		"kitty": false,
+		"wt": false,
+		"expected": "f4"
+	},
+	{
+		"input": "\u001b[[E",
+		"kitty": false,
+		"wt": false,
+		"expected": "f5"
+	},
+	{
+		"input": "\u001b[[5~",
+		"kitty": false,
+		"wt": false,
+		"expected": "pageUp"
+	},
+	{
+		"input": "\u001b[[6~",
+		"kitty": false,
+		"wt": false,
+		"expected": "pageDown"
+	},
+	{
+		"input": "\u001b[a",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+up"
+	},
+	{
+		"input": "\u001b[b",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+down"
+	},
+	{
+		"input": "\u001b[c",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+right"
+	},
+	{
+		"input": "\u001b[d",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+left"
+	},
+	{
+		"input": "\u001b[e",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+clear"
+	},
+	{
+		"input": "\u001b[2$",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+insert"
+	},
+	{
+		"input": "\u001b[2^",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+insert"
+	},
+	{
+		"input": "\u001b[3$",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+delete"
+	},
+	{
+		"input": "\u001b[3^",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+delete"
+	},
+	{
+		"input": "\u001b[5$",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+pageUp"
+	},
+	{
+		"input": "\u001b[5^",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+pageUp"
+	},
+	{
+		"input": "\u001b[6$",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+pageDown"
+	},
+	{
+		"input": "\u001b[6^",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+pageDown"
+	},
+	{
+		"input": "\u001b[7$",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+home"
+	},
+	{
+		"input": "\u001b[7^",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+home"
+	},
+	{
+		"input": "\u001b[8$",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+end"
+	},
+	{
+		"input": "\u001b[8^",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+end"
+	},
+	{
+		"input": "\u001b[Z",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+tab"
+	},
+	{
+		"input": "\u001b[97u",
+		"kitty": false,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[97;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+a"
+	},
+	{
+		"input": "\u001b[97;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+a"
+	},
+	{
+		"input": "\u001b[97;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+a"
+	},
+	{
+		"input": "\u001b[97;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[99u",
+		"kitty": false,
+		"wt": false,
+		"expected": "c"
+	},
+	{
+		"input": "\u001b[99;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+c"
+	},
+	{
+		"input": "\u001b[99;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[99;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+c"
+	},
+	{
+		"input": "\u001b[99;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[122u",
+		"kitty": false,
+		"wt": false,
+		"expected": "z"
+	},
+	{
+		"input": "\u001b[122;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+z"
+	},
+	{
+		"input": "\u001b[122;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+z"
+	},
+	{
+		"input": "\u001b[122;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+z"
+	},
+	{
+		"input": "\u001b[122;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[107u",
+		"kitty": false,
+		"wt": false,
+		"expected": "k"
+	},
+	{
+		"input": "\u001b[107;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+k"
+	},
+	{
+		"input": "\u001b[107;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+k"
+	},
+	{
+		"input": "\u001b[107;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+k"
+	},
+	{
+		"input": "\u001b[107;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[49u",
+		"kitty": false,
+		"wt": false,
+		"expected": "1"
+	},
+	{
+		"input": "\u001b[49;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+1"
+	},
+	{
+		"input": "\u001b[49;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+1"
+	},
+	{
+		"input": "\u001b[49;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+1"
+	},
+	{
+		"input": "\u001b[49;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[13u",
+		"kitty": false,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u001b[13;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\u001b[13;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+enter"
+	},
+	{
+		"input": "\u001b[13;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+enter"
+	},
+	{
+		"input": "\u001b[13;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[27u",
+		"kitty": false,
+		"wt": false,
+		"expected": "escape"
+	},
+	{
+		"input": "\u001b[27;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+escape"
+	},
+	{
+		"input": "\u001b[27;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+escape"
+	},
+	{
+		"input": "\u001b[27;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+escape"
+	},
+	{
+		"input": "\u001b[27;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "tab"
+	},
+	{
+		"input": "\u001b[9;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+tab"
+	},
+	{
+		"input": "\u001b[9;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+tab"
+	},
+	{
+		"input": "\u001b[9;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+tab"
+	},
+	{
+		"input": "\u001b[9;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[32u",
+		"kitty": false,
+		"wt": false,
+		"expected": "space"
+	},
+	{
+		"input": "\u001b[32;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+space"
+	},
+	{
+		"input": "\u001b[32;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+space"
+	},
+	{
+		"input": "\u001b[32;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+space"
+	},
+	{
+		"input": "\u001b[32;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[127u",
+		"kitty": false,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "\u001b[127;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+backspace"
+	},
+	{
+		"input": "\u001b[127;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+backspace"
+	},
+	{
+		"input": "\u001b[127;9u",
+		"kitty": false,
+		"wt": false,
+		"expected": "super+backspace"
+	},
+	{
+		"input": "\u001b[127;17u",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[97;1:1u",
+		"kitty": false,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[97;1:2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[97;1:3u",
+		"kitty": false,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[99;5:2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[99;5:3u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[1089::99;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[1074::100;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+d"
+	},
+	{
+		"input": "\u001b[1103::122;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+z"
+	},
+	{
+		"input": "\u001b[1079::112;6u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+ctrl+p"
+	},
+	{
+		"input": "\u001b[107;13u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+super+k"
+	},
+	{
+		"input": "\u001b[107;14u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+ctrl+super+k"
+	},
+	{
+		"input": "\u001b[99:67:99;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+c"
+	},
+	{
+		"input": "\u001b[1089::99;5:3u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[1089:1057:99;6:2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+ctrl+c"
+	},
+	{
+		"input": "\u001b[107::118;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+k"
+	},
+	{
+		"input": "\u001b[47::91;5u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+/"
+	},
+	{
+		"input": "\u001b[69;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+e"
+	},
+	{
+		"input": "\u001b[104;7u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+h"
+	},
+	{
+		"input": "\u001b[57399u",
+		"kitty": false,
+		"wt": false,
+		"expected": "0"
+	},
+	{
+		"input": "\u001b[57400u",
+		"kitty": false,
+		"wt": false,
+		"expected": "1"
+	},
+	{
+		"input": "\u001b[57401u",
+		"kitty": false,
+		"wt": false,
+		"expected": "2"
+	},
+	{
+		"input": "\u001b[57402u",
+		"kitty": false,
+		"wt": false,
+		"expected": "3"
+	},
+	{
+		"input": "\u001b[57403u",
+		"kitty": false,
+		"wt": false,
+		"expected": "4"
+	},
+	{
+		"input": "\u001b[57404u",
+		"kitty": false,
+		"wt": false,
+		"expected": "5"
+	},
+	{
+		"input": "\u001b[57405u",
+		"kitty": false,
+		"wt": false,
+		"expected": "6"
+	},
+	{
+		"input": "\u001b[57406u",
+		"kitty": false,
+		"wt": false,
+		"expected": "7"
+	},
+	{
+		"input": "\u001b[57407u",
+		"kitty": false,
+		"wt": false,
+		"expected": "8"
+	},
+	{
+		"input": "\u001b[57408u",
+		"kitty": false,
+		"wt": false,
+		"expected": "9"
+	},
+	{
+		"input": "\u001b[57409u",
+		"kitty": false,
+		"wt": false,
+		"expected": "."
+	},
+	{
+		"input": "\u001b[57410u",
+		"kitty": false,
+		"wt": false,
+		"expected": "/"
+	},
+	{
+		"input": "\u001b[57411u",
+		"kitty": false,
+		"wt": false,
+		"expected": "*"
+	},
+	{
+		"input": "\u001b[57412u",
+		"kitty": false,
+		"wt": false,
+		"expected": "-"
+	},
+	{
+		"input": "\u001b[57413u",
+		"kitty": false,
+		"wt": false,
+		"expected": "+"
+	},
+	{
+		"input": "\u001b[57414u",
+		"kitty": false,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u001b[57415u",
+		"kitty": false,
+		"wt": false,
+		"expected": "="
+	},
+	{
+		"input": "\u001b[57416u",
+		"kitty": false,
+		"wt": false,
+		"expected": ","
+	},
+	{
+		"input": "\u001b[57417u",
+		"kitty": false,
+		"wt": false,
+		"expected": "left"
+	},
+	{
+		"input": "\u001b[57418u",
+		"kitty": false,
+		"wt": false,
+		"expected": "right"
+	},
+	{
+		"input": "\u001b[57419u",
+		"kitty": false,
+		"wt": false,
+		"expected": "up"
+	},
+	{
+		"input": "\u001b[57420u",
+		"kitty": false,
+		"wt": false,
+		"expected": "down"
+	},
+	{
+		"input": "\u001b[57421u",
+		"kitty": false,
+		"wt": false,
+		"expected": "pageUp"
+	},
+	{
+		"input": "\u001b[57422u",
+		"kitty": false,
+		"wt": false,
+		"expected": "pageDown"
+	},
+	{
+		"input": "\u001b[57423u",
+		"kitty": false,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001b[57424u",
+		"kitty": false,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001b[57425u",
+		"kitty": false,
+		"wt": false,
+		"expected": "insert"
+	},
+	{
+		"input": "\u001b[57426u",
+		"kitty": false,
+		"wt": false,
+		"expected": "delete"
+	},
+	{
+		"input": "\u001b[57414;2u",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\u001b[27;5;99~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[27;5;100~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+d"
+	},
+	{
+		"input": "\u001b[27;5;122~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+z"
+	},
+	{
+		"input": "\u001b[27;5;13~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+enter"
+	},
+	{
+		"input": "\u001b[27;2;13~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\u001b[27;3;13~",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+enter"
+	},
+	{
+		"input": "\u001b[27;2;9~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+tab"
+	},
+	{
+		"input": "\u001b[27;5;9~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+tab"
+	},
+	{
+		"input": "\u001b[27;3;9~",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+tab"
+	},
+	{
+		"input": "\u001b[27;1;127~",
+		"kitty": false,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "\u001b[27;5;127~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+backspace"
+	},
+	{
+		"input": "\u001b[27;3;127~",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+backspace"
+	},
+	{
+		"input": "\u001b[27;1;27~",
+		"kitty": false,
+		"wt": false,
+		"expected": "escape"
+	},
+	{
+		"input": "\u001b[27;1;32~",
+		"kitty": false,
+		"wt": false,
+		"expected": "space"
+	},
+	{
+		"input": "\u001b[27;5;32~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+space"
+	},
+	{
+		"input": "\u001b[27;5;47~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+/"
+	},
+	{
+		"input": "\u001b[27;5;49~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+1"
+	},
+	{
+		"input": "\u001b[27;2;49~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+1"
+	},
+	{
+		"input": "\u001b[27;2;69~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+e"
+	},
+	{
+		"input": "\u001b[27;6;69~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+ctrl+e"
+	},
+	{
+		"input": "\u001b[27;7;104~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+h"
+	},
+	{
+		"input": "\u001b[27;2;196~",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "é",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "ä",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "ñ",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "中",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "あ",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "🙂",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "€",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[200~90:62:3F:A5\u001b[201~",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[200~foo:2Ubar\u001b[201~",
+		"kitty": false,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u0000",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+space"
+	},
+	{
+		"input": "\u0001",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+a"
+	},
+	{
+		"input": "\u0002",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+b"
+	},
+	{
+		"input": "\u0003",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u0004",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+d"
+	},
+	{
+		"input": "\u0005",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+e"
+	},
+	{
+		"input": "\u0006",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+f"
+	},
+	{
+		"input": "\u0007",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+g"
+	},
+	{
+		"input": "\b",
+		"kitty": true,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "\t",
+		"kitty": true,
+		"wt": false,
+		"expected": "tab"
+	},
+	{
+		"input": "\n",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\u000b",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+k"
+	},
+	{
+		"input": "\f",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+l"
+	},
+	{
+		"input": "\r",
+		"kitty": true,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u000e",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+n"
+	},
+	{
+		"input": "\u000f",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+o"
+	},
+	{
+		"input": "\u0010",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+p"
+	},
+	{
+		"input": "\u0011",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+q"
+	},
+	{
+		"input": "\u0012",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+r"
+	},
+	{
+		"input": "\u0013",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+s"
+	},
+	{
+		"input": "\u0014",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+t"
+	},
+	{
+		"input": "\u0015",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+u"
+	},
+	{
+		"input": "\u0016",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+v"
+	},
+	{
+		"input": "\u0017",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+w"
+	},
+	{
+		"input": "\u0018",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+x"
+	},
+	{
+		"input": "\u0019",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+y"
+	},
+	{
+		"input": "\u001a",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+z"
+	},
+	{
+		"input": "\u001b",
+		"kitty": true,
+		"wt": false,
+		"expected": "escape"
+	},
+	{
+		"input": "\u001c",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+\\"
+	},
+	{
+		"input": "\u001d",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+]"
+	},
+	{
+		"input": "\u001e",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001f",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+-"
+	},
+	{
+		"input": "",
+		"kitty": true,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "a",
+		"kitty": true,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "c",
+		"kitty": true,
+		"wt": false,
+		"expected": "c"
+	},
+	{
+		"input": "z",
+		"kitty": true,
+		"wt": false,
+		"expected": "z"
+	},
+	{
+		"input": "A",
+		"kitty": true,
+		"wt": false,
+		"expected": "A"
+	},
+	{
+		"input": "Z",
+		"kitty": true,
+		"wt": false,
+		"expected": "Z"
+	},
+	{
+		"input": "0",
+		"kitty": true,
+		"wt": false,
+		"expected": "0"
+	},
+	{
+		"input": "1",
+		"kitty": true,
+		"wt": false,
+		"expected": "1"
+	},
+	{
+		"input": "9",
+		"kitty": true,
+		"wt": false,
+		"expected": "9"
+	},
+	{
+		"input": "`",
+		"kitty": true,
+		"wt": false,
+		"expected": "`"
+	},
+	{
+		"input": "-",
+		"kitty": true,
+		"wt": false,
+		"expected": "-"
+	},
+	{
+		"input": "[",
+		"kitty": true,
+		"wt": false,
+		"expected": "["
+	},
+	{
+		"input": "]",
+		"kitty": true,
+		"wt": false,
+		"expected": "]"
+	},
+	{
+		"input": "\\",
+		"kitty": true,
+		"wt": false,
+		"expected": "\\"
+	},
+	{
+		"input": ";",
+		"kitty": true,
+		"wt": false,
+		"expected": ";"
+	},
+	{
+		"input": "/",
+		"kitty": true,
+		"wt": false,
+		"expected": "/"
+	},
+	{
+		"input": "_",
+		"kitty": true,
+		"wt": false,
+		"expected": "_"
+	},
+	{
+		"input": "+",
+		"kitty": true,
+		"wt": false,
+		"expected": "+"
+	},
+	{
+		"input": "~",
+		"kitty": true,
+		"wt": false,
+		"expected": "~"
+	},
+	{
+		"input": "<",
+		"kitty": true,
+		"wt": false,
+		"expected": "<"
+	},
+	{
+		"input": "?",
+		"kitty": true,
+		"wt": false,
+		"expected": "?"
+	},
+	{
+		"input": " ",
+		"kitty": true,
+		"wt": false,
+		"expected": "space"
+	},
+	{
+		"input": "\u001b\u001b",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+alt+["
+	},
+	{
+		"input": "\u001b\r",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\u001b\n",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b ",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+backspace"
+	},
+	{
+		"input": "\u001b\b",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+backspace"
+	},
+	{
+		"input": "\u001bOM",
+		"kitty": true,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u001ba",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001bb",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+left"
+	},
+	{
+		"input": "\u001by",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001bz",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b1",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b,",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b.",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001bB",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001bF",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001bf",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+right"
+	},
+	{
+		"input": "\u001bp",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+up"
+	},
+	{
+		"input": "\u001bn",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+down"
+	},
+	{
+		"input": "\u001b\u0001",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b\u0002",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b\u0003",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b\u0004",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b\u001a",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b\u001c",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+alt+\\"
+	},
+	{
+		"input": "\u001b\u001d",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+alt+]"
+	},
+	{
+		"input": "\u001b\u001f",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+alt+-"
+	},
+	{
+		"input": "\u001b[A",
+		"kitty": true,
+		"wt": false,
+		"expected": "up"
+	},
+	{
+		"input": "\u001bOA",
+		"kitty": true,
+		"wt": false,
+		"expected": "up"
+	},
+	{
+		"input": "\u001b[B",
+		"kitty": true,
+		"wt": false,
+		"expected": "down"
+	},
+	{
+		"input": "\u001bOB",
+		"kitty": true,
+		"wt": false,
+		"expected": "down"
+	},
+	{
+		"input": "\u001b[C",
+		"kitty": true,
+		"wt": false,
+		"expected": "right"
+	},
+	{
+		"input": "\u001bOC",
+		"kitty": true,
+		"wt": false,
+		"expected": "right"
+	},
+	{
+		"input": "\u001b[D",
+		"kitty": true,
+		"wt": false,
+		"expected": "left"
+	},
+	{
+		"input": "\u001bOD",
+		"kitty": true,
+		"wt": false,
+		"expected": "left"
+	},
+	{
+		"input": "\u001bOH",
+		"kitty": true,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001bOF",
+		"kitty": true,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001b[H",
+		"kitty": true,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001b[F",
+		"kitty": true,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001b[E",
+		"kitty": true,
+		"wt": false,
+		"expected": "clear"
+	},
+	{
+		"input": "\u001bOP",
+		"kitty": true,
+		"wt": false,
+		"expected": "f1"
+	},
+	{
+		"input": "\u001bOQ",
+		"kitty": true,
+		"wt": false,
+		"expected": "f2"
+	},
+	{
+		"input": "\u001bOR",
+		"kitty": true,
+		"wt": false,
+		"expected": "f3"
+	},
+	{
+		"input": "\u001bOS",
+		"kitty": true,
+		"wt": false,
+		"expected": "f4"
+	},
+	{
+		"input": "\u001bOa",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+up"
+	},
+	{
+		"input": "\u001bOb",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+down"
+	},
+	{
+		"input": "\u001bOc",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+right"
+	},
+	{
+		"input": "\u001bOd",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+left"
+	},
+	{
+		"input": "\u001bOe",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+clear"
+	},
+	{
+		"input": "\u001b[1;2A",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+up"
+	},
+	{
+		"input": "\u001b[1;2B",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+down"
+	},
+	{
+		"input": "\u001b[1;2C",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+right"
+	},
+	{
+		"input": "\u001b[1;2D",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+left"
+	},
+	{
+		"input": "\u001b[1;2H",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+home"
+	},
+	{
+		"input": "\u001b[1;2F",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+end"
+	},
+	{
+		"input": "\u001b[1;3A",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+up"
+	},
+	{
+		"input": "\u001b[1;3B",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+down"
+	},
+	{
+		"input": "\u001b[1;3C",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+right"
+	},
+	{
+		"input": "\u001b[1;3D",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+left"
+	},
+	{
+		"input": "\u001b[1;3H",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+home"
+	},
+	{
+		"input": "\u001b[1;3F",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+end"
+	},
+	{
+		"input": "\u001b[1;5A",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+up"
+	},
+	{
+		"input": "\u001b[1;5B",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+down"
+	},
+	{
+		"input": "\u001b[1;5C",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+right"
+	},
+	{
+		"input": "\u001b[1;5D",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+left"
+	},
+	{
+		"input": "\u001b[1;5H",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+home"
+	},
+	{
+		"input": "\u001b[1;5F",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+end"
+	},
+	{
+		"input": "\u001b[1;3:2A",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+up"
+	},
+	{
+		"input": "\u001b[1~",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[2~",
+		"kitty": true,
+		"wt": false,
+		"expected": "insert"
+	},
+	{
+		"input": "\u001b[3~",
+		"kitty": true,
+		"wt": false,
+		"expected": "delete"
+	},
+	{
+		"input": "\u001b[4~",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[5~",
+		"kitty": true,
+		"wt": false,
+		"expected": "pageUp"
+	},
+	{
+		"input": "\u001b[6~",
+		"kitty": true,
+		"wt": false,
+		"expected": "pageDown"
+	},
+	{
+		"input": "\u001b[7~",
+		"kitty": true,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001b[8~",
+		"kitty": true,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001b[11~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f1"
+	},
+	{
+		"input": "\u001b[12~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f2"
+	},
+	{
+		"input": "\u001b[13~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f3"
+	},
+	{
+		"input": "\u001b[14~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f4"
+	},
+	{
+		"input": "\u001b[15~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f5"
+	},
+	{
+		"input": "\u001b[17~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f6"
+	},
+	{
+		"input": "\u001b[18~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f7"
+	},
+	{
+		"input": "\u001b[19~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f8"
+	},
+	{
+		"input": "\u001b[20~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f9"
+	},
+	{
+		"input": "\u001b[21~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f10"
+	},
+	{
+		"input": "\u001b[23~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f11"
+	},
+	{
+		"input": "\u001b[24~",
+		"kitty": true,
+		"wt": false,
+		"expected": "f12"
+	},
+	{
+		"input": "\u001b[3;2~",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+delete"
+	},
+	{
+		"input": "\u001b[5;2~",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+pageUp"
+	},
+	{
+		"input": "\u001b[3;3~",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+delete"
+	},
+	{
+		"input": "\u001b[5;3~",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+pageUp"
+	},
+	{
+		"input": "\u001b[3;5~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+delete"
+	},
+	{
+		"input": "\u001b[5;5~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+pageUp"
+	},
+	{
+		"input": "\u001b[3;5:3~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+delete"
+	},
+	{
+		"input": "\u001b[[A",
+		"kitty": true,
+		"wt": false,
+		"expected": "f1"
+	},
+	{
+		"input": "\u001b[[B",
+		"kitty": true,
+		"wt": false,
+		"expected": "f2"
+	},
+	{
+		"input": "\u001b[[C",
+		"kitty": true,
+		"wt": false,
+		"expected": "f3"
+	},
+	{
+		"input": "\u001b[[D",
+		"kitty": true,
+		"wt": false,
+		"expected": "f4"
+	},
+	{
+		"input": "\u001b[[E",
+		"kitty": true,
+		"wt": false,
+		"expected": "f5"
+	},
+	{
+		"input": "\u001b[[5~",
+		"kitty": true,
+		"wt": false,
+		"expected": "pageUp"
+	},
+	{
+		"input": "\u001b[[6~",
+		"kitty": true,
+		"wt": false,
+		"expected": "pageDown"
+	},
+	{
+		"input": "\u001b[a",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+up"
+	},
+	{
+		"input": "\u001b[b",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+down"
+	},
+	{
+		"input": "\u001b[c",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+right"
+	},
+	{
+		"input": "\u001b[d",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+left"
+	},
+	{
+		"input": "\u001b[e",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+clear"
+	},
+	{
+		"input": "\u001b[2$",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+insert"
+	},
+	{
+		"input": "\u001b[2^",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+insert"
+	},
+	{
+		"input": "\u001b[3$",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+delete"
+	},
+	{
+		"input": "\u001b[3^",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+delete"
+	},
+	{
+		"input": "\u001b[5$",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+pageUp"
+	},
+	{
+		"input": "\u001b[5^",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+pageUp"
+	},
+	{
+		"input": "\u001b[6$",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+pageDown"
+	},
+	{
+		"input": "\u001b[6^",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+pageDown"
+	},
+	{
+		"input": "\u001b[7$",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+home"
+	},
+	{
+		"input": "\u001b[7^",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+home"
+	},
+	{
+		"input": "\u001b[8$",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+end"
+	},
+	{
+		"input": "\u001b[8^",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+end"
+	},
+	{
+		"input": "\u001b[Z",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+tab"
+	},
+	{
+		"input": "\u001b[97u",
+		"kitty": true,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[97;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+a"
+	},
+	{
+		"input": "\u001b[97;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+a"
+	},
+	{
+		"input": "\u001b[97;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+a"
+	},
+	{
+		"input": "\u001b[97;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[99u",
+		"kitty": true,
+		"wt": false,
+		"expected": "c"
+	},
+	{
+		"input": "\u001b[99;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+c"
+	},
+	{
+		"input": "\u001b[99;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[99;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+c"
+	},
+	{
+		"input": "\u001b[99;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[122u",
+		"kitty": true,
+		"wt": false,
+		"expected": "z"
+	},
+	{
+		"input": "\u001b[122;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+z"
+	},
+	{
+		"input": "\u001b[122;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+z"
+	},
+	{
+		"input": "\u001b[122;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+z"
+	},
+	{
+		"input": "\u001b[122;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[107u",
+		"kitty": true,
+		"wt": false,
+		"expected": "k"
+	},
+	{
+		"input": "\u001b[107;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+k"
+	},
+	{
+		"input": "\u001b[107;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+k"
+	},
+	{
+		"input": "\u001b[107;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+k"
+	},
+	{
+		"input": "\u001b[107;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[49u",
+		"kitty": true,
+		"wt": false,
+		"expected": "1"
+	},
+	{
+		"input": "\u001b[49;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+1"
+	},
+	{
+		"input": "\u001b[49;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+1"
+	},
+	{
+		"input": "\u001b[49;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+1"
+	},
+	{
+		"input": "\u001b[49;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[13u",
+		"kitty": true,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u001b[13;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\u001b[13;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+enter"
+	},
+	{
+		"input": "\u001b[13;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+enter"
+	},
+	{
+		"input": "\u001b[13;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[27u",
+		"kitty": true,
+		"wt": false,
+		"expected": "escape"
+	},
+	{
+		"input": "\u001b[27;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+escape"
+	},
+	{
+		"input": "\u001b[27;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+escape"
+	},
+	{
+		"input": "\u001b[27;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+escape"
+	},
+	{
+		"input": "\u001b[27;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "tab"
+	},
+	{
+		"input": "\u001b[9;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+tab"
+	},
+	{
+		"input": "\u001b[9;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+tab"
+	},
+	{
+		"input": "\u001b[9;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+tab"
+	},
+	{
+		"input": "\u001b[9;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[32u",
+		"kitty": true,
+		"wt": false,
+		"expected": "space"
+	},
+	{
+		"input": "\u001b[32;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+space"
+	},
+	{
+		"input": "\u001b[32;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+space"
+	},
+	{
+		"input": "\u001b[32;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+space"
+	},
+	{
+		"input": "\u001b[32;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[127u",
+		"kitty": true,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "\u001b[127;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+backspace"
+	},
+	{
+		"input": "\u001b[127;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+backspace"
+	},
+	{
+		"input": "\u001b[127;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+backspace"
+	},
+	{
+		"input": "\u001b[127;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[97;1:1u",
+		"kitty": true,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[97;1:2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[97;1:3u",
+		"kitty": true,
+		"wt": false,
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[99;5:2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[99;5:3u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[1089::99;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[1074::100;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+d"
+	},
+	{
+		"input": "\u001b[1103::122;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+z"
+	},
+	{
+		"input": "\u001b[1079::112;6u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+ctrl+p"
+	},
+	{
+		"input": "\u001b[107;13u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+super+k"
+	},
+	{
+		"input": "\u001b[107;14u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+ctrl+super+k"
+	},
+	{
+		"input": "\u001b[99:67:99;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+c"
+	},
+	{
+		"input": "\u001b[1089::99;5:3u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[1089:1057:99;6:2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+ctrl+c"
+	},
+	{
+		"input": "\u001b[107::118;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+k"
+	},
+	{
+		"input": "\u001b[47::91;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+/"
+	},
+	{
+		"input": "\u001b[69;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+e"
+	},
+	{
+		"input": "\u001b[104;7u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+alt+h"
+	},
+	{
+		"input": "\u001b[57399u",
+		"kitty": true,
+		"wt": false,
+		"expected": "0"
+	},
+	{
+		"input": "\u001b[57400u",
+		"kitty": true,
+		"wt": false,
+		"expected": "1"
+	},
+	{
+		"input": "\u001b[57401u",
+		"kitty": true,
+		"wt": false,
+		"expected": "2"
+	},
+	{
+		"input": "\u001b[57402u",
+		"kitty": true,
+		"wt": false,
+		"expected": "3"
+	},
+	{
+		"input": "\u001b[57403u",
+		"kitty": true,
+		"wt": false,
+		"expected": "4"
+	},
+	{
+		"input": "\u001b[57404u",
+		"kitty": true,
+		"wt": false,
+		"expected": "5"
+	},
+	{
+		"input": "\u001b[57405u",
+		"kitty": true,
+		"wt": false,
+		"expected": "6"
+	},
+	{
+		"input": "\u001b[57406u",
+		"kitty": true,
+		"wt": false,
+		"expected": "7"
+	},
+	{
+		"input": "\u001b[57407u",
+		"kitty": true,
+		"wt": false,
+		"expected": "8"
+	},
+	{
+		"input": "\u001b[57408u",
+		"kitty": true,
+		"wt": false,
+		"expected": "9"
+	},
+	{
+		"input": "\u001b[57409u",
+		"kitty": true,
+		"wt": false,
+		"expected": "."
+	},
+	{
+		"input": "\u001b[57410u",
+		"kitty": true,
+		"wt": false,
+		"expected": "/"
+	},
+	{
+		"input": "\u001b[57411u",
+		"kitty": true,
+		"wt": false,
+		"expected": "*"
+	},
+	{
+		"input": "\u001b[57412u",
+		"kitty": true,
+		"wt": false,
+		"expected": "-"
+	},
+	{
+		"input": "\u001b[57413u",
+		"kitty": true,
+		"wt": false,
+		"expected": "+"
+	},
+	{
+		"input": "\u001b[57414u",
+		"kitty": true,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u001b[57415u",
+		"kitty": true,
+		"wt": false,
+		"expected": "="
+	},
+	{
+		"input": "\u001b[57416u",
+		"kitty": true,
+		"wt": false,
+		"expected": ","
+	},
+	{
+		"input": "\u001b[57417u",
+		"kitty": true,
+		"wt": false,
+		"expected": "left"
+	},
+	{
+		"input": "\u001b[57418u",
+		"kitty": true,
+		"wt": false,
+		"expected": "right"
+	},
+	{
+		"input": "\u001b[57419u",
+		"kitty": true,
+		"wt": false,
+		"expected": "up"
+	},
+	{
+		"input": "\u001b[57420u",
+		"kitty": true,
+		"wt": false,
+		"expected": "down"
+	},
+	{
+		"input": "\u001b[57421u",
+		"kitty": true,
+		"wt": false,
+		"expected": "pageUp"
+	},
+	{
+		"input": "\u001b[57422u",
+		"kitty": true,
+		"wt": false,
+		"expected": "pageDown"
+	},
+	{
+		"input": "\u001b[57423u",
+		"kitty": true,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001b[57424u",
+		"kitty": true,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001b[57425u",
+		"kitty": true,
+		"wt": false,
+		"expected": "insert"
+	},
+	{
+		"input": "\u001b[57426u",
+		"kitty": true,
+		"wt": false,
+		"expected": "delete"
+	},
+	{
+		"input": "\u001b[57414;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\u001b[27;5;99~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[27;5;100~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+d"
+	},
+	{
+		"input": "\u001b[27;5;122~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+z"
+	},
+	{
+		"input": "\u001b[27;5;13~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+enter"
+	},
+	{
+		"input": "\u001b[27;2;13~",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\u001b[27;3;13~",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+enter"
+	},
+	{
+		"input": "\u001b[27;2;9~",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+tab"
+	},
+	{
+		"input": "\u001b[27;5;9~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+tab"
+	},
+	{
+		"input": "\u001b[27;3;9~",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+tab"
+	},
+	{
+		"input": "\u001b[27;1;127~",
+		"kitty": true,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "\u001b[27;5;127~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+backspace"
+	},
+	{
+		"input": "\u001b[27;3;127~",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+backspace"
+	},
+	{
+		"input": "\u001b[27;1;27~",
+		"kitty": true,
+		"wt": false,
+		"expected": "escape"
+	},
+	{
+		"input": "\u001b[27;1;32~",
+		"kitty": true,
+		"wt": false,
+		"expected": "space"
+	},
+	{
+		"input": "\u001b[27;5;32~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+space"
+	},
+	{
+		"input": "\u001b[27;5;47~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+/"
+	},
+	{
+		"input": "\u001b[27;5;49~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+1"
+	},
+	{
+		"input": "\u001b[27;2;49~",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+1"
+	},
+	{
+		"input": "\u001b[27;2;69~",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+e"
+	},
+	{
+		"input": "\u001b[27;6;69~",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+ctrl+e"
+	},
+	{
+		"input": "\u001b[27;7;104~",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+alt+h"
+	},
+	{
+		"input": "\u001b[27;2;196~",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "é",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "ä",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "ñ",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "中",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "あ",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "🙂",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "€",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[200~90:62:3F:A5\u001b[201~",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[200~foo:2Ubar\u001b[201~",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[107;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+k"
+	},
+	{
+		"input": "\u001b[13;9u",
+		"kitty": true,
+		"wt": false,
+		"expected": "super+enter"
+	},
+	{
+		"input": "\u001b[107;13u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+super+k"
+	},
+	{
+		"input": "\u001b[107;14u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+ctrl+super+k"
+	},
+	{
+		"input": "\u001b[49u",
+		"kitty": true,
+		"wt": false,
+		"expected": "1"
+	},
+	{
+		"input": "\u001b[49;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+1"
+	},
+	{
+		"input": "\u001b[57399u",
+		"kitty": true,
+		"wt": false,
+		"expected": "0"
+	},
+	{
+		"input": "\u001b[57409u",
+		"kitty": true,
+		"wt": false,
+		"expected": "."
+	},
+	{
+		"input": "\u001b[57413u",
+		"kitty": true,
+		"wt": false,
+		"expected": "+"
+	},
+	{
+		"input": "\u001b[57416u",
+		"kitty": true,
+		"wt": false,
+		"expected": ","
+	},
+	{
+		"input": "\u001b[57417u",
+		"kitty": true,
+		"wt": false,
+		"expected": "left"
+	},
+	{
+		"input": "\u001b[57418u",
+		"kitty": true,
+		"wt": false,
+		"expected": "right"
+	},
+	{
+		"input": "\u001b[57419u",
+		"kitty": true,
+		"wt": false,
+		"expected": "up"
+	},
+	{
+		"input": "\u001b[57420u",
+		"kitty": true,
+		"wt": false,
+		"expected": "down"
+	},
+	{
+		"input": "\u001b[57421u",
+		"kitty": true,
+		"wt": false,
+		"expected": "pageUp"
+	},
+	{
+		"input": "\u001b[57422u",
+		"kitty": true,
+		"wt": false,
+		"expected": "pageDown"
+	},
+	{
+		"input": "\u001b[57423u",
+		"kitty": true,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001b[57424u",
+		"kitty": true,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001b[57425u",
+		"kitty": true,
+		"wt": false,
+		"expected": "insert"
+	},
+	{
+		"input": "\u001b[57426u",
+		"kitty": true,
+		"wt": false,
+		"expected": "delete"
+	},
+	{
+		"input": "\u001b[1089::99;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[107::118;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+k"
+	},
+	{
+		"input": "\u001b[47::91;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+/"
+	},
+	{
+		"input": "\u001b[99;5u",
+		"kitty": true,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[69;2u",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+e"
+	},
+	{
+		"input": "\u001b[99;17u",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b[27;5;99~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u001b[27;5;100~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+d"
+	},
+	{
+		"input": "\u001b[27;5;122~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+z"
+	},
+	{
+		"input": "\u001b[27;5;13~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+enter"
+	},
+	{
+		"input": "\u001b[27;2;13~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\u001b[27;3;13~",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+enter"
+	},
+	{
+		"input": "\u001b[27;2;9~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+tab"
+	},
+	{
+		"input": "\u001b[27;5;9~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+tab"
+	},
+	{
+		"input": "\u001b[27;3;9~",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+tab"
+	},
+	{
+		"input": "\u001b[27;1;127~",
+		"kitty": false,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "\u001b[27;5;127~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+backspace"
+	},
+	{
+		"input": "\u001b[27;3;127~",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+backspace"
+	},
+	{
+		"input": "\u001b[27;1;27~",
+		"kitty": false,
+		"wt": false,
+		"expected": "escape"
+	},
+	{
+		"input": "\u001b[27;1;32~",
+		"kitty": false,
+		"wt": false,
+		"expected": "space"
+	},
+	{
+		"input": "\u001b[27;5;32~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+space"
+	},
+	{
+		"input": "\u001b[27;5;47~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+/"
+	},
+	{
+		"input": "\u001b[27;5;49~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+1"
+	},
+	{
+		"input": "\u001b[27;2;49~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+1"
+	},
+	{
+		"input": "\u001b[27;2;69~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+e"
+	},
+	{
+		"input": "\u001b[27;6;69~",
+		"kitty": false,
+		"wt": false,
+		"expected": "shift+ctrl+e"
+	},
+	{
+		"input": "\u001b[104;7u",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+h"
+	},
+	{
+		"input": "\u001b[27;7;104~",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+h"
+	},
+	{
+		"input": "\u0003",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+c"
+	},
+	{
+		"input": "\u0004",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+d"
+	},
+	{
+		"input": "\u001b",
+		"kitty": false,
+		"wt": false,
+		"expected": "escape"
+	},
+	{
+		"input": "\t",
+		"kitty": false,
+		"wt": false,
+		"expected": "tab"
+	},
+	{
+		"input": "\r",
+		"kitty": false,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\n",
+		"kitty": false,
+		"wt": false,
+		"expected": "enter"
+	},
+	{
+		"input": "\u0000",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+space"
+	},
+	{
+		"input": " ",
+		"kitty": false,
+		"wt": false,
+		"expected": "space"
+	},
+	{
+		"input": "1",
+		"kitty": false,
+		"wt": false,
+		"expected": "1"
+	},
+	{
+		"input": "\u001c",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+\\"
+	},
+	{
+		"input": "\u001d",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+]"
+	},
+	{
+		"input": "\u001f",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+-"
+	},
+	{
+		"input": "\u001b\u001b",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+["
+	},
+	{
+		"input": "\u001b\u001c",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+\\"
+	},
+	{
+		"input": "\u001b\u001d",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+]"
+	},
+	{
+		"input": "\u001b\u001f",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+-"
+	},
+	{
+		"input": "\u001b ",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+space"
+	},
+	{
+		"input": "\u001b\b",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+backspace"
+	},
+	{
+		"input": "\u001b\u0003",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+alt+c"
+	},
+	{
+		"input": "\u001bB",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+left"
+	},
+	{
+		"input": "\u001bF",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+right"
+	},
+	{
+		"input": "\u001ba",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+a"
+	},
+	{
+		"input": "\u001b1",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+1"
+	},
+	{
+		"input": "\u001b,",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+,"
+	},
+	{
+		"input": "\u001b.",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+."
+	},
+	{
+		"input": "\u001by",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+y"
+	},
+	{
+		"input": "\u001bz",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+z"
+	},
+	{
+		"input": "\u001b[A",
+		"kitty": false,
+		"wt": false,
+		"expected": "up"
+	},
+	{
+		"input": "\u001b[B",
+		"kitty": false,
+		"wt": false,
+		"expected": "down"
+	},
+	{
+		"input": "\u001b[C",
+		"kitty": false,
+		"wt": false,
+		"expected": "right"
+	},
+	{
+		"input": "\u001b[D",
+		"kitty": false,
+		"wt": false,
+		"expected": "left"
+	},
+	{
+		"input": "\u001bOA",
+		"kitty": false,
+		"wt": false,
+		"expected": "up"
+	},
+	{
+		"input": "\u001bOB",
+		"kitty": false,
+		"wt": false,
+		"expected": "down"
+	},
+	{
+		"input": "\u001bOC",
+		"kitty": false,
+		"wt": false,
+		"expected": "right"
+	},
+	{
+		"input": "\u001bOD",
+		"kitty": false,
+		"wt": false,
+		"expected": "left"
+	},
+	{
+		"input": "\u001bOH",
+		"kitty": false,
+		"wt": false,
+		"expected": "home"
+	},
+	{
+		"input": "\u001bOF",
+		"kitty": false,
+		"wt": false,
+		"expected": "end"
+	},
+	{
+		"input": "\u001bOP",
+		"kitty": false,
+		"wt": false,
+		"expected": "f1"
+	},
+	{
+		"input": "\u001b[24~",
+		"kitty": false,
+		"wt": false,
+		"expected": "f12"
+	},
+	{
+		"input": "\u001b[E",
+		"kitty": false,
+		"wt": false,
+		"expected": "clear"
+	},
+	{
+		"input": "\u001b[2^",
+		"kitty": false,
+		"wt": false,
+		"expected": "ctrl+insert"
+	},
+	{
+		"input": "\u001bp",
+		"kitty": false,
+		"wt": false,
+		"expected": "alt+up"
+	},
+	{
+		"input": "\u001b[[5~",
+		"kitty": false,
+		"wt": false,
+		"expected": "pageUp"
+	},
+	{
+		"input": "\u001b ",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b\b",
+		"kitty": true,
+		"wt": false,
+		"expected": "alt+backspace"
+	},
+	{
+		"input": "\u001b\u0003",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001bB",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001bF",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001ba",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b1",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b,",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001b.",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\u001by",
+		"kitty": true,
+		"wt": false,
+		"expected": null
+	},
+	{
+		"input": "\n",
+		"kitty": true,
+		"wt": false,
+		"expected": "shift+enter"
+	},
+	{
+		"input": "\b",
+		"kitty": false,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "\b",
+		"kitty": false,
+		"wt": true,
+		"expected": "ctrl+backspace"
+	},
+	{
+		"input": "",
+		"kitty": false,
+		"wt": false,
+		"expected": "backspace"
+	},
+	{
+		"input": "",
+		"kitty": false,
+		"wt": true,
+		"expected": "backspace"
+	}
+]

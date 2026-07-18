@@ -1,0 +1,126 @@
+[
+	{
+		"input": "\u001b[99;5:2u",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:3u",
+		"expected": true
+	},
+	{
+		"input": "\u001b[99;5:1u",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:2~",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:3~",
+		"expected": true
+	},
+	{
+		"input": "\u001b[99;5:1~",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:2A",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:3A",
+		"expected": true
+	},
+	{
+		"input": "\u001b[99;5:1A",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:2B",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:3B",
+		"expected": true
+	},
+	{
+		"input": "\u001b[99;5:1B",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:2C",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:3C",
+		"expected": true
+	},
+	{
+		"input": "\u001b[99;5:1C",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:2D",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:3D",
+		"expected": true
+	},
+	{
+		"input": "\u001b[99;5:1D",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:2H",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:3H",
+		"expected": true
+	},
+	{
+		"input": "\u001b[99;5:1H",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:2F",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5:3F",
+		"expected": true
+	},
+	{
+		"input": "\u001b[99;5:1F",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99;5u",
+		"expected": false
+	},
+	{
+		"input": "\u001b[99u",
+		"expected": false
+	},
+	{
+		"input": "\u0003",
+		"expected": false
+	},
+	{
+		"input": "\u001b[200~90:62:3F:A5\u001b[201~",
+		"expected": false
+	},
+	{
+		"input": "\u001b[200~foo:2Ubar\u001b[201~",
+		"expected": false
+	},
+	{
+		"input": "\u001b[1;2:3A",
+		"expected": true
+	},
+	{
+		"input": "\u001b[3;5:2~",
+		"expected": false
+	}
+]

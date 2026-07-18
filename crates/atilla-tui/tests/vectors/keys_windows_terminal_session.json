@@ -1,0 +1,65 @@
+[
+	{
+		"env": {
+			"WT_SESSION": null,
+			"SSH_CONNECTION": null,
+			"SSH_CLIENT": null,
+			"SSH_TTY": null
+		},
+		"expected": false
+	},
+	{
+		"env": {
+			"WT_SESSION": "test-session",
+			"SSH_CONNECTION": null,
+			"SSH_CLIENT": null,
+			"SSH_TTY": null
+		},
+		"expected": true
+	},
+	{
+		"env": {
+			"WT_SESSION": "test-session",
+			"SSH_CONNECTION": "1 2 3 4",
+			"SSH_CLIENT": null,
+			"SSH_TTY": null
+		},
+		"expected": false
+	},
+	{
+		"env": {
+			"WT_SESSION": "test-session",
+			"SSH_CONNECTION": null,
+			"SSH_CLIENT": "1 2 3",
+			"SSH_TTY": null
+		},
+		"expected": false
+	},
+	{
+		"env": {
+			"WT_SESSION": "test-session",
+			"SSH_CONNECTION": null,
+			"SSH_CLIENT": null,
+			"SSH_TTY": "/dev/pts/1"
+		},
+		"expected": false
+	},
+	{
+		"env": {
+			"WT_SESSION": "",
+			"SSH_CONNECTION": null,
+			"SSH_CLIENT": null,
+			"SSH_TTY": null
+		},
+		"expected": false
+	},
+	{
+		"env": {
+			"WT_SESSION": null,
+			"SSH_CONNECTION": "1 2 3 4",
+			"SSH_CLIENT": null,
+			"SSH_TTY": null
+		},
+		"expected": false
+	}
+]
