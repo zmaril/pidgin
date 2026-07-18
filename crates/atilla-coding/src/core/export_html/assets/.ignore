@@ -1,0 +1,5 @@
+# Vendored HTML export template and third-party libraries, embedded verbatim via
+# include_str!. These are not human-authored source and must stay byte-for-byte
+# identical to pi's originals, so they are exempt from repo linters (straitjacket,
+# ripgrep, and similar tools honor .ignore). The files remain tracked by git.
+*
