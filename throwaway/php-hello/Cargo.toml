@@ -1,0 +1,16 @@
+[package]
+name = "php-hello"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "php_hello"
+crate-type = ["cdylib"]
+
+[dependencies]
+ext-php-rs = "0.13"
+
+# Keep this crate standalone so cargo does not attach it to any workspace
+# that may exist at the repository root (avoids editing shared files).
+[workspace]
