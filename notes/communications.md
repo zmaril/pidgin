@@ -1,3 +1,4 @@
+<!-- straitjacket-allow-file:duplication — the ASCII boundary diagram and the several TS type-definition blocks (content blocks, messages, event union) share enough structural token shape that the clone detector reads them as duplicates; they are distinct, load-bearing reference content and are kept verbatim on purpose -->
 # pi's Communication Map & the Rust Stack
 
 *Research for the `pi` → Rust rewrite. Source traced at commit `3da591ab74ab9ab407e72ed882600b2c851fae21` (2026-07-17). This maps everything in pi that crosses a process or network boundary, and what the Rust equivalent should be.*
@@ -137,7 +138,7 @@ Also worth porting: `Usage` / `ModelCost` (token + cost accounting), `Model` (`t
 
 The internal Rust-facing API is idiomatic: each provider client returns `Stream<Item = AssistantMessageEvent>` (via `reqwest` bytes-stream → `eventsource-stream` parse → `serde_json` into a `StreamEvent` enum → `async_stream::stream!` yielding the uniform event). Errors after stream start are `error` **events**, matching pi's contract.
 
-But async `Stream`/`Future` **do not cross FFI** — Rust async is poll-based and runtime-driven, and PHP has no C ABI for a `Future`. So the core's *public* boundary must erase async into a synchronous, pull-shaped API:
+Async `Stream`/`Future` **do not cross FFI**, however — Rust async is poll-based and runtime-driven, and PHP has no C ABI for a `Future`. So the core's *public* boundary must erase async into a synchronous, pull-shaped API:
 
 - Keep the `tokio` runtime and the live `Stream` **inside Rust**. Hand the host an **opaque handle**.
 - Expose `start(context) -> handle`, `next_event(handle) -> Event` (blocking; internally `block_on`s the next stream item; returns the next normalized event or an end/error sentinel), and `close(handle)`.
