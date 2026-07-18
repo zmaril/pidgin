@@ -8,13 +8,16 @@ the shim as `*.__pi_original__.ts`.
 
 ## Merge queue
 
+Current native count on main: **4** (ai anthropic-messages + ai faux, tui keys
++ tui utils). This PR takes it to **10**.
+
 The human merges in this order (rebasing each onto the prior as needed):
 
-1. **#44** — faux provider native (foundations) — native 3 -> 4
-2. **THIS PR** — coding-agent utils + export-html ansi-to-html — native 4 -> 10
-   after rebasing onto #44; if it lands before #44 it is 3 -> 9 and #44 rebases
-   behind it
-3. **#50** — retry (ai) — queued next
+1. **#44** — faux provider native (foundations) — native 3 -> 4 — **MERGED**
+2. **THIS PR (#58)** — coding-agent utils + export-html ansi-to-html —
+   native 4 -> 10 — rebased onto faux-native main; head of the queue (nothing
+   ahead of it now that #44 has landed)
+3. **#50** — retry (ai) — queued behind this PR
 
 ## Flip table
 

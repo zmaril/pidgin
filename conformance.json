@@ -1,7 +1,7 @@
 {
   "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
   "generated_by": "scripts/conformance.sh",
-  "manifest_native_modules": 4,
+  "manifest_native_modules": 10,
   "total": 3777,
   "passing": 2904,
   "failing": 88,
@@ -30,7 +30,7 @@
       "passing": 1490,
       "failing": 88,
       "skipped": 47,
-      "native": 0,
+      "native": 6,
       "status": "ok",
       "note": "vitest run, exit 1"
     },
