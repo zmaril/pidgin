@@ -1,3 +1,10 @@
+// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// `azure-openai-responses.ts`, which is itself a thin wrapper mirroring
+// `openai-responses.ts`. `build_params` and the `thinking_level_*` /
+// `thinking_off_*` helpers deliberately track the OpenAI Responses shapes in
+// [`crate::api::openai_responses`] arm-for-arm so the two ports stay diffable
+// against their upstream files; the clone detector reads that intentional
+// mirroring as duplication.
 //! Azure OpenAI **Responses API** request shaping, ported from pi-ai's
 //! `packages/ai/src/api/azure-openai-responses.ts` at pinned commit `3da591ab`.
 //!

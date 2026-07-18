@@ -1,3 +1,8 @@
+// straitjacket-allow-file[:duplication] — these tests mirror pi's Azure
+// fixtures verbatim: the `response.*` named-event objects and per-test model
+// literals are walls of near-identical JSON by design, kept faithful to pi's
+// `azure-openai-*.test.ts` cases, and the clone detector reads them as
+// duplicates.
 //! Tests for the Azure OpenAI Responses wrapper, mirroring pi's
 //! `azure-openai-base-url.test.ts` (URL normalization + prompt-cache clamp +
 //! store:false) and `azure-openai-responses-reasoning-replay.test.ts` (the
