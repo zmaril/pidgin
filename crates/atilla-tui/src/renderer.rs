@@ -335,6 +335,18 @@ impl<T: Terminal> Tui<T> {
         self.container.clear();
     }
 
+    /// Replace the entire base frame with `lines`, backed by a single
+    /// [`SharedLines`] child. Clears any existing base children and installs one
+    /// line-buffer child that renders exactly `lines`. Overlays are untouched:
+    /// only the base container is swapped (the conformance shim uses this to feed
+    /// pi's TS-rendered lines into the Rust renderer wholesale).
+    pub fn set_base_lines(&mut self, lines: Vec<String>) {
+        self.container.clear();
+        let child = SharedLines::new();
+        child.set(lines);
+        self.container.add_child(Box::new(child));
+    }
+
     /// Access the terminal backend (e.g. to resize or inspect a logging sink).
     pub fn terminal_mut(&mut self) -> &mut T {
         &mut self.terminal
@@ -1040,6 +1052,20 @@ impl<T: Terminal> Tui<T> {
     }
 }
 
+impl Tui<crate::terminal::LoggingTerminal> {
+    /// Drain the accumulated write stream: return every recorded `write()` since
+    /// the last clear and reset the sink, i.e. `get_writes()` followed by
+    /// `clear_writes()` on the underlying [`LoggingTerminal`]. This is only
+    /// available for the logging sink because `get_writes`/`clear_writes` are not
+    /// part of the [`Terminal`] trait (the real [`CrosstermTerminal`] has no
+    /// recorded stream to drain).
+    pub fn take_writes(&mut self) -> String {
+        let writes = self.terminal.get_writes();
+        self.terminal.clear_writes();
+        writes
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1101,6 +1127,51 @@ mod tests {
         // Crash log written, matching pi's contract.
         assert!(dir.join("pi-crash.log").exists());
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn set_base_lines_replaces_whole_base_frame() {
+        // set_base_lines installs a single line-buffer child rendering exactly the
+        // given lines; a subsequent call replaces (does not append to) the frame.
+        let terminal = LoggingTerminal::new(20, 5);
+        let mut tui = Tui::new(terminal, false);
+
+        tui.set_base_lines(vec!["alpha".to_string(), "beta".to_string()]);
+        tui.start();
+        tui.flush().expect("clean first render");
+        let writes = tui.take_writes();
+        assert!(writes.contains("alpha"), "writes: {writes:?}");
+        assert!(writes.contains("beta"), "writes: {writes:?}");
+        assert_eq!(
+            tui.render(20),
+            vec!["alpha".to_string(), "beta".to_string()]
+        );
+
+        // Replace with a different, single-line frame: the old lines must be gone.
+        tui.set_base_lines(vec!["gamma".to_string()]);
+        tui.request_render(false);
+        tui.flush().expect("clean second render");
+        assert_eq!(tui.render(20), vec!["gamma".to_string()]);
+        assert!(!tui.render(20).contains(&"alpha".to_string()));
+        assert!(!tui.render(20).contains(&"beta".to_string()));
+    }
+
+    #[test]
+    fn take_writes_returns_and_clears_stream() {
+        // take_writes returns the accumulated writes and empties the sink, so a
+        // second call returns nothing.
+        let terminal = LoggingTerminal::new(20, 5);
+        let mut tui = Tui::new(terminal, false);
+        tui.set_base_lines(vec!["hello".to_string()]);
+        tui.start();
+        tui.flush().expect("clean render");
+
+        let first = tui.take_writes();
+        assert!(!first.is_empty());
+        assert!(first.contains("hello"), "writes: {first:?}");
+
+        let second = tui.take_writes();
+        assert!(second.is_empty(), "second take must be empty: {second:?}");
     }
 
     #[test]
