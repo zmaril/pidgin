@@ -1934,7 +1934,7 @@
     {
       "package": "tui",
       "src": "packages/tui/src/keys.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "tui",
@@ -1979,7 +1979,7 @@
     {
       "package": "tui",
       "src": "packages/tui/src/utils.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "tui",
