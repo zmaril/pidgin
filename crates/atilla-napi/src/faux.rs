@@ -27,6 +27,7 @@ use napi_derive::napi;
 use serde::Deserialize;
 
 use atilla_ai::providers::faux::{FauxModelDefinition, FauxProvider, RegisterFauxProviderOptions};
+use atilla_ai::seams::clock::FakeClock;
 use atilla_ai::seams::provider::{AbortSignal, Provider};
 use atilla_ai::types::{AssistantMessage, Context, Modality, ModelCost, StreamOptions};
 
@@ -114,6 +115,10 @@ fn parse_options(json: Option<String>) -> Result<Option<StreamOptions>> {
 #[napi(js_name = "FauxCore")]
 pub struct FauxCore {
     inner: FauxProvider,
+    /// The settable clock shared with `inner`; JS pushes `Date.now()` into it via
+    /// [`FauxCore::set_now_ms`] so the empty-queue/aborted timestamps Rust stamps
+    /// track JS-controlled time (vitest fake timers and real timers alike).
+    clock: FakeClock,
 }
 
 #[napi]
@@ -121,9 +126,16 @@ impl FauxCore {
     /// Build a faux core from pi's `RegisterFauxProviderOptions`, JSON-encoded.
     #[napi(constructor)]
     pub fn new(options_json: String) -> Result<Self> {
-        Ok(Self {
-            inner: FauxProvider::new(build_options(&options_json)?),
-        })
+        let (inner, clock) = FauxProvider::with_fake_clock(build_options(&options_json)?);
+        Ok(Self { inner, clock })
+    }
+
+    /// Set the `now` (epoch milliseconds) the provider reads when stamping the
+    /// empty-queue/aborted message timestamps. The JS shim calls this with
+    /// `Date.now()` before each stream so those timestamps track JS time.
+    #[napi(js_name = "setNowMs")]
+    pub fn set_now_ms(&self, now_ms: i64) {
+        self.clock.set_now_ms(now_ms);
     }
 
     /// The provider's api id (pi's `core.api`).
