@@ -1,0 +1,2293 @@
+{
+  "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
+  "generated_by": "scripts/conformance.sh",
+  "manifest_native_modules": 0,
+  "total": 3777,
+  "passing": 2901,
+  "failing": 121,
+  "skipped": 755,
+  "by_package": {
+    "agent": {
+      "total": 180,
+      "passing": 180,
+      "failing": 0,
+      "skipped": 0,
+      "status": "ok",
+      "note": "vitest run, exit 0"
+    },
+    "ai": {
+      "total": 1294,
+      "passing": 562,
+      "failing": 24,
+      "skipped": 708,
+      "status": "ok",
+      "note": "vitest run, exit 1"
+    },
+    "coding-agent": {
+      "total": 1625,
+      "passing": 1481,
+      "failing": 97,
+      "skipped": 47,
+      "status": "ok",
+      "note": "vitest run, exit 1"
+    },
+    "orchestrator": {
+      "total": 0,
+      "passing": 0,
+      "failing": 0,
+      "skipped": 0,
+      "status": "ok",
+      "note": "no tests"
+    },
+    "tui": {
+      "total": 678,
+      "passing": 678,
+      "failing": 0,
+      "skipped": 0,
+      "status": "ok",
+      "note": "node:test per file, 0 file timeout(s)"
+    }
+  },
+  "by_file": [
+    {
+      "package": "agent",
+      "file": "packages/agent/test/agent-loop.test.ts",
+      "passing": 20,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/agent.test.ts",
+      "passing": 19,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/e2e.test.ts",
+      "passing": 10,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/agent-harness-stream.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/agent-harness.test.ts",
+      "passing": 13,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/compaction.test.ts",
+      "passing": 20,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/nodejs-env.test.ts",
+      "passing": 20,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/prompt-templates.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/repo.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/resource-formatting.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/session-uuid.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/session.test.ts",
+      "passing": 28,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/skills.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/storage.test.ts",
+      "passing": 18,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/system-prompt.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "agent",
+      "file": "packages/agent/test/harness/truncate.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/abort.test.ts",
+      "passing": 1,
+      "failing": 2,
+      "skipped": 30
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-adaptive-thinking-models.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-cache-write-1h-cost.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-eager-tool-input-compat.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-eager-tool-input-e2e.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 19
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-empty-thinking-signature-compat.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-force-adaptive-thinking.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-long-cache-retention-e2e.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 10
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-oauth.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-opus-4-8-smoke.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 1
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-sse-parsing.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-temperature-compat.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-thinking-disable.test.ts",
+      "passing": 7,
+      "failing": 0,
+      "skipped": 1
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/anthropic-tool-name-normalization.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 4
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/azure-openai-base-url.test.ts",
+      "passing": 13,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/azure-openai-responses-reasoning-replay.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/bedrock-convert-messages.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/bedrock-custom-headers.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/bedrock-endpoint-resolution.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/bedrock-models.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/bedrock-thinking-payload.test.ts",
+      "passing": 10,
+      "failing": 1,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/cache-retention.test.ts",
+      "passing": 17,
+      "failing": 0,
+      "skipped": 4
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/cloudflare-stream.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/compat-env.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/context-estimate.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/context-overflow.test.ts",
+      "passing": 0,
+      "failing": 1,
+      "skipped": 31
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/cross-provider-handoff.test.ts",
+      "passing": 1,
+      "failing": 1,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/deferred-tools.test.ts",
+      "passing": 22,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/empty.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 100
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/env-api-keys.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/error-body.test.ts",
+      "passing": 12,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/faux-provider.test.ts",
+      "passing": 22,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/fireworks-models.test.ts",
+      "passing": 12,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/github-copilot-anthropic.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/github-copilot-oauth.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/google-shared-convert-tools.test.ts",
+      "passing": 7,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/google-shared-gemini3-unsigned-tool-call.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/google-shared-image-tool-result-routing.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/google-thinking-disable.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 9
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/google-thinking-signature.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/google-vertex-api-key-resolution.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/image-tool-result.test.ts",
+      "passing": 0,
+      "failing": 2,
+      "skipped": 36
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/images-models.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/images.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 3
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/interleaved-thinking.test.ts",
+      "passing": 0,
+      "failing": 2,
+      "skipped": 2
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/lax-message-content.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/lazy-module-load.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/max-thinking.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/mistral-reasoning-mode.test.ts",
+      "passing": 7,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/mistral-tool-schema.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/models-runtime.test.ts",
+      "passing": 25,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/node-http-proxy.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/oauth-auth.test.ts",
+      "passing": 10,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/oauth-device-code.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-codex-cache-affinity-e2e.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 1
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-codex-oauth.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-codex-stream.test.ts",
+      "passing": 30,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-completions-cache-control-format.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-completions-empty-tools.test.ts",
+      "passing": 11,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-completions-prompt-cache.test.ts",
+      "passing": 13,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-completions-reasoning-details.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-completions-response-model.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-completions-retry.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-completions-thinking-as-text.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-completions-tool-choice.test.ts",
+      "passing": 42,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-completions-tool-result-images.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-responses-cache-affinity-e2e.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 1
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-responses-compat.test.ts",
+      "passing": 32,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-responses-empty-tool-result.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-responses-foreign-toolcall-id.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-responses-message-id.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-responses-partial-json-cleanup.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-responses-reasoning-replay-e2e.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 3
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-responses-terminal-event.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openai-responses-tool-result-images.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 4
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openrouter-cache-write-repro.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 1
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/openrouter-images.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/overflow.test.ts",
+      "passing": 14,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/pi-messages.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/provider-error-body-passthrough.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/provider-error-body-regression.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/providers.test.ts",
+      "passing": 17,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/responseid.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 11
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/retry.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/stream.test.ts",
+      "passing": 0,
+      "failing": 9,
+      "skipped": 205
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/supports-xhigh.test.ts",
+      "passing": 25,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/together-models.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/tokens.test.ts",
+      "passing": 0,
+      "failing": 1,
+      "skipped": 25
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/tool-call-id-normalization.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 4
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/tool-call-without-result.test.ts",
+      "passing": 0,
+      "failing": 1,
+      "skipped": 25
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/total-tokens.test.ts",
+      "passing": 0,
+      "failing": 1,
+      "skipped": 30
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/transform-messages-copilot-openai-to-anthropic.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/unicode-surrogate.test.ts",
+      "passing": 0,
+      "failing": 3,
+      "skipped": 75
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/validation.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/xai-oauth.test.ts",
+      "passing": 14,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/xai-responses.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/xhigh.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 3
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/xiaomi-models.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/xiaomi-token-plan-ams-anthropic-empty-signature-smoke.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 1
+    },
+    {
+      "package": "ai",
+      "file": "packages/ai/test/zen.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 69
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-auto-compaction-queue.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-branching.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 3
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-compaction.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 5
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-concurrent.test.ts",
+      "passing": 7,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-dynamic-provider.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-dynamic-tools.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-retry.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-runtime-events.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-stats.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/agent-session-tree-navigation.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 10
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/ansi-utils.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/args.test.ts",
+      "passing": 72,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/assistant-message.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/auth-storage.test.ts",
+      "passing": 12,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/bash-close-hang-windows.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 2
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/bash-execution-width.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/block-images.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/cache-stats.test.ts",
+      "passing": 10,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/changelog.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/clipboard-image-bmp-conversion.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/clipboard-image.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/clipboard-native.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/clipboard.test.ts",
+      "passing": 7,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/compaction-extensions-example.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/compaction-extensions.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 8
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/compaction-serialization.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/compaction-summary-reasoning.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/compaction.test.ts",
+      "passing": 24,
+      "failing": 0,
+      "skipped": 2
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/config-value-migration.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/config.test.ts",
+      "passing": 14,
+      "failing": 1,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/edit-tool-legacy-input.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/edit-tool-no-full-redraw.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/experimental.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/export-html-skill-block.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/export-html-whitespace.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/export-html-xss.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/extensions-discovery.test.ts",
+      "passing": 4,
+      "failing": 26,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/extensions-input-event.test.ts",
+      "passing": 1,
+      "failing": 8,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/extensions-runner.test.ts",
+      "passing": 10,
+      "failing": 25,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/file-mutation-queue.test.ts",
+      "passing": 7,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/first-time-setup-fork.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/first-time-setup.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/footer-data-provider.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/footer-width.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/format-resume-command.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/frontmatter.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/git-merge-and-resolve-extension.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/git-ssh-url.test.ts",
+      "passing": 10,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/git-update.test.ts",
+      "passing": 13,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/http-dispatcher.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/image-process.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/image-processing.test.ts",
+      "passing": 10,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/image-resize-callers.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/initial-message.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/input-transform-streaming-example.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/interactive-mode-anthropic-warning.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/interactive-mode-clone-command.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/interactive-mode-compaction.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/interactive-mode-import-command.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/interactive-mode-startup-input.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/interactive-mode-status.test.ts",
+      "passing": 29,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/keybindings-migration.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/llama-extension.test.ts",
+      "passing": 7,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/max-thinking.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/model-registry.test.ts",
+      "passing": 81,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/model-resolver.test.ts",
+      "passing": 41,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/model-runtime-auth-options.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/model-runtime-cloudflare-compat.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/model-runtime-modify-models-compat.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/models-store.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/oauth-selector.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/package-command-paths.test.ts",
+      "passing": 25,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/package-manager-ssh.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/package-manager.test.ts",
+      "passing": 116,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/path-utils.test.ts",
+      "passing": 13,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/paths.test.ts",
+      "passing": 19,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/pi-user-agent.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/plan-mode-extension.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/plan-mode-utils.test.ts",
+      "passing": 33,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/print-mode.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/prompt-templates.test.ts",
+      "passing": 92,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/radius.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/remote-catalog-provider.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/resolve-config-value.test.ts",
+      "passing": 10,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/resource-loader.test.ts",
+      "passing": 17,
+      "failing": 5,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/restore-sandbox-env.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/rpc-client-clone.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/rpc-client-process-exit.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/rpc-jsonl.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/rpc-prompt-response-semantics.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/rpc.test.ts",
+      "passing": 0,
+      "failing": 0,
+      "skipped": 17
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/runtime-credentials.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/sdk-openrouter-attribution.test.ts",
+      "passing": 13,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/sdk-session-manager.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/sdk-skills.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/sdk-stream-options.test.ts",
+      "passing": 5,
+      "failing": 1,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-cwd.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-file-invalid.test.ts",
+      "passing": 0,
+      "failing": 1,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-id-readonly.test.ts",
+      "passing": 1,
+      "failing": 6,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-info-modified-timestamp.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-selector-path-delete.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-selector-rename.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-selector-search.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/settings-manager-bug.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/settings-manager.test.ts",
+      "passing": 34,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/skills.test.ts",
+      "passing": 28,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/startup-session-name.test.ts",
+      "passing": 0,
+      "failing": 2,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/status-indicator.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/stdout-cleanliness.test.ts",
+      "passing": 0,
+      "failing": 5,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/syntax-highlight.test.ts",
+      "passing": 7,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/system-prompt.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/test-harness.test.ts",
+      "passing": 15,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/theme-detection.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/theme-export.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/theme-picker.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/tool-execution-component.test.ts",
+      "passing": 24,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/tools.test.ts",
+      "passing": 68,
+      "failing": 6,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/tree-selector.test.ts",
+      "passing": 17,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/trigger-compact-extension.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/truncate-to-width.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/trust-manager.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/trust-selector.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/user-message.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/version-check.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/agent-session-bash-persistence.test.ts",
+      "passing": 8,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/agent-session-compaction.test.ts",
+      "passing": 14,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/agent-session-model-extension.test.ts",
+      "passing": 12,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/agent-session-prompt.test.ts",
+      "passing": 13,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/agent-session-queue.test.ts",
+      "passing": 14,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/agent-session-retry-events.test.ts",
+      "passing": 14,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/agent-session-runtime.test.ts",
+      "passing": 10,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/lax-message-content.test.ts",
+      "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/build-context.test.ts",
+      "passing": 16,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/custom-session-id.test.ts",
+      "passing": 12,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/file-operations.test.ts",
+      "passing": 21,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/labels.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/migration.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/save-entry.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/tree-traversal.test.ts",
+      "passing": 30,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/1717-2113-agent-session-event-settlement.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/2023-queued-slash-command-followup.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/2753-reload-stale-resource-settings.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/2781-skill-collision-precedence.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/2791-fswatch-error-crash.test.ts",
+      "passing": 0,
+      "failing": 1,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/2835-tools-allowlist-filters-extension-tools.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/2860-replaced-session-context.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/3217-scoped-model-order.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/3302-find-path-glob.test.ts",
+      "passing": 0,
+      "failing": 4,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/3303-find-nested-gitignore.test.ts",
+      "passing": 0,
+      "failing": 2,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/3317-network-connection-lost-retry.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/3592-no-builtin-tools-keeps-extension-tools.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/3616-settings-inmemory-reload.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/3686-session-name-event.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/3688-tree-cancel-compacting.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/3982-message-end-cost-override.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/4167-thinking-toggle-pending-tool-render.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5080-signal-shutdown-extension-cleanup.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5109-exclude-tools.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5208-late-bash-output.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5217-compaction-reason.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5303-bash-output-truncation.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5433-extension-oauth-prompt-input.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5596-missing-theme-export.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5661-uppercase-header-values.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5724-sigterm-signal-exit.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5868-rpc-unknown-command-id.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5943-session-start-notify.test.ts",
+      "passing": 7,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/5996-session-name-newlines.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/6019-explicit-provider-retry-message.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/6162-extension-active-tools-next-turn.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/6260-inline-extension-naming.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/6324-branch-summary-ambient-auth.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/6363-agent-settled-event.test.ts",
+      "passing": 3,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/extension-factory-cache.test.ts",
+      "passing": 0,
+      "failing": 4,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/suite/regressions/pre-prompt-compaction-no-continue.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/autocomplete.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/bug-regression-isimageline-startswith-bug.test.ts",
+      "passing": 11,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/editor.test.ts",
+      "passing": 180,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/fuzzy.test.ts",
+      "passing": 14,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/input.test.ts",
+      "passing": 35,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/keybindings.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/keys.test.ts",
+      "passing": 59,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/markdown.test.ts",
+      "passing": 66,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/overlay-non-capturing.test.ts",
+      "passing": 44,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/overlay-options.test.ts",
+      "passing": 24,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/overlay-short-content.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/regression-overlay-cjk-boundary.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/regression-regional-indicator-width.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/select-list.test.ts",
+      "passing": 5,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/stdin-buffer.test.ts",
+      "passing": 54,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/tab-width.test.ts",
+      "passing": 4,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/terminal-colors.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/terminal-image.test.ts",
+      "passing": 52,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/terminal.test.ts",
+      "passing": 12,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/truncate-to-width.test.ts",
+      "passing": 11,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/truncated-text.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/tui-cell-size-input.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/tui-overlay-style-leak.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/tui-render.test.ts",
+      "passing": 23,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/tui-shrink.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/word-navigation.test.ts",
+      "passing": 19,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "tui",
+      "file": "test/wrap-ansi.test.ts",
+      "passing": 19,
+      "failing": 0,
+      "skipped": 0
+    }
+  ],
+  "environment_failures": 66,
+  "environment_notes": [
+    "canvas system libs required: libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev (plus preinstalled libcairo2-dev, libpixman-1-dev)",
+    "packages/ai provider data (src/providers/data/*.json) is generated via 'npm run generate-models', not committed in pi",
+    "no provider API keys supplied: ai skips its live-provider tests by design",
+    "environment_failures=66 is a conservative keyword match over coding-agent failing test names (fswatch/watch/extension/discovery/stdout/stderr/spawn/which); it is a heuristic, not an exact attribution — see by_file for raw per-file failing counts."
+  ]
+}

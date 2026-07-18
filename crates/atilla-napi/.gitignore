@@ -1,0 +1,5 @@
+# napi-rs build outputs (rebuilt by the conformance runner)
+*.node
+index.js
+index.d.ts
+node_modules/

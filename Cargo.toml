@@ -1,6 +1,13 @@
 [workspace]
 resolver = "2"
-members = ["crates/atilla-core", "crates/atilla-cli"]
+members = [
+    "crates/atilla-core",
+    "crates/atilla-cli",
+    "crates/atilla-ai",
+    "crates/atilla-agent",
+    "crates/atilla-coding",
+    "crates/atilla-napi",
+]
 
 [workspace.package]
 version = "0.1.0"

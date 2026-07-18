@@ -1,0 +1,9 @@
+[package]
+name = "atilla-coding"
+description = "Rust mirror of @earendil-works/pi-coding-agent — the coding agent shell (scaffold)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
