@@ -1,11 +1,14 @@
 //! Pure display helpers shared by the tool renderers.
 //!
-//! Ported from pi's `core/tools/render-utils.ts`. Only the pure string helpers
-//! are ported here: [`str_value`], [`replace_tabs`], [`normalize_display_text`],
-//! and [`shorten_path`]. The theme/terminal-dependent renderers (`linkPath`,
-//! `getTextOutput`, `renderToolPath`, `invalidArgText`) are deferred: they pull
-//! in the pi-tui capabilities, ANSI handling, and the interactive `Theme`, none
-//! of which exist in this crate yet.
+//! Ported from pi's `core/tools/render-utils.ts`. The pure string helpers are
+//! ported here: [`str_value`], [`replace_tabs`], [`normalize_display_text`],
+//! [`shorten_path`], and [`get_text_output`]. The remaining
+//! theme/terminal-dependent renderers (`linkPath`, `renderToolPath`,
+//! `invalidArgText`) are deferred: they pull in the pi-tui capabilities and the
+//! interactive `Theme`, neither of which exists in this crate yet.
+
+use crate::utils::ansi::strip_ansi;
+use crate::utils::shell::sanitize_binary_output;
 
 /// Coerce a value into a display string, matching pi's `str`:
 /// - a string stays as-is (`Some(string)`)
@@ -33,6 +36,15 @@ pub fn replace_tabs(text: &str) -> String {
 /// Strip carriage returns for display normalization.
 pub fn normalize_display_text(text: &str) -> String {
     text.replace('\r', "")
+}
+
+/// Materialize a tool result's text for display/model consumption, reproducing
+/// pi's `render-utils.ts` `getTextOutput` transform for a single text block:
+/// strip ANSI escape sequences, sanitize binary/control output, and drop
+/// carriage returns. This is the point at which pi strips ANSI — callers keep
+/// the raw text (ANSI intact) until they materialize it here.
+pub fn get_text_output(content: &str) -> String {
+    normalize_display_text(&sanitize_binary_output(&strip_ansi(content)))
 }
 
 /// Shorten a path by replacing a leading home directory with `~`.
@@ -69,6 +81,13 @@ mod tests {
     fn normalize_display_text_strips_cr() {
         assert_eq!(normalize_display_text("a\r\nb\r\n"), "a\nb\n");
         assert_eq!(normalize_display_text("plain"), "plain");
+    }
+
+    #[test]
+    fn get_text_output_strips_ansi_sanitizes_and_drops_cr() {
+        // ANSI escape stripped, control char sanitized, carriage return dropped.
+        assert_eq!(get_text_output("\u{1b}[31mred\u{1b}[0m\r\n"), "red\n");
+        assert_eq!(get_text_output("plain"), "plain");
     }
 
     #[test]
