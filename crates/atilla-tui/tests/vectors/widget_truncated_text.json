@@ -1,0 +1,152 @@
+[
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 50,
+		"expected": [
+			" Hello world                                      "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 30,
+		"expected": [
+			" Hello world                  "
+		]
+	},
+	{
+		"text": "Hello",
+		"paddingX": 0,
+		"paddingY": 2,
+		"width": 40,
+		"expected": [
+			"                                        ",
+			"                                        ",
+			"Hello                                   ",
+			"                                        ",
+			"                                        "
+		]
+	},
+	{
+		"text": "This is a very long piece of text that will definitely exceed the available width",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 30,
+		"expected": [
+			" This is a very long piece\u001b[0m...\u001b[0m "
+		]
+	},
+	{
+		"text": "\u001b[31mHello\u001b[39m \u001b[34mworld\u001b[39m",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 40,
+		"expected": [
+			" \u001b[31mHello\u001b[39m \u001b[34mworld\u001b[39m                            "
+		]
+	},
+	{
+		"text": "\u001b[31mThis is a very long red text that will be truncated\u001b[39m",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 20,
+		"expected": [
+			" \u001b[31mThis is a very \u001b[0m...\u001b[0m "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 30,
+		"expected": [
+			" Hello world                  "
+		]
+	},
+	{
+		"text": "",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 30,
+		"expected": [
+			"                              "
+		]
+	},
+	{
+		"text": "First line\nSecond line\nThird line",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 40,
+		"expected": [
+			" First line                             "
+		]
+	},
+	{
+		"text": "This is a very long first line that needs truncation\nSecond line",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 25,
+		"expected": [
+			" This is a very long \u001b[0m...\u001b[0m "
+		]
+	},
+	{
+		"text": "日本語の長いテキストをここで切り詰めます",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 10,
+		"expected": [
+			" 日本\u001b[0m...\u001b[0m  "
+		]
+	},
+	{
+		"text": "日本語の長いテキストをここで切り詰めます",
+		"paddingX": 1,
+		"paddingY": 0,
+		"width": 20,
+		"expected": [
+			" 日本語の長いテ\u001b[0m...\u001b[0m  "
+		]
+	},
+	{
+		"text": "tab\there",
+		"paddingX": 0,
+		"paddingY": 0,
+		"width": 20,
+		"expected": [
+			"tab\there          "
+		]
+	},
+	{
+		"text": "emoji 🙂🙂🙂 overflow test string here",
+		"paddingX": 1,
+		"paddingY": 1,
+		"width": 15,
+		"expected": [
+			"               ",
+			" emoji 🙂🙂\u001b[0m...\u001b[0m ",
+			"               "
+		]
+	},
+	{
+		"text": "exact",
+		"paddingX": 0,
+		"paddingY": 0,
+		"width": 5,
+		"expected": [
+			"exact"
+		]
+	},
+	{
+		"text": "ab",
+		"paddingX": 3,
+		"paddingY": 0,
+		"width": 4,
+		"expected": [
+			"   \u001b[0m.\u001b[0m   "
+		]
+	}
+]

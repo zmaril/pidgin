@@ -1,0 +1,68 @@
+[
+	{
+		"mime": "image/png",
+		"data": "iVBORwAAAAAAAAAAAAAAAAAAAyAAAAJY",
+		"dims": {
+			"widthPx": 800,
+			"heightPx": 600
+		}
+	},
+	{
+		"mime": "image/png",
+		"data": "iVBORwAAAAAAAAAAAAAAAAAAAAEAAAAB",
+		"dims": {
+			"widthPx": 1,
+			"heightPx": 1
+		}
+	},
+	{
+		"mime": "image/png",
+		"data": "iVBORwAAAAAAAAAAAAAAAAAAB4AAAAQ4",
+		"dims": {
+			"widthPx": 1920,
+			"heightPx": 1080
+		}
+	},
+	{
+		"mime": "image/jpeg",
+		"data": "/9j/wAARCAHgAoAAAAAAAAAAAA==",
+		"dims": {
+			"widthPx": 640,
+			"heightPx": 480
+		}
+	},
+	{
+		"mime": "image/jpeg",
+		"data": "/9j/wAARCADIAGQAAAAAAAAAAA==",
+		"dims": {
+			"widthPx": 100,
+			"heightPx": 200
+		}
+	},
+	{
+		"mime": "image/gif",
+		"data": "R0lGODlhQAHwAA==",
+		"dims": {
+			"widthPx": 320,
+			"heightPx": 240
+		}
+	},
+	{
+		"mime": "image/webp",
+		"data": "UklGRgAAAABXRUJQVlA4WAAAAAAAAAAA/wAAfwAA",
+		"dims": {
+			"widthPx": 256,
+			"heightPx": 128
+		}
+	},
+	{
+		"mime": "image/png",
+		"data": "bm90IGEgcG5n",
+		"dims": null
+	},
+	{
+		"mime": "image/bmp",
+		"data": "iVBORwAAAAAAAAAAAAAAAAAAAAoAAAAK",
+		"dims": null
+	}
+]

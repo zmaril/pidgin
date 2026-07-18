@@ -8,6 +8,9 @@ repository.workspace = true
 
 [dependencies]
 unicode-segmentation = "1.12"
+# base64 decode/encode for terminal_image.rs (image-dimension header parsing and
+# the iTerm2 `name=` field), matching pi's `Buffer.from(..., "base64")` usage.
+base64 = "0.22"
 # ICU4X word segmentation. Backs the word segmenter used by word-navigation;
 # reconciled to pi's ICU4C `Intl.Segmenter` via a colon tailoring in
 # text_util.rs (see that module and tests/word_segmentation.json).
