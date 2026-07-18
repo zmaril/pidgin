@@ -21,6 +21,8 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
+use serde::{Deserialize, Serialize};
+
 use crate::seams::provider::{AbortSignal, Provider as StreamBackend, StreamResult};
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
@@ -40,11 +42,13 @@ pub type ProviderHeaders = BTreeMap<String, Option<String>>;
 /// A pared-down stand-in for pi's `ProviderAuth`: it names the credential and
 /// lists the environment variables (in precedence order) that can supply an API
 /// key. The full resolve/login/oauth machinery is deferred for this slice.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProviderAuth {
     /// Human-readable credential name (pi's `apiKey.name`).
     pub name: String,
     /// API-key environment variables in precedence order (pi's `envApiKeyAuth`).
+    #[serde(default)]
     pub api_key_env_vars: Vec<String>,
 }
 
@@ -113,6 +117,52 @@ pub struct CreateProviderOptions {
     pub fetch_models: Option<FetchModels>,
     /// Single backend, or a map keyed by `model.api`.
     pub api: ApiRouting,
+}
+
+/// A serializable snapshot of one provider: its identity, metadata, auth, and
+/// last-known models. This is the JSON-persistable unit pi rebuilds custom
+/// providers from (the `models.json` config that also flows through
+/// [`create_provider`]). Backends ([`ApiRouting`]) and the dynamic-fetch hook are
+/// runtime-only wiring and are not part of the snapshot; a provider rebuilt from
+/// one routes via [`ApiRouting::Unimplemented`] until backends are re-attached.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderSnapshot {
+    /// Unique provider id.
+    pub id: String,
+    /// Display name. Defaults to `id` when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Provider base URL.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base_url: Option<String>,
+    /// Provider-level headers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub headers: Option<ProviderHeaders>,
+    /// Auth metadata.
+    #[serde(default)]
+    pub auth: ProviderAuth,
+    /// Last-known models for this provider.
+    #[serde(default)]
+    pub models: Vec<Model>,
+}
+
+impl ProviderSnapshot {
+    /// Rebuild a runtime [`RegistryProvider`] from this snapshot. Streaming uses
+    /// the "no API implementation" path (backends are not carried by the
+    /// snapshot); model listing, lookup, pricing, and metadata are fully restored.
+    pub fn into_provider(self) -> RegistryProvider {
+        create_provider(CreateProviderOptions {
+            id: self.id,
+            name: self.name,
+            base_url: self.base_url,
+            headers: self.headers,
+            auth: self.auth,
+            models: self.models,
+            fetch_models: None,
+            api: ApiRouting::Unimplemented,
+        })
+    }
 }
 
 /// The concrete runtime provider unit, pi's `Provider<TApi>` (`models.ts:75`).
@@ -338,6 +388,20 @@ impl Models {
     /// An empty collection (pi's `createModels`).
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Build a populated collection from provider snapshots, the JSON-snapshot
+    /// counterpart to [`create_models`] + [`crate::builtin_providers`]. Mirrors
+    /// pi's `createModels` followed by `setProvider` over each `models.json`
+    /// custom provider: every snapshot is upserted by id (later snapshots win),
+    /// so a `Models` can be reconstructed from a serialized form as well as from
+    /// the builtins path.
+    pub fn from_providers(providers: impl IntoIterator<Item = ProviderSnapshot>) -> Self {
+        let mut models = Models::new();
+        for snapshot in providers {
+            models.set_provider(snapshot.into_provider());
+        }
+        models
     }
 
     /// All providers, in registration order (pi's `getProviders`).
@@ -654,6 +718,81 @@ mod tests {
             force: false,
         }));
         assert!(provider.get_models().is_empty());
+    }
+
+    /// A minimal providers-JSON snapshot with one provider and one model whose
+    /// `compat` blob must survive the round-trip. Shared by the snapshot-path
+    /// tests so the JSON boilerplate lives in one place.
+    fn snapshot_json() -> serde_json::Value {
+        serde_json::json!([{
+            "id": "acme",
+            "name": "Acme",
+            "baseUrl": "https://acme.test/v1",
+            "auth": { "name": "Acme API key", "apiKeyEnvVars": ["ACME_API_KEY"] },
+            "models": [{
+                "id": "acme-1",
+                "name": "Acme One",
+                "api": "acme-api",
+                "provider": "acme",
+                "baseUrl": "https://acme.test/v1",
+                "reasoning": false,
+                "input": ["text"],
+                "cost": { "input": 1.0, "output": 2.0, "cacheRead": 0.1, "cacheWrite": 0.0 },
+                "contextWindow": 10000,
+                "maxTokens": 1000,
+                "compat": { "supportsTemperature": false }
+            }]
+        }])
+    }
+
+    // The napi ModelsCore snapshot path: deserialize a providers-JSON snapshot,
+    // build a `Models` from it, and confirm getModel round-trips and the model's
+    // compat blob survives re-serialization out (napi getModel serializes the
+    // Model<Value> back to JSON).
+    #[test]
+    fn from_providers_snapshot_round_trips() {
+        let snapshots: Vec<ProviderSnapshot> =
+            serde_json::from_value(snapshot_json()).expect("snapshot deserializes");
+        let models = Models::from_providers(snapshots);
+
+        assert_eq!(models.get_providers().len(), 1);
+        assert_eq!(models.get_models(Some("acme")).len(), 1);
+
+        let model = models.get_model("acme", "acme-1").expect("acme-1 resolves");
+        assert_eq!(model.provider, "acme");
+        assert_eq!(model.api, "acme-api");
+
+        // Serialize the resulting Model<Value> out and confirm the compat blob
+        // survives verbatim.
+        let out = serde_json::to_value(&model).expect("model serializes");
+        assert_eq!(
+            out["compat"]["supportsTemperature"],
+            serde_json::json!(false)
+        );
+
+        // A model whose api has no wired backend streams the "no API
+        // implementation" error (snapshot-rebuilt providers are Unimplemented).
+        let result = models
+            .get_provider("acme")
+            .unwrap()
+            .stream(&model, &context(), None, None);
+        assert_eq!(result.message.stop_reason, StopReason::Error);
+    }
+
+    // modelsAreEqual over two deserialized Model<Value> — the napi
+    // modelsAreEqual(a_json, b_json) shape: same id+provider are equal, a
+    // differing id is not.
+    #[test]
+    fn models_are_equal_over_deserialized_models() {
+        let model_json = snapshot_json()[0]["models"][0].clone();
+        let a: Model = serde_json::from_value(model_json.clone()).expect("a deserializes");
+        let b: Model = serde_json::from_value(model_json).expect("b deserializes");
+        assert!(models_are_equal(Some(&a), Some(&b)));
+
+        let mut other = b.clone();
+        other.id = "acme-2".to_string();
+        assert!(!models_are_equal(Some(&a), Some(&other)));
+        assert!(!models_are_equal(Some(&a), None));
     }
 
     // setProvider upserts by id (models.ts:230).
