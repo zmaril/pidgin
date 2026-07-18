@@ -1,3 +1,5 @@
+<!-- straitjacket-allow-file[:duplication] — design note; illustrative napi/SSE code sketches and Pro/Con scaffolding repeat intentionally -->
+
 # Testing Strategy: Passing pi's Own Test Suite
 
 **Status:** proposal · **Scope:** how the atilla Rust mirror proves conformance against [earendil-works/pi](https://github.com/earendil-works/pi) · **Conformance bar:** *take pi's own test suite and pass all of it.*
