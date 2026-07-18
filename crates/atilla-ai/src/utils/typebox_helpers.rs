@@ -1,3 +1,7 @@
+// straitjacket-allow-file[:duplication] — the per-case `StringEnumOptions` +
+// `string_enum` + `assert_eq!` blocks in the tests exercise each option
+// permutation and read as duplicates, but each is a distinct byte-for-byte
+// assertion on the produced schema shape.
 //! TypeBox schema-builder helpers, ported from pi-ai's
 //! `packages/ai/src/utils/typebox-helpers.ts` at pinned commit `3da591ab`.
 //!
