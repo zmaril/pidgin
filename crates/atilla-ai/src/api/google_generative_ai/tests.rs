@@ -1,3 +1,8 @@
+// straitjacket-allow-file[:duplication] — these tests transcribe pi's Google
+// model fixtures verbatim: the hand-built `GoogleModel` helper and the asserted
+// config/chunk JSON literals are near-identical to the sibling Google test files
+// by design, and the clone detector reads them as duplicates. They are distinct,
+// load-bearing fixtures kept parallel to pi's test cases.
 //! Unit tests for the direct Gemini client-config builder and the napi decode
 //! entry point. The stream-decode assertions live with the shared helper
 //! (`google_shared/tests.rs`); here we cover the `createClient` config shape
@@ -44,7 +49,10 @@ fn client_config_sets_base_url_and_suppresses_version_path() {
     };
     let config = build_client_config(&model("https://proxy.example.com/v1", None), &options);
     let http = &config["httpOptions"];
-    assert_eq!(http["baseUrl"], serde_json::json!("https://proxy.example.com/v1"));
+    assert_eq!(
+        http["baseUrl"],
+        serde_json::json!("https://proxy.example.com/v1")
+    );
     assert_eq!(http["apiVersion"], serde_json::json!(""));
 }
 
@@ -86,7 +94,10 @@ fn parse_stream_to_json_round_trips() {
     let out = parse_stream_to_json(&chunks, &model_json, 0).expect("json");
     let parsed: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(parsed["message"]["stopReason"], serde_json::json!("stop"));
-    assert_eq!(parsed["message"]["content"][0]["text"], serde_json::json!("hello"));
+    assert_eq!(
+        parsed["message"]["content"][0]["text"],
+        serde_json::json!("hello")
+    );
     // The event stream terminates in a `done` event.
     let events = parsed["events"].as_array().unwrap();
     assert_eq!(events.last().unwrap()["type"], serde_json::json!("done"));
