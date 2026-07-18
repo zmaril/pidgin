@@ -1,0 +1,2539 @@
+[
+	{
+		"name": "extractPathPrefix hey-slash forced",
+		"basePath": "/tmp",
+		"hasFd": false,
+		"lines": [
+			"hey /"
+		],
+		"cursorLine": 0,
+		"cursorCol": 5,
+		"force": true,
+		"readdir": {
+			"/": [
+				{
+					"name": "bin",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "bin.usr-is-merged",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "boot",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "container_info.json",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "dev",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "etc",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "home",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "lib",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "lib.usr-is-merged",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "lib64",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "lost+found",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "media",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "mnt",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "old_root",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "opt",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "proc",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "root",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "run",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "sbin",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "srv",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "sys",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "tmp",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "usr",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "var",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "workspace",
+					"dir": true,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/bin": true,
+			"/lib": true,
+			"/lib64": true,
+			"/sbin": true
+		},
+		"homedir": "/root",
+		"fdCalls": [],
+		"expected": {
+			"prefix": "/",
+			"items": [
+				{
+					"value": "/bin.usr-is-merged/",
+					"label": "bin.usr-is-merged/",
+					"description": null
+				},
+				{
+					"value": "/bin/",
+					"label": "bin/",
+					"description": null
+				},
+				{
+					"value": "/boot/",
+					"label": "boot/",
+					"description": null
+				},
+				{
+					"value": "/dev/",
+					"label": "dev/",
+					"description": null
+				},
+				{
+					"value": "/etc/",
+					"label": "etc/",
+					"description": null
+				},
+				{
+					"value": "/home/",
+					"label": "home/",
+					"description": null
+				},
+				{
+					"value": "/lib.usr-is-merged/",
+					"label": "lib.usr-is-merged/",
+					"description": null
+				},
+				{
+					"value": "/lib/",
+					"label": "lib/",
+					"description": null
+				},
+				{
+					"value": "/lib64/",
+					"label": "lib64/",
+					"description": null
+				},
+				{
+					"value": "/lost+found/",
+					"label": "lost+found/",
+					"description": null
+				},
+				{
+					"value": "/media/",
+					"label": "media/",
+					"description": null
+				},
+				{
+					"value": "/mnt/",
+					"label": "mnt/",
+					"description": null
+				},
+				{
+					"value": "/old_root/",
+					"label": "old_root/",
+					"description": null
+				},
+				{
+					"value": "/opt/",
+					"label": "opt/",
+					"description": null
+				},
+				{
+					"value": "/proc/",
+					"label": "proc/",
+					"description": null
+				},
+				{
+					"value": "/root/",
+					"label": "root/",
+					"description": null
+				},
+				{
+					"value": "/run/",
+					"label": "run/",
+					"description": null
+				},
+				{
+					"value": "/sbin/",
+					"label": "sbin/",
+					"description": null
+				},
+				{
+					"value": "/srv/",
+					"label": "srv/",
+					"description": null
+				},
+				{
+					"value": "/sys/",
+					"label": "sys/",
+					"description": null
+				},
+				{
+					"value": "/tmp/",
+					"label": "tmp/",
+					"description": null
+				},
+				{
+					"value": "/usr/",
+					"label": "usr/",
+					"description": null
+				},
+				{
+					"value": "/var/",
+					"label": "var/",
+					"description": null
+				},
+				{
+					"value": "/workspace/",
+					"label": "workspace/",
+					"description": null
+				},
+				{
+					"value": "/container_info.json",
+					"label": "container_info.json",
+					"description": null
+				}
+			]
+		},
+		"assertMode": "prefixAndValueSet"
+	},
+	{
+		"name": "extractPathPrefix /A forced",
+		"basePath": "/tmp",
+		"hasFd": false,
+		"lines": [
+			"/A"
+		],
+		"cursorLine": 0,
+		"cursorCol": 2,
+		"force": true,
+		"readdir": {
+			"/": [
+				{
+					"name": "bin",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "bin.usr-is-merged",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "boot",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "container_info.json",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "dev",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "etc",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "home",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "lib",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "lib.usr-is-merged",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "lib64",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "lost+found",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "media",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "mnt",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "old_root",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "opt",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "proc",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "root",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "run",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "sbin",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "srv",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "sys",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "tmp",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "usr",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "var",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "workspace",
+					"dir": true,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/bin": true,
+			"/lib": true,
+			"/lib64": true,
+			"/sbin": true
+		},
+		"homedir": "/root",
+		"fdCalls": [],
+		"expected": null,
+		"assertMode": "prefixAndValueSet"
+	},
+	{
+		"name": "extractPathPrefix /model not-triggered",
+		"basePath": "/tmp",
+		"hasFd": false,
+		"lines": [
+			"/model"
+		],
+		"cursorLine": 0,
+		"cursorCol": 6,
+		"force": true,
+		"readdir": {
+			"/": [
+				{
+					"name": "bin",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "bin.usr-is-merged",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "boot",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "container_info.json",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "dev",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "etc",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "home",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "lib",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "lib.usr-is-merged",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "lib64",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "lost+found",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "media",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "mnt",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "old_root",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "opt",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "proc",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "root",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "run",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "sbin",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "srv",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "sys",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "tmp",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "usr",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "var",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "workspace",
+					"dir": true,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/bin": true,
+			"/lib": true,
+			"/lib64": true,
+			"/sbin": true
+		},
+		"homedir": "/root",
+		"fdCalls": [],
+		"expected": null,
+		"assertMode": "prefixAndValueSet"
+	},
+	{
+		"name": "extractPathPrefix /command /-forced",
+		"basePath": "/tmp",
+		"hasFd": false,
+		"lines": [
+			"/command /"
+		],
+		"cursorLine": 0,
+		"cursorCol": 10,
+		"force": true,
+		"readdir": {
+			"/": [
+				{
+					"name": "bin",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "bin.usr-is-merged",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "boot",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "container_info.json",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "dev",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "etc",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "home",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "lib",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "lib.usr-is-merged",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "lib64",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "lost+found",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "media",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "mnt",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "old_root",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "opt",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "proc",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "root",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "run",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "sbin",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "srv",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "sys",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "tmp",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "usr",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "var",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "workspace",
+					"dir": true,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/bin": true,
+			"/lib": true,
+			"/lib64": true,
+			"/sbin": true
+		},
+		"homedir": "/root",
+		"fdCalls": [],
+		"expected": {
+			"prefix": "/",
+			"items": [
+				{
+					"value": "/bin.usr-is-merged/",
+					"label": "bin.usr-is-merged/",
+					"description": null
+				},
+				{
+					"value": "/bin/",
+					"label": "bin/",
+					"description": null
+				},
+				{
+					"value": "/boot/",
+					"label": "boot/",
+					"description": null
+				},
+				{
+					"value": "/dev/",
+					"label": "dev/",
+					"description": null
+				},
+				{
+					"value": "/etc/",
+					"label": "etc/",
+					"description": null
+				},
+				{
+					"value": "/home/",
+					"label": "home/",
+					"description": null
+				},
+				{
+					"value": "/lib.usr-is-merged/",
+					"label": "lib.usr-is-merged/",
+					"description": null
+				},
+				{
+					"value": "/lib/",
+					"label": "lib/",
+					"description": null
+				},
+				{
+					"value": "/lib64/",
+					"label": "lib64/",
+					"description": null
+				},
+				{
+					"value": "/lost+found/",
+					"label": "lost+found/",
+					"description": null
+				},
+				{
+					"value": "/media/",
+					"label": "media/",
+					"description": null
+				},
+				{
+					"value": "/mnt/",
+					"label": "mnt/",
+					"description": null
+				},
+				{
+					"value": "/old_root/",
+					"label": "old_root/",
+					"description": null
+				},
+				{
+					"value": "/opt/",
+					"label": "opt/",
+					"description": null
+				},
+				{
+					"value": "/proc/",
+					"label": "proc/",
+					"description": null
+				},
+				{
+					"value": "/root/",
+					"label": "root/",
+					"description": null
+				},
+				{
+					"value": "/run/",
+					"label": "run/",
+					"description": null
+				},
+				{
+					"value": "/sbin/",
+					"label": "sbin/",
+					"description": null
+				},
+				{
+					"value": "/srv/",
+					"label": "srv/",
+					"description": null
+				},
+				{
+					"value": "/sys/",
+					"label": "sys/",
+					"description": null
+				},
+				{
+					"value": "/tmp/",
+					"label": "tmp/",
+					"description": null
+				},
+				{
+					"value": "/usr/",
+					"label": "usr/",
+					"description": null
+				},
+				{
+					"value": "/var/",
+					"label": "var/",
+					"description": null
+				},
+				{
+					"value": "/workspace/",
+					"label": "workspace/",
+					"description": null
+				},
+				{
+					"value": "/container_info.json",
+					"label": "container_info.json",
+					"description": null
+				}
+			]
+		},
+		"assertMode": "prefixAndValueSet"
+	},
+	{
+		"name": "dot-slash preserves ./ file",
+		"basePath": "/tmp/pi-autocomplete-kqxyYR",
+		"hasFd": false,
+		"lines": [
+			"./up"
+		],
+		"cursorLine": 0,
+		"cursorCol": 4,
+		"force": true,
+		"readdir": {
+			"/tmp/pi-autocomplete-kqxyYR": [
+				{
+					"name": "update.sh",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "utils.ts",
+					"dir": false,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-kqxyYR": true,
+			"/tmp/pi-autocomplete-kqxyYR/update.sh": false,
+			"/tmp/pi-autocomplete-kqxyYR/utils.ts": false
+		},
+		"homedir": "/root",
+		"fdCalls": [],
+		"expected": {
+			"prefix": "./up",
+			"items": [
+				{
+					"value": "./update.sh",
+					"label": "update.sh",
+					"description": null
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "dot-slash preserves ./ directory",
+		"basePath": "/tmp/pi-autocomplete-T4uHkv",
+		"hasFd": false,
+		"lines": [
+			"./sr"
+		],
+		"cursorLine": 0,
+		"cursorCol": 4,
+		"force": true,
+		"readdir": {
+			"/tmp/pi-autocomplete-T4uHkv": [
+				{
+					"name": "src",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-T4uHkv/src": [
+				{
+					"name": "index.ts",
+					"dir": false,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-T4uHkv": true,
+			"/tmp/pi-autocomplete-T4uHkv/src": true,
+			"/tmp/pi-autocomplete-T4uHkv/src/index.ts": false
+		},
+		"homedir": "/root",
+		"fdCalls": [],
+		"expected": {
+			"prefix": "./sr",
+			"items": [
+				{
+					"value": "./src/",
+					"label": "src/",
+					"description": null
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "quoted paths with spaces direct",
+		"basePath": "/tmp/pi-autocomplete-8F9e4J",
+		"hasFd": false,
+		"lines": [
+			"my"
+		],
+		"cursorLine": 0,
+		"cursorCol": 2,
+		"force": true,
+		"readdir": {
+			"/tmp/pi-autocomplete-8F9e4J": [
+				{
+					"name": "my folder",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-8F9e4J/my folder": [
+				{
+					"name": "test.txt",
+					"dir": false,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-8F9e4J": true,
+			"/tmp/pi-autocomplete-8F9e4J/my folder": true,
+			"/tmp/pi-autocomplete-8F9e4J/my folder/test.txt": false
+		},
+		"homedir": "/root",
+		"fdCalls": [],
+		"expected": {
+			"prefix": "my",
+			"items": [
+				{
+					"value": "\"my folder/\"",
+					"label": "my folder/",
+					"description": null
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "quoted continues inside quoted paths",
+		"basePath": "/tmp/pi-autocomplete-FK6FyV",
+		"hasFd": false,
+		"lines": [
+			"\"my folder/\""
+		],
+		"cursorLine": 0,
+		"cursorCol": 11,
+		"force": true,
+		"readdir": {
+			"/tmp/pi-autocomplete-FK6FyV": [
+				{
+					"name": "my folder",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-FK6FyV/my folder": [
+				{
+					"name": "other.txt",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "test.txt",
+					"dir": false,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-FK6FyV": true,
+			"/tmp/pi-autocomplete-FK6FyV/my folder": true,
+			"/tmp/pi-autocomplete-FK6FyV/my folder/other.txt": false,
+			"/tmp/pi-autocomplete-FK6FyV/my folder/test.txt": false
+		},
+		"homedir": "/root",
+		"fdCalls": [],
+		"expected": {
+			"prefix": "\"my folder/",
+			"items": [
+				{
+					"value": "\"my folder/other.txt\"",
+					"label": "other.txt",
+					"description": null
+				},
+				{
+					"value": "\"my folder/test.txt\"",
+					"label": "test.txt",
+					"description": null
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "quoted applies without duplicating quote",
+		"basePath": "/tmp/pi-autocomplete-B0eJyq",
+		"hasFd": false,
+		"lines": [
+			"\"my folder/te\""
+		],
+		"cursorLine": 0,
+		"cursorCol": 13,
+		"force": true,
+		"readdir": {
+			"/tmp/pi-autocomplete-B0eJyq": [
+				{
+					"name": "my folder",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-B0eJyq/my folder": [
+				{
+					"name": "test.txt",
+					"dir": false,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-B0eJyq": true,
+			"/tmp/pi-autocomplete-B0eJyq/my folder": true,
+			"/tmp/pi-autocomplete-B0eJyq/my folder/test.txt": false
+		},
+		"homedir": "/root",
+		"fdCalls": [],
+		"expected": {
+			"prefix": "\"my folder/te",
+			"items": [
+				{
+					"value": "\"my folder/test.txt\"",
+					"label": "test.txt",
+					"description": null
+				}
+			]
+		},
+		"assertMode": "items",
+		"apply": {
+			"itemValue": "\"my folder/test.txt\"",
+			"expectedLines": [
+				"\"my folder/test.txt\""
+			]
+		}
+	},
+	{
+		"name": "fd empty @ query",
+		"basePath": "/tmp/pi-autocomplete-root-DBg30F/cwd",
+		"hasFd": true,
+		"lines": [
+			"@"
+		],
+		"cursorLine": 0,
+		"cursorCol": 1,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-DBg30F": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-DBg30F/cwd": [
+				{
+					"name": "README.md",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "src",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-DBg30F/cwd/src": [],
+			"/tmp/pi-autocomplete-root-DBg30F/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-DBg30F": true,
+			"/tmp/pi-autocomplete-root-DBg30F/cwd": true,
+			"/tmp/pi-autocomplete-root-DBg30F/cwd/README.md": false,
+			"/tmp/pi-autocomplete-root-DBg30F/cwd/src": true,
+			"/tmp/pi-autocomplete-root-DBg30F/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-DBg30F/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**"
+				],
+				"stdout": "README.md\nsrc/\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@",
+			"items": [
+				{
+					"value": "@README.md",
+					"label": "README.md",
+					"description": "README.md"
+				},
+				{
+					"value": "@src/",
+					"label": "src/",
+					"description": "src"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd matches file with extension",
+		"basePath": "/tmp/pi-autocomplete-root-YFZzaR/cwd",
+		"hasFd": true,
+		"lines": [
+			"@file.txt"
+		],
+		"cursorLine": 0,
+		"cursorCol": 9,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-YFZzaR": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-YFZzaR/cwd": [
+				{
+					"name": "file.txt",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-YFZzaR/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-YFZzaR": true,
+			"/tmp/pi-autocomplete-root-YFZzaR/cwd": true,
+			"/tmp/pi-autocomplete-root-YFZzaR/cwd/file.txt": false,
+			"/tmp/pi-autocomplete-root-YFZzaR/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-YFZzaR/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"file.txt"
+				],
+				"stdout": "file.txt\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@file.txt",
+			"items": [
+				{
+					"value": "@file.txt",
+					"label": "file.txt",
+					"description": "file.txt"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd case insensitive filter",
+		"basePath": "/tmp/pi-autocomplete-root-WisVX5/cwd",
+		"hasFd": true,
+		"lines": [
+			"@re"
+		],
+		"cursorLine": 0,
+		"cursorCol": 3,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-WisVX5": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-WisVX5/cwd": [
+				{
+					"name": "README.md",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "src",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-WisVX5/cwd/src": [],
+			"/tmp/pi-autocomplete-root-WisVX5/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-WisVX5": true,
+			"/tmp/pi-autocomplete-root-WisVX5/cwd": true,
+			"/tmp/pi-autocomplete-root-WisVX5/cwd/README.md": false,
+			"/tmp/pi-autocomplete-root-WisVX5/cwd/src": true,
+			"/tmp/pi-autocomplete-root-WisVX5/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-WisVX5/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"re"
+				],
+				"stdout": "README.md\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@re",
+			"items": [
+				{
+					"value": "@README.md",
+					"label": "README.md",
+					"description": "README.md"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd ranks directories before files",
+		"basePath": "/tmp/pi-autocomplete-root-ISxBlW/cwd",
+		"hasFd": true,
+		"lines": [
+			"@src"
+		],
+		"cursorLine": 0,
+		"cursorCol": 4,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-ISxBlW": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-ISxBlW/cwd": [
+				{
+					"name": "src",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "src.txt",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-ISxBlW/cwd/src": [],
+			"/tmp/pi-autocomplete-root-ISxBlW/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-ISxBlW": true,
+			"/tmp/pi-autocomplete-root-ISxBlW/cwd": true,
+			"/tmp/pi-autocomplete-root-ISxBlW/cwd/src": true,
+			"/tmp/pi-autocomplete-root-ISxBlW/cwd/src.txt": false,
+			"/tmp/pi-autocomplete-root-ISxBlW/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-ISxBlW/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"src"
+				],
+				"stdout": "src/\nsrc.txt\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@src",
+			"items": [
+				{
+					"value": "@src/",
+					"label": "src/",
+					"description": "src"
+				},
+				{
+					"value": "@src.txt",
+					"label": "src.txt",
+					"description": "src.txt"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd returns nested file paths",
+		"basePath": "/tmp/pi-autocomplete-root-KcK8n3/cwd",
+		"hasFd": true,
+		"lines": [
+			"@index"
+		],
+		"cursorLine": 0,
+		"cursorCol": 6,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-KcK8n3": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-KcK8n3/cwd": [
+				{
+					"name": "src",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-KcK8n3/cwd/src": [
+				{
+					"name": "index.ts",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-KcK8n3/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-KcK8n3": true,
+			"/tmp/pi-autocomplete-root-KcK8n3/cwd": true,
+			"/tmp/pi-autocomplete-root-KcK8n3/cwd/src": true,
+			"/tmp/pi-autocomplete-root-KcK8n3/cwd/src/index.ts": false,
+			"/tmp/pi-autocomplete-root-KcK8n3/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-KcK8n3/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"index"
+				],
+				"stdout": "src/index.ts\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@index",
+			"items": [
+				{
+					"value": "@src/index.ts",
+					"label": "index.ts",
+					"description": "src/index.ts"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd matches deeply nested paths",
+		"basePath": "/tmp/pi-autocomplete-root-k2lVKz/cwd",
+		"hasFd": true,
+		"lines": [
+			"@tui/src/auto"
+		],
+		"cursorLine": 0,
+		"cursorCol": 13,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-k2lVKz": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd": [
+				{
+					"name": "packages",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages": [
+				{
+					"name": "ai",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "tui",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/ai": [
+				{
+					"name": "src",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/ai/src": [
+				{
+					"name": "autocomplete.ts",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/tui": [
+				{
+					"name": "src",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/tui/src": [
+				{
+					"name": "autocomplete.ts",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-k2lVKz/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-k2lVKz": true,
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd": true,
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages": true,
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/ai": true,
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/ai/src": true,
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/ai/src/autocomplete.ts": false,
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/tui": true,
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/tui/src": true,
+			"/tmp/pi-autocomplete-root-k2lVKz/cwd/packages/tui/src/autocomplete.ts": false,
+			"/tmp/pi-autocomplete-root-k2lVKz/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-k2lVKz/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"--full-path",
+					"tui[\\\\/]src[\\\\/]auto"
+				],
+				"stdout": "packages/tui/src/autocomplete.ts\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@tui/src/auto",
+			"items": [
+				{
+					"value": "@packages/tui/src/autocomplete.ts",
+					"label": "autocomplete.ts",
+					"description": "packages/tui/src/autocomplete.ts"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd matches directory in middle with full-path",
+		"basePath": "/tmp/pi-autocomplete-root-Zw2OLf/cwd",
+		"hasFd": true,
+		"lines": [
+			"@components/"
+		],
+		"cursorLine": 0,
+		"cursorCol": 12,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-Zw2OLf": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd": [
+				{
+					"name": "src",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd/src": [
+				{
+					"name": "components",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "utils",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd/src/components": [
+				{
+					"name": "Button.tsx",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd/src/utils": [
+				{
+					"name": "helpers.ts",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-Zw2OLf/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-Zw2OLf": true,
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd": true,
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd/src": true,
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd/src/components": true,
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd/src/components/Button.tsx": false,
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd/src/utils": true,
+			"/tmp/pi-autocomplete-root-Zw2OLf/cwd/src/utils/helpers.ts": false,
+			"/tmp/pi-autocomplete-root-Zw2OLf/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-Zw2OLf/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"--full-path",
+					"components[\\\\/]"
+				],
+				"stdout": "src/components/Button.tsx\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@components/",
+			"items": [
+				{
+					"value": "@src/components/Button.tsx",
+					"label": "Button.tsx",
+					"description": "src/components/Button.tsx"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd scopes to relative directories recursively",
+		"basePath": "/tmp/pi-autocomplete-root-eYcpyJ/cwd",
+		"hasFd": true,
+		"lines": [
+			"@../outside/a"
+		],
+		"cursorLine": 0,
+		"cursorCol": 13,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-eYcpyJ": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-eYcpyJ/cwd": [],
+			"/tmp/pi-autocomplete-root-eYcpyJ/outside": [
+				{
+					"name": "nested",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-eYcpyJ/outside/nested": [
+				{
+					"name": "alpha.ts",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "deeper",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-eYcpyJ/outside/nested/deeper": [
+				{
+					"name": "also-alpha.ts",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "zzz.ts",
+					"dir": false,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-eYcpyJ": true,
+			"/tmp/pi-autocomplete-root-eYcpyJ/cwd": true,
+			"/tmp/pi-autocomplete-root-eYcpyJ/outside": true,
+			"/tmp/pi-autocomplete-root-eYcpyJ/outside/nested": true,
+			"/tmp/pi-autocomplete-root-eYcpyJ/outside/nested/alpha.ts": false,
+			"/tmp/pi-autocomplete-root-eYcpyJ/outside/nested/deeper": true,
+			"/tmp/pi-autocomplete-root-eYcpyJ/outside/nested/deeper/also-alpha.ts": false,
+			"/tmp/pi-autocomplete-root-eYcpyJ/outside/nested/deeper/zzz.ts": false
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-eYcpyJ/outside/",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"a"
+				],
+				"stdout": "nested/alpha.ts\nnested/deeper/also-alpha.ts\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@../outside/a",
+			"items": [
+				{
+					"value": "@../outside/nested/alpha.ts",
+					"label": "alpha.ts",
+					"description": "../outside/nested/alpha.ts"
+				},
+				{
+					"value": "@../outside/nested/deeper/also-alpha.ts",
+					"label": "also-alpha.ts",
+					"description": "../outside/nested/deeper/also-alpha.ts"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd quotes paths with spaces",
+		"basePath": "/tmp/pi-autocomplete-root-JHnSk0/cwd",
+		"hasFd": true,
+		"lines": [
+			"@my"
+		],
+		"cursorLine": 0,
+		"cursorCol": 3,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-JHnSk0": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-JHnSk0/cwd": [
+				{
+					"name": "my folder",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-JHnSk0/cwd/my folder": [
+				{
+					"name": "test.txt",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-JHnSk0/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-JHnSk0": true,
+			"/tmp/pi-autocomplete-root-JHnSk0/cwd": true,
+			"/tmp/pi-autocomplete-root-JHnSk0/cwd/my folder": true,
+			"/tmp/pi-autocomplete-root-JHnSk0/cwd/my folder/test.txt": false,
+			"/tmp/pi-autocomplete-root-JHnSk0/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-JHnSk0/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"my"
+				],
+				"stdout": "my folder/\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@my",
+			"items": [
+				{
+					"value": "@\"my folder/\"",
+					"label": "my folder/",
+					"description": "my folder"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd includes hidden excludes .git",
+		"basePath": "/tmp/pi-autocomplete-root-BNLr0t/cwd",
+		"hasFd": true,
+		"lines": [
+			"@"
+		],
+		"cursorLine": 0,
+		"cursorCol": 1,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-BNLr0t": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd": [
+				{
+					"name": ".git",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": ".github",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": ".pi",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.git": [
+				{
+					"name": "config",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.github": [
+				{
+					"name": "workflows",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.github/workflows": [
+				{
+					"name": "ci.yml",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.pi": [
+				{
+					"name": "config.json",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-BNLr0t/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-BNLr0t": true,
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd": true,
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.git": true,
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.git/config": false,
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.github": true,
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.github/workflows": true,
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.github/workflows/ci.yml": false,
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.pi": true,
+			"/tmp/pi-autocomplete-root-BNLr0t/cwd/.pi/config.json": false,
+			"/tmp/pi-autocomplete-root-BNLr0t/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-BNLr0t/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**"
+				],
+				"stdout": ".github/\n.github/workflows/\n.github/workflows/ci.yml\n.pi/\n.pi/config.json\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@",
+			"items": [
+				{
+					"value": "@.github/",
+					"label": ".github/",
+					"description": ".github"
+				},
+				{
+					"value": "@.github/workflows/",
+					"label": "workflows/",
+					"description": ".github/workflows"
+				},
+				{
+					"value": "@.github/workflows/ci.yml",
+					"label": "ci.yml",
+					"description": ".github/workflows/ci.yml"
+				},
+				{
+					"value": "@.pi/",
+					"label": ".pi/",
+					"description": ".pi"
+				},
+				{
+					"value": "@.pi/config.json",
+					"label": "config.json",
+					"description": ".pi/config.json"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd follows symlinked directories",
+		"basePath": "/tmp/pi-autocomplete-root-XfJuhN/cwd",
+		"hasFd": true,
+		"lines": [
+			"@some"
+		],
+		"cursorLine": 0,
+		"cursorCol": 5,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-XfJuhN": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-XfJuhN/cwd": [
+				{
+					"name": "dir",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "symlinked_dir",
+					"dir": false,
+					"link": true
+				}
+			],
+			"/tmp/pi-autocomplete-root-XfJuhN/cwd/dir": [
+				{
+					"name": "some_file.txt",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-XfJuhN/outside": [
+				{
+					"name": "some_file.txt",
+					"dir": false,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-XfJuhN": true,
+			"/tmp/pi-autocomplete-root-XfJuhN/cwd": true,
+			"/tmp/pi-autocomplete-root-XfJuhN/cwd/dir": true,
+			"/tmp/pi-autocomplete-root-XfJuhN/cwd/dir/some_file.txt": false,
+			"/tmp/pi-autocomplete-root-XfJuhN/cwd/symlinked_dir": true,
+			"/tmp/pi-autocomplete-root-XfJuhN/outside": true,
+			"/tmp/pi-autocomplete-root-XfJuhN/outside/some_file.txt": false
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-XfJuhN/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"some"
+				],
+				"stdout": "dir/some_file.txt\nsymlinked_dir/some_file.txt\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@some",
+			"items": [
+				{
+					"value": "@dir/some_file.txt",
+					"label": "some_file.txt",
+					"description": "dir/some_file.txt"
+				},
+				{
+					"value": "@symlinked_dir/some_file.txt",
+					"label": "some_file.txt",
+					"description": "symlinked_dir/some_file.txt"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd returns symlinked directory by name",
+		"basePath": "/tmp/pi-autocomplete-root-R51qEI/cwd",
+		"hasFd": true,
+		"lines": [
+			"@symlinked"
+		],
+		"cursorLine": 0,
+		"cursorCol": 10,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-R51qEI": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-R51qEI/cwd": [
+				{
+					"name": "symlinked_dir",
+					"dir": false,
+					"link": true
+				}
+			],
+			"/tmp/pi-autocomplete-root-R51qEI/outside": [
+				{
+					"name": "nested",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-R51qEI/outside/nested": [
+				{
+					"name": "file.txt",
+					"dir": false,
+					"link": false
+				}
+			]
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-R51qEI": true,
+			"/tmp/pi-autocomplete-root-R51qEI/cwd": true,
+			"/tmp/pi-autocomplete-root-R51qEI/cwd/symlinked_dir": true,
+			"/tmp/pi-autocomplete-root-R51qEI/outside": true,
+			"/tmp/pi-autocomplete-root-R51qEI/outside/nested": true,
+			"/tmp/pi-autocomplete-root-R51qEI/outside/nested/file.txt": false
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-R51qEI/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"symlinked"
+				],
+				"stdout": "symlinked_dir/\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@symlinked",
+			"items": [
+				{
+					"value": "@symlinked_dir/",
+					"label": "symlinked_dir/",
+					"description": "symlinked_dir"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd returns symlinked files without type l",
+		"basePath": "/tmp/pi-autocomplete-root-Pnpbny/cwd",
+		"hasFd": true,
+		"lines": [
+			"@link"
+		],
+		"cursorLine": 0,
+		"cursorCol": 5,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-Pnpbny": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-Pnpbny/cwd": [
+				{
+					"name": "link.txt",
+					"dir": false,
+					"link": true
+				},
+				{
+					"name": "original.txt",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-Pnpbny/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-Pnpbny": true,
+			"/tmp/pi-autocomplete-root-Pnpbny/cwd": true,
+			"/tmp/pi-autocomplete-root-Pnpbny/cwd/link.txt": false,
+			"/tmp/pi-autocomplete-root-Pnpbny/cwd/original.txt": false,
+			"/tmp/pi-autocomplete-root-Pnpbny/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-Pnpbny/cwd",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"link"
+				],
+				"stdout": "link.txt\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@link",
+			"items": [
+				{
+					"value": "@link.txt",
+					"label": "link.txt",
+					"description": "link.txt"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd continues inside quoted @ paths",
+		"basePath": "/tmp/pi-autocomplete-root-rCQfpY/cwd",
+		"hasFd": true,
+		"lines": [
+			"@\"my folder/\""
+		],
+		"cursorLine": 0,
+		"cursorCol": 12,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-rCQfpY": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-rCQfpY/cwd": [
+				{
+					"name": "my folder",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-rCQfpY/cwd/my folder": [
+				{
+					"name": "other.txt",
+					"dir": false,
+					"link": false
+				},
+				{
+					"name": "test.txt",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-rCQfpY/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-rCQfpY": true,
+			"/tmp/pi-autocomplete-root-rCQfpY/cwd": true,
+			"/tmp/pi-autocomplete-root-rCQfpY/cwd/my folder": true,
+			"/tmp/pi-autocomplete-root-rCQfpY/cwd/my folder/other.txt": false,
+			"/tmp/pi-autocomplete-root-rCQfpY/cwd/my folder/test.txt": false,
+			"/tmp/pi-autocomplete-root-rCQfpY/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-rCQfpY/cwd/my folder/",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**"
+				],
+				"stdout": "other.txt\ntest.txt\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@\"my folder/",
+			"items": [
+				{
+					"value": "@\"my folder/other.txt\"",
+					"label": "other.txt",
+					"description": "my folder/other.txt"
+				},
+				{
+					"value": "@\"my folder/test.txt\"",
+					"label": "test.txt",
+					"description": "my folder/test.txt"
+				}
+			]
+		},
+		"assertMode": "items"
+	},
+	{
+		"name": "fd applies quoted @ completion without dup quote",
+		"basePath": "/tmp/pi-autocomplete-root-pF83j9/cwd",
+		"hasFd": true,
+		"lines": [
+			"@\"my folder/te\""
+		],
+		"cursorLine": 0,
+		"cursorCol": 14,
+		"force": false,
+		"readdir": {
+			"/tmp/pi-autocomplete-root-pF83j9": [
+				{
+					"name": "cwd",
+					"dir": true,
+					"link": false
+				},
+				{
+					"name": "outside",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-pF83j9/cwd": [
+				{
+					"name": "my folder",
+					"dir": true,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-pF83j9/cwd/my folder": [
+				{
+					"name": "test.txt",
+					"dir": false,
+					"link": false
+				}
+			],
+			"/tmp/pi-autocomplete-root-pF83j9/outside": []
+		},
+		"stat": {
+			"/tmp/pi-autocomplete-root-pF83j9": true,
+			"/tmp/pi-autocomplete-root-pF83j9/cwd": true,
+			"/tmp/pi-autocomplete-root-pF83j9/cwd/my folder": true,
+			"/tmp/pi-autocomplete-root-pF83j9/cwd/my folder/test.txt": false,
+			"/tmp/pi-autocomplete-root-pF83j9/outside": true
+		},
+		"homedir": "/root",
+		"fdCalls": [
+			{
+				"args": [
+					"--base-directory",
+					"/tmp/pi-autocomplete-root-pF83j9/cwd/my folder/",
+					"--max-results",
+					"100",
+					"--type",
+					"f",
+					"--type",
+					"d",
+					"--follow",
+					"--hidden",
+					"--exclude",
+					".git",
+					"--exclude",
+					".git/*",
+					"--exclude",
+					".git/**",
+					"te"
+				],
+				"stdout": "test.txt\n",
+				"code": 0
+			}
+		],
+		"expected": {
+			"prefix": "@\"my folder/te",
+			"items": [
+				{
+					"value": "@\"my folder/test.txt\"",
+					"label": "test.txt",
+					"description": "my folder/test.txt"
+				}
+			]
+		},
+		"assertMode": "items",
+		"apply": {
+			"itemValue": "@\"my folder/test.txt\"",
+			"expectedLines": [
+				"@\"my folder/test.txt\" "
+			]
+		}
+	}
+]
