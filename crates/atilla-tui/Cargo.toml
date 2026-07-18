@@ -8,6 +8,9 @@ repository.workspace = true
 
 [dependencies]
 unicode-segmentation = "1.12"
+# crossterm is used strictly as the ANSI output sink / event backend for the
+# real terminal (CrosstermTerminal); all diff/layout logic is our own port.
+crossterm = "0.29"
 
 [dev-dependencies]
 serde = { version = "1", features = ["derive"] }
