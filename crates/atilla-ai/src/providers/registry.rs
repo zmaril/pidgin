@@ -540,6 +540,21 @@ mod tests {
         Context::default()
     }
 
+    /// Baseline [`CreateProviderOptions`] for tests; override the fields a case
+    /// cares about via struct-update (`..default_opts(id)`).
+    fn default_opts(id: &str) -> CreateProviderOptions {
+        CreateProviderOptions {
+            id: id.to_string(),
+            name: None,
+            base_url: None,
+            headers: None,
+            auth: ProviderAuth::default(),
+            models: vec![],
+            fetch_models: None,
+            api: ApiRouting::Unimplemented,
+        }
+    }
+
     // providers.test.ts:300 — dispatches on model.api for mixed-API providers.
     // Adapted to dispatch at the provider level (pi routes through
     // `models.completeSimple`, which additionally applies auth — the auth
@@ -551,17 +566,12 @@ mod tests {
         by_api.insert("api-a".to_string(), recording("a", calls.clone()));
         by_api.insert("api-b".to_string(), recording("b", calls.clone()));
         let provider = create_provider(CreateProviderOptions {
-            id: "mixed".to_string(),
-            name: None,
-            base_url: None,
-            headers: None,
-            auth: ProviderAuth::default(),
             models: vec![
                 test_model("api-a", "model-a"),
                 test_model("api-b", "model-b"),
             ],
-            fetch_models: None,
             api: ApiRouting::ByApi(by_api),
+            ..default_opts("mixed")
         });
 
         provider.stream(&test_model("api-a", "model-a"), &context(), None, None);
@@ -579,14 +589,9 @@ mod tests {
         let mut by_api = BTreeMap::new();
         by_api.insert("api-a".to_string(), recording("a", calls));
         let provider = create_provider(CreateProviderOptions {
-            id: "mixed".to_string(),
-            name: None,
-            base_url: None,
-            headers: None,
-            auth: ProviderAuth::default(),
             models: vec![test_model("api-a", "model-a")],
-            fetch_models: None,
             api: ApiRouting::ByApi(by_api),
+            ..default_opts("mixed")
         });
         let result = provider.stream(&test_model("api-ghost", "model-x"), &context(), None, None);
         assert_eq!(result.message.stop_reason, StopReason::Error);
@@ -608,17 +613,11 @@ mod tests {
         let fetches = Arc::new(Mutex::new(0u32));
         let fetches_inner = fetches.clone();
         let provider = create_provider(CreateProviderOptions {
-            id: "dynamic".to_string(),
-            name: None,
-            base_url: None,
-            headers: None,
-            auth: ProviderAuth::default(),
-            models: vec![],
             fetch_models: Some(Arc::new(move |_ctx| {
                 *fetches_inner.lock().unwrap() += 1;
                 vec![test_model("api-a", "listed")]
             })),
-            api: ApiRouting::Unimplemented,
+            ..default_opts("dynamic")
         });
 
         assert!(provider.get_models().is_empty());
@@ -647,14 +646,8 @@ mod tests {
     #[test]
     fn dynamic_provider_offline_does_not_fetch() {
         let provider = create_provider(CreateProviderOptions {
-            id: "dynamic".to_string(),
-            name: None,
-            base_url: None,
-            headers: None,
-            auth: ProviderAuth::default(),
-            models: vec![],
             fetch_models: Some(Arc::new(|_ctx| vec![test_model("api-a", "listed")])),
-            api: ApiRouting::Unimplemented,
+            ..default_opts("dynamic")
         });
         assert!(!provider.refresh_models(&RefreshContext {
             allow_network: false,
@@ -669,14 +662,8 @@ mod tests {
         let mut models = create_models();
         let make = |name: &str| {
             create_provider(CreateProviderOptions {
-                id: "p".to_string(),
                 name: Some(name.to_string()),
-                base_url: None,
-                headers: None,
-                auth: ProviderAuth::default(),
-                models: vec![],
-                fetch_models: None,
-                api: ApiRouting::Unimplemented,
+                ..default_opts("p")
             })
         };
         models.set_provider(make("first"));
