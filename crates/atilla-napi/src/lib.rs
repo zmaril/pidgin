@@ -171,7 +171,9 @@ pub fn strip_ansi(value: String) -> String {
 /// `detectSupportedImageMimeType` (utils/mime.ts): sniff a supported image MIME
 /// type from magic bytes, or `null`.
 #[napi(js_name = "detectSupportedImageMimeType")]
-pub fn detect_supported_image_mime_type(buffer: napi::bindgen_prelude::Uint8Array) -> Option<String> {
+pub fn detect_supported_image_mime_type(
+    buffer: napi::bindgen_prelude::Uint8Array,
+) -> Option<String> {
     atilla_coding::utils::mime::detect_supported_image_mime_type(&buffer).map(|s| s.to_string())
 }
 
@@ -211,13 +213,12 @@ pub fn normalize_changelog_links(markdown: String, version_json: String) -> napi
 /// undefined`.
 #[napi(js_name = "comparePackageVersions")]
 pub fn compare_package_versions(left_version: String, right_version: String) -> Option<i32> {
-    atilla_coding::utils::version_check::compare_package_versions(&left_version, &right_version).map(
-        |ordering| match ordering {
+    atilla_coding::utils::version_check::compare_package_versions(&left_version, &right_version)
+        .map(|ordering| match ordering {
             std::cmp::Ordering::Less => -1,
             std::cmp::Ordering::Equal => 0,
             std::cmp::Ordering::Greater => 1,
-        },
-    )
+        })
 }
 
 /// `isNewerPackageVersion` (utils/version-check.ts): is `candidate` strictly

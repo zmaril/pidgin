@@ -1,4 +1,4 @@
-# Conformance steward ledger
+# Conformance flip ledger (shim maintainer)
 
 Tracks which pi modules are backed by the Rust engine (`atilla-napi`) vs still
 running pi's own TypeScript. "Native" = a hand-written shim in
