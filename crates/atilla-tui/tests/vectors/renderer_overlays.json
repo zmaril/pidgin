@@ -1,0 +1,4759 @@
+[
+	{
+		"name": "overlay_top_left",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"TOP-LEFT"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "top-left",
+					"width": 10
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007TOP-LEFT  \u001b[0m\u001b]8;;\u0007                                                                      \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"TOP-LEFT                                                                        ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_bottom_right",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"BTM-RIGHT"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "bottom-right",
+					"width": 10
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                                                                      \u001b[0m\u001b]8;;\u0007BTM-RIGHT \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                                                                      BTM-RIGHT "
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_top_center",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"CENTERED"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "top-center",
+					"width": 10
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J                                   \u001b[0m\u001b]8;;\u0007CENTERED  \u001b[0m\u001b]8;;\u0007                                   \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"                                   CENTERED                                     ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_margin_number",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"MARGIN"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "top-left",
+					"width": 10,
+					"margin": 5
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n     \u001b[0m\u001b]8;;\u0007MARGIN    \u001b[0m\u001b]8;;\u0007                                                                 \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"     MARGIN                                                                     ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_margin_object",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"MARGIN"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "top-left",
+					"width": 10,
+					"margin": {
+						"top": 2,
+						"left": 3,
+						"right": 0,
+						"bottom": 0
+					}
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n   \u001b[0m\u001b]8;;\u0007MARGIN    \u001b[0m\u001b]8;;\u0007                                                                   \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"   MARGIN                                                                       ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_offset",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"OFFSET"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "top-left",
+					"width": 10,
+					"offsetX": 10,
+					"offsetY": 5
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n          \u001b[0m\u001b]8;;\u0007OFFSET    \u001b[0m\u001b]8;;\u0007                                                            \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"          OFFSET                                                                ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_pct_center",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"PCT"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"width": 10,
+					"row": "50%",
+					"col": "50%"
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                                   \u001b[0m\u001b]8;;\u0007PCT       \u001b[0m\u001b]8;;\u0007                                   \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                                   PCT                                          ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_row_pct_0",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"TOP"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"width": 10,
+					"row": "0%"
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J                                   \u001b[0m\u001b]8;;\u0007TOP       \u001b[0m\u001b]8;;\u0007                                   \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"                                   TOP                                          ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_row_pct_100",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"BOTTOM"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"width": 10,
+					"row": "100%"
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                                   \u001b[0m\u001b]8;;\u0007BOTTOM    \u001b[0m\u001b]8;;\u0007                                   \u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                                   BOTTOM                                       "
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_max_height",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"Line 4",
+					"Line 5"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"maxHeight": 3
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007Line 1                                                                          \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007Line 2                                                                          \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007Line 3                                                                          \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"Line 1                                                                          ",
+					"Line 2                                                                          ",
+					"Line 3                                                                          ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_max_height_pct",
+		"columns": 80,
+		"rows": 10,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"L1",
+					"L2",
+					"L3",
+					"L4",
+					"L5",
+					"L6",
+					"L7",
+					"L8",
+					"L9",
+					"L10"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"maxHeight": "50%"
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 10
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 10
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007L1                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007L2                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007L3                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007L4                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007L5                                                                              \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"L1                                                                              ",
+					"L2                                                                              ",
+					"L3                                                                              ",
+					"L4                                                                              ",
+					"L5                                                                              ",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 9,
+					"hardwareCursorRow": 9,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 10,
+					"previousWidth": 80,
+					"previousHeight": 10
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 9,
+					"hardwareCursorRow": 9,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 10,
+					"previousWidth": 80,
+					"previousHeight": 10
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_absolute",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"ABSOLUTE"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "bottom-right",
+					"row": 3,
+					"col": 5,
+					"width": 10
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n     \u001b[0m\u001b]8;;\u0007ABSOLUTE  \u001b[0m\u001b]8;;\u0007                                                                 \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"     ABSOLUTE                                                                   ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_width_pct",
+		"columns": 100,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"test"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"width": "50%"
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 100,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 100,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                         \u001b[0m\u001b]8;;\u0007test                                              \u001b[0m\u001b]8;;\u0007                         \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                         test                                                                       ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 100,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 100,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_min_width",
+		"columns": 100,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"test"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"width": "10%",
+					"minWidth": 30
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 100,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 100,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                                   \u001b[0m\u001b]8;;\u0007test                          \u001b[0m\u001b]8;;\u0007                                   \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                                   test                                                             ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 100,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 100,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_width_overflow_truncate",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"width": 20
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                              \u001b[0m\u001b]8;;\u0007XXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b]8;;\u0007                              \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                              XXXXXXXXXXXXXXXXXXXX                              ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_edge_col60",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"col": 60,
+					"width": 20
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                                                            \u001b[0m\u001b]8;;\u0007XXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                                                            XXXXXXXXXXXXXXXXXXXX",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_complex_ansi",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"\u001b[48;2;40;50;40m \u001b[38;2;128;128;128mSome styled content\u001b[39m\u001b[49m\u001b]8;;http://example.com\u0007link\u001b]8;;\u0007 more content  more content  more content  more content  more content  more content  more content  more content  more content  more content ",
+					"\u001b[48;2;40;50;40m \u001b[38;2;128;128;128mSome styled content\u001b[39m\u001b[49m\u001b]8;;http://example.com\u0007link\u001b]8;;\u0007 more content  more content  more content  more content  more content  more content  more content  more content  more content  more content ",
+					"\u001b[48;2;40;50;40m \u001b[38;2;128;128;128mSome styled content\u001b[39m\u001b[49m\u001b]8;;http://example.com\u0007link\u001b]8;;\u0007 more content  more content  more content  more content  more content  more content  more content  more content  more content  more content "
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"width": 60
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n          \u001b[0m\u001b]8;;\u0007\u001b[48;2;40;50;40m \u001b[38;2;128;128;128mSome styled content\u001b[39m\u001b[49m\u001b]8;;http://example.com\u0007link\u001b]8;;\u0007 more content  more content  more co\u001b[0m\u001b]8;;\u0007          \u001b[0m\u001b]8;;\u0007\r\n          \u001b[0m\u001b]8;;\u0007\u001b[48;2;40;50;40m \u001b[38;2;128;128;128mSome styled content\u001b[39m\u001b[49m\u001b]8;;http://example.com\u0007link\u001b]8;;\u0007 more content  more content  more co\u001b[0m\u001b]8;;\u0007          \u001b[0m\u001b]8;;\u0007\r\n          \u001b[0m\u001b]8;;\u0007\u001b[48;2;40;50;40m \u001b[38;2;128;128;128mSome styled content\u001b[39m\u001b[49m\u001b]8;;http://example.com\u0007link\u001b]8;;\u0007 more content  more content  more co\u001b[0m\u001b]8;;\u0007          \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"           Some styled contentlink more content  more content  more co          ",
+					"           Some styled contentlink more content  more content  more co          ",
+					"           Some styled contentlink more content  more content  more co          ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_styled_base",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": [
+					"\u001b[1m\u001b[38;2;255;0;0mXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m",
+					"\u001b[1m\u001b[38;2;255;0;0mXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m",
+					"\u001b[1m\u001b[38;2;255;0;0mXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"width": 20,
+					"anchor": "center"
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[1m\u001b[38;2;255;0;0mXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b[0m\u001b]8;;\u0007\r\n\u001b[1m\u001b[38;2;255;0;0mXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b[0m\u001b]8;;\u0007\r\n\u001b[1m\u001b[38;2;255;0;0mXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[1m\u001b[38;2;255;0;0mXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b[0m\u001b]8;;\u0007\r\n\u001b[1m\u001b[38;2;255;0;0mXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b[0m\u001b]8;;\u0007\r\n\u001b[1m\u001b[38;2;255;0;0mXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                              \u001b[0m\u001b]8;;\u0007OVERLAY             \u001b[0m\u001b]8;;\u0007                              \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                              OVERLAY                                           ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_wide_chars",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"中文日本語한글テスト漢字"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"width": 15
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                                \u001b[0m\u001b]8;;\u0007中文日本語한글 \u001b[0m\u001b]8;;\u0007                                 \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                                中文日本語한글                                  ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_osc_base",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": [
+					"See \u001b]8;;file:///path/to/file.ts\u0007file.ts\u001b]8;;\u0007 for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"See \u001b]8;;file:///path/to/file.ts\u0007file.ts\u001b]8;;\u0007 for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"See \u001b]8;;file:///path/to/file.ts\u0007file.ts\u001b]8;;\u0007 for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY-TEXT"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "center",
+					"width": 20
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hSee \u001b]8;;file:///path/to/file.ts\u0007file.ts\u001b]8;;\u0007 for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b]8;;\u0007\r\nSee \u001b]8;;file:///path/to/file.ts\u0007file.ts\u001b]8;;\u0007 for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b]8;;\u0007\r\nSee \u001b]8;;file:///path/to/file.ts\u0007file.ts\u001b]8;;\u0007 for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"See file.ts for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"See file.ts for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"See file.ts for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3JSee \u001b]8;;file:///path/to/file.ts\u0007file.ts\u001b]8;;\u0007 for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b]8;;\u0007\r\nSee \u001b]8;;file:///path/to/file.ts\u0007file.ts\u001b]8;;\u0007 for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b]8;;\u0007\r\nSee \u001b]8;;file:///path/to/file.ts\u0007file.ts\u001b]8;;\u0007 for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                              \u001b[0m\u001b]8;;\u0007OVERLAY-TEXT        \u001b[0m\u001b]8;;\u0007                              \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"See file.ts for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"See file.ts for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"See file.ts for details XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                              OVERLAY-TEXT                                      ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_short_content",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": [
+					"Line 1",
+					"Line 2",
+					"Line 3"
+				]
+			},
+			{
+				"lines": [
+					"OVERLAY_TOP",
+					"OVERLAY_MID",
+					"OVERLAY_BOT"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026hLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 2,
+					"hardwareCursorRow": 2,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 3,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3JLine 1\u001b[0m\u001b]8;;\u0007\r\nLine 2\u001b[0m\u001b]8;;\u0007\r\nLine 3\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY_TOP                                                                     \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY_MID                                                                     \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007OVERLAY_BOT                                                                     \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"Line 1",
+					"Line 2",
+					"Line 3",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"OVERLAY_TOP                                                                     ",
+					"OVERLAY_MID                                                                     ",
+					"OVERLAY_BOT                                                                     ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_style_leak",
+		"columns": 20,
+		"rows": 6,
+		"components": [
+			{
+				"lines": [
+					"\u001b[3mXXXXXXXXXXXXXXXXXXXX\u001b[23m",
+					"INPUT"
+				]
+			},
+			{
+				"lines": [
+					"OVR"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"row": 0,
+					"col": 5,
+					"width": 3
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[3mXXXXXXXXXXXXXXXXXXXX\u001b[23m\u001b[0m\u001b]8;;\u0007\r\nINPUT\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"XXXXXXXXXXXXXXXXXXXX",
+					"INPUT",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 20,
+					"previousHeight": 6
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 1,
+					"hardwareCursorRow": 1,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 2,
+					"previousWidth": 20,
+					"previousHeight": 6
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[3mXXXXX\u001b[0m\u001b]8;;\u0007OVR\u001b[0m\u001b]8;;\u0007\u001b[3mXXXXXXXXXXXX\u001b[0m\u001b]8;;\u0007\r\nINPUT\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"XXXXXOVRXXXXXXXXXXXX",
+					"INPUT",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 5,
+					"hardwareCursorRow": 5,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 6,
+					"previousWidth": 20,
+					"previousHeight": 6
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 5,
+					"hardwareCursorRow": 5,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 6,
+					"previousWidth": 20,
+					"previousHeight": 6
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_stacked_top",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"FIRST-OVERLAY"
+				]
+			},
+			{
+				"lines": [
+					"SECOND"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "top-left",
+					"width": 20
+				}
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"anchor": "top-left",
+					"width": 10
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007SECOND    \u001b[0m\u001b]8;;\u0007LAY       \u001b[0m\u001b]8;;\u0007                                                            \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"SECOND    LAY                                                                   ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_different_positions",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"TOP-LEFT"
+				]
+			},
+			{
+				"lines": [
+					"BTM-RIGHT"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "top-left",
+					"width": 15
+				}
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"anchor": "bottom-right",
+					"width": 15
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007TOP-LEFT       \u001b[0m\u001b]8;;\u0007                                                                 \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n                                                                 \u001b[0m\u001b]8;;\u0007BTM-RIGHT      \u001b[0m\u001b]8;;\u0007\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"TOP-LEFT                                                                        ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"                                                                 BTM-RIGHT      "
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	},
+	{
+		"name": "overlay_hide_stack_order",
+		"columns": 80,
+		"rows": 24,
+		"components": [
+			{
+				"lines": []
+			},
+			{
+				"lines": [
+					"FIRST"
+				]
+			},
+			{
+				"lines": [
+					"SECOND"
+				]
+			}
+		],
+		"base": [
+			0
+		],
+		"flags": [],
+		"reactions": [],
+		"steps": [
+			{
+				"op": "start"
+			},
+			{
+				"op": "showOverlay",
+				"component": 1,
+				"options": {
+					"anchor": "top-left",
+					"width": 10
+				}
+			},
+			{
+				"op": "showOverlay",
+				"component": 2,
+				"options": {
+					"anchor": "top-left",
+					"width": 10
+				}
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "hideOverlay"
+			},
+			{
+				"op": "render",
+				"force": true
+			},
+			{
+				"op": "stop"
+			}
+		],
+		"results": [
+			{
+				"op": "start",
+				"writes": "\u001b[?2026h\u001b[?2026l",
+				"viewport": [
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": null,
+					"status": "inactive",
+					"overlay": null,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "showOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 1,
+					"cursorRow": 0,
+					"hardwareCursorRow": 0,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 0,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007SECOND    \u001b[0m\u001b]8;;\u0007                                                                      \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"SECOND                                                                          ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 2,
+					"status": "eligible",
+					"overlay": 2,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "hideOverlay",
+				"writes": "",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 2,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "render",
+				"writes": "\u001b[?2026h\u001b[2J\u001b[H\u001b[3J\u001b[0m\u001b]8;;\u0007FIRST     \u001b[0m\u001b]8;;\u0007                                                                      \u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\r\n\u001b[0m\u001b]8;;\u0007\u001b[?2026l",
+				"viewport": [
+					"FIRST                                                                           ",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			},
+			{
+				"op": "stop",
+				"writes": "\u001b[1B\r\n",
+				"viewport": [],
+				"state": {
+					"fullRedraws": 3,
+					"cursorRow": 23,
+					"hardwareCursorRow": 23,
+					"previousViewportTop": 0,
+					"maxLinesRendered": 24,
+					"previousWidth": 80,
+					"previousHeight": 24
+				},
+				"focus": {
+					"focused": 1,
+					"status": "eligible",
+					"overlay": 1,
+					"blockedBy": null,
+					"resume": "none",
+					"target": null
+				},
+				"deliveries": []
+			}
+		]
+	}
+]

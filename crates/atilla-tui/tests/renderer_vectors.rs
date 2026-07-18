@@ -72,11 +72,11 @@ struct Scenario {
     results: Vec<StepResult>,
 }
 
-fn load() -> Vec<Scenario> {
+fn load(file: &str) -> Vec<Scenario> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join("vectors")
-        .join("renderer_core.json");
+        .join(file);
     let data = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path:?}: {e}"));
     serde_json::from_str(&data).unwrap_or_else(|e| panic!("parse {path:?}: {e}"))
 }
@@ -183,10 +183,9 @@ fn replay(scenario: &Scenario, fails: &mut Vec<String>) {
     }
 }
 
-#[test]
-fn renderer_core_vectors() {
-    let scenarios = load();
-    assert!(!scenarios.is_empty(), "no renderer vectors loaded");
+fn run_suite(label: &str, file: &str) {
+    let scenarios = load(file);
+    assert!(!scenarios.is_empty(), "no {label} vectors loaded");
     let mut fails = Vec::new();
     let step_count: usize = scenarios.iter().map(|s| s.results.len()).sum();
     for scenario in &scenarios {
@@ -195,14 +194,29 @@ fn renderer_core_vectors() {
     if !fails.is_empty() {
         let shown: Vec<_> = fails.iter().take(20).cloned().collect();
         panic!(
-            "renderer_core: {} disagreements across {} scenarios / {step_count} steps\n{}",
+            "{label}: {} disagreements across {} scenarios / {step_count} steps\n{}",
             fails.len(),
             scenarios.len(),
             shown.join("\n")
         );
     }
     eprintln!(
-        "renderer_core: {} scenarios / {step_count} steps byte-identical to pi",
+        "{label}: {} scenarios / {step_count} steps byte-identical to pi",
         scenarios.len()
     );
+}
+
+#[test]
+fn renderer_core_vectors() {
+    run_suite("renderer_core", "renderer_core.json");
+}
+
+/// The 7 byte-exact "TUI Kitty image cleanup" cases from `tui-render.test.ts`:
+/// reserved-row clear-before-draw, would-scroll full-redraw fallback,
+/// reserved-row draw during full redraw, taller-than-viewport first-row
+/// placement (#4461), delete-before-draw ordering for moved/changed images,
+/// and previous-image deletion during full redraws.
+#[test]
+fn renderer_image_vectors() {
+    run_suite("renderer_images", "renderer_images.json");
 }

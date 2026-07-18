@@ -25,6 +25,7 @@ use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use crate::overlay::{ComponentId, OverlayFocusRestoreState, OverlayStackEntry, ReactionAction};
 use crate::terminal::Terminal;
 use crate::{normalize_terminal_output, visible_width};
 
@@ -36,7 +37,7 @@ pub const CURSOR_MARKER: &str = "\x1b_pi:c\x07";
 
 /// Appended to every non-image line after normalization: reset SGR + close any
 /// open OSC 8 hyperlink so styles never leak into the next line.
-const SEGMENT_RESET: &str = "\x1b[0m\x1b]8;;\x07";
+pub(crate) const SEGMENT_RESET: &str = "\x1b[0m\x1b]8;;\x07";
 
 const KITTY_SEQUENCE_PREFIX: &str = "\x1b_G";
 const ITERM2_PREFIX: &str = "\x1b]1337;File=";
@@ -230,7 +231,7 @@ fn extract_kitty_image_rows(line: &str) -> i64 {
 /// The main renderer. Owns the terminal sink and the mutable viewport
 /// bookkeeping. Ported from pi's `TUI` (PR-R1 core subset).
 pub struct Tui<T: Terminal> {
-    terminal: T,
+    pub(crate) terminal: T,
     container: Container,
 
     previous_lines: Vec<String>,
@@ -258,6 +259,34 @@ pub struct Tui<T: Terminal> {
     images_capable: bool,
     /// Override for the crash-log directory (defaults to `~/.pi/agent`).
     crash_log_dir: Option<PathBuf>,
+
+    // --- Overlay + focus subsystem (PR-R2) ---
+    /// Registry of components addressable by [`ComponentId`] for overlay
+    /// rendering and focus tracking. pi keeps direct object references; the
+    /// registry is the Rust stand-in for reference identity.
+    pub(crate) components: Vec<Rc<RefCell<dyn Component>>>,
+    /// The currently focused component, if any.
+    pub(crate) focused_component: Option<ComponentId>,
+    /// Components mounted in the base tree, for `isComponentMounted`. Populated
+    /// by [`Tui::mount_base`]; empty means no registered component is a base
+    /// child (the common case in the overlay tests).
+    pub(crate) mounted: Vec<ComponentId>,
+    /// The overlay stack (bottom-to-top by insertion; z-order by focus_order).
+    pub(crate) overlay_stack: Vec<OverlayStackEntry>,
+    /// The overlay focus-restore state machine.
+    pub(crate) overlay_focus_restore: OverlayFocusRestoreState,
+    /// Monotonic focus-order counter (higher = visually in front).
+    pub(crate) focus_order_counter: u64,
+    /// Monotonic handle-id counter for overlay handles.
+    pub(crate) handle_id_counter: usize,
+    /// Log of `(component, data)` input deliveries, for input-routing vectors.
+    pub(crate) input_deliveries: Vec<(ComponentId, String)>,
+    /// Scripted reactions a focused component runs on given input, keyed by
+    /// `(component, data)`. pi's tests attach ad-hoc `handleInput` closures that
+    /// call back into the TUI (`setFocus`, `unfocus`, tree mutation); encoding
+    /// them as data lets `handle_input` apply them without re-entrant borrows.
+    pub(crate) input_reactions:
+        std::collections::HashMap<(ComponentId, String), Vec<ReactionAction>>,
 }
 
 impl<T: Terminal> Tui<T> {
@@ -284,6 +313,15 @@ impl<T: Terminal> Tui<T> {
             termux: false,
             images_capable: false,
             crash_log_dir: None,
+            components: Vec::new(),
+            focused_component: None,
+            mounted: Vec::new(),
+            overlay_stack: Vec::new(),
+            overlay_focus_restore: OverlayFocusRestoreState::Inactive,
+            focus_order_counter: 0,
+            handle_id_counter: 0,
+            input_deliveries: Vec::new(),
+            input_reactions: std::collections::HashMap::new(),
         }
     }
 
@@ -672,7 +710,11 @@ impl<T: Terminal> Tui<T> {
 
         // Render all components, then extract cursor marker, then apply resets.
         let mut new_lines = self.render(width);
-        // Overlay compositing is PR-R2 (overlay stack is always empty here).
+        // Composite overlays into the rendered lines before the differential
+        // compare (ported from doRender's `overlayStack.length > 0` branch).
+        if !self.overlay_stack.is_empty() {
+            new_lines = self.composite_overlays(new_lines, width_i, height_i);
+        }
         let cursor_pos = Self::extract_cursor_position(&mut new_lines, height);
         Self::apply_line_resets(&mut new_lines);
 
@@ -696,7 +738,10 @@ impl<T: Terminal> Tui<T> {
 
         // Content shrunk below the working area and no overlays: re-render to
         // clear empty rows (configurable via clearOnShrink).
-        if self.clear_on_shrink && (new_lines.len() as i64) < self.max_lines_rendered {
+        if self.clear_on_shrink
+            && (new_lines.len() as i64) < self.max_lines_rendered
+            && self.overlay_stack.is_empty()
+        {
             self.full_render(true, &new_lines, cursor_pos, width_i, height_i);
             return Ok(());
         }
