@@ -1,10 +1,10 @@
 {
   "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
   "generated_by": "scripts/conformance.sh",
-  "manifest_native_modules": 10,
+  "manifest_native_modules": 13,
   "total": 3777,
-  "passing": 2904,
-  "failing": 88,
+  "passing": 2905,
+  "failing": 87,
   "skipped": 785,
   "by_package": {
     "agent": {
@@ -27,10 +27,10 @@
     },
     "coding-agent": {
       "total": 1625,
-      "passing": 1490,
-      "failing": 88,
+      "passing": 1491,
+      "failing": 87,
       "skipped": 47,
-      "native": 6,
+      "native": 9,
       "status": "ok",
       "note": "vitest run, exit 1"
     },
@@ -1758,8 +1758,8 @@
     {
       "package": "coding-agent",
       "file": "packages/coding-agent/test/session-manager/file-operations.test.ts",
-      "passing": 20,
-      "failing": 1,
+      "passing": 21,
+      "failing": 0,
       "skipped": 0
     },
     {
