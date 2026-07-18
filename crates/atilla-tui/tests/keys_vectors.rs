@@ -1,3 +1,7 @@
+// straitjacket-allow-file:duplication — the `load()` vector-reading helper is
+// intentionally the same boilerplate as in width_vectors.rs; each integration
+// test binary is standalone and cannot share a private helper without a common
+// module, which is more indirection than this two-line reader warrants.
 //! Drives the Rust key parser against vectors extracted from pi itself
 //! (`crates/atilla-tui/vectors/gen/generate_keys.mjs`). Every assertion is
 //! byte-identical: pi is the source of truth, and any disagreement is a bug in

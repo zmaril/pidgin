@@ -1,3 +1,8 @@
+// straitjacket-allow-file:emoji — the emoji literals below are the width test
+// corpus (single emoji, VS16, keycaps, flags, skin tones, ZWJ families); they
+// are input data extracted straight into the vectors, not decorative prose.
+// straitjacket-allow-file:duplication — generator scaffolding; the parallel
+// per-case builder blocks are intentionally uniform, not shared logic.
 // Vector generator for the bit-exact Rust port of pi's TUI width module.
 //
 // Runs pi's own exported functions from vendor/pi/packages/tui/src/utils.ts

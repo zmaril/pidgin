@@ -1,3 +1,8 @@
+// straitjacket-allow-file:duplication — bit-exact port: each byte scanner
+// deliberately mirrors one of pi's distinct anchored key-sequence regexes
+// one-for-one, so the parallel `:(\d+)` / `;(\d+)` optional-group scans and the
+// near-identical arrow/home-end scanners are intentional structural fidelity,
+// not incidental copy-paste.
 //! Bit-exact Rust port of pi's terminal key parser
 //! (`vendor/pi/packages/tui/src/keys.ts`, pi v0.80.10, submodule pin
 //! `3da591a`).

@@ -1,3 +1,5 @@
+// straitjacket-allow-file:duplication — vector/table generator scaffolding; the
+// per-property extraction blocks are intentionally parallel, not shared logic.
 // Generate crates/atilla-tui/src/unicode_tables.rs by extracting Unicode
 // property membership directly from the same V8/ICU engine pi runs on
 // (Node 22). This guarantees the Rust port's property predicates match the

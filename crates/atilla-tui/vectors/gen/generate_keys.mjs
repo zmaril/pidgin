@@ -1,3 +1,5 @@
+// straitjacket-allow-file:emoji — the emoji literal is UTF-8 key-input test
+// data fed to pi's parser, not decorative prose.
 // Vector generator for the bit-exact Rust port of pi's TUI key parser.
 //
 // Runs pi's own exported functions from vendor/pi/packages/tui/src/keys.ts

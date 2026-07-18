@@ -1,3 +1,5 @@
+// straitjacket-allow-file:duplication — extracted codepoint-range table data;
+// the parallel `(start, end)` tuple literals are generated, not hand-written logic.
 // Generated from Node 22's V8/ICU Unicode property data by
 // crates/atilla-tui/vectors/gen/gen_unicode_tables.mjs. Do not edit by hand.
 //

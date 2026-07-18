@@ -1,3 +1,5 @@
+// straitjacket-allow-file:duplication — extracted codepoint-range table data;
+// the parallel `(start, end)` tuple literals are generated, not hand-written logic.
 // Generated from get-east-asian-width@1.6.0 (vendored at vendor/pi/node_modules).
 // Regenerate via crates/atilla-tui/vectors/gen/gen_eaw_table.sh.
 // Merged FullWidth + Wide codepoint ranges. eastAsianWidth(cp) returns 2 iff

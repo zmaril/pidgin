@@ -1,3 +1,8 @@
+// straitjacket-allow-file:duplication — bit-exact port: each width function
+// mirrors one of pi's separate utils functions one-for-one, so the shared
+// ANSI-aware scan skeleton (extract_ansi_code loop + grapheme walk) recurs by
+// design across truncate/slice/wrap rather than being factored into one shared
+// abstraction that would drift from pi's per-function structure.
 //! Bit-exact Rust port of the width-related parts of pi's TUI utils module
 //! (`vendor/pi/packages/tui/src/utils.ts`, pi v0.80.10, pinned submodule
 //! `3da591a`).
