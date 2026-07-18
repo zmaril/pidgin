@@ -34,7 +34,7 @@ No fork of upstream diverged into Rust — every port below is a **standalone re
 | Repo | Stars | License | Notes |
 |---|---|---|---|
 | [qhkm/pi-rs](https://github.com/qhkm/pi-rs) | 3 | MIT | Broadest scope: pi-ai (17+ providers), agent-core, tui, CLI, + Slack bot, web UI. 461+ tests. "Vibecoded." |
-| [nktkt/pi](https://github.com/nktkt/pi) | 3 | MIT | Ports pi-ai + pi-agent + CLI; 3 crates on crates.io (`pi-coding-agent`/`pi-ai`/`pi-agent`, v1.0.0). ⚠️ crate `repository` metadata points at the upstream TS repo despite not being maintainer-published — misleading, flag it. |
+| [nktkt/pi](https://github.com/nktkt/pi) | 3 | MIT | Ports pi-ai + pi-agent + CLI; 3 crates on crates.io (`pi-coding-agent`/`pi-ai`/`pi-agent`, v1.0.0). Note: crate `repository` metadata points at the upstream TS repo despite not being maintainer-published — misleading, flag it. |
 | [OdradekAI/opi](https://github.com/OdradekAI/opi) | 4 | MIT | Reimplementation (not API-compatible), 4 crates, v0.7.0, working terminal agent. |
 | [metaphorics/pi-rust](https://github.com/metaphorics/pi-rust) | 3 | unstated | Greenfield rewrite keeping `~/.pi` config/session/auth drop-in compatible; unmodified TS extensions via an on-demand **Bun sidecar** (different bet than QuickJS). |
 | [xmonader/pirs](https://github.com/xmonader/pirs) | 0 | MIT | 6+ crates; extensibility via **`.rhai` scripts** instead of TS. Alpha, 150+ tests. |
