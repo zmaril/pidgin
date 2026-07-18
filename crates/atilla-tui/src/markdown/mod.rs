@@ -576,6 +576,89 @@ impl Markdown {
     // table rendering lives in `tables.rs` (impl Markdown)
 }
 
+// ---- public flip-wrapper API (one-shot entry points) ----
+
+/// The chalk (level-3) SGR code pairs backing pi's `defaultMarkdownTheme`
+/// (`vendor/pi/packages/tui/test/test-themes.ts`). Each entry is a chain of
+/// `(open, close)` SGR pairs.
+const CYAN: &[(u16, u16)] = &[(36, 39)];
+const BLUE: &[(u16, u16)] = &[(34, 39)];
+const DIM: &[(u16, u16)] = &[(2, 22)];
+const YELLOW: &[(u16, u16)] = &[(33, 39)];
+const GREEN: &[(u16, u16)] = &[(32, 39)];
+const BOLD: &[(u16, u16)] = &[(1, 22)];
+const ITALIC: &[(u16, u16)] = &[(3, 23)];
+const STRIKE: &[(u16, u16)] = &[(9, 29)];
+const UNDERLINE: &[(u16, u16)] = &[(4, 24)];
+const BOLD_CYAN: &[(u16, u16)] = &[(1, 22), (36, 39)];
+
+/// Apply a chain of `(open, close)` SGR code pairs to `s`, byte-identically to
+/// chalk's `applyStyle` (nesting fix + newline encasing). This is the exact
+/// styling contract pi's `defaultMarkdownTheme` closures rely on.
+fn chalk(codes: &[(u16, u16)], s: &str) -> String {
+    // chalk returns the input unchanged for an empty string.
+    if s.is_empty() {
+        return String::new();
+    }
+    let open_all: String = codes.iter().map(|(o, _)| format!("\x1b[{o}m")).collect();
+    let close_all: String = codes
+        .iter()
+        .rev()
+        .map(|(_, c)| format!("\x1b[{c}m"))
+        .collect();
+
+    let mut string = s.to_string();
+    if string.contains('\u{1b}') {
+        // chalk's `stringReplaceAll` KEEPS the close code and appends the open
+        // after it (reopening the style the inner reset terminated).
+        for (o, c) in codes.iter().rev() {
+            let close = format!("\x1b[{c}m");
+            let replacement = format!("\x1b[{c}m\x1b[{o}m");
+            string = string.replace(&close, &replacement);
+        }
+    }
+    if string.contains('\n') {
+        let replacement = format!("{close_all}\n{open_all}");
+        string = string.replace('\n', &replacement);
+    }
+    format!("{open_all}{string}{close_all}")
+}
+
+fn style_fn(codes: &'static [(u16, u16)]) -> StyleFn {
+    Box::new(move |t: &str| chalk(codes, t))
+}
+
+/// pi's `defaultMarkdownTheme` (`vendor/pi/packages/tui/test/test-themes.ts`),
+/// reproduced as the chalk (level-3) ANSI contract. This is the single source
+/// of truth for the theme the ~70 markdown vectors validate against.
+pub fn default_markdown_theme() -> MarkdownTheme {
+    MarkdownTheme {
+        heading: style_fn(BOLD_CYAN),
+        link: style_fn(BLUE),
+        link_url: style_fn(DIM),
+        code: style_fn(YELLOW),
+        code_block: style_fn(GREEN),
+        code_block_border: style_fn(DIM),
+        quote: style_fn(ITALIC),
+        quote_border: style_fn(DIM),
+        hr: style_fn(DIM),
+        list_bullet: style_fn(CYAN),
+        bold: style_fn(BOLD),
+        italic: style_fn(ITALIC),
+        strikethrough: style_fn(STRIKE),
+        underline: style_fn(UNDERLINE),
+        highlight_code: None,
+        code_block_indent: None,
+    }
+}
+
+/// One-shot markdown render with the default theme. Mirrors pi's
+/// `new Markdown(source, 0, 0, defaultMarkdownTheme).render(width)` path
+/// (the entry point the napi `markdownRender(source, width)` wraps).
+pub fn markdown_render(source: &str, width: usize) -> Vec<String> {
+    Markdown::new(source, 0, 0, default_markdown_theme(), None, None).render(width)
+}
+
 /// pi's `trimPartialClosingFences`: trim streamed partial closing fences so code
 /// blocks do not shrink/flicker when the final fence char arrives.
 fn trim_partial_closing_fences(tokens: &mut [Token]) {

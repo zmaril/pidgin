@@ -1,3 +1,8 @@
+// straitjacket-allow-file:duplication — this replay harness reproduces the
+// chalk (level-3) `applyStyle` contract to build the per-case custom
+// default-text-style themes; the same `chalk` shape now also backs
+// `markdown::default_markdown_theme`, but here it is test scaffolding for
+// arbitrary vector-replay themes, kept verbatim on purpose.
 //! Replays the markdown render vectors extracted from pi's OWN `Markdown`
 //! component (`crates/atilla-tui/vectors/gen/generate_markdown.mjs`, driven
 //! through pi's renderer) and asserts the Rust port emits a byte-identical
@@ -11,7 +16,7 @@ use std::path::PathBuf;
 
 use serde::Deserialize;
 
-use atilla_tui::{DefaultTextStyle, Markdown, MarkdownOptions, MarkdownTheme, StyleFn};
+use atilla_tui::{DefaultTextStyle, Markdown, MarkdownOptions, StyleFn};
 
 #[derive(Deserialize)]
 struct Case {
@@ -78,43 +83,6 @@ fn chalk(codes: &[(u16, u16)], s: &str) -> String {
 fn encase_newlines(s: &str, close: &str, open: &str) -> String {
     let replacement = format!("{close}\n{open}");
     s.replace('\n', &replacement)
-}
-
-fn style_fn(codes: &'static [(u16, u16)]) -> StyleFn {
-    Box::new(move |t: &str| chalk(codes, t))
-}
-
-const CYAN: &[(u16, u16)] = &[(36, 39)];
-const BLUE: &[(u16, u16)] = &[(34, 39)];
-const DIM: &[(u16, u16)] = &[(2, 22)];
-const YELLOW: &[(u16, u16)] = &[(33, 39)];
-const GREEN: &[(u16, u16)] = &[(32, 39)];
-const BOLD: &[(u16, u16)] = &[(1, 22)];
-const ITALIC: &[(u16, u16)] = &[(3, 23)];
-const STRIKE: &[(u16, u16)] = &[(9, 29)];
-const UNDERLINE: &[(u16, u16)] = &[(4, 24)];
-const BOLD_CYAN: &[(u16, u16)] = &[(1, 22), (36, 39)];
-
-/// pi's `defaultMarkdownTheme` (`test-themes.ts`).
-fn default_theme() -> MarkdownTheme {
-    MarkdownTheme {
-        heading: style_fn(BOLD_CYAN),
-        link: style_fn(BLUE),
-        link_url: style_fn(DIM),
-        code: style_fn(YELLOW),
-        code_block: style_fn(GREEN),
-        code_block_border: style_fn(DIM),
-        quote: style_fn(ITALIC),
-        quote_border: style_fn(DIM),
-        hr: style_fn(DIM),
-        list_bullet: style_fn(CYAN),
-        bold: style_fn(BOLD),
-        italic: style_fn(ITALIC),
-        strikethrough: style_fn(STRIKE),
-        underline: style_fn(UNDERLINE),
-        highlight_code: None,
-        code_block_indent: None,
-    }
 }
 
 fn gray_fn() -> StyleFn {
@@ -196,7 +164,7 @@ fn markdown_render_vectors_are_byte_exact() {
     let mut failures: Vec<String> = Vec::new();
 
     for case in &vectors.cases {
-        let theme = default_theme();
+        let theme = atilla_tui::default_markdown_theme();
         let default_style = case.style.as_deref().map(style_for);
         let options = case.opts.as_ref().map(|o| MarkdownOptions {
             preserve_ordered_list_markers: o.preserve_ordered_list_markers,
@@ -241,4 +209,40 @@ fn markdown_render_vectors_are_byte_exact() {
         vectors.cases.len(),
         failures.join("\n\n")
     );
+}
+
+#[test]
+fn markdown_render_matches_direct_construction() {
+    // The public one-shot wrapper must reproduce pi's
+    // `new Markdown(src, 0, 0, defaultMarkdownTheme).render(width)` path.
+    let source = "# Hello";
+    let width = 80;
+    let direct = Markdown::new(
+        source,
+        0,
+        0,
+        atilla_tui::default_markdown_theme(),
+        None,
+        None,
+    )
+    .render(width);
+    let wrapped = atilla_tui::markdown_render(source, width);
+    assert_eq!(wrapped, direct);
+}
+
+#[test]
+fn markdown_render_matches_vector_for_h1() {
+    // If a vector exercises `# Hello` at width 80, the public wrapper's output
+    // must be byte-identical to pi's recorded lines.
+    let vectors = load();
+    if let Some(case) = vectors
+        .cases
+        .iter()
+        .find(|c| c.input == "# Hello" && c.width == 80 && c.padding_x == 0 && c.padding_y == 0)
+    {
+        assert_eq!(
+            atilla_tui::markdown_render(&case.input, case.width),
+            case.raw
+        );
+    }
 }
