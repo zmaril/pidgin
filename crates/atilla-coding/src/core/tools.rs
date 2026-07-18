@@ -9,6 +9,7 @@
 //! placeholders until the surrounding agent runtime is ported.
 
 pub mod bash;
+pub mod definitions;
 pub mod edit;
 pub mod edit_diff;
 pub mod file_mutation_queue;
