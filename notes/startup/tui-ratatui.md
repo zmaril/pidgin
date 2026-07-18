@@ -3,7 +3,7 @@
 > **Scope:** can pi's `tui` package (npm `@earendil-works/pi-tui`, 12,166 source LOC across `src/*.ts`) be rebuilt on the Rust ratatui + crossterm stack, and where is the friction?
 > **Upstream pin:** `3da591ab74ab9ab407e72ed882600b2c851fae21` (`earendil-works/pi`).
 > **Stack surveyed (2026-07-18):** ratatui 0.30.2 (19 Jun 2026), crossterm 0.29.0 (5 Apr 2025), unicode-width 0.2.x, ratatui-image 11.0.6 (25 Jun 2026).
-> **Companion:** `notes/porting-map.md` classifies `tui` as HIGH coupling / DEFER-hard and schedules it to land just before interactive mode.
+> **Companion:** `notes/startup/porting-map.md` classifies `tui` as HIGH coupling / DEFER-hard and schedules it to land just before interactive mode.
 
 ## Verdict
 
