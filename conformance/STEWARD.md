@@ -34,18 +34,21 @@ and less stable, so it is a follow-up rather than part of this change.
 
 ## Merge queue
 
-Current native count on main: **10** (ai anthropic-messages + ai faux, tui keys
+Current native count on main: **13** (ai anthropic-messages + ai faux, tui keys
 + tui utils, coding-agent utils {ansi, mime, changelog, version-check, git} +
-export-html ansi-to-html). Batch 2 (this PR) takes it to **13**.
+export-html ansi-to-html + tools {truncate, edit-diff, path-utils}). Batch 3
+(this PR) takes it to **16**.
 
 The human merges in this order (rebasing each onto the prior as needed):
 
 1. **#44** — faux provider native (foundations) — native 3 -> 4 — **MERGED**
 2. **#58** — coding-agent utils + export-html ansi-to-html — native 4 -> 10 —
    **MERGED**
-3. **THIS PR (batch 2)** — coding-agent tools truncate + edit-diff + path-utils
-   — native 10 -> 13
-4. **#50** — retry (ai) — queued behind this PR
+3. **batch 2** — coding-agent tools truncate + edit-diff + path-utils — native
+   10 -> 13 — **MERGED**
+4. **THIS PR (batch 3)** — coding-agent core config + keybindings
+   (resolve-config-value + trust-manager + keybindings) — native 13 -> 16
+5. **#50** — retry (ai) — queued behind this PR
 
 ## Flip table
 
@@ -62,6 +65,9 @@ The human merges in this order (rebasing each onto the prior as needed):
 | core/tools/truncate | coding-agent | flipped | test/tools.test.ts (read + bash blocks; no deep import) | yes | `formatSize`, `truncateHead`, `truncateTail`, `truncateLine`; shim re-adds pi's dropped JS default args (`options = {}`, `maxChars`) and consts; `TruncatedBy` enum + `Option` marshal to pi's `"lines" \| "bytes" \| null`; result crosses as JSON |
 | core/tools/edit-diff | coding-agent | flipped | test/tools.test.ts (edit block, jsdiff `applyPatch` round-trip) + edit-tool-no-full-redraw | yes | 10 sync pure fns (`detectLineEnding`, `normalizeToLF`, `restoreLineEndings`, `normalizeForFuzzyMatch`, `fuzzyFindText`, `stripBom`, `applyReplacementsPreservingUnchangedLines`, `applyEditsToNormalizedContent`, `generateUnifiedPatch`, `generateDiffString`); shim re-adds `contextLines = 4`; `computeEditsDiff`/`computeEditDiff` stay original |
 | core/tools/path-utils | coding-agent | flipped | test/path-utils.test.ts (13) | yes (hybrid) | `expandPath`, `resolveToCwd` (Rust `Result` → throw); `resolveReadPath` rebuilt in shim with real `accessSync` probe over native macOS filename transforms; `pathExists`/`resolveReadPathAsync` stay original |
-| core/tools/read | coding-agent | pending | — | no | hybrid port (batch 3) |
-| core/tools/edit | coding-agent | pending | — | no | hybrid port (batch 3) |
-| agent session modules | coding-agent | pending | — | no | batch 3 |
+| core/resolve-config-value | coding-agent | flipped | test/resolve-config-value.test.ts (10) | yes | all ported symbols; `env?` override crosses as JSON, process env read by Rust (`std::env::var`); `!command` cache + subprocess (default `sh -c`) in Rust; `None`→`undefined`; Windows configured-shell/stdin path not ported (that pi test passes via `sh -c` anyway) |
+| core/trust-manager | coding-agent | flipped | test/trust-manager.test.ts (2) | yes | `getProjectTrustParentPath`, `getProjectTrustOptions`, `hasTrustRequiringProjectResources` (explicit `$HOME` injected by shim); `ProjectTrustStore` stays a JS class over the agent dir delegating to stateless native get-entry/set-many; `proper-lockfile` advisory lock not ported |
+| core/keybindings | coding-agent | flipped | test/keybindings-migration.test.ts (3) | yes | native `KEYBINDINGS` default table (`keybindingsFor`, IndexMap-ordered) + `migrateKeybindingsConfig` (`{config, migrated}`); class keeps extending pi-tui's still-original base so `matches()`/conflict/`instanceof` stay pi-tui; `toKeybindingsConfig`/`loadRawConfig` glue rebuilt in shim |
+| core/tools/read | coding-agent | pending | — | no | hybrid port (later batch) |
+| core/tools/edit | coding-agent | pending | — | no | hybrid port (later batch) |
+| agent session modules | coding-agent | pending | — | no | later batch |

@@ -6,7 +6,11 @@
 //! surface is fronted by pi's own type declarations in the hand-written shims;
 //! export names are pinned per-symbol with `#[napi(js_name = …)]`.
 
+use std::collections::HashMap;
+
+use indexmap::IndexMap;
 use napi_derive::napi;
+use serde_json::Value;
 
 // Stage 3: the faux-provider surface (`FauxCore`), driving the Rust faux
 // provider's deterministic streaming and cache accounting from JS. Additive.
@@ -575,4 +579,330 @@ pub fn path_try_nfd_variant(file_path: String) -> String {
 #[napi(js_name = "pathTryCurlyQuoteVariant")]
 pub fn path_try_curly_quote_variant(file_path: String) -> String {
     atilla_coding::core::tools::path_utils::try_curly_quote_variant(&file_path)
+}
+
+// --- coding-agent core: resolve-config-value --------------------------------
+//
+// Thin wrappers over `atilla_coding::core::resolve_config_value`, backing the
+// native `core/resolve-config-value.ts` shim. pi's `env?` credential-scoped
+// override crosses as an optional JSON object string; the process environment
+// is read by the Rust port directly (`std::env::var`), matching pi's
+// `env?.[name] || process.env[name]`. Rust `None` maps back to pi's
+// `undefined` in the shim; `resolveConfigValue`'s `!command` subprocess path and
+// the process-lifetime command cache live in Rust.
+
+/// Parse pi's optional `env` override (a JSON `Record<string,string>`) into a
+/// map. An absent/empty/`null` argument means "no override".
+fn parse_config_env(json: Option<String>) -> napi::Result<Option<HashMap<String, String>>> {
+    match json {
+        None => Ok(None),
+        Some(s) if s.trim().is_empty() || s == "null" => Ok(None),
+        Some(s) => serde_json::from_str(&s)
+            .map(Some)
+            .map_err(|e| napi::Error::from_reason(format!("invalid env override: {e}"))),
+    }
+}
+
+/// `resolveConfigValue` (resolve-config-value.ts): resolve a literal / env
+/// template / cached `!command`. `None` -> pi's `undefined`.
+#[napi(js_name = "resolveConfigValue")]
+pub fn resolve_config_value(config: String, env: Option<String>) -> napi::Result<Option<String>> {
+    let env = parse_config_env(env)?;
+    Ok(atilla_coding::core::resolve_config_value::resolve_config_value(&config, env.as_ref()))
+}
+
+/// `resolveConfigValueUncached` (resolve-config-value.ts): like
+/// [`resolve_config_value`] but re-executes `!command`s every call.
+#[napi(js_name = "resolveConfigValueUncached")]
+pub fn resolve_config_value_uncached(
+    config: String,
+    env: Option<String>,
+) -> napi::Result<Option<String>> {
+    let env = parse_config_env(env)?;
+    Ok(
+        atilla_coding::core::resolve_config_value::resolve_config_value_uncached(
+            &config,
+            env.as_ref(),
+        ),
+    )
+}
+
+/// `resolveConfigValueOrThrow` (resolve-config-value.ts): resolve or throw pi's
+/// descriptive error. Rust `Err` crosses as a thrown JS `Error` with pi's message.
+#[napi(js_name = "resolveConfigValueOrThrow")]
+pub fn resolve_config_value_or_throw(
+    config: String,
+    description: String,
+    env: Option<String>,
+) -> napi::Result<String> {
+    let env = parse_config_env(env)?;
+    atilla_coding::core::resolve_config_value::resolve_config_value_or_throw(
+        &config,
+        &description,
+        env.as_ref(),
+    )
+    .map_err(|e| napi::Error::from_reason(e.to_string()))
+}
+
+/// `getConfigValueEnvVarName` (resolve-config-value.ts): the single env var a
+/// value references, or `null` (pi's `undefined`).
+#[napi(js_name = "getConfigValueEnvVarName")]
+pub fn get_config_value_env_var_name(config: String) -> Option<String> {
+    atilla_coding::core::resolve_config_value::get_config_value_env_var_name(&config)
+}
+
+/// `getConfigValueEnvVarNames` (resolve-config-value.ts): all distinct env var
+/// names a value references, in first-seen order.
+#[napi(js_name = "getConfigValueEnvVarNames")]
+pub fn get_config_value_env_var_names(config: String) -> Vec<String> {
+    atilla_coding::core::resolve_config_value::get_config_value_env_var_names(&config)
+}
+
+/// `getMissingConfigValueEnvVarNames` (resolve-config-value.ts): referenced env
+/// var names that do not currently resolve.
+#[napi(js_name = "getMissingConfigValueEnvVarNames")]
+pub fn get_missing_config_value_env_var_names(
+    config: String,
+    env: Option<String>,
+) -> napi::Result<Vec<String>> {
+    let env = parse_config_env(env)?;
+    Ok(
+        atilla_coding::core::resolve_config_value::get_missing_config_value_env_var_names(
+            &config,
+            env.as_ref(),
+        ),
+    )
+}
+
+/// `isCommandConfigValue` (resolve-config-value.ts): whether a value is a
+/// `!`-prefixed shell command.
+#[napi(js_name = "isCommandConfigValue")]
+pub fn is_command_config_value(config: String) -> bool {
+    atilla_coding::core::resolve_config_value::is_command_config_value(&config)
+}
+
+/// `isConfigValueConfigured` (resolve-config-value.ts): whether every env var a
+/// value references is set.
+#[napi(js_name = "isConfigValueConfigured")]
+pub fn is_config_value_configured(config: String, env: Option<String>) -> napi::Result<bool> {
+    let env = parse_config_env(env)?;
+    Ok(
+        atilla_coding::core::resolve_config_value::is_config_value_configured(
+            &config,
+            env.as_ref(),
+        ),
+    )
+}
+
+/// `resolveHeaders` (resolve-config-value.ts): resolve each header value,
+/// dropping empties. Returns pi's `Record<string,string>` as JSON, or `null`.
+#[napi(js_name = "resolveHeaders")]
+pub fn resolve_headers(
+    headers: Option<String>,
+    env: Option<String>,
+) -> napi::Result<Option<String>> {
+    let headers = parse_config_env(headers)?;
+    let env = parse_config_env(env)?;
+    match atilla_coding::core::resolve_config_value::resolve_headers(headers.as_ref(), env.as_ref())
+    {
+        None => Ok(None),
+        Some(map) => serde_json::to_string(&map)
+            .map(Some)
+            .map_err(|e| napi::Error::from_reason(e.to_string())),
+    }
+}
+
+/// `resolveHeadersOrThrow` (resolve-config-value.ts): resolve each header value
+/// or throw pi's descriptive error. Returns the map JSON, or `null`.
+#[napi(js_name = "resolveHeadersOrThrow")]
+pub fn resolve_headers_or_throw(
+    headers: Option<String>,
+    description: String,
+    env: Option<String>,
+) -> napi::Result<Option<String>> {
+    let headers = parse_config_env(headers)?;
+    let env = parse_config_env(env)?;
+    let resolved = atilla_coding::core::resolve_config_value::resolve_headers_or_throw(
+        headers.as_ref(),
+        &description,
+        env.as_ref(),
+    )
+    .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    match resolved {
+        None => Ok(None),
+        Some(map) => serde_json::to_string(&map)
+            .map(Some)
+            .map_err(|e| napi::Error::from_reason(e.to_string())),
+    }
+}
+
+/// `clearConfigValueCache` (resolve-config-value.ts): clear the process-lifetime
+/// `!command` result cache.
+#[napi(js_name = "clearConfigValueCache")]
+pub fn clear_config_value_cache() {
+    atilla_coding::core::resolve_config_value::clear_config_value_cache();
+}
+
+// --- coding-agent core: trust-manager ---------------------------------------
+//
+// Thin wrappers over `atilla_coding::core::trust_manager`, backing the native
+// `core/trust-manager.ts` shim. Structured values cross as JSON using pi's exact
+// field names (`{ path, decision }`, `{ label, trusted, updates, savedPath? }`);
+// the shim `JSON.parse`s them. `ProjectTrustStore` stays a JS class holding the
+// agent dir, delegating each method to the stateless functions below (each
+// reconstructs the Rust store, whose only state is the on-disk `trust.json`).
+
+/// Serialize a Rust `ProjectTrustUpdate` into pi's `{ path, decision }` shape,
+/// mapping `Option<bool>` to pi's `boolean | null`.
+fn trust_update_to_json(update: &atilla_coding::core::trust_manager::ProjectTrustUpdate) -> Value {
+    let mut obj = serde_json::Map::new();
+    obj.insert("path".to_string(), Value::String(update.path.clone()));
+    obj.insert(
+        "decision".to_string(),
+        match update.decision {
+            Some(b) => Value::Bool(b),
+            None => Value::Null,
+        },
+    );
+    Value::Object(obj)
+}
+
+/// Serialize a Rust `ProjectTrustOption` into pi's option shape; `savedPath` is
+/// omitted (pi's `undefined`) for session-only options.
+fn trust_option_to_json(option: &atilla_coding::core::trust_manager::ProjectTrustOption) -> Value {
+    let mut obj = serde_json::Map::new();
+    obj.insert("label".to_string(), Value::String(option.label.clone()));
+    obj.insert("trusted".to_string(), Value::Bool(option.trusted));
+    obj.insert(
+        "updates".to_string(),
+        Value::Array(option.updates.iter().map(trust_update_to_json).collect()),
+    );
+    if let Some(saved_path) = &option.saved_path {
+        obj.insert("savedPath".to_string(), Value::String(saved_path.clone()));
+    }
+    Value::Object(obj)
+}
+
+/// `getProjectTrustParentPath` (trust-manager.ts): the nearest ancestor path, or
+/// `null` at a filesystem root (pi's `undefined`).
+#[napi(js_name = "getProjectTrustParentPath")]
+pub fn get_project_trust_parent_path(cwd: String) -> Option<String> {
+    atilla_coding::core::trust_manager::get_project_trust_parent_path(&cwd)
+}
+
+/// `getProjectTrustOptions` (trust-manager.ts): the ordered trust options for
+/// `cwd`, as a JSON array. The shim supplies pi's `{ includeSessionOnly }` default.
+#[napi(js_name = "getProjectTrustOptions")]
+pub fn get_project_trust_options(cwd: String, include_session_only: bool) -> napi::Result<String> {
+    let options =
+        atilla_coding::core::trust_manager::get_project_trust_options(&cwd, include_session_only);
+    let array: Vec<Value> = options.iter().map(trust_option_to_json).collect();
+    serde_json::to_string(&Value::Array(array)).map_err(|e| napi::Error::from_reason(e.to_string()))
+}
+
+/// `hasTrustRequiringProjectResources` (trust-manager.ts): whether `cwd` carries
+/// project-local resources that must be gated by trust. The shim passes pi's
+/// `process.env.HOME || homedir()` as `home_dir`.
+#[napi(js_name = "hasTrustRequiringProjectResources")]
+pub fn has_trust_requiring_project_resources(cwd: String, home_dir: String) -> bool {
+    atilla_coding::core::trust_manager::has_trust_requiring_project_resources_with_home(
+        &cwd, &home_dir,
+    )
+}
+
+/// `ProjectTrustStore.getEntry` (trust-manager.ts): the nearest recorded trust
+/// entry for `cwd`, as JSON `{ path, decision }`, or `null`. Errors cross as
+/// thrown JS errors (pi throws on an unreadable/invalid store).
+#[napi(js_name = "trustStoreGetEntry")]
+pub fn trust_store_get_entry(agent_dir: String, cwd: String) -> napi::Result<Option<String>> {
+    let store = atilla_coding::core::trust_manager::ProjectTrustStore::new(&agent_dir);
+    match store
+        .get_entry(&cwd)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?
+    {
+        None => Ok(None),
+        Some(entry) => {
+            let mut obj = serde_json::Map::new();
+            obj.insert("path".to_string(), Value::String(entry.path));
+            obj.insert("decision".to_string(), Value::Bool(entry.decision));
+            Ok(Some(Value::Object(obj).to_string()))
+        }
+    }
+}
+
+/// `ProjectTrustStore.setMany` (trust-manager.ts): apply a batch of trust updates
+/// (a JSON array of `{ path, decision }`, `decision: boolean | null`). Errors
+/// cross as thrown JS errors.
+#[napi(js_name = "trustStoreSetMany")]
+pub fn trust_store_set_many(agent_dir: String, updates_json: String) -> napi::Result<()> {
+    #[derive(serde::Deserialize)]
+    struct TrustUpdateJson {
+        path: String,
+        decision: Option<bool>,
+    }
+    let updates: Vec<TrustUpdateJson> = serde_json::from_str(&updates_json)
+        .map_err(|e| napi::Error::from_reason(format!("invalid trust updates: {e}")))?;
+    let mapped: Vec<atilla_coding::core::trust_manager::ProjectTrustUpdate> = updates
+        .into_iter()
+        .map(|u| atilla_coding::core::trust_manager::ProjectTrustUpdate {
+            path: u.path,
+            decision: u.decision,
+        })
+        .collect();
+    let store = atilla_coding::core::trust_manager::ProjectTrustStore::new(&agent_dir);
+    store
+        .set_many(&mapped)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))
+}
+
+// --- coding-agent core: keybindings -----------------------------------------
+//
+// Thin wrappers over `atilla_coding::core::keybindings`, backing the native
+// `core/keybindings.ts` shim. The default table and legacy-name migration cross
+// as JSON in pi's exact camelCase shape (`{ defaultKeys, description }`,
+// `{ config, migrated }`); `IndexMap` preserves pi's source order, which the
+// migration file-rewrite depends on. pi-tui's `KeybindingsManager` base
+// (resolution + `matches()`) is a separate, still-original module, so the shim
+// keeps extending it and only swaps in this native default table and migration.
+
+/// `keybindingsFor` (keybindings.ts): the ordered default keybinding table for a
+/// `process.platform` string, as pi's `KeybindingDefinitions` JSON. Order is
+/// preserved so `orderKeybindingsConfig`/`getResolvedBindings` stay faithful.
+#[napi(js_name = "keybindingsFor")]
+pub fn keybindings_for(platform: String) -> napi::Result<String> {
+    use atilla_coding::core::keybindings::Platform;
+    let target = match platform.as_str() {
+        "win32" => Platform::Windows,
+        "darwin" => Platform::Macos,
+        _ => Platform::Other,
+    };
+    let definitions = atilla_coding::core::keybindings::keybindings_for(target);
+    let mut out: IndexMap<String, Value> = IndexMap::new();
+    for (id, definition) in definitions {
+        let keys = serde_json::to_value(&definition.default_keys)
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        let mut obj = serde_json::Map::new();
+        obj.insert("defaultKeys".to_string(), keys);
+        obj.insert(
+            "description".to_string(),
+            Value::String(definition.description.to_string()),
+        );
+        out.insert(id, Value::Object(obj));
+    }
+    serde_json::to_string(&out).map_err(|e| napi::Error::from_reason(e.to_string()))
+}
+
+/// `migrateKeybindingsConfig` (keybindings.ts): rewrite legacy flat key names to
+/// namespaced ids. Takes pi's raw config as a JSON object, returns
+/// `{ config, migrated }` JSON with key order preserved (`IndexMap`).
+#[napi(js_name = "migrateKeybindingsConfig")]
+pub fn migrate_keybindings_config(raw_json: String) -> napi::Result<String> {
+    let raw: IndexMap<String, Value> = serde_json::from_str(&raw_json)
+        .map_err(|e| napi::Error::from_reason(format!("invalid keybindings config: {e}")))?;
+    let (config, migrated) = atilla_coding::core::keybindings::migrate_keybindings_config(&raw);
+    let config_str =
+        serde_json::to_string(&config).map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    Ok(format!(
+        "{{\"config\":{config_str},\"migrated\":{migrated}}}"
+    ))
 }
