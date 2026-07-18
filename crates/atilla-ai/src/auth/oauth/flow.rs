@@ -16,8 +16,6 @@
 //! [`run_flow`] driver both consume the same machine, so unit tests exercise the
 //! exact logic the shim drives.
 
-use std::collections::BTreeMap;
-
 use serde::{Deserialize, Serialize};
 
 use crate::seams::clock::{Clock, Timers};
@@ -28,34 +26,6 @@ use crate::auth::error::AuthFlowError;
 use crate::auth::types::{AuthEvent, AuthInteraction, AuthPrompt, OAuthAuth, OAuthCredential};
 
 use super::device_code::abortable_sleep;
-
-// Serde shim: the seam's `HttpRequest`/`HttpResponse` do not derive serde on this
-// branch base. We mirror their fields via serde's `remote` derive so [`Step`] /
-// [`StepInput`] can carry the seam types verbatim across the JSON napi boundary,
-// matching seam-wiring's confirmed wire JSON (`body` is `Option<String>`, `null`
-// when absent; `headers` a JSON object of string→string; all field names single
-// lowercase words). TODO(seam-wiring PR #63): reuse seam types directly once
-// their serde derives land on main and this branch rebases.
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "HttpRequest")]
-struct HttpRequestShim {
-    method: String,
-    url: String,
-    #[serde(default)]
-    headers: BTreeMap<String, String>,
-    #[serde(default)]
-    body: Option<String>,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "HttpResponse")]
-struct HttpResponseShim {
-    status: u16,
-    #[serde(default)]
-    headers: BTreeMap<String, String>,
-    #[serde(default)]
-    body: String,
-}
 
 /// One action yielded by an OAuth flow, serialized to JSON across the one-way
 /// napi boundary.
@@ -73,7 +43,6 @@ pub enum Step {
     /// Perform an HTTP request, then re-enter with the response.
     Request {
         /// The request the shim should `fetch`.
-        #[serde(with = "HttpRequestShim")]
         request: HttpRequest,
     },
     /// Sleep `delay_ms`, then perform an HTTP request (device-code polling).
@@ -81,7 +50,6 @@ pub enum Step {
         /// The delay before the request, in ms.
         delay_ms: u64,
         /// The request the shim should `fetch` after the delay.
-        #[serde(with = "HttpRequestShim")]
         request: HttpRequest,
     },
     /// Prompt the caller, then re-enter with the entered/selected value.
@@ -113,7 +81,7 @@ pub enum Step {
 pub enum StepInput {
     /// The response to a [`Step::Request`] / [`Step::Wait`]. Serializes as a map
     /// carrying the tag: `{"kind":"response","status":..,"headers":..,"body":..}`.
-    Response(#[serde(with = "HttpResponseShim")] HttpResponse),
+    Response(HttpResponse),
     /// The value returned by a [`Step::Prompt`] (pasted code / selected id).
     Input {
         /// The entered/selected value.
@@ -255,6 +223,10 @@ mod tests {
             .with_header("accept", "application/json");
         let step = Step::Request { request };
         // Struct-variant: the seam request nests under `request`, tagged by `kind`.
+        // Pins the exact wire JSON the host `fetch` shim consumes — the seam types'
+        // derived serde must match the previous serde-remote shim byte-for-byte
+        // (single-word field names, `headers` a string→string object, `body` a
+        // JSON string when present).
         assert_eq!(
             serde_json::to_value(&step).unwrap(),
             json!({
@@ -270,7 +242,32 @@ mod tests {
     }
 
     #[test]
+    fn request_step_serializes_absent_body_as_null() {
+        // A GET has no body; the seam's `body: Option<String>` must serialize as
+        // JSON `null`, exactly as the retired shim did.
+        let step = Step::Request {
+            request: HttpRequest::get("https://example/authorize"),
+        };
+        assert_eq!(
+            serde_json::to_value(&step).unwrap(),
+            json!({
+                "kind": "request",
+                "request": {
+                    "method": "GET",
+                    "url": "https://example/authorize",
+                    "headers": {},
+                    "body": null,
+                },
+            })
+        );
+    }
+
+    #[test]
     fn response_input_round_trips_through_tagged_map() {
+        // The shim consumes `{"kind":"response","status":..,"headers":..,"body":..}`
+        // — the tag plus the seam response's fields flattened alongside it. Pin
+        // that exact wire shape and that the inner seam type re-serializes to the
+        // same field JSON the shim emitted.
         let value = json!({
             "kind": "response",
             "status": 200,
@@ -285,6 +282,16 @@ mod tests {
                 assert_eq!(
                     response.headers.get("content-type").unwrap(),
                     "application/json"
+                );
+                // The seam response's own wire JSON is byte-identical to the map
+                // body the shim round-tripped (minus the `kind` tag).
+                assert_eq!(
+                    serde_json::to_value(&response).unwrap(),
+                    json!({
+                        "status": 200,
+                        "headers": { "content-type": "application/json" },
+                        "body": "{\"ok\":true}",
+                    })
                 );
             }
             _ => panic!("expected response"),

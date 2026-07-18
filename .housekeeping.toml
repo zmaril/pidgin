@@ -21,12 +21,7 @@ allow = [
 # tagged placeholder for the next binding surface, not untracked work.
 # The fluessig integration note quotes that same M1 placeholder marker as prose
 # when describing what atilla exposes today — a reference, not untracked work.
-# `flow.rs` carries a single `TODO(seam-wiring PR #63)` marker: a tracked
-# cross-PR handoff to drop the local serde-mirror structs once seam-wiring's
-# HttpRequest/HttpResponse serde derives land on main — tracked work, not
-# untracked.
 ignore = [
     "bindings/php/src/lib.rs",
     "notes/fluessig-integration.md",
-    "crates/atilla-ai/src/auth/oauth/flow.rs",
 ]
