@@ -177,4 +177,25 @@ export class NodeExecutionEnv implements ExecutionEnv {
 	async cleanup(): Promise<void> {
 		// Best-effort; the native host env has nothing to release.
 	}
+
+	/**
+	 * Internal accessor for the sibling native shims (`skills.ts`/
+	 * `prompt-templates.ts`), whose Rust loaders read files through the same
+	 * host-backed env. Returns the Rust `NodeExecutionEnvCore` handle this shim
+	 * already holds so those loaders can borrow it instead of re-constructing an
+	 * env. Not part of pi's `ExecutionEnv` surface.
+	 */
+	nativeCore(): NodeExecutionEnvCore {
+		return this.core;
+	}
+}
+
+/**
+ * Return the Rust-backed core handle for a {@link NodeExecutionEnv}, or
+ * `undefined` for any other `ExecutionEnv` (e.g. a `MemoryExecutionEnv`). The
+ * skills/prompt-templates shims use this to route native when the env is our
+ * `NodeExecutionEnv` and pi-delegate otherwise.
+ */
+export function nativeExecutionCore(env: unknown): NodeExecutionEnvCore | undefined {
+	return env instanceof NodeExecutionEnv ? env.nativeCore() : undefined;
 }

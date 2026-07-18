@@ -32,6 +32,93 @@ pub fn format_skills_for_system_prompt(skills_json: String) -> napi::Result<Stri
     Ok(atilla_agent::harness::system_prompt::format_skills_for_system_prompt(&skills))
 }
 
+// --- agent harness: skills / prompt-templates formatting --------------------
+//
+// Pure, synchronous formatters ported to `atilla_agent::harness::skills` and
+// `atilla_agent::harness::prompt_templates`, backing the native `harness/
+// skills.ts` and `harness/prompt-templates.ts` shims. pi's rich `Skill` /
+// `PromptTemplate` cross as JSON strings (serialized in the shim, parsed with
+// serde here); the string result is returned unchanged. The stateful loaders
+// (`loadSkills`/`loadPromptTemplates`) are methods on `NodeExecutionEnvCore`
+// below, so they can borrow the same host-backed Rust env the shim already
+// holds for `nodejs.ts`.
+
+/// Serialize a [`Skill`](atilla_agent::harness::skills::Skill) to pi's `Skill`
+/// JSON shape, always emitting `disableModelInvocation` (pi's loader tests
+/// compare against an explicit `false`, but the Rust serde derive skips the
+/// default, so it is written unconditionally here).
+fn skill_to_value(skill: &atilla_agent::harness::skills::Skill) -> Value {
+    json!({
+        "name": skill.name,
+        "description": skill.description,
+        "content": skill.content,
+        "filePath": skill.file_path,
+        "disableModelInvocation": skill.disable_model_invocation,
+    })
+}
+
+/// Serialize a [`PromptTemplate`](atilla_agent::harness::prompt_templates::PromptTemplate)
+/// to pi's `PromptTemplate` JSON shape. The Rust loader always sets
+/// `description` (falling back to the empty string), matching pi.
+fn prompt_template_to_value(
+    template: &atilla_agent::harness::prompt_templates::PromptTemplate,
+) -> Value {
+    json!({
+        "name": template.name,
+        "description": template.description,
+        "content": template.content,
+    })
+}
+
+/// `formatSkillInvocation` (harness/skills.ts): render a `<skill>` invocation
+/// block, optionally appending user instructions. pi's `Skill` crosses as a
+/// JSON object; `additionalInstructions` is an optional string.
+#[napi(js_name = "formatSkillInvocation")]
+pub fn format_skill_invocation(
+    skill_json: String,
+    additional_instructions: Option<String>,
+) -> napi::Result<String> {
+    use atilla_agent::harness::skills::{format_skill_invocation, Skill};
+    let skill: Skill = serde_json::from_str(&skill_json)
+        .map_err(|e| napi::Error::from_reason(format!("invalid skill: {e}")))?;
+    Ok(format_skill_invocation(
+        &skill,
+        additional_instructions.as_deref(),
+    ))
+}
+
+/// `parseCommandArgs` (harness/prompt-templates.ts): split an argument string
+/// using simple shell-style single and double quotes.
+#[napi(js_name = "parseCommandArgs")]
+pub fn parse_command_args(args_string: String) -> Vec<String> {
+    atilla_agent::harness::prompt_templates::parse_command_args(&args_string)
+}
+
+/// `substituteArgs` (harness/prompt-templates.ts): substitute prompt-template
+/// placeholders (`$1`, `$@`, `$ARGUMENTS`, `${@:N}`, `${@:N:L}`) with args.
+#[napi(js_name = "substituteArgs")]
+pub fn substitute_args(content: String, args: Vec<String>) -> String {
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    atilla_agent::harness::prompt_templates::substitute_args(&content, &refs)
+}
+
+/// `formatPromptTemplateInvocation` (harness/prompt-templates.ts): substitute
+/// positional arguments into a template's content. pi's `PromptTemplate`
+/// crosses as a JSON object; the argument list crosses as a string array.
+#[napi(js_name = "formatPromptTemplateInvocation")]
+pub fn format_prompt_template_invocation(
+    template_json: String,
+    args: Vec<String>,
+) -> napi::Result<String> {
+    use atilla_agent::harness::prompt_templates::{
+        format_prompt_template_invocation, PromptTemplate,
+    };
+    let template: PromptTemplate = serde_json::from_str(&template_json)
+        .map_err(|e| napi::Error::from_reason(format!("invalid prompt template: {e}")))?;
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    Ok(format_prompt_template_invocation(&template, &refs))
+}
+
 // --- agent harness: nodejs execution env -----------------------------------
 //
 // Stateful handle wrapping the host-backed `atilla_agent::harness::env::
@@ -176,7 +263,9 @@ impl NodeExecutionEnvCore {
     pub fn read_binary_file(&self, path: String) -> napi::Result<Buffer> {
         match self.inner.read_binary_file(&path) {
             Ok(bytes) => Ok(Buffer::from(bytes)),
-            Err(error) => Err(napi::Error::from_reason(file_error_value(&error).to_string())),
+            Err(error) => Err(napi::Error::from_reason(
+                file_error_value(&error).to_string(),
+            )),
         }
     }
 
@@ -273,5 +362,45 @@ impl NodeExecutionEnvCore {
             })),
             Err(error) => exec_err_json(&error),
         })
+    }
+
+    /// `loadSkills` (harness/skills.ts): traverse the given directories through
+    /// this host env and return `{skills,diagnostics}` as a JSON string. The
+    /// sourced/mapper variants are composed in the shim over this method, so no
+    /// opaque JS `source` value ever crosses the boundary. `disableModelInvocation`
+    /// is always present on each skill (see [`skill_to_value`]).
+    #[napi(js_name = "loadSkills")]
+    pub fn load_skills(&self, dirs: Vec<String>) -> String {
+        let refs: Vec<&str> = dirs.iter().map(String::as_str).collect();
+        let loaded = atilla_agent::harness::skills::load_skills(&self.inner, &refs);
+        let skills: Vec<Value> = loaded.skills.iter().map(skill_to_value).collect();
+        let diagnostics: Vec<Value> = loaded
+            .diagnostics
+            .iter()
+            .map(|d| serde_json::to_value(d).unwrap_or(Value::Null))
+            .collect();
+        json!({ "skills": skills, "diagnostics": diagnostics }).to_string()
+    }
+
+    /// `loadPromptTemplates` (harness/prompt-templates.ts): load `.md` templates
+    /// from the given paths through this host env and return
+    /// `{promptTemplates,diagnostics}` as a JSON string. The sourced/mapper
+    /// variants are composed in the shim over this method.
+    #[napi(js_name = "loadPromptTemplates")]
+    pub fn load_prompt_templates(&self, paths: Vec<String>) -> String {
+        let refs: Vec<&str> = paths.iter().map(String::as_str).collect();
+        let loaded =
+            atilla_agent::harness::prompt_templates::load_prompt_templates(&self.inner, &refs);
+        let prompt_templates: Vec<Value> = loaded
+            .prompt_templates
+            .iter()
+            .map(prompt_template_to_value)
+            .collect();
+        let diagnostics: Vec<Value> = loaded
+            .diagnostics
+            .iter()
+            .map(|d| serde_json::to_value(d).unwrap_or(Value::Null))
+            .collect();
+        json!({ "promptTemplates": prompt_templates, "diagnostics": diagnostics }).to_string()
     }
 }

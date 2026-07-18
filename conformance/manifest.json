@@ -48,7 +48,10 @@
     {
       "package": "agent",
       "src": "packages/agent/src/harness/prompt-templates.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "packages/agent/test/harness/prompt-templates.test.ts"
+      ]
     },
     {
       "package": "agent",
@@ -88,7 +91,11 @@
     {
       "package": "agent",
       "src": "packages/agent/src/harness/skills.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "packages/agent/test/harness/skills.test.ts",
+        "packages/agent/test/harness/resource-formatting.test.ts"
+      ]
     },
     {
       "package": "agent",
