@@ -118,6 +118,8 @@ name = "atilla-orchestrator"
 version = "0.1.0"
 dependencies = [
  "atilla-agent",
+ "atilla-ai",
+ "nix",
  "serde",
  "serde_json",
  "tempfile",
