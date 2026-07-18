@@ -4,9 +4,9 @@ This note scopes connecting
 [`fluessig`](https://github.com/zmaril/fluessig) and atilla. The direction
 is decided: **A, fluessig generates atilla's bindings.** This note records
 that decision, the concrete work it implies on each side, the milestone
-that gates it, and the questions still open. It is grounded in fluessig's
-code and commit history, not its README, which is stale (see section 1a).
-Where this note and `design.md` disagree, `design.md` wins.
+that gates it, and the decisions and questions still open. It is grounded
+in fluessig's code and commit history, not its README, which is stale (see
+section 1a). Where this note and `design.md` disagree, `design.md` wins.
 
 The starting premise needed correcting first. fluessig is **not** a PHP
 application, so there is no `php.ini`, no `.so` to load, and no NTS/ZTS or
@@ -113,16 +113,20 @@ On the fluessig side, the changes this needs:
    and agent runs emit a streaming event union (a `stream`-shaped op).
    Confirming, and where needed extending, the shape model and type map to
    carry opaque handles and event-union streams is a core design risk.
-3. Reproduce pi's Node return shapes exactly. This is the second half of
-   the work and has its own section, because atilla's Node binding is also
-   its conformance harness (section 4).
+3. Reproduce pi's Node return shapes exactly. This is a large piece of the
+   work and has its own section, because atilla's Node binding is also its
+   conformance harness (section 4).
+4. Emit pi's package and module layout. fluessig produces one flat binding
+   per catalog; pi's conformance surface is five packages with pi-exact
+   names and deep module paths. Multi-package, multi-module output is a new
+   fluessig capability (section 5).
 
 On the atilla side:
 
 1. Provide a describable surface. Today the façade is only
    `atilla_core::version()`; `Session::open` and the agent loop are not
    built yet, so the surface fluessig would generate from grows with
-   atilla's milestones (section 5).
+   atilla's milestones (section 6).
 2. Choose the source of truth. Because fluessig's front end is going
    Rust-first, the natural model is to annotate the façade types in
    `atilla-core` with fluessig derives, or to keep a small schema crate
@@ -204,7 +208,39 @@ carry over to the PHP back-end when it lands.
 
 ---
 
-## 5. Milestone gate and a sequencing that de-risks A
+## 5. Emitting pi's package and module layout
+
+There is a fifth fluessig gap the earlier draft did not name, and it is
+structural rather than per-return. fluessig produces one flat binding per
+catalog: its node emitter loops every interface into a single generated
+file, the CLI writes one file per language, and the schema (`api.json`)
+has no package, module, or scope field at all, with `deny_unknown_fields`
+blocking any data-side addition. pi's conformance surface is the opposite.
+atilla mirrors pi's five packages (`ai`, `agent`, `coding-agent`, `tui`,
+`orchestrator`) as crates funneled through the `atilla-core` façade, and
+pi's tests import by pi's exact package names (`@earendil-works/pi-ai`,
+`pi-agent-core`, and so on) and by hundreds of deep `../src/*` module
+paths, each an independently tracked shim in the conformance module
+manifest. Names are load-bearing: a near-miss is a silent import mismatch.
+
+So describing atilla's whole façade as one fluessig catalog would collapse
+it into one flat output and could not recreate pi's breakdown. Recreating
+it needs three things fluessig lacks today: a schema-level package and
+module grouping concept, an output fan-out in the emitter and CLI
+(analogous to the language fan-out fluessig already does when rendering its
+README), and caller-specified package names with nested module paths. This
+is a distinct capability from the name pinning in section 4: that pins a
+symbol's name, this pins where the symbol lives.
+
+The `atilla-core` façade being one Rust crate does not force the collapse.
+The façade is the internal seam; the schema can tag each op and type with
+its target pi package and module regardless of where the derive
+definitions live. The grouping metadata is what matters, not whether the
+schema sits in `atilla-core` or a separate crate.
+
+---
+
+## 6. Milestone gate and a sequencing that de-risks A
 
 The link itself is buildable today, and the payoff grows with atilla's
 façade:
@@ -212,21 +248,21 @@ façade:
 | Step | atilla surface | fluessig work | Gated at |
 | --- | --- | --- | --- |
 | Regenerate today's `Atilla::version()` from a schema, byte-comparable to the hand-written binding | `atilla_core::version()` | `src/bindgen/php.rs` MVP | M0 (today) |
-| First non-trivial generated binding | `Session::open(path)` -> messages plus stats | handle plus struct lowering; Node name pinning (section 4) | M1 |
+| First non-trivial generated binding | `Session::open(path)` -> messages plus stats | handle plus struct lowering; Node name pinning (section 4); package and module targeting (section 5) | M1 |
 | Generate over the agent surface | agent loop, event stream | union-as-object projection, async-iterable stream, dual error model (section 4) | M3 |
-| Replace the hand-written napi harness with generated napi | napi conformance surface | node back-end parity with pi's `.d.ts` fronting | M7 |
+| Replace the hand-written napi harness with generated napi | napi conformance surface | node back-end parity with pi's `.d.ts` fronting, plus multi-package and multi-module output (section 5) | M7 |
 
 Recommended first move, doable now: build the PHP back-end far enough to
 regenerate the existing M0 `Atilla::version()` binding and diff it against
 the hand-written one. That proves the direction end-to-end against a
 trivial surface before atilla's API grows, and it is the concrete answer
 to "what needs to happen with fluessig to enable atilla": a `php.rs` back
-end is step one, and the Node return-shape work in section 4 is the larger
-follow-on.
+end is step one, and the Node and package-layout work in sections 4 and 5
+is the larger follow-on.
 
 ---
 
-## 6. What atilla exposes today versus what is needed
+## 7. What atilla exposes today versus what is needed
 
 Today (M0, merged): `atilla_core::version()` and PHP `Atilla::version():
 string` via ext-php-rs `=0.13.1` targeting PHP 8.4 NTS. `Session::open`
@@ -241,22 +277,30 @@ napi harness swap.
 
 ---
 
-## 7. Open questions now that A is chosen
+## 8. Decisions and open questions
 
-1. Source of truth: does atilla describe its façade with fluessig derives
-   inside `atilla-core`, or in a separate schema crate? The first is
-   tighter but couples the core to a fluessig ref.
-2. Op-model fit: can fluessig's `ctor | unary | stream | manual` shapes
-   and type map carry atilla's opaque session handles and streaming event
-   unions as they stand, or does the op model need extending first?
-3. Node return fidelity (section 4): does the fluessig Node back-end grow
-   the four capabilities pi needs (name pinning, union-as-object,
-   async-iterable streams, dual error model), or do those stay atilla-side
-   behind the `@manual` escape hatch until they generalize? This decides
-   how much of the conformance surface is generated versus hand-written.
-4. Ownership: the PHP and Node back-end changes live in the fluessig repo.
-   Does atilla drive that work upstream in fluessig, and on whose
-   milestone?
-5. Harness swap: `atilla-napi` is the conformance harness. At which
-   milestone does generated napi replace the hand-written harness without
-   regressing pi's test suite, before or after M7?
+Recorded decisions from the project owner, who owns both repos:
+
+- Op model: fluessig's shape model and type map will likely need extending
+  to carry atilla's opaque handles and event unions (question 1 below).
+- Node capabilities: the four section-4 gaps are grown into fluessig's
+  generic back-end, not left behind the `@manual` escape hatch.
+- Ownership: atilla drives the fluessig-side work; a shared owner means the
+  repo boundary is not a blocker.
+- Harness swap: generated napi replaces the hand-written harness when it
+  makes sense and can, not on a fixed milestone.
+- Package layout: recreating pi's package breakdown is required and is a
+  new fluessig capability (section 5), not recoverable by schema placement
+  alone. "All in `atilla-core`" is fine as the internal seam as long as the
+  schema carries package and module grouping.
+
+Still open:
+
+1. Op-model fit: exactly which extensions the shape model and type map need
+   to carry opaque session handles and streaming event unions.
+2. Source of truth: do the fluessig derives live on the façade types in
+   `atilla-core`, or in a separate schema crate? Either supports the
+   package grouping above; the trade is coupling `atilla-core` to a
+   fluessig ref versus carrying an extra crate.
+3. Multi-package emission: the shape of the schema-level grouping concept
+   and the emitter and CLI fan-out that section 5 requires is undecided.
