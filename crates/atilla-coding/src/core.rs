@@ -7,15 +7,53 @@ pub mod command_flow;
 pub mod defaults;
 pub mod experimental;
 pub mod export_html;
+pub mod http_dispatcher;
 pub mod keybindings;
+pub mod model_config;
+pub mod model_resolver;
 pub mod package_manager;
 pub mod project_trust;
+pub mod provider_attribution;
 pub mod radius;
 pub mod resolve_config_value;
 pub mod session_cwd;
 pub mod session_manager;
 pub mod tools;
 pub mod trust_manager;
+
+/// Build a fully-populated test [`atilla_ai::types::Model`] with sensible
+/// defaults, shared across the `model_resolver` and `provider_attribution`
+/// test modules. Callers mutate the few fields they exercise (`reasoning`,
+/// `name`, `base_url`).
+///
+/// This lives here — rather than in a `core/test_support.rs` — because the
+/// coding-agent port keeps its shared test fixtures module-local; a single
+/// builder avoids cloning the 13-field `Model` literal into each test module.
+#[cfg(test)]
+pub(crate) fn test_model(id: &str, provider: &str) -> atilla_ai::types::Model {
+    use atilla_ai::types::{Modality, ModelCost};
+    atilla_ai::types::Model {
+        id: id.to_string(),
+        name: id.to_string(),
+        api: "anthropic-messages".to_string(),
+        provider: provider.to_string(),
+        base_url: format!("https://{provider}.example"),
+        reasoning: false,
+        thinking_level_map: None,
+        input: vec![Modality::Text],
+        cost: ModelCost {
+            input: 1.0,
+            output: 2.0,
+            cache_read: 0.1,
+            cache_write: 1.0,
+            tiers: None,
+        },
+        context_window: 128_000,
+        max_tokens: 8192,
+        headers: None,
+        compat: None,
+    }
+}
 
 #[cfg(test)]
 mod test_support;
