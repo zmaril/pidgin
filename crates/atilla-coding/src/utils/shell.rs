@@ -230,28 +230,21 @@ pub fn get_shell_env() -> Vec<(String, String)> {
     let separator = if cfg!(windows) { ';' } else { ':' };
 
     let mut env: Vec<(String, String)> = std::env::vars().collect();
-    let path_key = env
-        .iter()
-        .find(|(k, _)| k.to_lowercase() == "path")
-        .map(|(k, _)| k.clone());
 
-    match path_key {
-        Some(key) => {
-            for (k, v) in env.iter_mut() {
-                if *k == key {
-                    let entries: Vec<&str> = v.split(separator).filter(|e| !e.is_empty()).collect();
-                    if !entries.iter().any(|e| *e == bin_dir_str) {
-                        let mut parts: Vec<String> = Vec::new();
-                        if !bin_dir_str.is_empty() {
-                            parts.push(bin_dir_str.clone());
-                        }
-                        if !v.is_empty() {
-                            parts.push(v.clone());
-                        }
-                        *v = parts.join(&separator.to_string());
-                    }
-                    break;
+    // Single pass: locate the (case-insensitively matched) PATH entry and edit
+    // its value in place, preserving the existing key's casing.
+    match env.iter_mut().find(|(k, _)| k.to_lowercase() == "path") {
+        Some((_, v)) => {
+            let entries: Vec<&str> = v.split(separator).filter(|e| !e.is_empty()).collect();
+            if !entries.iter().any(|e| *e == bin_dir_str) {
+                let mut parts: Vec<String> = Vec::new();
+                if !bin_dir_str.is_empty() {
+                    parts.push(bin_dir_str.clone());
                 }
+                if !v.is_empty() {
+                    parts.push(v.clone());
+                }
+                *v = parts.join(&separator.to_string());
             }
         }
         None => {

@@ -156,7 +156,7 @@ pub async fn run_ls<O: LsOperations>(
     // Unicode collator, so we lowercase and compare by scalar order. This
     // matches `localeCompare`'s ordering for ASCII names; locale-specific
     // collation of non-ASCII names (accent/punctuation weighting) may differ.
-    entries.sort_by_key(|a| a.to_lowercase());
+    entries.sort_by_cached_key(|a| a.to_lowercase());
 
     // Format entries with directory indicators.
     let mut results: Vec<String> = Vec::new();

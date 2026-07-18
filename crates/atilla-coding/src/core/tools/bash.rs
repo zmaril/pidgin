@@ -42,17 +42,21 @@ use std::time::Duration;
 
 use tokio::sync::{mpsc, watch};
 
-use crate::utils::ansi::strip_ansi;
 use crate::utils::child_process::wait_for_child_process;
 use crate::utils::shell::{
-    get_shell_config, get_shell_env, kill_process_tree, sanitize_binary_output,
-    track_detached_child_pid, untrack_detached_child_pid,
+    get_shell_config, get_shell_env, kill_process_tree, track_detached_child_pid,
+    untrack_detached_child_pid,
 };
 
 use super::output_accumulator::{
     OutputAccumulator, OutputAccumulatorOptions, OutputSnapshot, TempFileSink,
 };
 use super::truncate::{format_size, TruncatedBy, DEFAULT_MAX_BYTES, DEFAULT_MAX_LINES};
+
+// pi materializes display text in `render-utils.ts`'s `getTextOutput`; the port
+// keeps that transform at that layer. Re-exported so existing callers (and
+// tests) can still reach it as `bash::get_text_output`.
+pub use super::render_utils::get_text_output;
 
 /// Hard ceiling on the resolved timeout, in milliseconds (pi's
 /// `MAX_TIMEOUT_MS = 2_147_483_647`).
@@ -399,15 +403,6 @@ impl BashOperations for LocalBashOperations {
     }
 }
 
-/// Materialize a tool result's text for display/model consumption, reproducing
-/// pi's `render-utils.ts` `getTextOutput` transform for a single text block:
-/// strip ANSI escape sequences, sanitize binary/control output, and drop
-/// carriage returns. This is the point at which pi strips ANSI — the raw
-/// [`BashToolResult::content`] keeps the escapes intact.
-pub fn get_text_output(content: &str) -> String {
-    sanitize_binary_output(&strip_ansi(content)).replace('\r', "")
-}
-
 /// Details attached to a bash result (pi's `BashToolDetails`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BashToolDetails {
@@ -541,7 +536,9 @@ impl<O: BashOperations> BashTool<O> {
             }),
             signal,
             timeout,
-            env: Some(spawn_context.env.clone()),
+            // Move the assembled env in (partial move); `command`/`cwd` are still
+            // borrowed by `exec` below, which a partial move leaves valid.
+            env: Some(spawn_context.env),
         };
 
         let exec_fut = self
@@ -685,11 +682,10 @@ fn emit_update(
     *last_update_at = Some(tokio::time::Instant::now());
     let snapshot = output.snapshot(true);
     let details = Some(BashToolDetails {
-        truncation: if snapshot.truncation.truncated {
-            Some(snapshot.truncation.clone())
-        } else {
-            None
-        },
+        truncation: snapshot
+            .truncation
+            .truncated
+            .then(|| snapshot.truncation.clone()),
         full_output_path: snapshot.full_output_path.clone(),
     });
     cb(BashUpdate {
