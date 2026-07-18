@@ -124,7 +124,10 @@ fn uses_reasoning_effort_for_mistral_small_4() {
 
 #[test]
 fn omits_reasoning_controls_for_mistral_small_4_when_off() {
-    let payload = capture_payload(&model("mistral-small-2603", true), SimpleMistralOptions::default());
+    let payload = capture_payload(
+        &model("mistral-small-2603", true),
+        SimpleMistralOptions::default(),
+    );
     assert!(payload.get("reasoningEffort").is_none());
     assert!(payload.get("promptMode").is_none());
 }
@@ -157,7 +160,10 @@ fn uses_reasoning_effort_for_mistral_medium_35() {
 
 #[test]
 fn omits_reasoning_controls_for_mistral_medium_35_when_off() {
-    let payload = capture_payload(&model("mistral-medium-3.5", true), SimpleMistralOptions::default());
+    let payload = capture_payload(
+        &model("mistral-medium-3.5", true),
+        SimpleMistralOptions::default(),
+    );
     assert!(payload.get("reasoningEffort").is_none());
     assert!(payload.get("promptMode").is_none());
 }
@@ -198,7 +204,10 @@ fn prompt_caching_sets_x_affinity_header() {
         },
     );
     let headers = build_request_headers(&m, &resolved);
-    assert_eq!(headers.get("x-affinity").map(String::as_str), Some("session-123"));
+    assert_eq!(
+        headers.get("x-affinity").map(String::as_str),
+        Some("session-123")
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -354,7 +363,14 @@ fn decodes_text_stream_with_usage_and_cost() {
 
     assert_eq!(
         event_kinds(&outcome),
-        ["start", "text_start", "text_delta", "text_delta", "text_end", "done"]
+        [
+            "start",
+            "text_start",
+            "text_delta",
+            "text_delta",
+            "text_end",
+            "done"
+        ]
     );
     assert_eq!(outcome.message.stop_reason, StopReason::Stop);
     assert_eq!(outcome.message.response_id.as_deref(), Some("resp_1"));
@@ -443,7 +459,14 @@ fn decodes_tool_call_stream() {
     let outcome = parse_chat_stream(&chunks, &model("mistral-large-latest", false), 0);
     assert_eq!(
         event_kinds(&outcome),
-        ["start", "toolcall_start", "toolcall_delta", "toolcall_delta", "toolcall_end", "done"]
+        [
+            "start",
+            "toolcall_start",
+            "toolcall_delta",
+            "toolcall_delta",
+            "toolcall_end",
+            "done"
+        ]
     );
     assert_eq!(outcome.message.stop_reason, StopReason::ToolUse);
     match &outcome.message.content[0] {

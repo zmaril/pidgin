@@ -12,12 +12,15 @@
 //! shared Rust port exists yet; when one lands, delete this file and re-point
 //! [`super::transform_messages`] at the shared module.
 
-use crate::types::{AssistantMessage, ContentBlock, Message, StopReason, ToolResultMessage, UserContent};
+use crate::types::{
+    AssistantMessage, ContentBlock, Message, StopReason, ToolResultMessage, UserContent,
+};
 
 /// The non-vision placeholder pi substitutes for images in user turns.
 const NON_VISION_USER_IMAGE_PLACEHOLDER: &str = "(image omitted: model does not support images)";
 /// The non-vision placeholder pi substitutes for images in tool-result turns.
-const NON_VISION_TOOL_IMAGE_PLACEHOLDER: &str = "(tool image omitted: model does not support images)";
+const NON_VISION_TOOL_IMAGE_PLACEHOLDER: &str =
+    "(tool image omitted: model does not support images)";
 
 /// The minimal model identity `transformMessages` reads: it compares the source
 /// assistant message's `provider`/`api`/`model` against these to decide whether a
@@ -29,7 +32,10 @@ pub struct ModelIdentity<'a> {
     pub supports_images: bool,
 }
 
-fn replace_images_with_placeholder(content: &[ContentBlock], placeholder: &str) -> Vec<ContentBlock> {
+fn replace_images_with_placeholder(
+    content: &[ContentBlock],
+    placeholder: &str,
+) -> Vec<ContentBlock> {
     let mut result: Vec<ContentBlock> = Vec::new();
     let mut previous_was_placeholder = false;
 
@@ -80,8 +86,10 @@ fn downgrade_unsupported_images(messages: &[Message], supports_images: bool) -> 
             }
             Message::ToolResult(tool_result) => {
                 let mut next = tool_result.clone();
-                next.content =
-                    replace_images_with_placeholder(&tool_result.content, NON_VISION_TOOL_IMAGE_PLACEHOLDER);
+                next.content = replace_images_with_placeholder(
+                    &tool_result.content,
+                    NON_VISION_TOOL_IMAGE_PLACEHOLDER,
+                );
                 Message::ToolResult(next)
             }
             other => other.clone(),
@@ -90,7 +98,9 @@ fn downgrade_unsupported_images(messages: &[Message], supports_images: bool) -> 
 }
 
 fn is_same_model(assistant: &AssistantMessage, model: &ModelIdentity) -> bool {
-    assistant.provider == model.provider && assistant.api == model.api && assistant.model == model.id
+    assistant.provider == model.provider
+        && assistant.api == model.api
+        && assistant.model == model.id
 }
 
 /// Normalize tool-call IDs and thinking blocks for cross-provider compatibility,
@@ -107,7 +117,8 @@ pub fn transform_messages(
     timestamp: i64,
 ) -> Vec<Message> {
     // Build a map of original tool call IDs to normalized IDs.
-    let mut tool_call_id_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut tool_call_id_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
 
     // pi normalizes null/undefined content to `[]`; in the Rust boundary types
     // content is already non-null, so the `imageAwareMessages` step is the first
@@ -214,7 +225,8 @@ pub fn transform_messages(
     // Second pass: insert synthetic empty tool results for orphaned tool calls.
     let mut result: Vec<Message> = Vec::new();
     let mut pending_tool_calls: Vec<(String, String)> = Vec::new();
-    let mut existing_tool_result_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut existing_tool_result_ids: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
 
     fn insert_synthetic(
         result: &mut Vec<Message>,
@@ -257,7 +269,10 @@ pub fn transform_messages(
                 );
 
                 // Skip errored/aborted assistant messages entirely.
-                if matches!(assistant.stop_reason, StopReason::Error | StopReason::Aborted) {
+                if matches!(
+                    assistant.stop_reason,
+                    StopReason::Error | StopReason::Aborted
+                ) {
                     continue;
                 }
 

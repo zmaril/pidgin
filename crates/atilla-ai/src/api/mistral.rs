@@ -140,8 +140,10 @@ pub fn short_hash(input: &str) -> String {
         h1 = (h1 ^ ch).wrapping_mul(2_654_435_761);
         h2 = (h2 ^ ch).wrapping_mul(1_597_334_677);
     }
-    h1 = (h1 ^ (h1 >> 16)).wrapping_mul(2_246_822_507) ^ (h2 ^ (h2 >> 13)).wrapping_mul(3_266_489_909);
-    h2 = (h2 ^ (h2 >> 16)).wrapping_mul(2_246_822_507) ^ (h1 ^ (h1 >> 13)).wrapping_mul(3_266_489_909);
+    h1 = (h1 ^ (h1 >> 16)).wrapping_mul(2_246_822_507)
+        ^ (h2 ^ (h2 >> 13)).wrapping_mul(3_266_489_909);
+    h2 = (h2 ^ (h2 >> 16)).wrapping_mul(2_246_822_507)
+        ^ (h1 ^ (h1 >> 13)).wrapping_mul(3_266_489_909);
     format!("{}{}", to_base36(h2), to_base36(h1))
 }
 
@@ -161,7 +163,10 @@ fn to_base36(mut n: u32) -> String {
 }
 
 fn retain_alphanumeric(input: &str) -> String {
-    input.chars().filter(|c| c.is_ascii_alphanumeric()).collect()
+    input
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .collect()
 }
 
 /// Derive a candidate 9-char Mistral tool-call ID for `id` on `attempt`
@@ -171,7 +176,11 @@ pub fn derive_mistral_tool_call_id(id: &str, attempt: u32) -> String {
     if attempt == 0 && normalized.len() == MISTRAL_TOOL_CALL_ID_LENGTH {
         return normalized;
     }
-    let seed_base = if normalized.is_empty() { id.to_string() } else { normalized };
+    let seed_base = if normalized.is_empty() {
+        id.to_string()
+    } else {
+        normalized
+    };
     let seed = if attempt == 0 {
         seed_base
     } else {
@@ -302,7 +311,11 @@ fn should_use_prompt_caching(options: &MistralOptions) -> Option<&str> {
 ///
 /// `transform_messages` (tool-id normalization) is applied to `context.messages`
 /// exactly as pi's `stream()` does before `buildChatPayload`.
-pub fn build_chat_payload(model: &MistralModel, context: &Context, options: &MistralOptions) -> Value {
+pub fn build_chat_payload(
+    model: &MistralModel,
+    context: &Context,
+    options: &MistralOptions,
+) -> Value {
     let mut normalizer = MistralToolCallIdNormalizer::new();
     let transformed = transform_messages_impl(
         &context.messages,
@@ -360,7 +373,10 @@ pub fn build_chat_payload(model: &MistralModel, context: &Context, options: &Mis
 /// Build the request headers pi wires via `buildRequestOptions`
 /// (`mistral-conversations.ts:213`): model headers, then caller headers, then the
 /// `x-affinity` prompt-cache header (unless a caller already set it).
-pub fn build_request_headers(model: &MistralModel, options: &MistralOptions) -> BTreeMap<String, String> {
+pub fn build_request_headers(
+    model: &MistralModel,
+    options: &MistralOptions,
+) -> BTreeMap<String, String> {
     let mut headers: BTreeMap<String, String> = BTreeMap::new();
     if let Some(model_headers) = &model.headers {
         for (k, v) in model_headers {
@@ -380,7 +396,12 @@ pub fn build_request_headers(model: &MistralModel, options: &MistralOptions) -> 
     headers
 }
 
-fn build_tool_result_text(text: &str, has_images: bool, supports_images: bool, is_error: bool) -> String {
+fn build_tool_result_text(
+    text: &str,
+    has_images: bool,
+    supports_images: bool,
+    is_error: bool,
+) -> String {
     let trimmed = text.trim();
     let error_prefix = if is_error { "[tool error] " } else { "" };
 
@@ -431,12 +452,16 @@ pub fn to_chat_messages(messages: &[Message], supports_images: bool) -> Vec<Valu
                     result.push(json!({ "role": "user", "content": sanitize_surrogates(text) }));
                 }
                 UserContent::Blocks(blocks) => {
-                    let had_images = blocks.iter().any(|b| matches!(b, ContentBlock::Image { .. }));
+                    let had_images = blocks
+                        .iter()
+                        .any(|b| matches!(b, ContentBlock::Image { .. }));
                     let mut content: Vec<Value> = Vec::new();
                     for block in blocks {
                         match block {
                             ContentBlock::Text { text, .. } => {
-                                content.push(json!({ "type": "text", "text": sanitize_surrogates(text) }));
+                                content.push(
+                                    json!({ "type": "text", "text": sanitize_surrogates(text) }),
+                                );
                             }
                             ContentBlock::Image { data, mime_type } if supports_images => {
                                 content.push(json!({
@@ -467,8 +492,9 @@ pub fn to_chat_messages(messages: &[Message], supports_images: bool) -> Vec<Valu
                     match block {
                         ContentBlock::Text { text, .. } => {
                             if !text.trim().is_empty() {
-                                content_parts
-                                    .push(json!({ "type": "text", "text": sanitize_surrogates(text) }));
+                                content_parts.push(
+                                    json!({ "type": "text", "text": sanitize_surrogates(text) }),
+                                );
                             }
                         }
                         ContentBlock::Thinking { thinking, .. } => {
@@ -506,10 +532,12 @@ pub fn to_chat_messages(messages: &[Message], supports_images: bool) -> Vec<Valu
                 let mut assistant_message = Map::new();
                 assistant_message.insert("role".to_string(), json!("assistant"));
                 if !content_parts.is_empty() {
-                    assistant_message.insert("content".to_string(), Value::Array(content_parts.clone()));
+                    assistant_message
+                        .insert("content".to_string(), Value::Array(content_parts.clone()));
                 }
                 if !tool_calls.is_empty() {
-                    assistant_message.insert("toolCalls".to_string(), Value::Array(tool_calls.clone()));
+                    assistant_message
+                        .insert("toolCalls".to_string(), Value::Array(tool_calls.clone()));
                 }
                 if !content_parts.is_empty() || !tool_calls.is_empty() {
                     result.push(Value::Object(assistant_message));
@@ -529,9 +557,14 @@ pub fn to_chat_messages(messages: &[Message], supports_images: bool) -> Vec<Valu
                     .content
                     .iter()
                     .any(|p| matches!(p, ContentBlock::Image { .. }));
-                let tool_text =
-                    build_tool_result_text(&text_result, has_images, supports_images, tool_result.is_error);
-                let mut tool_content: Vec<Value> = vec![json!({ "type": "text", "text": tool_text })];
+                let tool_text = build_tool_result_text(
+                    &text_result,
+                    has_images,
+                    supports_images,
+                    tool_result.is_error,
+                );
+                let mut tool_content: Vec<Value> =
+                    vec![json!({ "type": "text", "text": tool_text })];
                 for part in &tool_result.content {
                     if !supports_images {
                         continue;
@@ -621,7 +654,10 @@ fn clamp_thinking_level(model: &MistralModel, level: ModelThinkingLevel) -> Mode
     }
     let requested_index = EXTENDED_THINKING_LEVELS.iter().position(|l| *l == level);
     let Some(requested_index) = requested_index else {
-        return available.first().copied().unwrap_or(ModelThinkingLevel::Off);
+        return available
+            .first()
+            .copied()
+            .unwrap_or(ModelThinkingLevel::Off);
     };
     for candidate in EXTENDED_THINKING_LEVELS.iter().skip(requested_index) {
         if available.contains(candidate) {
@@ -633,13 +669,21 @@ fn clamp_thinking_level(model: &MistralModel, level: ModelThinkingLevel) -> Mode
             return *candidate;
         }
     }
-    available.first().copied().unwrap_or(ModelThinkingLevel::Off)
+    available
+        .first()
+        .copied()
+        .unwrap_or(ModelThinkingLevel::Off)
 }
 
 /// Map provider-agnostic [`SimpleMistralOptions`] to [`MistralOptions`], mirroring
 /// pi's `streamSimple` reasoning-mode selection (`mistral-conversations.ts:110`).
-pub fn resolve_simple_options(model: &MistralModel, options: &SimpleMistralOptions) -> MistralOptions {
-    let clamped = options.reasoning.map(|level| clamp_thinking_level(model, level));
+pub fn resolve_simple_options(
+    model: &MistralModel,
+    options: &SimpleMistralOptions,
+) -> MistralOptions {
+    let clamped = options
+        .reasoning
+        .map(|level| clamp_thinking_level(model, level));
     let reasoning = match clamped {
         Some(ModelThinkingLevel::Off) => None,
         other => other,
@@ -652,7 +696,10 @@ pub fn resolve_simple_options(model: &MistralModel, options: &SimpleMistralOptio
         None
     };
     let reasoning_effort = if should_use_reasoning && uses_reasoning_effort(model) {
-        Some(map_reasoning_effort(model, reasoning.expect("reasoning present")))
+        Some(map_reasoning_effort(
+            model,
+            reasoning.expect("reasoning present"),
+        ))
     } else {
         None
     };
@@ -692,9 +739,21 @@ fn get_mistral_cached_prompt_tokens(usage: &Value, prompt_tokens: u64) -> u64 {
     let raw = usage
         .get("promptTokensDetails")
         .and_then(|d| d.get("cachedTokens"))
-        .or_else(|| usage.get("prompt_tokens_details").and_then(|d| d.get("cached_tokens")))
-        .or_else(|| usage.get("promptTokenDetails").and_then(|d| d.get("cachedTokens")))
-        .or_else(|| usage.get("prompt_token_details").and_then(|d| d.get("cached_tokens")))
+        .or_else(|| {
+            usage
+                .get("prompt_tokens_details")
+                .and_then(|d| d.get("cached_tokens"))
+        })
+        .or_else(|| {
+            usage
+                .get("promptTokenDetails")
+                .and_then(|d| d.get("cachedTokens"))
+        })
+        .or_else(|| {
+            usage
+                .get("prompt_token_details")
+                .and_then(|d| d.get("cached_tokens"))
+        })
         .or_else(|| usage.get("numCachedTokens"))
         .or_else(|| usage.get("num_cached_tokens"));
     let cached = raw
@@ -811,9 +870,11 @@ fn consume_chat_stream(
     let mut current: Option<CurrentKind> = None;
     // Tool blocks keyed by `${callId}:${index}` → content index. `tool_order`
     // preserves pi's Map insertion order for the terminal `toolcall_end` flush.
-    let mut tool_blocks_by_key: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    let mut tool_blocks_by_key: std::collections::HashMap<String, usize> =
+        std::collections::HashMap::new();
     let mut tool_order: Vec<usize> = Vec::new();
-    let mut tool_partial_args: std::collections::HashMap<usize, String> = std::collections::HashMap::new();
+    let mut tool_partial_args: std::collections::HashMap<usize, String> =
+        std::collections::HashMap::new();
 
     for chunk in chunks {
         if output.response_id.is_none() {
@@ -833,7 +894,10 @@ fn consume_chat_stream(
             output.usage.cache_write = 0;
             let total = usage.get("totalTokens").and_then(Value::as_u64);
             output.usage.total_tokens = total.unwrap_or(
-                output.usage.input + output.usage.output + output.usage.cache_read + output.usage.cache_write,
+                output.usage.input
+                    + output.usage.output
+                    + output.usage.cache_read
+                    + output.usage.cache_write,
             );
             recompute_cost(model, &mut output.usage);
         }
@@ -848,7 +912,10 @@ fn consume_chat_stream(
 
         let delta = choice.get("delta");
 
-        if let Some(content) = delta.and_then(|d| d.get("content")).filter(|c| !c.is_null()) {
+        if let Some(content) = delta
+            .and_then(|d| d.get("content"))
+            .filter(|c| !c.is_null())
+        {
             let items: Vec<Value> = match content {
                 Value::String(s) => vec![Value::String(s.clone())],
                 Value::Array(arr) => arr.clone(),
@@ -883,7 +950,11 @@ fn consume_chat_stream(
                 .to_string();
 
             let block_index = match tool_blocks_by_key.get(&key) {
-                Some(&idx) if matches!(output.content.get(idx), Some(ContentBlock::ToolCall { .. })) => idx,
+                Some(&idx)
+                    if matches!(output.content.get(idx), Some(ContentBlock::ToolCall { .. })) =>
+                {
+                    idx
+                }
                 _ => {
                     output.content.push(ContentBlock::ToolCall {
                         id: call_id.clone(),
@@ -913,7 +984,9 @@ fn consume_chat_stream(
             let partial = tool_partial_args.entry(block_index).or_default();
             partial.push_str(&args_delta);
             let parsed = parse_streaming_json(Some(partial));
-            if let Some(ContentBlock::ToolCall { arguments, .. }) = output.content.get_mut(block_index) {
+            if let Some(ContentBlock::ToolCall { arguments, .. }) =
+                output.content.get_mut(block_index)
+            {
                 *arguments = parsed;
             }
             events.push(AssistantMessageEvent::ToolcallDelta {
@@ -928,7 +1001,10 @@ fn consume_chat_stream(
         finish_current_block(&kind, output, events);
     }
     for &index in &tool_order {
-        if !matches!(output.content.get(index), Some(ContentBlock::ToolCall { .. })) {
+        if !matches!(
+            output.content.get(index),
+            Some(ContentBlock::ToolCall { .. })
+        ) {
             continue;
         }
         let partial = tool_partial_args.get(&index).cloned().unwrap_or_default();
