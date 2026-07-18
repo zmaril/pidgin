@@ -326,11 +326,11 @@ fn navigate_tree_returns_editor_text_and_emits_session_tree() {
 
     let harness = AgentHarness::new(base_options(Session::new(storage), faux, model)).unwrap();
     let tree_events = Rc::new(RefCell::new(Vec::new()));
-    let te = tree_events.clone();
+    let tree_ev = tree_events.clone();
     let _sub = harness.subscribe(Rc::new(move |event: &AgentHarnessEvent, _| {
         if let AgentHarnessEvent::Own(own) = event {
             if let AgentHarnessOwnEvent::SessionTree(ev) = own.as_ref() {
-                te.borrow_mut().push(ev.old_leaf_id.clone());
+                tree_ev.borrow_mut().push(ev.old_leaf_id.clone());
             }
         }
     }));

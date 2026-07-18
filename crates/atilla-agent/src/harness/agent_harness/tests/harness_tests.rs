@@ -70,12 +70,12 @@ fn drains_one_queued_steering_message_at_a_time() {
                 sl.borrow_mut().push(q.steer.len());
             }
         }
-        AgentHarnessEvent::Loop(AgentEvent::MessageStart { message }) => {
-            if role(message) == Some("assistant") && !queued.get() {
-                queued.set(true);
-                h.steer("one", None).unwrap();
-                h.steer("two", None).unwrap();
-            }
+        AgentHarnessEvent::Loop(AgentEvent::MessageStart { message })
+            if role(message) == Some("assistant") && !queued.get() =>
+        {
+            queued.set(true);
+            h.steer("one", None).unwrap();
+            h.steer("two", None).unwrap();
         }
         _ => {}
     }));
@@ -154,14 +154,14 @@ fn abort_clears_steer_and_follow_up_preserves_next_turn() {
                     .push((q.steer.len(), q.follow_up.len(), q.next_turn.len()));
             }
         }
-        AgentHarnessEvent::Loop(AgentEvent::MessageStart { message }) => {
-            if role(message) == Some("assistant") && !acted.get() {
-                acted.set(true);
-                h.steer("steer", None).unwrap();
-                h.follow_up("follow", None).unwrap();
-                h.next_turn("next", None).unwrap();
-                *ar.borrow_mut() = Some(h.abort().unwrap());
-            }
+        AgentHarnessEvent::Loop(AgentEvent::MessageStart { message })
+            if role(message) == Some("assistant") && !acted.get() =>
+        {
+            acted.set(true);
+            h.steer("steer", None).unwrap();
+            h.follow_up("follow", None).unwrap();
+            h.next_turn("next", None).unwrap();
+            *ar.borrow_mut() = Some(h.abort().unwrap());
         }
         _ => {}
     }));
@@ -207,12 +207,12 @@ fn drains_follow_up_messages_one_at_a_time() {
                 fl.borrow_mut().push(q.follow_up.len());
             }
         }
-        AgentHarnessEvent::Loop(AgentEvent::MessageStart { message }) => {
-            if role(message) == Some("assistant") && !queued.get() {
-                queued.set(true);
-                h.follow_up("one", None).unwrap();
-                h.follow_up("two", None).unwrap();
-            }
+        AgentHarnessEvent::Loop(AgentEvent::MessageStart { message })
+            if role(message) == Some("assistant") && !queued.get() =>
+        {
+            queued.set(true);
+            h.follow_up("one", None).unwrap();
+            h.follow_up("two", None).unwrap();
         }
         _ => {}
     }));
