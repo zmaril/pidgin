@@ -1,0 +1,27 @@
+[package]
+name = "atilla-php"
+description = "PHP native extension (ext-php-rs cdylib) bridging the atilla engine into PHP."
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/zmaril/atilla"
+publish = false
+
+[lib]
+name = "atilla_php"
+crate-type = ["cdylib"]
+
+[dependencies]
+# Pinned exactly: ext-php-rs is pre-1.0 and its attribute macros churn between
+# minors (see throwaway/php-hello findings). 0.13.1 is proven on PHP 8.4 NTS.
+ext-php-rs = "=0.13.1"
+# The façade crate is the only atilla dependency a binding is allowed to reach.
+atilla-core = { path = "../../crates/atilla-core" }
+
+# Standalone workspace: this empty table makes cargo treat this crate as its own
+# workspace rather than attaching it to the workspace rooted at the repository
+# top level. That keeps ext-php-rs (which needs libclang + PHP dev headers via
+# bindgen) out of the root `cargo build` and the shared `rust` CI job, so those
+# stay green on runners without PHP headers installed. Build this crate with
+# `cargo build` from inside bindings/php (see README.md).
+[workspace]

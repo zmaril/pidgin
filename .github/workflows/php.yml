@@ -1,0 +1,87 @@
+# straitjacket-allow-file[:duplication] — the checkout/toolchain/cache setup
+# necessarily mirrors ci.yml; Actions YAML has no include mechanism for it.
+#
+# PHP binding workflow. Builds the ext-php-rs cdylib and proves it loads in PHP
+# and returns the real atilla-core version (bindings/php/test.sh). The PHP
+# binding is a standalone crate outside the root workspace (it needs libclang +
+# PHP dev headers, which the shared `rust` job does not install), so it gets its
+# own job here rather than riding along in ci.yml.
+
+name: php
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 7 * * 2"  # weekly: catch PHP/ext-php-rs/toolchain drift
+  workflow_dispatch:
+
+jobs:
+  # Fan-out: only run the heavy build when the PR actually touches the PHP
+  # binding, its workflow, or the atilla-core façade it depends on. A skipped
+  # required check still reports green, so branch protection stays happy.
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      php: ${{ steps.filter.outputs.php }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            php:
+              - 'bindings/php/**'
+              - 'crates/atilla-core/**'
+              - '.github/workflows/php.yml'
+
+  php:
+    name: php extension
+    needs: changes
+    if: needs.changes.outputs.php == 'true' || github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # PHP 8.4 NTS to match the toolchain the binding is developed and pinned
+      # against (see bindings/php/README.md).
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+        env:
+          phpts: nts
+
+      # ext-php-rs runs bindgen over the PHP headers, so the dev headers and
+      # libclang must be present.
+      - name: Install PHP dev headers and libclang
+        run: sudo apt-get update && sudo apt-get install -y php-dev libclang-dev clang
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/php
+
+      - name: Report toolchain
+        working-directory: bindings/php
+        run: |
+          php -v
+          php-config --version
+          php -i | grep -i 'thread safety' || true
+
+      - name: fmt
+        working-directory: bindings/php
+        run: cargo fmt --check
+
+      - name: clippy
+        working-directory: bindings/php
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: build + load + version test
+        working-directory: bindings/php
+        run: ./test.sh
