@@ -59,6 +59,20 @@ rm -f "$OUT"/*.vitest.json "$OUT"/*.tap "$OUT"/pkgmeta/*.json
 
 log() { printf '[conformance] %s\n' "$*"; }
 
+# --- native-shim overlay restore -------------------------------------------
+# codegen.mjs overlays native shims onto the vendored pi tree (overwriting the
+# original module and preserving it as `<name>.__pi_original__.ts`). Restore the
+# tree to its pinned state before and after the run so overlays never leak into
+# git status or the next run's drift check. Only tracked files under packages/
+# are restored and only the `.__pi_original__.ts` backups are removed, so the
+# npm install and generated model data (both untracked) survive.
+restore_pi_overlay() {
+  find "$PI_ROOT/packages" -name '*.__pi_original__.ts' -delete 2>/dev/null || true
+  git -C "$PI_ROOT" checkout -- packages 2>/dev/null || true
+}
+trap restore_pi_overlay EXIT
+restore_pi_overlay
+
 # --- optional setup ---------------------------------------------------------
 if [ "$DO_SETUP" -eq 1 ]; then
   log "setup: installing canvas system libs ($CANVAS_LIBS)"
@@ -89,6 +103,14 @@ elif (cd "$REPO_ROOT/crates/atilla-napi" && npm install && npx napi build --plat
   log "napi addon built"
 else
   log "napi addon build failed (non-fatal; see napi-build.log)"
+fi
+
+# Expose the built addon to the vendored pi tree so native shims can
+# `import ... from "atilla-napi"`. The symlink lands in pi's node_modules
+# (untracked, gitignored) and is harmless when no module is native.
+if [ -d "$PI_ROOT/node_modules" ]; then
+  ln -sfn "$REPO_ROOT/crates/atilla-napi" "$PI_ROOT/node_modules/atilla-napi"
+  log "linked atilla-napi into pi node_modules"
 fi
 
 # --- codegen: materialize the module tree ----------------------------------

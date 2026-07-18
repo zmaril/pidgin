@@ -4,7 +4,9 @@
 //! Modules mirror pi's `src/` top-level layout; port order runs roughly
 //! `types` and `utils` first, then `auth`, `providers`, `api`, and finally
 //! `compat`. Stage 1 ports the boundary types (`types.ts`) and cost math
-//! (`models.ts`'s `calculateCost`); the remaining modules are still stubs.
+//! (`models.ts`'s `calculateCost`); Stage 2 ports the Anthropic Messages SSE
+//! streaming parser (`api/anthropic.rs`) and its JSON-repair helpers
+//! (`utils/json_parse.rs`). The remaining modules are still stubs.
 
 pub mod api;
 pub mod auth;
@@ -14,7 +16,7 @@ pub mod providers;
 pub mod types;
 pub mod utils;
 
-pub use cost::calculate_cost;
+pub use cost::{calculate_cost, calculate_cost_with};
 pub use types::*;
 
 /// Name of the pi package this crate mirrors.

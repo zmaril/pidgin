@@ -21,6 +21,30 @@ const OUT = process.env.CONFORMANCE_OUT || join(repoRoot, "conformance", ".out")
 
 const PI_SHA = "3da591ab74ab9ab407e72ed882600b2c851fae21";
 
+/** Count modules flipped to the Rust addon (`status: "native"`) in the manifest. */
+function manifestNativeModules() {
+  try {
+    const manifest = JSON.parse(readFileSync(join(here, "manifest.json"), "utf8"));
+    return (manifest.modules ?? []).filter((m) => m.status === "native").length;
+  } catch {
+    return 0;
+  }
+}
+
+/** Per-package count of modules flipped to the Rust addon, keyed by package. */
+function manifestNativeByPackage() {
+  const counts = {};
+  try {
+    const manifest = JSON.parse(readFileSync(join(here, "manifest.json"), "utf8"));
+    for (const m of manifest.modules ?? []) {
+      if (m.status === "native") counts[m.package] = (counts[m.package] ?? 0) + 1;
+    }
+  } catch {
+    // fall through: no manifest means no native modules to attribute
+  }
+  return counts;
+}
+
 // Failure classification: coding-agent failures that are shaped by the sandbox
 // environment rather than by a real behavioral divergence. Conservative — used
 // only to populate environment_failures, and the basis is recorded in
@@ -108,6 +132,7 @@ function main() {
   }
   const meta = readJson(metaPath);
   const environmentNotes = [...(meta.environment_notes ?? [])];
+  const nativeByPackage = manifestNativeByPackage();
 
   const byPackage = {};
   const byFile = [];
@@ -128,6 +153,7 @@ function main() {
         passing: 0,
         failing: 0,
         skipped: 0,
+        native: nativeByPackage[pkg] ?? 0,
         status,
         note,
       };
@@ -141,6 +167,7 @@ function main() {
         passing: 0,
         failing: 0,
         skipped: 0,
+        native: nativeByPackage[pkg] ?? 0,
         status: "env-blocked",
         note: note || `reporter file ${info.reporter} not produced`,
       };
@@ -155,6 +182,7 @@ function main() {
       passing: parsed.passing,
       failing: parsed.failing,
       skipped: parsed.skipped,
+      native: nativeByPackage[pkg] ?? 0,
       status,
       note,
     };
@@ -186,7 +214,7 @@ function main() {
   const out = {
     pi_sha: PI_SHA,
     generated_by: "scripts/conformance.sh",
-    manifest_native_modules: 0,
+    manifest_native_modules: manifestNativeModules(),
     total,
     passing,
     failing,

@@ -132,6 +132,7 @@ dependencies = [
 name = "atilla-napi"
 version = "0.1.0"
 dependencies = [
+ "atilla-ai",
  "napi",
  "napi-build",
  "napi-derive",

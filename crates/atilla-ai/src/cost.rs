@@ -1,6 +1,6 @@
 //! Cost math ported from pi-ai's `calculateCost` (`packages/ai/src/models.ts:639`).
 
-use crate::types::{Model, ModelCostRates, Usage, UsageCost};
+use crate::types::{Model, ModelCost, ModelCostRates, Usage, UsageCost};
 
 /// Compute the cost breakdown for a `usage` against a `model`'s pricing.
 ///
@@ -17,11 +17,18 @@ use crate::types::{Model, ModelCostRates, Usage, UsageCost};
 /// Unlike the TypeScript original, this does not mutate `usage`; it returns a
 /// fresh [`UsageCost`].
 pub fn calculate_cost<C>(model: &Model<C>, usage: &Usage) -> UsageCost {
+    calculate_cost_with(&model.cost, usage)
+}
+
+/// [`calculate_cost`] against a bare [`ModelCost`], for callers (like the
+/// Anthropic SSE driver) that carry a model's pricing without a full
+/// [`Model`] value.
+pub fn calculate_cost_with(cost: &ModelCost, usage: &Usage) -> UsageCost {
     let input_tokens = usage.input + usage.cache_read + usage.cache_write;
 
-    let mut rates: ModelCostRates = model.cost.base_rates();
+    let mut rates: ModelCostRates = cost.base_rates();
     let mut matched_threshold: Option<u64> = None;
-    if let Some(tiers) = &model.cost.tiers {
+    if let Some(tiers) = &cost.tiers {
         for tier in tiers {
             let above = tier.input_tokens_above;
             if input_tokens > above && matched_threshold.is_none_or(|m| above > m) {
