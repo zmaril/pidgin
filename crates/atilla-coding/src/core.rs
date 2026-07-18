@@ -1,7 +1,9 @@
 //! Mirror of pi-coding-agent's `core` module (`packages/coding-agent/src/core`).
 //!
 //! The `tools` subtree, the config/settings cluster, and a first slice of core
-//! glue modules are ported so far; remaining sibling submodules land later.
+//! glue modules are ported so far — including the `prompt_templates` /
+//! `system_prompt` / `slash_commands` shell modules; remaining sibling
+//! submodules land later.
 
 pub mod cache_stats;
 pub mod command_flow;
@@ -21,12 +23,15 @@ pub mod model_resolver;
 pub mod output_guard;
 pub mod package_manager;
 pub mod project_trust;
+pub mod prompt_templates;
 pub mod provider_attribution;
 pub mod radius;
 pub mod resolve_config_value;
 pub mod session_cwd;
 pub mod session_manager;
+pub mod slash_commands;
 pub mod source_info;
+pub mod system_prompt;
 pub mod telemetry;
 pub mod timings;
 pub mod tools;

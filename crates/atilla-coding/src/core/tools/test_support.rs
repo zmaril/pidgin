@@ -8,6 +8,20 @@
 use std::fs;
 use std::path::PathBuf;
 
+/// Build a unique path under the system temp dir, tagged with `prefix` plus the
+/// current process id and a nanosecond timestamp. Shared by every test fixture
+/// that needs a collision-free scratch directory.
+pub fn unique_temp_path(prefix: &str) -> PathBuf {
+    std::env::temp_dir().join(format!(
+        "{prefix}-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ))
+}
+
 /// A self-cleaning temporary directory rooted under the system temp dir.
 pub struct TempDir {
     /// Absolute path to the directory root.
@@ -17,14 +31,7 @@ pub struct TempDir {
 impl TempDir {
     /// Create a uniquely-named temp directory tagged for the calling test.
     pub fn new(tag: &str) -> Self {
-        let path = std::env::temp_dir().join(format!(
-            "atilla-tool-{tag}-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
+        let path = unique_temp_path(&format!("atilla-tool-{tag}"));
         fs::create_dir_all(&path).unwrap();
         TempDir { path }
     }
