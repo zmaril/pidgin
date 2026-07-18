@@ -105,7 +105,7 @@ Device-code polling, refresh-then-retry, and chained logins (a Copilot login is 
 
 ```rust
 /// One action yielded by an OAuth flow, serialized across the one-way boundary.
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Step {
     Request { request: HttpRequest },
@@ -116,12 +116,13 @@ pub enum Step {
     Error   { message: String },
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum StepInput {
-    Response(HttpResponse),
-    Input { value: String },
-    Ack,
+    Response(HttpResponse),   // {"kind":"response","status":..,"headers":..,"body":..}
+    Input { value: String },  // {"kind":"input","value":".."}
+    Ack,                      // {"kind":"ack"}
+    Aborted,                  // {"kind":"aborted"} -> advance() returns Error{"Login cancelled"}
 }
 
 pub trait OAuthFlowMachine {
@@ -137,7 +138,7 @@ The shim drives the loop until `Done` or `Error`:
 - `Prompt` — call the caller's `prompt()`, then `advance(Input)`. `Notify` — call `notify()`, then `advance(Ack)`. These carry pi's `AuthInteraction` callbacks, which the test supplies on the JS side.
 - `Done` — return the credential. `Error` — throw.
 
-`now_ms` is passed to both `start` and `advance` (expiry math and the device-code deadline). Abort stays shim-side: the shim stops driving. The loopback-server and browser login paths are not `fetch` and are not stubbed by pi's `*-oauth.test.ts`, so they stay a native path outside this bridge.
+`now_ms` is passed to both `start` and `advance` (expiry math and the device-code deadline). Cancellation feeds an `Aborted` input, and `advance(Aborted, _)` returns `Error{ "Login cancelled" }`; the shim feeds it when the caller's abort signal fires during a `Wait` or the caller's `prompt()` rejects. Two adjacent terminal errors are ordinary `Error` steps the machine computes from `now` or the response, not inputs: a device-poll deadline timeout ("Device flow timed out") and a provider denial ("device authorization was denied"). One case is purely shim-side: after `Done`, the shim aborts the interactive prompt's signal so a UI dismisses it. The loopback-server and browser login paths are not `fetch` and are not stubbed by pi's `*-oauth.test.ts`, so they stay a native path outside this bridge.
 
 ---
 
