@@ -31,6 +31,13 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
+pub mod cache;
+pub mod compat;
+pub mod content;
+pub mod request;
+pub mod thinking;
+pub mod tools;
+
 use crate::cost::calculate_cost_with;
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, ContentBlock, ModelCost, StopReason,
@@ -732,3 +739,6 @@ fn render_partial(output: &AssistantMessage, blocks: &[WorkingBlock]) -> Assista
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod request_tests;
