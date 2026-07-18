@@ -191,9 +191,31 @@ run_vitest_pkg() {
   log "vitest: $pkg (timeout ${PKG_TIMEOUT}s)"
   local start end rc
   start="$(date +%s)"
+
+  # --- determinism hardening: strip injected credentials for the vitest run ----
+  # The conformance baseline used to flap by +/-1 between runs. The cause is that
+  # this environment injects AWS credentials and an ANTHROPIC_BASE_URL. With those
+  # visible, packages/ai's provider tests take the live path instead of the
+  # documented offline/skip path, so pass/fail counts drift with network and
+  # provider state (and the drift can perturb the coding-agent suite too). A
+  # deterministic baseline matters for the auto-refresh workflow that diffs
+  # conformance.json on every run.
+  #
+  # `env -u` removes those variables for the vitest invocation only, pinning the
+  # suites to their offline behavior. Setup (apt / npm / codegen) above keeps the
+  # full environment.
+  #
+  # Follow-up: we also evaluated dropping the vitest run to an unprivileged user
+  # (so that the coding-agent chmod/EACCES asserts, which root bypasses, would run
+  # for real). In this tree that made the baseline worse and less stable -- many
+  # suites write working dirs inside the package tree and transpile extensions at
+  # runtime, which is fragile under a dropped uid -- so it is deferred. The
+  # credential strip alone gives the deterministic baseline documented in
+  # conformance/STEWARD.md.
   set +e
-  (cd "$PI_ROOT/packages/$pkg" && timeout "$PKG_TIMEOUT" npx vitest run \
-    --reporter=json --outputFile="$OUT/$reporter") >"$human" 2>&1
+  (cd "$PI_ROOT/packages/$pkg" && timeout "$PKG_TIMEOUT" \
+    env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN -u ANTHROPIC_BASE_URL \
+    npx vitest run --reporter=json --outputFile="$OUT/$reporter") >"$human" 2>&1
   rc=$?
   set -e
   end="$(date +%s)"

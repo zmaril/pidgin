@@ -3,8 +3,8 @@
   "generated_by": "scripts/conformance.sh",
   "manifest_native_modules": 13,
   "total": 3777,
-  "passing": 2905,
-  "failing": 87,
+  "passing": 2919,
+  "failing": 73,
   "skipped": 785,
   "by_package": {
     "agent": {
@@ -27,8 +27,8 @@
     },
     "coding-agent": {
       "total": 1625,
-      "passing": 1491,
-      "failing": 87,
+      "passing": 1505,
+      "failing": 73,
       "skipped": 47,
       "native": 9,
       "status": "ok",
@@ -1555,15 +1555,15 @@
     {
       "package": "coding-agent",
       "file": "packages/coding-agent/test/session-file-invalid.test.ts",
-      "passing": 0,
-      "failing": 1,
+      "passing": 1,
+      "failing": 0,
       "skipped": 0
     },
     {
       "package": "coding-agent",
       "file": "packages/coding-agent/test/session-id-readonly.test.ts",
-      "passing": 1,
-      "failing": 6,
+      "passing": 7,
+      "failing": 0,
       "skipped": 0
     },
     {
@@ -1618,8 +1618,8 @@
     {
       "package": "coding-agent",
       "file": "packages/coding-agent/test/startup-session-name.test.ts",
-      "passing": 0,
-      "failing": 2,
+      "passing": 2,
+      "failing": 0,
       "skipped": 0
     },
     {
@@ -1632,8 +1632,8 @@
     {
       "package": "coding-agent",
       "file": "packages/coding-agent/test/stdout-cleanliness.test.ts",
-      "passing": 0,
-      "failing": 5,
+      "passing": 5,
+      "failing": 0,
       "skipped": 0
     },
     {
@@ -2288,11 +2288,46 @@
       "skipped": 0
     }
   ],
-  "environment_failures": 66,
+  "cli_conformance": {
+    "total": 15,
+    "passing": 15,
+    "failing": 0,
+    "skipped": 0,
+    "bin": "/workspace/atilla/target/release/atilla",
+    "status": "ok",
+    "note": "vitest run against atilla binary, exit 0",
+    "files": [
+      {
+        "file": "packages/coding-agent/test/session-file-invalid.test.ts",
+        "passing": 1,
+        "failing": 0,
+        "skipped": 0
+      },
+      {
+        "file": "packages/coding-agent/test/session-id-readonly.test.ts",
+        "passing": 7,
+        "failing": 0,
+        "skipped": 0
+      },
+      {
+        "file": "packages/coding-agent/test/startup-session-name.test.ts",
+        "passing": 2,
+        "failing": 0,
+        "skipped": 0
+      },
+      {
+        "file": "packages/coding-agent/test/stdout-cleanliness.test.ts",
+        "passing": 5,
+        "failing": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  "environment_failures": 61,
   "environment_notes": [
     "canvas system libs required: libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev (plus preinstalled libcairo2-dev, libpixman-1-dev)",
     "packages/ai provider data (src/providers/data/*.json) is generated via 'npm run generate-models', not committed in pi",
     "no provider API keys supplied: ai skips its live-provider tests by design",
-    "environment_failures=66 is a conservative keyword match over coding-agent failing test names (fswatch/watch/extension/discovery/stdout/stderr/spawn/which); it is a heuristic, not an exact attribution — see by_file for raw per-file failing counts."
+    "environment_failures=61 is a conservative keyword match over coding-agent failing test names (fswatch/watch/extension/discovery/stdout/stderr/spawn/which); it is a heuristic, not an exact attribution — see by_file for raw per-file failing counts."
   ]
 }
