@@ -12,4 +12,5 @@ path = "src/main.rs"
 
 [dependencies]
 atilla-core = { path = "../atilla-core" }
+atilla-coding = { path = "../atilla-coding" }
 serde_json = { workspace = true }

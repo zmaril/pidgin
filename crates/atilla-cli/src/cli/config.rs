@@ -7,8 +7,6 @@
 //! are derived from `APP_NAME` exactly as pi does, so the black-box tests'
 //! `PI_CODING_AGENT_DIR` / `PI_CODING_AGENT_SESSION_DIR` line up.
 
-use std::path::PathBuf;
-
 /// pi's `APP_NAME` (`piConfig.name || "pi"`). Used in help text and env vars.
 pub const APP_NAME: &str = "pi";
 
@@ -27,22 +25,3 @@ pub const ENV_SESSION_DIR: &str = "PI_CODING_AGENT_SESSION_DIR";
 /// satisfies pi's `--version` contract (`/^\d+\.\d+\.\d+/`). It is intentionally
 /// not pinned to pi's package version.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-fn home_dir() -> PathBuf {
-    // Mirrors Node's os.homedir(); HOME on unix, USERPROFILE on windows.
-    std::env::var_os("HOME")
-        .or_else(|| std::env::var_os("USERPROFILE"))
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("."))
-}
-
-/// Get the agent config directory (`$PI_CODING_AGENT_DIR` or `~/.pi/agent`).
-/// Mirrors `getAgentDir()`.
-pub fn get_agent_dir() -> PathBuf {
-    if let Some(env_dir) = std::env::var_os(ENV_AGENT_DIR) {
-        if !env_dir.is_empty() {
-            return PathBuf::from(env_dir);
-        }
-    }
-    home_dir().join(CONFIG_DIR_NAME).join("agent")
-}
