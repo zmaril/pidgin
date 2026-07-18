@@ -86,6 +86,7 @@ name = "atilla-napi"
 version = "0.1.0"
 dependencies = [
  "atilla-ai",
+ "atilla-coding",
  "atilla-tui",
  "napi",
  "napi-build",
