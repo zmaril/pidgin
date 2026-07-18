@@ -18,6 +18,8 @@ A **conformance dashboard** parses the vitest/node:test JSON reporter into `N of
 
 **Estimated "run unmodified and pass" coverage:** ~30–40% of cases near-term (dominated by the pi-ai protocol layer + agent core once those are ported), with a long-term ceiling around ~90% (a small tail is intrinsically Node-specific and gets ported or excluded).
 
+**How good a spec is pi's suite?** A coverage audit (§7) shows pi's own tests hit only ~74% lines / ~62% branches on the `ai` and `agent` packages — and `ai`'s figure is inflated by 57% of tests skipping without live provider keys, exactly over the provider-I/O and OAuth code. So the suite is a useful but not airtight spec, which independently argues for the incremental tiered port above over a Bun-style big-bang.
+
 ---
 
 ## 1. What pi's test suite actually looks like
@@ -205,7 +207,33 @@ Build: napi-rs `napi build --platform` emits the `.node` addon + `.d.ts`; a smal
 
 ---
 
-## 7. Open questions
+## 7. How good a spec is pi's suite? (upstream code-coverage audit)
+
+The sibling "Bun-in-Rust" finding raises the real question: Bun big-banged ~535k lines using an unchanged TS test suite *as the spec*. Whether we can be that aggressive hinges on one number — how much of pi's code its own tests actually exercise. We ran pi's suite under v8 coverage (Node v22.22, provider keys unset so network tests skip, per `test.sh`).
+
+| package | statements | branches | functions | lines | tests |
+|---|---|---|---|---|---|
+| **ai** | 72.5% | 62.9% | 82.6% | 74.1% | 556 pass / **738 skipped** / 1294 |
+| **agent** | 72.5% | 61.2% | 85.1% | 74.3% | 180 pass / 0 skip |
+| coding-agent | not scored¹ | — | — | — | 1491 pass / 87 fail / 47 skip |
+| tui | n/a² | — | — | — | node:test, not vitest |
+
+¹ 87 tests fail in a bare sandbox (extension discovery, fswatch, stdout-cleanliness — environment/filesystem-shaped, not code bugs) and v8 suppresses the report while any test fails. ² tui uses `node:test`; no v8 summary emitted.
+
+**Verdict: usable spec, but not spec-grade — lean incremental, not big-bang.**
+
+- **`ai`'s 74% is inflated by skips.** 738 of 1294 tests (57%) self-skip without live provider keys — and they cover precisely the least-covered code: provider streaming and OAuth. `bedrock-converse-stream.ts` 52%, `mistral-conversations.ts` 30%, `google-vertex.ts` 50%, `oauth/*.ts` 11–57%. Porting those adapters from the offline suite alone would fly blind; they need live-key runs or recorded golden transcripts.
+- **`agent` is more trustworthy** (0 skips, 180 passing) but has hard gaps: `proxy.ts` is **0%** (104 lines untested) and the 440-line core `agent-harness.ts` sits at 71% line / **50% branch**. The session/storage layer is well covered (session 99%, compaction 98%, jsonl/memory repos 88–100%).
+- **`coding-agent` and `tui` are unmeasured** — treat their conformance as unknown until a cleaner-environment run.
+
+**Implication for the harness:** a faithful port can lean on pi's tests for the well-covered core (session/storage, SSE parsing, request shaping) but must add *its own* Rust tests — and likely record golden LLM transcripts — for the provider-I/O and OAuth adapters and the agent-harness branches the offline suite never touches. This is a second, independent argument for the tiered/incremental approach in §3 over a Bun-style big-bang: the spec has holes exactly where the port is riskiest.
+
+**Two porting gotchas surfaced while measuring** (both block a from-scratch `npm test`):
+
+- `packages/ai` devDepends on `canvas` (a native module needing `libcairo2`/`pango`/`jpeg`/`gif`/`rsvg` system libs) for image tests — the conformance environment must install these.
+- `packages/ai/src/providers/data/*.json` is **generated, not committed** — `npm run generate-models` fetches model catalogs over HTTPS (models.dev, openrouter). Without it, both `ai` and `agent` fail at import. **The Rust port (and its conformance harness) must reproduce this model-catalog generation step or vendor the JSON.**
+
+## 8. Open questions
 
 - **Faux-provider round-trip:** can napi threadsafe-function callbacks reproduce the exact streaming event *ordering and timing* the tests assert on, or do we need the faux provider to stay JS and only swap the code *below* it? (Prototype in step 1.)
 - **RPC protocol stability:** is pi's RPC/line protocol versioned and stable enough to target, or does it churn? Determines Tier 2 viability.
