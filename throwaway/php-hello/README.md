@@ -81,7 +81,7 @@ editing shared files.
 
 ## Findings
 
-### (a) Where a tokio async runtime lives inside a PHP process
+### a. Where a tokio async runtime lives inside a PHP process
 
 PHP execution is synchronous and request-scoped: a request runs on one thread,
 top to bottom, then tears down. A tokio runtime does **not** map onto that
@@ -107,7 +107,7 @@ model cleanly. The workable pattern is:
   first use *inside the worker*, after fork — never at module init in the
   master. Same caution for any other tool that pre-forks.
 
-### (b) ext-php-rs maturity and PHP 8.x support
+### b. ext-php-rs maturity and PHP 8.x support
 
 - **Support matrix**: 0.13.x targets PHP **8.0–8.4**. This spike built and ran
   clean against **PHP 8.4.19** with **ext-php-rs 0.13.1**, so 8.4 works today.
@@ -120,7 +120,7 @@ model cleanly. The workable pattern is:
   target: pin the version, and budget for small migration work each bump. There
   is no stability guarantee until 1.0.
 
-### (c) Prebuilt-binary distribution: PECL vs Composer
+### c. Prebuilt-binary distribution: PECL vs Composer
 
 - **PECL** expects a C extension built through `phpize`/`configure`/`make`. A
   Rust `.so` doesn't fit that pipeline without wrapping the cargo build in a
