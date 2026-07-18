@@ -1,0 +1,16 @@
+[package]
+name = "atilla-cli"
+description = "The atilla CLI — a thin shell over atilla-core."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "atilla"
+path = "src/main.rs"
+
+[dependencies]
+atilla-core = { path = "../atilla-core" }
+anyhow = { workspace = true }
+clap = { workspace = true }
