@@ -272,6 +272,9 @@ pub struct SessionInfoEntry {
 }
 
 /// A session entry, discriminated by `type`. Mirrors pi's `SessionEntry` union.
+// The variants are deserialized session data mirroring pi's union 1:1; boxing to
+// equalize variant sizes would diverge from that mirror for no runtime benefit.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SessionEntry {
