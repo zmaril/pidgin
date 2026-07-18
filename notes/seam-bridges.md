@@ -1,6 +1,6 @@
 # atilla — seam bridges
 
-How a pi test's JavaScript-side mock reaches a Rust seam. This is the contract the ported-consumer threads (auth, exec tools) and the shim steward build against. It extends the one-way JSON boundary that PR #35 established for the faux provider (`crates/atilla-ai/src/providers/faux.rs` → `crates/atilla-napi/src/faux.rs` `FauxCore` → `conformance/shims/packages/ai/src/providers/faux.ts`) to the other four seams.
+How a pi test's JavaScript-side mock reaches a Rust seam. This is the contract the ported-consumer threads (auth, exec tools) and the shim maintainer build against. It extends the one-way JSON boundary that PR #35 established for the faux provider (`crates/atilla-ai/src/providers/faux.rs` → `crates/atilla-napi/src/faux.rs` `FauxCore` → `conformance/shims/packages/ai/src/providers/faux.ts`) to the other four seams.
 
 The seam traits already exist in `crates/atilla-ai/src/seams/` with a production impl and a scripted test double each. What this doc adds is the rule that decides, for any given seam, where the JS/Rust line falls — so that pi's existing `vi.*` mock lands on the effect it already targets, with no change to pi's test.
 
@@ -28,7 +28,7 @@ The contracts here are written ahead of most of their consumers. Today:
 | Command runner | `CommandRunner` | none | not yet |
 | Storage / env | `ExecutionEnv` | none | not yet |
 
-Only the faux provider consumes any seam, and it reads the clock only on its empty-queue and aborted paths, neither of which a pi test asserts. So no pi test exercises these seams against Rust today; each goes green when its consumer module is ported and flipped native. A bridge is proven in two earlier steps first: a Rust test over the pure half (this thread), and an FFI test over the shim once the napi core and a consumer exist (with the steward's harness). The real pi file is the third step, owned by the consumer thread.
+Only the faux provider consumes any seam, and it reads the clock only on its empty-queue and aborted paths, neither of which a pi test asserts. So no pi test exercises these seams against Rust today; each goes green when its consumer module is ported and flipped native. A bridge is proven in two earlier steps first: a Rust test over the pure half (this thread), and an FFI test over the shim once the napi core and a consumer exist (with the shim maintainer's harness). The real pi file is the third step, owned by the consumer thread.
 
 ---
 
@@ -43,7 +43,7 @@ Only the faux provider consumes any seam, and it reads the clock only on its emp
 
 **Injectable Rust type:** `seams::clock::FakeClock` (settable `now`, cloneable shared state) for pure-Rust tests. Across the FFI, prefer passing `now` as a method parameter over holding a clock — it keeps each call one-way and stateless. A consumer that must hold `Arc<dyn Clock>` internally can take a `ClockCore` handle whose `now` the shim sets before the call.
 
-**napi core (spec for the steward):** `ClockCore` — `new(nowMs: i64)`, `setNowMs(nowMs: i64)`, `nowMs() -> i64`, wrapping a shared `FakeClock`. Most consumers will not need it; the parameter form is enough.
+**napi core (spec for the shim maintainer):** `ClockCore` — `new(nowMs: i64)`, `setNowMs(nowMs: i64)`, `nowMs() -> i64`, wrapping a shared `FakeClock`. Most consumers will not need it; the parameter form is enough.
 
 **Reference proof (rides PR #44's faux flip):** the faux provider stamps its empty-queue and aborted messages from the clock. Add a `nowMs` parameter to `FauxCore.streamResolved` and `FauxCore.emptyQueueResult`; the shim passes `Date.now()`. An FFI test then sets a fake time, drives an empty-queue stream, and asserts the returned message `timestamp` equals it — proving a JS time value reaches Rust and back. This does not change any pi test; pi's faux tests stay green because they do not assert that field.
 
@@ -80,7 +80,7 @@ For a single request that is one of each. For a multi-step flow (OAuth authoriza
 
 **Injectable Rust type:** `seams::http::ScriptedTransport` (queued responses, recorded requests) for pure-Rust tests; `HostTransport` (delegates to injected fetch closures) is the production analog for a pure-Rust caller. Across the FFI, do not hold `Arc<dyn HttpTransport>` inside a bridged loop — restructure to build/consume, because a held transport would have to await JS.
 
-**napi core (spec for the steward):** no generic `HttpCore`. Request and response shapes are domain-specific, and a generic byte-level transport would force Rust to await JS, which the boundary forbids. Put the `buildX`/`consumeX` method pairs on the consumer's own core (for example `AnthropicOAuthCore`). The steward and the consumer thread own that core; this thread owns the `HttpRequest`/`HttpResponse` seam types they cross.
+**napi core (spec for the shim maintainer):** no generic `HttpCore`. Request and response shapes are domain-specific, and a generic byte-level transport would force Rust to await JS, which the boundary forbids. Put the `buildX`/`consumeX` method pairs on the consumer's own core (for example `AnthropicOAuthCore`). The shim maintainer and the consumer thread own that core; this thread owns the `HttpRequest`/`HttpResponse` seam types they cross.
 
 **Plug your consumer in (anthropic OAuth login):**
 
@@ -114,7 +114,7 @@ The shim's `runCommand(program, args, cwd)` performs the spawn — or, in a test
 
 **Injectable Rust type:** `seams::subprocess::ScriptedCommandRunner` (queued replies, recorded argv) for pure-Rust tests. Across the FFI, use the plan/consume split.
 
-**napi core (spec for the steward):** `CommandCore` (or methods on the package-manager core) with `planX` methods returning argv JSON and `consumeX` methods parsing captured output.
+**napi core (spec for the shim maintainer):** `CommandCore` (or methods on the package-manager core) with `planX` methods returning argv JSON and `consumeX` methods parsing captured output.
 
 **Plug your consumer in (package-manager install):**
 
@@ -142,7 +142,7 @@ await runCommand(plan.program, plan.args, plan.cwd);   // vi.spyOn(pkgMgr, "runC
 
 **Injectable Rust type:** `seams::storage::MemoryEnv` (`with_env`, `with_file` seeders, cloneable shared state) — already the right shape.
 
-**napi core (spec for the steward):** `StorageCore` — `new(seedJson)`, `readFile(path) -> string`, `writeFile(path, contents)`, `exists(path) -> bool`, `envVar(key) -> string | null`, and `dumpJson() -> string` to read written state back into JS for assertions.
+**napi core (spec for the shim maintainer):** `StorageCore` — `new(seedJson)`, `readFile(path) -> string`, `writeFile(path, contents)`, `exists(path) -> bool`, `envVar(key) -> string | null`, and `dumpJson() -> string` to read written state back into JS for assertions.
 
 **Plug your consumer in (auth storage):**
 
@@ -161,12 +161,12 @@ expect(JSON.parse(written).access).toBe("access-token");
 Each bridge is proven in three steps, and the first two are gate-free:
 
 1. **Rust half** — a unit or integration test in `crates/atilla-ai` over the injectable double (`FakeClock`, `ScriptedTransport`, `ScriptedCommandRunner`, `MemoryEnv`). Owned by this thread.
-2. **FFI half** — once the napi core exists, a focused JS test through the shim that injects a value and asserts it reached Rust and back. Run with the steward's single-file harness. Owned jointly with the steward.
+2. **FFI half** — once the napi core exists, a focused JS test through the shim that injects a value and asserts it reached Rust and back. Run with the shim maintainer's single-file harness. Owned jointly with the shim maintainer.
 3. **Real pi file** — flips native when the consumer module is ported; the pi test then runs unchanged against Rust. Owned by the consumer thread (auth, exec tools).
 
 ### Single-file harness loop
 
-From the steward, verified end to end. Rebuild the addon every time — do not trust an existing `.node`:
+From the shim maintainer, verified end to end. Rebuild the addon every time — do not trust an existing `.node`:
 
 ```bash
 cd /workspace/atilla; REPO_ROOT="$(pwd)"; PI_ROOT="$REPO_ROOT/vendor/pi"
@@ -182,5 +182,5 @@ Gotchas: codegen aborts on manifest drift (a new module file needs a manifest ro
 ## Ownership
 
 - **Seam traits and doubles** — `crates/atilla-ai/src/seams/` — this thread.
-- **napi cores, shim glue, manifest flips** — the shim steward.
+- **napi cores, shim glue, manifest flips** — the shim maintainer.
 - **Ported consumers (the build/consume splits)** — the auth thread and the exec-tools thread. Code to the per-bridge contract above; the seam types you cross are stable.
