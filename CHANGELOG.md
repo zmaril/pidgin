@@ -10,5 +10,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Cargo workspace scaffold: `atilla-core` (library) and `atilla-cli` (the
   `atilla` binary), with an `atilla run` placeholder command.
-- CI (fmt, clippy, test), dependabot, CODEOWNERS, and the fleet housekeeping,
-  straitjacket, conventional-commits, codespell, and vale workflows.
+- CI (fmt, clippy, test), Dependabot, CODEOWNERS, and the fleet housekeeping,
+  Straitjacket, conventional-commits, codespell, and vale workflows.

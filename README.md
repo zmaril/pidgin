@@ -42,13 +42,19 @@ atilla --version # print the version
 ## Development
 
 ```sh
+scripts/dev.sh            # format-check + lint + test, the way CI does
+```
+
+Or run the gates individually:
+
+```sh
 cargo fmt --all           # format
 cargo clippy --all-targets -- -D warnings  # lint
 cargo test                # run the tests
 ```
 
 CI runs the same three on every push and pull request, alongside the fleet
-housekeeping, straitjacket, codespell, and vale checks.
+housekeeping, Straitjacket, codespell, and vale checks.
 
 ## Contributing
 
