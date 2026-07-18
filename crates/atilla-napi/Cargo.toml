@@ -1,0 +1,17 @@
+[package]
+name = "atilla-napi"
+description = "Node-API (napi-rs) cdylib bridging the atilla engine into JavaScript."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "2", default-features = false, features = ["napi9"] }
+napi-derive = "2"
+
+[build-dependencies]
+napi-build = "2"

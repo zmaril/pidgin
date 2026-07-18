@@ -6,6 +6,7 @@ members = [
     "crates/atilla-ai",
     "crates/atilla-agent",
     "crates/atilla-coding",
+    "crates/atilla-napi",
 ]
 
 [workspace.package]
