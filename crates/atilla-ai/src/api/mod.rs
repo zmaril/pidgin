@@ -6,3 +6,6 @@
 //! Messages SSE parsing path.
 
 pub mod anthropic;
+pub mod azure_openai_responses;
+pub mod openai_responses;
+pub mod openai_responses_shared;
