@@ -267,3 +267,312 @@ pub fn ansi_to_html(text: String) -> String {
 pub fn ansi_lines_to_html(lines: Vec<String>) -> String {
     atilla_coding::core::export_html::ansi_to_html::ansi_lines_to_html(&lines)
 }
+
+// --- coding-agent tools: truncate ------------------------------------------
+//
+// Thin wrappers over `atilla_coding::core::tools::truncate`, backing the native
+// `core/tools/truncate.ts` shim. Structured results cross as JSON strings using
+// pi's exact `TruncationResult` field names; the shim `JSON.parse`s them and
+// re-adds pi's JS default arguments (which the Rust port dropped).
+
+/// Serialize a Rust `TruncationResult` into pi's `TruncationResult` JSON shape,
+/// mapping the `TruncatedBy` enum + `Option` to pi's `"lines" | "bytes" | null`.
+fn truncation_result_to_json(r: &atilla_coding::core::tools::truncate::TruncationResult) -> String {
+    use atilla_coding::core::tools::truncate::TruncatedBy;
+    let truncated_by = match r.truncated_by {
+        None => serde_json::Value::Null,
+        Some(TruncatedBy::Lines) => serde_json::json!("lines"),
+        Some(TruncatedBy::Bytes) => serde_json::json!("bytes"),
+    };
+    serde_json::json!({
+        "content": r.content,
+        "truncated": r.truncated,
+        "truncatedBy": truncated_by,
+        "totalLines": r.total_lines,
+        "totalBytes": r.total_bytes,
+        "outputLines": r.output_lines,
+        "outputBytes": r.output_bytes,
+        "lastLinePartial": r.last_line_partial,
+        "firstLineExceedsLimit": r.first_line_exceeds_limit,
+        "maxLines": r.max_lines,
+        "maxBytes": r.max_bytes,
+    })
+    .to_string()
+}
+
+/// `formatSize` (core/tools/truncate.ts): format a byte count as `B`/`KB`/`MB`.
+#[napi(js_name = "truncateFormatSize")]
+pub fn truncate_format_size(bytes: i64) -> String {
+    atilla_coding::core::tools::truncate::format_size(bytes.max(0) as usize)
+}
+
+/// `truncateHead` (core/tools/truncate.ts): keep the first N lines/bytes. The
+/// shim supplies `maxLines`/`maxBytes` (its defaulted `TruncationOptions`).
+#[napi(js_name = "truncateHead")]
+pub fn truncate_head(content: String, max_lines: i64, max_bytes: i64) -> String {
+    use atilla_coding::core::tools::truncate::{truncate_head, TruncationOptions};
+    let opts = TruncationOptions {
+        max_lines: max_lines.max(0) as usize,
+        max_bytes: max_bytes.max(0) as usize,
+    };
+    truncation_result_to_json(&truncate_head(&content, opts))
+}
+
+/// `truncateTail` (core/tools/truncate.ts): keep the last N lines/bytes.
+#[napi(js_name = "truncateTail")]
+pub fn truncate_tail(content: String, max_lines: i64, max_bytes: i64) -> String {
+    use atilla_coding::core::tools::truncate::{truncate_tail, TruncationOptions};
+    let opts = TruncationOptions {
+        max_lines: max_lines.max(0) as usize,
+        max_bytes: max_bytes.max(0) as usize,
+    };
+    truncation_result_to_json(&truncate_tail(&content, opts))
+}
+
+/// `truncateLine` (core/tools/truncate.ts): truncate a single line to
+/// `maxChars`, returning pi's `{ text, wasTruncated }` shape as JSON. The shim
+/// supplies the `GREP_MAX_LINE_LENGTH` default for `maxChars`.
+#[napi(js_name = "truncateLine")]
+pub fn truncate_line(line: String, max_chars: i64) -> String {
+    let r = atilla_coding::core::tools::truncate::truncate_line(&line, max_chars.max(0) as usize);
+    serde_json::json!({ "text": r.text, "wasTruncated": r.was_truncated }).to_string()
+}
+
+// --- coding-agent tools: edit-diff -----------------------------------------
+//
+// Thin wrappers over `atilla_coding::core::tools::edit_diff`, backing the native
+// `core/tools/edit-diff.ts` shim. The `LineEnding` enum crosses as pi's
+// `"\r\n" | "\n"` union; structured results cross as JSON strings with pi's
+// exact field names. The async `computeEditsDiff`/`computeEditDiff` are not
+// ported and stay in pi's original.
+
+fn line_ending_to_str(ending: atilla_coding::core::tools::edit_diff::LineEnding) -> &'static str {
+    match ending {
+        atilla_coding::core::tools::edit_diff::LineEnding::Crlf => "\r\n",
+        atilla_coding::core::tools::edit_diff::LineEnding::Lf => "\n",
+    }
+}
+
+/// `detectLineEnding` (core/tools/edit-diff.ts): detect the dominant line
+/// ending, returning pi's `"\r\n" | "\n"` union.
+#[napi(js_name = "detectLineEnding")]
+pub fn detect_line_ending(content: String) -> String {
+    line_ending_to_str(atilla_coding::core::tools::edit_diff::detect_line_ending(
+        &content,
+    ))
+    .to_string()
+}
+
+/// `normalizeToLF` (core/tools/edit-diff.ts): normalize all line endings to
+/// `\n`.
+#[napi(js_name = "normalizeToLf")]
+pub fn normalize_to_lf(text: String) -> String {
+    atilla_coding::core::tools::edit_diff::normalize_to_lf(&text)
+}
+
+/// `restoreLineEndings` (core/tools/edit-diff.ts): restore `\n` to `ending`. The
+/// shim passes pi's `"\r\n" | "\n"` union as `ending`.
+#[napi(js_name = "restoreLineEndings")]
+pub fn restore_line_endings(text: String, ending: String) -> String {
+    use atilla_coding::core::tools::edit_diff::LineEnding;
+    let le = if ending == "\r\n" {
+        LineEnding::Crlf
+    } else {
+        LineEnding::Lf
+    };
+    atilla_coding::core::tools::edit_diff::restore_line_endings(&text, le)
+}
+
+/// `normalizeForFuzzyMatch` (core/tools/edit-diff.ts): NFKC + trailing-ws strip
+/// + smart quote/dash/space folding.
+#[napi(js_name = "normalizeForFuzzyMatch")]
+pub fn normalize_for_fuzzy_match(text: String) -> String {
+    atilla_coding::core::tools::edit_diff::normalize_for_fuzzy_match(&text)
+}
+
+/// `stripBom` (core/tools/edit-diff.ts): strip a leading UTF-8 BOM, returning
+/// pi's `{ bom, text }` shape as JSON.
+#[napi(js_name = "stripBom")]
+pub fn strip_bom(content: String) -> String {
+    let r = atilla_coding::core::tools::edit_diff::strip_bom(&content);
+    serde_json::json!({ "bom": r.bom, "text": r.text }).to_string()
+}
+
+/// `fuzzyFindText` (core/tools/edit-diff.ts): exact-then-fuzzy search, returning
+/// pi's `FuzzyMatchResult` shape as JSON. Offsets are byte-based (as in the Rust
+/// port); pi's tests do not deep-index the returned offset.
+#[napi(js_name = "fuzzyFindText")]
+pub fn fuzzy_find_text(content: String, old_text: String) -> String {
+    let r = atilla_coding::core::tools::edit_diff::fuzzy_find_text(&content, &old_text);
+    let index: i64 = if r.found { r.index as i64 } else { -1 };
+    serde_json::json!({
+        "found": r.found,
+        "index": index,
+        "matchLength": r.match_length,
+        "usedFuzzyMatch": r.used_fuzzy_match,
+        "contentForReplacement": r.content_for_replacement,
+    })
+    .to_string()
+}
+
+/// `applyReplacementsPreservingUnchangedLines` (core/tools/edit-diff.ts): apply
+/// replacements matched against a normalized base view to the original content,
+/// keeping unchanged line blocks. `replacements_json` is pi's
+/// `{ matchIndex, matchLength, newText }[]`; the array index supplies the
+/// (algorithmically irrelevant) `edit_index`. Errors cross as thrown JS errors.
+#[napi(js_name = "applyReplacementsPreservingUnchangedLines")]
+pub fn apply_replacements_preserving_unchanged_lines(
+    original_content: String,
+    base_content: String,
+    replacements_json: String,
+) -> napi::Result<String> {
+    use atilla_coding::core::tools::edit_diff::PreservingReplacement;
+    let raw: Vec<serde_json::Value> = serde_json::from_str(&replacements_json)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    let reps: Vec<PreservingReplacement> = raw
+        .iter()
+        .enumerate()
+        .map(|(i, v)| PreservingReplacement {
+            edit_index: i,
+            match_index: v.get("matchIndex").and_then(|x| x.as_u64()).unwrap_or(0) as usize,
+            match_length: v.get("matchLength").and_then(|x| x.as_u64()).unwrap_or(0) as usize,
+            new_text: v
+                .get("newText")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string(),
+        })
+        .collect();
+    atilla_coding::core::tools::edit_diff::apply_replacements_preserving_unchanged_lines(
+        &original_content,
+        &base_content,
+        &reps,
+    )
+    .map_err(napi::Error::from_reason)
+}
+
+/// `applyEditsToNormalizedContent` (core/tools/edit-diff.ts): apply one or more
+/// exact-text replacements to LF-normalized content, returning pi's
+/// `{ baseContent, newContent }` shape as JSON. `edits_json` is pi's
+/// `{ oldText, newText }[]`. Match/duplicate/overlap errors cross as thrown JS
+/// errors (pi throws too).
+#[napi(js_name = "applyEditsToNormalizedContent")]
+pub fn apply_edits_to_normalized_content(
+    normalized_content: String,
+    edits_json: String,
+    path: String,
+) -> napi::Result<String> {
+    use atilla_coding::core::tools::edit_diff::Edit;
+    let raw: Vec<serde_json::Value> =
+        serde_json::from_str(&edits_json).map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    let edits: Vec<Edit> = raw
+        .iter()
+        .map(|v| Edit {
+            old_text: v
+                .get("oldText")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string(),
+            new_text: v
+                .get("newText")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string(),
+        })
+        .collect();
+    let r = atilla_coding::core::tools::edit_diff::apply_edits_to_normalized_content(
+        &normalized_content,
+        &edits,
+        &path,
+    )
+    .map_err(napi::Error::from_reason)?;
+    Ok(serde_json::json!({
+        "baseContent": r.base_content,
+        "newContent": r.new_content,
+    })
+    .to_string())
+}
+
+/// `generateUnifiedPatch` (core/tools/edit-diff.ts): jsdiff-compatible unified
+/// patch. The shim supplies pi's `contextLines = 4` default.
+#[napi(js_name = "generateUnifiedPatch")]
+pub fn generate_unified_patch(
+    path: String,
+    old_content: String,
+    new_content: String,
+    context_lines: i64,
+) -> String {
+    atilla_coding::core::tools::edit_diff::generate_unified_patch(
+        &path,
+        &old_content,
+        &new_content,
+        context_lines.max(0) as usize,
+    )
+}
+
+/// `generateDiffString` (core/tools/edit-diff.ts): display-oriented diff with
+/// line numbers, returning pi's `{ diff, firstChangedLine }` shape as JSON
+/// (`firstChangedLine` is `null` when there is no change; the shim maps it to
+/// `undefined`). The shim supplies pi's `contextLines = 4` default.
+#[napi(js_name = "generateDiffString")]
+pub fn generate_diff_string(
+    old_content: String,
+    new_content: String,
+    context_lines: i64,
+) -> String {
+    let r = atilla_coding::core::tools::edit_diff::generate_diff_string(
+        &old_content,
+        &new_content,
+        context_lines.max(0) as usize,
+    );
+    let first_changed = match r.first_changed_line {
+        Some(n) => serde_json::json!(n),
+        None => serde_json::Value::Null,
+    };
+    serde_json::json!({ "diff": r.diff, "firstChangedLine": first_changed }).to_string()
+}
+
+// --- coding-agent tools: path-utils ----------------------------------------
+//
+// Thin wrappers over `atilla_coding::core::tools::path_utils`, backing the
+// native `core/tools/path-utils.ts` shim. `expandPath`/`resolveToCwd` return a
+// Rust `Result`; the shim maps a thrown error back to pi's throw-on-bad-input.
+// The private macOS filename transforms are exposed so the shim can rebuild
+// pi's `resolveReadPath` fs-probe fallback with a real `accessSync` closure.
+// `pathExists`/`resolveReadPathAsync` are not ported and stay in pi's original.
+
+/// `expandPath` (core/tools/path-utils.ts): fold unicode spaces, strip a leading
+/// `@`, expand `~`, convert `file://`. Errors cross as thrown JS errors.
+#[napi(js_name = "expandPath")]
+pub fn expand_path(file_path: String) -> napi::Result<String> {
+    atilla_coding::core::tools::path_utils::expand_path(&file_path)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))
+}
+
+/// `resolveToCwd` (core/tools/path-utils.ts): resolve `file_path` against `cwd`.
+/// Errors cross as thrown JS errors (pi's `resolvePath` throws on bad input).
+#[napi(js_name = "resolveToCwd")]
+pub fn resolve_to_cwd(file_path: String, cwd: String) -> napi::Result<String> {
+    atilla_coding::core::tools::path_utils::resolve_to_cwd(&file_path, &cwd)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))
+}
+
+/// Private pi transform `tryMacOSScreenshotPath`, exposed so the shim's
+/// `resolveReadPath` can rebuild pi's fallback ordering natively.
+#[napi(js_name = "pathTryMacosScreenshotPath")]
+pub fn path_try_macos_screenshot_path(file_path: String) -> String {
+    atilla_coding::core::tools::path_utils::try_macos_screenshot_path(&file_path)
+}
+
+/// Private pi transform `tryNFDVariant`, exposed for the shim's `resolveReadPath`.
+#[napi(js_name = "pathTryNfdVariant")]
+pub fn path_try_nfd_variant(file_path: String) -> String {
+    atilla_coding::core::tools::path_utils::try_nfd_variant(&file_path)
+}
+
+/// Private pi transform `tryCurlyQuoteVariant`, exposed for the shim's
+/// `resolveReadPath`.
+#[napi(js_name = "pathTryCurlyQuoteVariant")]
+pub fn path_try_curly_quote_variant(file_path: String) -> String {
+    atilla_coding::core::tools::path_utils::try_curly_quote_variant(&file_path)
+}

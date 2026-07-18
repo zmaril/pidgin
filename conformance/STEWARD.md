@@ -8,16 +8,18 @@ the shim as `*.__pi_original__.ts`.
 
 ## Merge queue
 
-Current native count on main: **4** (ai anthropic-messages + ai faux, tui keys
-+ tui utils). This PR takes it to **10**.
+Current native count on main: **10** (ai anthropic-messages + ai faux, tui keys
++ tui utils, coding-agent utils {ansi, mime, changelog, version-check, git} +
+export-html ansi-to-html). Batch 2 (this PR) takes it to **13**.
 
 The human merges in this order (rebasing each onto the prior as needed):
 
 1. **#44** — faux provider native (foundations) — native 3 -> 4 — **MERGED**
-2. **THIS PR (#58)** — coding-agent utils + export-html ansi-to-html —
-   native 4 -> 10 — rebased onto faux-native main; head of the queue (nothing
-   ahead of it now that #44 has landed)
-3. **#50** — retry (ai) — queued behind this PR
+2. **#58** — coding-agent utils + export-html ansi-to-html — native 4 -> 10 —
+   **MERGED**
+3. **THIS PR (batch 2)** — coding-agent tools truncate + edit-diff + path-utils
+   — native 10 -> 13
+4. **#50** — retry (ai) — queued behind this PR
 
 ## Flip table
 
@@ -31,7 +33,9 @@ The human merges in this order (rebasing each onto the prior as needed):
 | core/export-html/ansi-to-html | coding-agent | flipped | test/export-html-whitespace.test.ts (3) | yes | `ansiToHtml` + `ansiLinesToHtml`; index.ts/tool-renderer.ts stay original; xss/skill-block asserts are inert source-text greps on template assets |
 | utils/frontmatter | coding-agent | held | — | no | yaml block-scalar trailing-newline delta vs pi's parser |
 | utils/pi-user-agent | coding-agent | excluded | — | no | test asserts `node/<ver>` + node arch, which the Rust port deliberately replaces |
-| core/tools/path-utils | coding-agent | pending | — | no | hybrid port (batch 2) |
-| core/tools/read | coding-agent | pending | — | no | hybrid port (batch 2) |
-| core/tools/edit | coding-agent | pending | — | no | hybrid port (batch 2) |
+| core/tools/truncate | coding-agent | flipped | test/tools.test.ts (read + bash blocks; no deep import) | yes | `formatSize`, `truncateHead`, `truncateTail`, `truncateLine`; shim re-adds pi's dropped JS default args (`options = {}`, `maxChars`) and consts; `TruncatedBy` enum + `Option` marshal to pi's `"lines" \| "bytes" \| null`; result crosses as JSON |
+| core/tools/edit-diff | coding-agent | flipped | test/tools.test.ts (edit block, jsdiff `applyPatch` round-trip) + edit-tool-no-full-redraw | yes | 10 sync pure fns (`detectLineEnding`, `normalizeToLF`, `restoreLineEndings`, `normalizeForFuzzyMatch`, `fuzzyFindText`, `stripBom`, `applyReplacementsPreservingUnchangedLines`, `applyEditsToNormalizedContent`, `generateUnifiedPatch`, `generateDiffString`); shim re-adds `contextLines = 4`; `computeEditsDiff`/`computeEditDiff` stay original |
+| core/tools/path-utils | coding-agent | flipped | test/path-utils.test.ts (13) | yes (hybrid) | `expandPath`, `resolveToCwd` (Rust `Result` → throw); `resolveReadPath` rebuilt in shim with real `accessSync` probe over native macOS filename transforms; `pathExists`/`resolveReadPathAsync` stay original |
+| core/tools/read | coding-agent | pending | — | no | hybrid port (batch 3) |
+| core/tools/edit | coding-agent | pending | — | no | hybrid port (batch 3) |
 | agent session modules | coding-agent | pending | — | no | batch 3 |
