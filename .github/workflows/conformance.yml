@@ -26,6 +26,12 @@
 # --setup, not on every PR. agent/tui do not import canvas themselves, but the
 # shared workspace install does, so we install the canvas system libs and let
 # the setup step continue-on-error rather than trying to prune the install.
+#
+# Black-box CLI conformance runs regardless of the package subset: the runner
+# builds the atilla binary (cargo build -p atilla-cli --release) and spawns four
+# repointed coding-agent CLI test files against it, reporting a SEPARATE
+# cli_conformance metric (its own sticky-comment section). It is not folded into
+# any per-package native count.
 
 name: conformance
 

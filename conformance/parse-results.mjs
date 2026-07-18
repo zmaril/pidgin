@@ -124,6 +124,41 @@ function parseTuiTap(path) {
   return { total, passing, failing, skipped, byFile };
 }
 
+/**
+ * Build the black-box CLI conformance metric from meta.cli. This is tracked
+ * SEPARATELY from the package smoke: it never touches by_package, the run
+ * totals, or manifest_native_modules. It reports the four repointed CLI test
+ * files run against the compiled atilla binary. An env-blocked build (binary
+ * absent) contributes zero and keeps its note, mirroring the package logic.
+ */
+function buildCliConformance(cli) {
+  if (!cli) return null;
+  const status = cli.status ?? "ok";
+  const note = cli.note ?? "";
+  const bin = cli.bin ?? "";
+  const reporterPath = cli.reporter ? join(OUT, cli.reporter) : "";
+  if (status !== "ok" || !reporterPath || !existsSync(reporterPath)) {
+    return { total: 0, passing: 0, failing: 0, skipped: 0, bin, status, note, files: [] };
+  }
+  const parsed = parseVitest(reporterPath);
+  const files = parsed.byFile.map((bf) => ({
+    file: bf.file,
+    passing: bf.passing,
+    failing: bf.failing,
+    skipped: bf.skipped,
+  }));
+  return {
+    total: parsed.total,
+    passing: parsed.passing,
+    failing: parsed.failing,
+    skipped: parsed.skipped,
+    bin,
+    status,
+    note,
+    files,
+  };
+}
+
 function main() {
   const metaPath = join(OUT, "run-meta.json");
   if (!existsSync(metaPath)) {
@@ -221,6 +256,7 @@ function main() {
     skipped,
     by_package: byPackage,
     by_file: byFile,
+    cli_conformance: buildCliConformance(meta.cli),
     environment_failures: environmentFailures,
     environment_notes: environmentNotes,
   };

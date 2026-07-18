@@ -1986,5 +1986,23 @@
       "src": "packages/tui/src/word-navigation.ts",
       "status": "original"
     }
+  ],
+  "cli_repoint": [
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/test/stdout-cleanliness.test.ts"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/test/session-id-readonly.test.ts"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/test/startup-session-name.test.ts"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/test/session-file-invalid.test.ts"
+    }
   ]
 }
