@@ -455,14 +455,55 @@ mod tests {
     }
 
     #[test]
-    fn detached_pid_tracking_roundtrip() {
-        // Use PIDs that are not real processes; kill is best-effort/no-op.
-        track_detached_child_pid(999_999_991);
-        track_detached_child_pid(999_999_992);
-        untrack_detached_child_pid(999_999_991);
-        // Should not panic; clears the set.
-        kill_tracked_detached_children();
-        // A second call on an empty set is a no-op.
-        kill_tracked_detached_children();
+    fn detached_pid_tracking_add_remove() {
+        // Exercise track/untrack/membership against the shared set using sentinel
+        // PIDs that are never real processes. This deliberately does NOT call the
+        // process-global reaper `kill_tracked_detached_children()`: that drains the
+        // shared set and would kill real detached children spawned by concurrent
+        // subprocess tests under cargo's parallel execution. Membership is checked
+        // only for our own sentinel PIDs, so concurrent inserts of real PIDs by
+        // other tests do not affect these assertions.
+        let a = 999_999_991;
+        let b = 999_999_992;
+        track_detached_child_pid(a);
+        track_detached_child_pid(b);
+        {
+            let set = TRACKED_DETACHED_CHILD_PIDS.lock().unwrap();
+            assert!(set.contains(&a));
+            assert!(set.contains(&b));
+        }
+        untrack_detached_child_pid(a);
+        {
+            let set = TRACKED_DETACHED_CHILD_PIDS.lock().unwrap();
+            assert!(!set.contains(&a));
+            assert!(set.contains(&b));
+        }
+        // Clean up only our own sentinel; never touch other tests' PIDs.
+        untrack_detached_child_pid(b);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn kill_process_tree_reaps_controlled_child() {
+        use std::os::unix::process::CommandExt;
+        use std::process::Command;
+
+        // Spawn a disposable child as its own process-group leader (setpgid(0,0)
+        // via process_group), so `killpg(pid, SIGKILL)` targets exactly this
+        // group and nothing else. This exercises the real killpg code path
+        // against a child we own, with no reliance on the shared tracking set.
+        let mut child = Command::new("sleep")
+            .arg("30")
+            .process_group(0)
+            .spawn()
+            .expect("spawn sleep");
+        let pid = child.id() as i32;
+
+        kill_process_tree(pid);
+
+        // wait() returns once the SIGKILL'd child is reaped; the child was killed,
+        // so it must not report success.
+        let status = child.wait().expect("wait on child");
+        assert!(!status.success());
     }
 }
