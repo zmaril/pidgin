@@ -25,7 +25,9 @@
 //! gateway is stored verbatim; the provider worker wires normalization in.
 
 use crate::auth::error::AuthFlowError;
-use crate::auth::types::{AuthInteraction, ModelAuth, OAuthAuth, OAuthCredential, OAuthFlow};
+use crate::auth::types::{ModelAuth, OAuthAuth, OAuthCredential};
+
+use super::flow::{OAuthFlowMachine, Step, StepInput};
 
 /// Loopback callback host (`radius.ts:25`).
 pub const CALLBACK_HOST: &str = "127.0.0.1";
@@ -75,22 +77,14 @@ impl OAuthAuth for RadiusOAuth {
 
     // TODO(port): body pending — provider worker (config discovery + login-method
     // select + browser/device-code flow; `radius.ts:366-390`).
-    fn login(
-        &self,
-        _interaction: &dyn AuthInteraction,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        todo!("Radius OAuth login — provider worker")
+    fn login_machine(&self) -> Box<dyn OAuthFlowMachine> {
+        Box::new(RadiusStubMachine)
     }
 
     // TODO(port): body pending — provider worker (config discovery +
     // refresh_token grant; `radius.ts:392-404`).
-    fn refresh(
-        &self,
-        _credential: &OAuthCredential,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        todo!("Radius OAuth refresh — provider worker")
+    fn refresh_machine(&self, _credential: &OAuthCredential) -> Box<dyn OAuthFlowMachine> {
+        Box::new(RadiusStubMachine)
     }
 
     fn to_auth(&self, credential: &OAuthCredential) -> Result<ModelAuth, AuthFlowError> {
@@ -99,5 +93,18 @@ impl OAuthAuth for RadiusOAuth {
             api_key: Some(credential.access.clone()),
             ..ModelAuth::default()
         })
+    }
+}
+
+/// Stub flow machine — the browser + device-code login/refresh state machines
+/// are ported by the Radius provider worker.
+struct RadiusStubMachine;
+
+impl OAuthFlowMachine for RadiusStubMachine {
+    fn start(&mut self, _now_ms: i64) -> Step {
+        todo!("Radius OAuth flow machine — provider worker")
+    }
+    fn advance(&mut self, _input: StepInput, _now_ms: i64) -> Step {
+        todo!("Radius OAuth flow machine — provider worker")
     }
 }

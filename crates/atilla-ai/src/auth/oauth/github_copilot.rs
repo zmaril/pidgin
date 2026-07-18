@@ -17,7 +17,9 @@
 //! login; the provider worker wires that once the providers module lands.
 
 use crate::auth::error::AuthFlowError;
-use crate::auth::types::{AuthInteraction, ModelAuth, OAuthAuth, OAuthCredential, OAuthFlow};
+use crate::auth::types::{ModelAuth, OAuthAuth, OAuthCredential};
+
+use super::flow::{OAuthFlowMachine, Step, StepInput};
 
 /// OAuth client id (pi decodes this from base64; `github-copilot.ts:9-10`).
 pub const CLIENT_ID: &str = "Iv1.b507a08c87ecfe98";
@@ -55,22 +57,14 @@ impl OAuthAuth for GitHubCopilotOAuth {
 
     // TODO(port): body pending — provider worker (enterprise-domain prompt +
     // device-code flow + model enablement; `github-copilot.ts:329-359`).
-    fn login(
-        &self,
-        _interaction: &dyn AuthInteraction,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        todo!("GitHub Copilot OAuth login — provider worker")
+    fn login_machine(&self) -> Box<dyn OAuthFlowMachine> {
+        Box::new(GitHubCopilotStubMachine)
     }
 
     // TODO(port): body pending — provider worker (copilot_internal token +
     // available-model-id fetch; `github-copilot.ts:244-288`).
-    fn refresh(
-        &self,
-        _credential: &OAuthCredential,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        todo!("GitHub Copilot OAuth refresh — provider worker")
+    fn refresh_machine(&self, _credential: &OAuthCredential) -> Box<dyn OAuthFlowMachine> {
+        Box::new(GitHubCopilotStubMachine)
     }
 
     // TODO(port): body pending — provider worker. `toAuth` returns
@@ -79,5 +73,18 @@ impl OAuthAuth for GitHubCopilotOAuth {
     // (`proxy-ep=...` -> `api.*`) is ported with the login/refresh bodies.
     fn to_auth(&self, _credential: &OAuthCredential) -> Result<ModelAuth, AuthFlowError> {
         todo!("GitHub Copilot to_auth (base-URL derivation) — provider worker")
+    }
+}
+
+/// Stub flow machine — the device-code login/refresh state machines are ported
+/// by the GitHub Copilot provider worker.
+struct GitHubCopilotStubMachine;
+
+impl OAuthFlowMachine for GitHubCopilotStubMachine {
+    fn start(&mut self, _now_ms: i64) -> Step {
+        todo!("GitHub Copilot OAuth flow machine — provider worker")
+    }
+    fn advance(&mut self, _input: StepInput, _now_ms: i64) -> Step {
+        todo!("GitHub Copilot OAuth flow machine — provider worker")
     }
 }

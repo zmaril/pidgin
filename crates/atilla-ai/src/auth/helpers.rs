@@ -11,9 +11,10 @@
 use std::sync::OnceLock;
 
 use super::error::AuthFlowError;
+use super::oauth::flow::OAuthFlowMachine;
 use super::types::{
     ApiKeyAuth, ApiKeyCredential, AuthContext, AuthInteraction, AuthPrompt, AuthPromptKind,
-    AuthResult, ModelAuth, OAuthAuth, OAuthCredential, OAuthFlow,
+    AuthResult, ModelAuth, OAuthAuth, OAuthCredential,
 };
 
 /// Standard api-key auth (`helpers.ts:9-25`).
@@ -133,20 +134,12 @@ impl OAuthAuth for LazyOAuth {
         self.login_label.as_deref()
     }
 
-    fn login(
-        &self,
-        interaction: &dyn AuthInteraction,
-        flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        self.loaded().login(interaction, flow)
+    fn login_machine(&self) -> Box<dyn OAuthFlowMachine> {
+        self.loaded().login_machine()
     }
 
-    fn refresh(
-        &self,
-        credential: &OAuthCredential,
-        flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        self.loaded().refresh(credential, flow)
+    fn refresh_machine(&self, credential: &OAuthCredential) -> Box<dyn OAuthFlowMachine> {
+        self.loaded().refresh_machine(credential)
     }
 
     fn to_auth(&self, credential: &OAuthCredential) -> Result<ModelAuth, AuthFlowError> {

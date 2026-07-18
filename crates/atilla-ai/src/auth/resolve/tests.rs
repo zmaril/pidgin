@@ -17,7 +17,8 @@ use crate::auth::context::DefaultAuthContext;
 use crate::auth::credential_store::InMemoryCredentialStore;
 use crate::auth::error::{AuthFlowError, ModelsErrorCode};
 use crate::auth::helpers::env_api_key_auth;
-use crate::auth::types::{AuthInteraction, ModelAuth, OAuthCredential, ProviderAuth};
+use crate::auth::oauth::flow::{OAuthFlowMachine, Step, StepInput};
+use crate::auth::types::{ModelAuth, OAuthCredential, ProviderAuth};
 use crate::seams::clock::FakeClock;
 use crate::seams::http::ScriptedTransport;
 use crate::seams::storage::MemoryEnv;
@@ -54,29 +55,15 @@ impl OAuthAuth for FakeOAuth {
         "Fake OAuth"
     }
 
-    fn login(
-        &self,
-        _interaction: &dyn AuthInteraction,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
+    fn login_machine(&self) -> Box<dyn OAuthFlowMachine> {
         unreachable!("login is not exercised by resolution tests")
     }
 
-    fn refresh(
-        &self,
-        _credential: &OAuthCredential,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        self.refresh_calls.fetch_add(1, Ordering::SeqCst);
-        match self.outcome.lock().unwrap().clone() {
-            RefreshOutcome::Ok { access, expires } => Ok(OAuthCredential {
-                refresh: "rotated-refresh".into(),
-                access,
-                expires,
-                extra: Map::new(),
-            }),
-            RefreshOutcome::Err(message) => Err(AuthFlowError::new(message)),
-        }
+    fn refresh_machine(&self, _credential: &OAuthCredential) -> Box<dyn OAuthFlowMachine> {
+        Box::new(FakeRefreshMachine {
+            refresh_calls: self.refresh_calls.clone(),
+            outcome: self.outcome.lock().unwrap().clone(),
+        })
     }
 
     fn to_auth(&self, credential: &OAuthCredential) -> Result<ModelAuth, AuthFlowError> {
@@ -85,6 +72,39 @@ impl OAuthAuth for FakeOAuth {
             api_key: Some(credential.access.clone()),
             ..ModelAuth::default()
         })
+    }
+}
+
+/// The refresh machine [`FakeOAuth`] hands to `run_refresh`: it completes in a
+/// single `start` step (no network), recording the refresh call and yielding the
+/// configured outcome — the machine-shaped analog of the old `refresh` method.
+struct FakeRefreshMachine {
+    refresh_calls: Arc<AtomicUsize>,
+    outcome: RefreshOutcome,
+}
+
+impl OAuthFlowMachine for FakeRefreshMachine {
+    fn start(&mut self, _now_ms: i64) -> Step {
+        self.refresh_calls.fetch_add(1, Ordering::SeqCst);
+        match &self.outcome {
+            RefreshOutcome::Ok { access, expires } => Step::Done {
+                credential: OAuthCredential {
+                    refresh: "rotated-refresh".into(),
+                    access: access.clone(),
+                    expires: *expires,
+                    extra: Map::new(),
+                },
+            },
+            RefreshOutcome::Err(message) => Step::Error {
+                message: message.clone(),
+            },
+        }
+    }
+
+    fn advance(&mut self, _input: StepInput, _now_ms: i64) -> Step {
+        Step::Error {
+            message: "FakeRefreshMachine completes on start".to_string(),
+        }
     }
 }
 

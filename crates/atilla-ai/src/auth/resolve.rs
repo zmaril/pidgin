@@ -13,6 +13,7 @@
 
 use super::credential_store::{CredentialStore, ModifyError};
 use super::error::ModelsError;
+use super::oauth::flow::run_refresh;
 use super::types::{
     ApiKeyAuth, ApiKeyCredential, AuthContext, AuthProvider, AuthResolutionOverrides, AuthResult,
     Credential, OAuthAuth, OAuthCredential, OAuthFlow, ProviderEnv,
@@ -138,7 +139,16 @@ pub fn resolve_stored_oauth(
                 if flow.clock.now_ms() < current.expires {
                     return Ok(None); // another process/request refreshed
                 }
-                match oauth.refresh(&current, flow) {
+                // Drive the provider's refresh machine against the seams (the
+                // JS shim would drive the same machine on the conformance path).
+                match run_refresh(
+                    oauth,
+                    &current,
+                    flow.http,
+                    flow.timers,
+                    flow.clock,
+                    flow.signal,
+                ) {
                     Ok(refreshed) => Ok(Some(Credential::OAuth(refreshed))),
                     Err(error) => Err(ModelsError::oauth(format!(
                         "OAuth refresh failed for {provider_id}"

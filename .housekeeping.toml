@@ -21,14 +21,18 @@ allow = [
 # tagged placeholder for the next binding surface, not untracked work.
 # The fluessig integration note quotes that same M1 placeholder marker as prose
 # when describing what atilla exposes today — a reference, not untracked work.
-# The five auth OAuth provider files are compiling STUBS: their `TODO(port)`
-# markers are deliberate, per-provider handoff signals pointing the provider
-# workers at the exact login/refresh bodies still to fill (the constants and
-# `OAuthAuth` signatures are already in place), not untracked work.
+# The four remaining auth OAuth provider files are compiling STUBS: their
+# `TODO(port)`/`todo!()` markers are deliberate, per-provider handoff signals
+# pointing the provider workers at the exact login/refresh bodies still to fill
+# (the constants and `OAuthAuth` signatures are already in place), not untracked
+# work. `flow.rs` carries a single `TODO(seam-wiring PR #63)` marker: a tracked
+# cross-PR handoff to drop the local serde-mirror structs once seam-wiring's
+# HttpRequest/HttpResponse serde derives land on main — tracked work, not
+# untracked.
 ignore = [
     "bindings/php/src/lib.rs",
     "notes/fluessig-integration.md",
-    "crates/atilla-ai/src/auth/oauth/anthropic.rs",
+    "crates/atilla-ai/src/auth/oauth/flow.rs",
     "crates/atilla-ai/src/auth/oauth/xai.rs",
     "crates/atilla-ai/src/auth/oauth/github_copilot.rs",
     "crates/atilla-ai/src/auth/oauth/openai_codex.rs",

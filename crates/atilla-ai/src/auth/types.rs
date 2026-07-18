@@ -34,6 +34,7 @@ use crate::seams::http::HttpTransport;
 use crate::seams::provider::AbortSignal;
 
 use super::error::AuthFlowError;
+use super::oauth::flow::OAuthFlowMachine;
 
 /// Provider-scoped environment/config values (pi's `ProviderEnv`, a
 /// `Record<string, string>`; `../types.ts:104`).
@@ -188,18 +189,26 @@ pub struct AuthCheck {
 }
 
 /// A selectable option in a `select` prompt (`types.ts:122`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AuthSelectOption {
     /// The option id (returned by `prompt` when this option is chosen).
     pub id: String,
     /// The option label.
     pub label: String,
     /// An optional description.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 
 /// The kind of prompt shown to the user during login (`types.ts:119-124`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Serialized internally-tagged on `type` (`text` / `secret` / `select` /
+/// `manual_code`), matching pi's prompt discriminant, so the [`flow::Step::Prompt`]
+/// step round-trips across the napi boundary.
+///
+/// [`flow::Step::Prompt`]: super::oauth::flow::Step::Prompt
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum AuthPromptKind {
     /// A free-text prompt.
     Text {
@@ -234,12 +243,20 @@ pub enum AuthPromptKind {
 /// A prompt shown to the user during login (`types.ts:119-124`).
 ///
 /// `signal` lets the flow cancel a pending prompt when an out-of-band event
-/// (e.g. a callback server) resolves the step first.
-#[derive(Debug, Clone)]
+/// (e.g. a callback server) resolves the step first. It is a live, in-process
+/// handle, so it is skipped when the prompt is serialized across the napi
+/// boundary (the shim drives cancellation via [`flow::StepInput::Aborted`]); the
+/// `kind` is flattened so a prompt serializes as
+/// `{"type":"manual_code","message":..,"placeholder":..}`.
+///
+/// [`flow::StepInput::Aborted`]: super::oauth::flow::StepInput::Aborted
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthPrompt {
-    /// Per-prompt cancellation signal.
+    /// Per-prompt cancellation signal (not serialized).
+    #[serde(skip)]
     pub signal: Option<AbortSignal>,
     /// The prompt kind.
+    #[serde(flatten)]
     pub kind: AuthPromptKind,
 }
 
@@ -312,13 +329,14 @@ pub trait AuthInteraction {
     fn notify(&self, event: AuthEvent);
 }
 
-/// The injected seams an OAuth flow needs: network, time, timers, and an
+/// The injected seams an OAuth resolution needs: network, time, timers, and an
 /// optional abort signal.
 ///
 /// This is the sync-port stand-in for pi's ambient `fetch` / `Date.now()` /
-/// `setTimeout` / `AbortSignal`. `login` (device-code polling) uses all four;
-/// `refresh` uses `http` + `clock` (+ `signal`); `to_auth` is pure and takes
-/// no flow.
+/// `setTimeout` / `AbortSignal`. [`resolve`](super::resolve) bundles the seams
+/// here and hands them to
+/// [`run_refresh`](super::oauth::flow::run_refresh) when driving a provider's
+/// refresh machine under the store lock; `clock` also drives the expiry checks.
 pub struct OAuthFlow<'a> {
     /// The HTTP transport (pi's `fetch`).
     pub http: &'a dyn HttpTransport,
@@ -366,9 +384,14 @@ pub trait ApiKeyAuth: Send + Sync {
 
 /// OAuth auth (`types.ts:189-210`).
 ///
-/// The `refresh`/`to_auth` split lets `resolve` own the locked refresh pattern:
-/// `refresh` produces a credential, `to_auth` derives request auth from whatever
-/// credential ends up stored.
+/// Login and refresh are multi-step flows that must not perform effects on the
+/// conformance path (the JS shim owns `fetch`/`setTimeout`/prompts across the
+/// one-way napi boundary), so instead of Rust-driving the network they each
+/// return an [`OAuthFlowMachine`] the shim or the pure-Rust
+/// [`run_flow`](super::oauth::flow::run_flow) driver advances. The
+/// `refresh`/`to_auth` split lets `resolve` own the locked refresh pattern: the
+/// refresh machine produces a credential, `to_auth` derives request auth from
+/// whatever credential ends up stored.
 pub trait OAuthAuth: Send + Sync {
     /// Display name, e.g. "Anthropic (Claude Pro/Max)".
     fn name(&self) -> &str;
@@ -378,20 +401,15 @@ pub trait OAuthAuth: Send + Sync {
         None
     }
 
-    /// Interactive login, producing a fresh OAuth credential.
-    fn login(
-        &self,
-        interaction: &dyn AuthInteraction,
-        flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError>;
+    /// Build the interactive login flow machine. Driving it to completion
+    /// produces a fresh OAuth credential.
+    fn login_machine(&self) -> Box<dyn OAuthFlowMachine>;
 
-    /// Exchange the refresh token. Network call; errors on failure
-    /// (invalid_grant etc.). `resolve` runs this under the store lock.
-    fn refresh(
-        &self,
-        credential: &OAuthCredential,
-        flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError>;
+    /// Build the refresh flow machine for `credential`. Driving it exchanges the
+    /// refresh token; the flow errors on failure (invalid_grant etc.).
+    /// `resolve` runs this under the store lock via
+    /// [`run_refresh`](super::oauth::flow::run_refresh).
+    fn refresh_machine(&self, credential: &OAuthCredential) -> Box<dyn OAuthFlowMachine>;
 
     /// Side-effect-free derivation of request auth from a valid credential.
     fn to_auth(&self, credential: &OAuthCredential) -> Result<ModelAuth, AuthFlowError>;

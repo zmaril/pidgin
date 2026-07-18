@@ -12,7 +12,9 @@
 //! provider worker.
 
 use crate::auth::error::AuthFlowError;
-use crate::auth::types::{AuthInteraction, ModelAuth, OAuthAuth, OAuthCredential, OAuthFlow};
+use crate::auth::types::{ModelAuth, OAuthAuth, OAuthCredential};
+
+use super::flow::{OAuthFlowMachine, Step, StepInput};
 
 /// OAuth client id (`xai.ts:8`).
 pub const XAI_CLIENT_ID: &str = "b1a00492-073a-47ea-816f-4c329264a828";
@@ -50,22 +52,14 @@ impl OAuthAuth for XaiOAuth {
 
     // TODO(port): body pending — provider worker (device-code request + poll;
     // `xai.ts:201-211`).
-    fn login(
-        &self,
-        _interaction: &dyn AuthInteraction,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        todo!("xAI OAuth login — provider worker")
+    fn login_machine(&self) -> Box<dyn OAuthFlowMachine> {
+        Box::new(XaiStubMachine)
     }
 
     // TODO(port): body pending — provider worker (refresh_token grant;
     // `xai.ts:213-227`).
-    fn refresh(
-        &self,
-        _credential: &OAuthCredential,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        todo!("xAI OAuth refresh — provider worker")
+    fn refresh_machine(&self, _credential: &OAuthCredential) -> Box<dyn OAuthFlowMachine> {
+        Box::new(XaiStubMachine)
     }
 
     fn to_auth(&self, credential: &OAuthCredential) -> Result<ModelAuth, AuthFlowError> {
@@ -74,5 +68,18 @@ impl OAuthAuth for XaiOAuth {
             api_key: Some(credential.access.clone()),
             ..ModelAuth::default()
         })
+    }
+}
+
+/// Stub flow machine — the device-code login/refresh state machines are ported
+/// by the xAI provider worker.
+struct XaiStubMachine;
+
+impl OAuthFlowMachine for XaiStubMachine {
+    fn start(&mut self, _now_ms: i64) -> Step {
+        todo!("xAI OAuth flow machine — provider worker")
+    }
+    fn advance(&mut self, _input: StepInput, _now_ms: i64) -> Step {
+        todo!("xAI OAuth flow machine — provider worker")
     }
 }

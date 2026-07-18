@@ -19,7 +19,9 @@
 //! `accountId` extraction is likewise a pure helper.
 
 use crate::auth::error::AuthFlowError;
-use crate::auth::types::{AuthInteraction, ModelAuth, OAuthAuth, OAuthCredential, OAuthFlow};
+use crate::auth::types::{ModelAuth, OAuthAuth, OAuthCredential};
+
+use super::flow::{OAuthFlowMachine, Step, StepInput};
 
 /// OAuth client id (`openai-codex.ts:26`).
 pub const CLIENT_ID: &str = "app_EMoamEEZ73f0CkXaXp7hrann";
@@ -91,22 +93,14 @@ impl OAuthAuth for OpenAICodexOAuth {
 
     // TODO(port): body pending — provider worker (login-method select, then
     // browser or device-code flow; `openai-codex.ts:513-531`).
-    fn login(
-        &self,
-        _interaction: &dyn AuthInteraction,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        todo!("OpenAI Codex OAuth login — provider worker")
+    fn login_machine(&self) -> Box<dyn OAuthFlowMachine> {
+        Box::new(OpenAICodexStubMachine)
     }
 
     // TODO(port): body pending — provider worker (refresh_token grant;
     // `openai-codex.ts:171-188,506-508`).
-    fn refresh(
-        &self,
-        _credential: &OAuthCredential,
-        _flow: &OAuthFlow,
-    ) -> Result<OAuthCredential, AuthFlowError> {
-        todo!("OpenAI Codex OAuth refresh — provider worker")
+    fn refresh_machine(&self, _credential: &OAuthCredential) -> Box<dyn OAuthFlowMachine> {
+        Box::new(OpenAICodexStubMachine)
     }
 
     fn to_auth(&self, credential: &OAuthCredential) -> Result<ModelAuth, AuthFlowError> {
@@ -115,5 +109,18 @@ impl OAuthAuth for OpenAICodexOAuth {
             api_key: Some(credential.access.clone()),
             ..ModelAuth::default()
         })
+    }
+}
+
+/// Stub flow machine — the browser + device-code login/refresh state machines
+/// are ported by the OpenAI Codex provider worker.
+struct OpenAICodexStubMachine;
+
+impl OAuthFlowMachine for OpenAICodexStubMachine {
+    fn start(&mut self, _now_ms: i64) -> Step {
+        todo!("OpenAI Codex OAuth flow machine — provider worker")
+    }
+    fn advance(&mut self, _input: StepInput, _now_ms: i64) -> Step {
+        todo!("OpenAI Codex OAuth flow machine — provider worker")
     }
 }
