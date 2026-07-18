@@ -1,0 +1,200 @@
+[
+	{
+		"line": "out 192M\t.pi/skill-tests/results-ha",
+		"beforeEnd": 10,
+		"afterStart": 13,
+		"afterLen": 10,
+		"strictAfter": true,
+		"expectedBefore": "out 192M",
+		"expectedBeforeWidth": 8,
+		"expectedAfter": "i/skill-te",
+		"expectedAfterWidth": 10
+	},
+	{
+		"line": "out 192M\t.pi/skill-tests/results-ha",
+		"beforeEnd": 11,
+		"afterStart": 13,
+		"afterLen": 10,
+		"strictAfter": true,
+		"expectedBefore": "out 192M\t",
+		"expectedBeforeWidth": 11,
+		"expectedAfter": "i/skill-te",
+		"expectedAfterWidth": 10
+	},
+	{
+		"line": "out 192M\t.pi/skill-tests/results-ha",
+		"beforeEnd": 8,
+		"afterStart": 13,
+		"afterLen": 10,
+		"strictAfter": true,
+		"expectedBefore": "out 192M",
+		"expectedBeforeWidth": 8,
+		"expectedAfter": "i/skill-te",
+		"expectedAfterWidth": 10
+	},
+	{
+		"line": "hello world foo bar",
+		"beforeEnd": 5,
+		"afterStart": 6,
+		"afterLen": 5,
+		"strictAfter": false,
+		"expectedBefore": "hello",
+		"expectedBeforeWidth": 5,
+		"expectedAfter": "world",
+		"expectedAfterWidth": 5
+	},
+	{
+		"line": "hello world foo bar",
+		"beforeEnd": 5,
+		"afterStart": 6,
+		"afterLen": 5,
+		"strictAfter": true,
+		"expectedBefore": "hello",
+		"expectedBeforeWidth": 5,
+		"expectedAfter": "world",
+		"expectedAfterWidth": 5
+	},
+	{
+		"line": "hello world foo bar",
+		"beforeEnd": 0,
+		"afterStart": 6,
+		"afterLen": 5,
+		"strictAfter": false,
+		"expectedBefore": "",
+		"expectedBeforeWidth": 0,
+		"expectedAfter": "world",
+		"expectedAfterWidth": 5
+	},
+	{
+		"line": "\u001b[31mred\u001b[0m green blue",
+		"beforeEnd": 3,
+		"afterStart": 4,
+		"afterLen": 5,
+		"strictAfter": false,
+		"expectedBefore": "\u001b[31mred",
+		"expectedBeforeWidth": 3,
+		"expectedAfter": "green",
+		"expectedAfterWidth": 5
+	},
+	{
+		"line": "\u001b[1;44mstyled overlay text here\u001b[0m",
+		"beforeEnd": 6,
+		"afterStart": 8,
+		"afterLen": 6,
+		"strictAfter": false,
+		"expectedBefore": "\u001b[1;44mstyled",
+		"expectedBeforeWidth": 6,
+		"expectedAfter": "\u001b[1;44mverlay",
+		"expectedAfterWidth": 6
+	},
+	{
+		"line": "\u001b[1;44mstyled overlay text here\u001b[0m",
+		"beforeEnd": 6,
+		"afterStart": 8,
+		"afterLen": 6,
+		"strictAfter": true,
+		"expectedBefore": "\u001b[1;44mstyled",
+		"expectedBeforeWidth": 6,
+		"expectedAfter": "\u001b[1;44mverlay",
+		"expectedAfterWidth": 6
+	},
+	{
+		"line": "界界界界界界",
+		"beforeEnd": 4,
+		"afterStart": 6,
+		"afterLen": 4,
+		"strictAfter": true,
+		"expectedBefore": "界界",
+		"expectedBeforeWidth": 4,
+		"expectedAfter": "界界",
+		"expectedAfterWidth": 4
+	},
+	{
+		"line": "界界界界界界",
+		"beforeEnd": 4,
+		"afterStart": 6,
+		"afterLen": 4,
+		"strictAfter": false,
+		"expectedBefore": "界界",
+		"expectedBeforeWidth": 4,
+		"expectedAfter": "界界",
+		"expectedAfterWidth": 4
+	},
+	{
+		"line": "界界界界界界",
+		"beforeEnd": 3,
+		"afterStart": 6,
+		"afterLen": 4,
+		"strictAfter": true,
+		"expectedBefore": "界",
+		"expectedBeforeWidth": 2,
+		"expectedAfter": "界界",
+		"expectedAfterWidth": 4
+	},
+	{
+		"line": "a界b界c界d",
+		"beforeEnd": 2,
+		"afterStart": 4,
+		"afterLen": 3,
+		"strictAfter": true,
+		"expectedBefore": "a",
+		"expectedBeforeWidth": 1,
+		"expectedAfter": "界c",
+		"expectedAfterWidth": 3
+	},
+	{
+		"line": "🙂界🙂界🙂界",
+		"beforeEnd": 4,
+		"afterStart": 6,
+		"afterLen": 4,
+		"strictAfter": false,
+		"expectedBefore": "🙂界",
+		"expectedBeforeWidth": 4,
+		"expectedAfter": "界🙂",
+		"expectedAfterWidth": 4
+	},
+	{
+		"line": "prefix\u001b[32m middle \u001b[0msuffix",
+		"beforeEnd": 6,
+		"afterStart": 8,
+		"afterLen": 6,
+		"strictAfter": false,
+		"expectedBefore": "prefix",
+		"expectedBeforeWidth": 6,
+		"expectedAfter": "\u001b[32middle ",
+		"expectedAfterWidth": 6
+	},
+	{
+		"line": "overlay test",
+		"beforeEnd": 5,
+		"afterStart": 5,
+		"afterLen": 0,
+		"strictAfter": false,
+		"expectedBefore": "overl",
+		"expectedBeforeWidth": 5,
+		"expectedAfter": "",
+		"expectedAfterWidth": 0
+	},
+	{
+		"line": "overlay test",
+		"beforeEnd": 5,
+		"afterStart": 5,
+		"afterLen": 0,
+		"strictAfter": true,
+		"expectedBefore": "overl",
+		"expectedBeforeWidth": 5,
+		"expectedAfter": "",
+		"expectedAfterWidth": 0
+	},
+	{
+		"line": "tab\there\tmore text",
+		"beforeEnd": 5,
+		"afterStart": 8,
+		"afterLen": 6,
+		"strictAfter": true,
+		"expectedBefore": "tab",
+		"expectedBeforeWidth": 3,
+		"expectedAfter": "re\tm",
+		"expectedAfterWidth": 6
+	}
+]

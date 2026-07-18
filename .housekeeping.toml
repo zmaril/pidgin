@@ -9,7 +9,12 @@ conventional-commits = "required"
 [scripts]
 # test.sh is bindings/php's build + load + version harness; it must sit next to
 # the crate it drives (a standalone workspace), not under the repo-wide scripts/.
-allow = ["bindings/php/test.sh"]
+# gen_eaw_table.sh is a vector-generator that lives beside its sibling .mjs
+# generators for the atilla-tui bit-exact port, not under the repo-wide scripts/.
+allow = [
+    "bindings/php/test.sh",
+    "crates/atilla-tui/vectors/gen/gen_eaw_table.sh",
+]
 
 [stray-todos]
 # The M1 Session::open marker in the PHP binding is a deliberate, milestone-

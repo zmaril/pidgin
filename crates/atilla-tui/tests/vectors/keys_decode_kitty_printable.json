@@ -1,0 +1,498 @@
+[
+	{
+		"input": "\u001b[57399u",
+		"expected": "0"
+	},
+	{
+		"input": "\u001b[57400u",
+		"expected": "1"
+	},
+	{
+		"input": "\u001b[57401u",
+		"expected": "2"
+	},
+	{
+		"input": "\u001b[57402u",
+		"expected": "3"
+	},
+	{
+		"input": "\u001b[57403u",
+		"expected": "4"
+	},
+	{
+		"input": "\u001b[57404u",
+		"expected": "5"
+	},
+	{
+		"input": "\u001b[57405u",
+		"expected": "6"
+	},
+	{
+		"input": "\u001b[57406u",
+		"expected": "7"
+	},
+	{
+		"input": "\u001b[57407u",
+		"expected": "8"
+	},
+	{
+		"input": "\u001b[57408u",
+		"expected": "9"
+	},
+	{
+		"input": "\u001b[57409u",
+		"expected": "."
+	},
+	{
+		"input": "\u001b[57410u",
+		"expected": "/"
+	},
+	{
+		"input": "\u001b[57411u",
+		"expected": "*"
+	},
+	{
+		"input": "\u001b[57412u",
+		"expected": "-"
+	},
+	{
+		"input": "\u001b[57413u",
+		"expected": "+"
+	},
+	{
+		"input": "\u001b[57414u",
+		"expected": ""
+	},
+	{
+		"input": "\u001b[57415u",
+		"expected": "="
+	},
+	{
+		"input": "\u001b[57416u",
+		"expected": ","
+	},
+	{
+		"input": "\u001b[57417u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[57418u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[57419u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[57420u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[57421u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[57422u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[57423u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[57424u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[57425u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[57426u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[97u",
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[97;1u",
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[97;2u",
+		"expected": "a"
+	},
+	{
+		"input": "\u001b[97;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[97;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[97;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[97;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[65u",
+		"expected": "A"
+	},
+	{
+		"input": "\u001b[65;1u",
+		"expected": "A"
+	},
+	{
+		"input": "\u001b[65;2u",
+		"expected": "A"
+	},
+	{
+		"input": "\u001b[65;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[65;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[65;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[65;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[49u",
+		"expected": "1"
+	},
+	{
+		"input": "\u001b[49;1u",
+		"expected": "1"
+	},
+	{
+		"input": "\u001b[49;2u",
+		"expected": "1"
+	},
+	{
+		"input": "\u001b[49;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[49;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[49;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[49;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[32u",
+		"expected": " "
+	},
+	{
+		"input": "\u001b[32;1u",
+		"expected": " "
+	},
+	{
+		"input": "\u001b[32;2u",
+		"expected": " "
+	},
+	{
+		"input": "\u001b[32;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[32;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[32;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[32;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[13u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[13;1u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[13;2u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[13;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[13;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[13;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[13;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[27u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[27;1u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[27;2u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[27;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[27;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[27;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[27;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[9;1u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[9;2u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[9;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[9;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[9;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[9;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[127u",
+		"expected": ""
+	},
+	{
+		"input": "\u001b[127;1u",
+		"expected": ""
+	},
+	{
+		"input": "\u001b[127;2u",
+		"expected": ""
+	},
+	{
+		"input": "\u001b[127;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[127;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[127;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[127;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[196u",
+		"expected": "Ä"
+	},
+	{
+		"input": "\u001b[196;1u",
+		"expected": "Ä"
+	},
+	{
+		"input": "\u001b[196;2u",
+		"expected": "Ä"
+	},
+	{
+		"input": "\u001b[196;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[196;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[196;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[196;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[99u",
+		"expected": "c"
+	},
+	{
+		"input": "\u001b[99;1u",
+		"expected": "c"
+	},
+	{
+		"input": "\u001b[99;2u",
+		"expected": "c"
+	},
+	{
+		"input": "\u001b[99;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[99;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[99;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[99;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[47u",
+		"expected": "/"
+	},
+	{
+		"input": "\u001b[47;1u",
+		"expected": "/"
+	},
+	{
+		"input": "\u001b[47;2u",
+		"expected": "/"
+	},
+	{
+		"input": "\u001b[47;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[47;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[47;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[47;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[33u",
+		"expected": "!"
+	},
+	{
+		"input": "\u001b[33;1u",
+		"expected": "!"
+	},
+	{
+		"input": "\u001b[33;2u",
+		"expected": "!"
+	},
+	{
+		"input": "\u001b[33;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[33;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[33;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[33;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[233u",
+		"expected": "é"
+	},
+	{
+		"input": "\u001b[233;1u",
+		"expected": "é"
+	},
+	{
+		"input": "\u001b[233;2u",
+		"expected": "é"
+	},
+	{
+		"input": "\u001b[233;3u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[233;5u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[233;6u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[233;9u",
+		"expected": null
+	},
+	{
+		"input": "\u001b[99:67:99;2u",
+		"expected": "C"
+	},
+	{
+		"input": "\u001b[97:65;2u",
+		"expected": "A"
+	},
+	{
+		"input": "\u001b[not-a-seq",
+		"expected": null
+	},
+	{
+		"input": "\u0003",
+		"expected": null
+	},
+	{
+		"input": "a",
+		"expected": null
+	}
+]
