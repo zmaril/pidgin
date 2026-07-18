@@ -140,6 +140,8 @@ The shim drives the loop until `Done` or `Error`:
 
 `now_ms` is passed to both `start` and `advance` (expiry math and the device-code deadline). Cancellation feeds an `Aborted` input, and `advance(Aborted, _)` returns `Error{ "Login cancelled" }`; the shim feeds it when the caller's abort signal fires during a `Wait` or the caller's `prompt()` rejects. Two adjacent terminal errors are ordinary `Error` steps the machine computes from `now` or the response, not inputs: a device-poll deadline timeout ("Device flow timed out") and a provider denial ("device authorization was denied"). One case is purely shim-side: after `Done`, the shim aborts the interactive prompt's signal so a UI dismisses it. The loopback-server and browser login paths are not `fetch` and are not stubbed by pi's `*-oauth.test.ts`, so they stay a native path outside this bridge.
 
+One edge the machine does not model: pi's RFC 8628 poller sleeps `min(interval, remaining)` and then rechecks the deadline, so at the exact boundary it can stop without a final poll. `Wait` couples a delay with a poll, so a device-code flow instead returns `Error{ "Device flow timed out" }` on the `advance` where `now` crosses the deadline, with no trailing poll — matching pi's no-final-poll behavior; only the final sleep's exact instant differs, which pi's `*-oauth.test.ts` fixtures never observe. If a test or client ever pins that instant, add a bare `Wait { delay_ms }` step (no request) — a purely additive change.
+
 ---
 
 ## Bridge 3 — Command runner
