@@ -6,3 +6,4 @@
 //! Messages SSE parsing path.
 
 pub mod anthropic;
+pub mod openai_completions;
