@@ -20,7 +20,7 @@
 | [coltonoscopy/ts2rust](https://github.com/coltonoscopy/ts2rust) | TS→Rust | PoC transpiler in Clojure | 3 commits, toy | No | unclear | Dormant PoC |
 | [mcmah309/ts2rs](https://github.com/mcmah309/ts2rs) | TS→Rust (**types only**) | TS type decls → Rust structs + serde | v0.1.x, early (Feb 2026) | Types only, no logic | unstated | Alive |
 | [j4ger/ts2rs](https://github.com/j4ger/ts2rs) | TS→Rust (**types only**) | Import TS interfaces via proc-macro | small | Types only | MIT-ish | Low activity |
-| **[ts-rs (Aleph-Alpha)](https://github.com/Aleph-Alpha/ts-rs)** | **Rust→TS (WRONG WAY)** | Derives TS bindings from Rust structs | Mature, ~3k★ | — (reverse direction) | MIT/Apache | Very alive |
+| **[ts-rs (Aleph-Alpha)](https://github.com/Aleph-Alpha/ts-rs)** | **Rust→TS (WRONG WAY)** | Derives TS bindings from Rust structs | Mature, ~3k stars | — (reverse direction) | MIT/Apache | Actively maintained |
 | CodeConvert / FavTutor / Syntha / CodingFleet | TS/JS→Rust | LLM-wrapper web converters, ~25k-char cap | snippet-only | per-snippet, needs rewrite | commercial | Alive |
 
 **Read:** every genuine direct-transpiler attempt is a single-author experiment. The "types-only" tools (`mcmah309/ts2rs`, `j4ger/ts2rs`) are real but convert *type declarations* to serde structs for a shared TS/Rust boundary — they do not translate logic. **Name-collision trap:** `ts-rs` (the popular one) goes Rust→TS and is useless here; don't confuse it with the `ts2rs`/`ts2rust` experiments.
@@ -29,9 +29,9 @@
 
 | Tool | Role | Maturity | Gives typed AST? | License | Alive? |
 |---|---|---|---|---|---|
-| [oxc](https://oxc.rs/) | Rust JS/TS parser, arena AST (~3× swc) | Production | **No** — syntax only; type-aware lint delegates to tsc | MIT | Very alive |
+| [oxc](https://oxc.rs/) | Rust JS/TS parser, arena AST (~3× swc) | Production | **No** — syntax only; type-aware lint delegates to tsc | MIT | Actively maintained |
 | [swc](https://swc.rs/) | Rust JS/TS parser + transforms (powers Next.js) | Production | No — syntax only | MIT/Apache | Alive |
-| TypeScript compiler / **tsgo (TS 7)** | The **only** fully type-resolved AST + `TypeChecker` | Production; Go port (Project Corsa) ~GA Jul 2026, ~10× faster | **Yes** (the type oracle you need) | Apache-2.0 | Very alive |
+| TypeScript compiler / **tsgo (TS 7)** | The **only** fully type-resolved AST + `TypeChecker` | Production; Go port (Project Corsa) ~GA Jul 2026, ~10× faster | **Yes** (the type oracle you need) | Apache-2.0 | Actively maintained |
 | [stc](https://github.com/dudykr/stc) | TS type-checker **in Rust** | **Officially abandoned** | — | Apache-2.0 | **Dead** |
 | [tree-sitter-typescript](https://github.com/tree-sitter/tree-sitter-typescript) | Incremental untyped CST | Mature | No (untyped, error-tolerant) | MIT | Alive |
 
@@ -76,62 +76,62 @@ A **coding-agent CLI + interactive TUI** (npm `@earendil-works/pi-coding-agent`,
 
 `tsconfig`: **strict: true**, `erasableSyntaxOnly: true`, ES2022. Highlights across src:
 
-- 🟢 646 `interface` + 859 `type` decls; **523 discriminant literal fields** (`type:`/`kind:`/`role:`) → discriminated-union-first style → clean Rust `enum`s; 84 `switch` → `match`; 0 `enum` decls (string-literal unions instead); 0 mapped types; 2 conditional types.
-- 🟢 **0 decorators, 0 `Reflect`/metadata, 0 `eval`, 1 `Proxy`, 1 `.prototype`, 2 `defineProperty`** — essentially no metaprogramming.
-- 🟡 152 `any` (low for 100k LOC, concentrated at provider/JSON edges), 496 `unknown` (mostly IO/JSON boundaries → `serde_json::Value`), 887 `as` casts (inflated by 125 `as const`), 13 `as unknown as`, 8 non-null `!`.
-- 🟡 141 classes / 65 `implements` / shallow inheritance → traits+structs; 20 `Object.assign` → explicit struct updates; 40 `keyof`.
+- Green 646 `interface` + 859 `type` decls; **523 discriminant literal fields** (`type:`/`kind:`/`role:`) → discriminated-union-first style → clean Rust `enum`s; 84 `switch` → `match`; 0 `enum` decls (string-literal unions instead); 0 mapped types; 2 conditional types.
+- Green **0 decorators, 0 `Reflect`/metadata, 0 `eval`, 1 `Proxy`, 1 `.prototype`, 2 `defineProperty`** — essentially no metaprogramming.
+- Yellow 152 `any` (low for 100k LOC, concentrated at provider/JSON edges), 496 `unknown` (mostly IO/JSON boundaries → `serde_json::Value`), 887 `as` casts (inflated by 125 `as const`), 13 `as unknown as`, 8 non-null `!`.
+- Yellow 141 classes / 65 `implements` / shallow inheritance → traits+structs; 20 `Object.assign` → explicit struct updates; 40 `keyof`.
 
 **Verdict:** about as Rust-friendly as a large TS codebase gets.
 
 ### Runtime-coupling scorecard — this is where the cost is (HIGH)
 
-- 🔴 **2,922 arrow fns / 880 callback-typed params** → Rust ownership makes stored/escaping closures costly (`Box<dyn Fn>`, `Arc`, sometimes redesign).
-- 🟡 870 `async` fns / 1,385 `await` / 1,097 `Promise` → `tokio` + `async fn`; mechanical but everywhere.
-- 🔴 142 `node:` imports (fs 65, path 54, os 21, child_process/spawn/exec 50) → `std`/`tokio`, but 210+ call sites to rewrite; 102 `process.env`; 18 `__dirname` / 23 `import.meta`.
-- 🟡 16 async generators / 18 `yield` — **streaming LLM responses** → Rust `Stream`/`async-stream`; 8 EventEmitter + 85 `.on(` (event-driven TUI/agent) → channels.
-- 🟡 61 `JSON.parse` / 90 `JSON.stringify` → serde, but JSON is treated as loosely-typed objects at LLM edges.
-- 🟡 2 native C `.node` addons (darwin modifiers, win32 console) — reimplement directly in Rust (easier than in TS).
+- Red **2,922 arrow fns / 880 callback-typed params** → Rust ownership makes stored/escaping closures costly (`Box<dyn Fn>`, `Arc`, sometimes redesign).
+- Yellow 870 `async` fns / 1,385 `await` / 1,097 `Promise` → `tokio` + `async fn`; mechanical but everywhere.
+- Red 142 `node:` imports (fs 65, path 54, os 21, child_process/spawn/exec 50) → `std`/`tokio`, but 210+ call sites to rewrite; 102 `process.env`; 18 `__dirname` / 23 `import.meta`.
+- Yellow 16 async generators / 18 `yield` — **streaming LLM responses** → Rust `Stream`/`async-stream`; 8 EventEmitter + 85 `.on(` (event-driven TUI/agent) → channels.
+- Yellow 61 `JSON.parse` / 90 `JSON.stringify` → serde, but JSON is treated as loosely-typed objects at LLM edges.
+- Yellow 2 native C `.node` addons (darwin modifiers, win32 console) — reimplement directly in Rust (easier than in TS).
 
 ### The showstopper: the extension system
 
-`packages/coding-agent/src/core/extensions/loader.ts` uses `jiti` to **compile and execute user-supplied TypeScript at runtime**, with documented reliance on JS semantics (cross-loader duck-typing because `instanceof` fails across jiti caches; `globalThis` to share theme state). **Rust cannot JIT arbitrary TypeScript.** A Rust port must (a) drop runtime extensibility, (b) switch to WASM/dylib plugins (breaks every existing extension), or (c) embed a JS engine (Deno core / QuickJS) — reintroducing a JS runtime and defeating much of the point. **Decide this before any LOC/effort estimate.**
+`packages/coding-agent/src/core/extensions/loader.ts` uses `jiti` to **compile and execute user-supplied TypeScript at runtime**, with documented reliance on JS semantics (cross-loader duck-typing because `instanceof` fails across jiti caches; `globalThis` to share theme state). **Rust cannot JIT arbitrary TypeScript.** A Rust port must (i) drop runtime extensibility, (ii) switch to WASM/dylib plugins (breaks every existing extension), or (iii) embed a JS engine (Deno core / QuickJS) — reintroducing a JS runtime and defeating much of the point. **Decide this before any LOC/effort estimate.**
 
 ### Dependency table (runtime deps; workspace-internal omitted)
 
 | Dependency | Purpose | Rust equivalent | Maturity |
 |---|---|---|---|
-| `@anthropic-ai/sdk` | Anthropic client | hand-roll on `reqwest` (community crates exist) | 🟡 |
-| `openai` | OpenAI-compatible client | `async-openai` | 🟢 |
-| `@google/genai` | Gemini client | hand-roll on `reqwest` (no first-party crate) | 🔴 |
-| `@aws-sdk/client-bedrock-runtime` | Bedrock | `aws-sdk-bedrockruntime` | 🟢 |
-| `@mistralai/mistralai` | Mistral client | hand-roll on `reqwest` | 🔴 |
-| `@opentelemetry/api` | Tracing | `opentelemetry` + `tracing` | 🟢 |
-| `undici` / proxy-agents | HTTP/fetch/proxy | `reqwest`/`hyper` (built-in proxy) | 🟢 |
-| `typebox` | Runtime schema + JSON Schema (tool params) | `serde` + `schemars` (+ `jsonschema`) | 🟢 mature but **load-bearing & pervasive** → real re-modeling |
-| `partial-json` | Parse incomplete streaming JSON | none — hand-roll | 🔴 essential to streaming tool-calls |
-| `yaml` | Config | `serde_yaml` | 🟢 |
-| `ignore` | .gitignore matching | `ignore` (ripgrep author) | 🟢 |
-| `glob` / `minimatch` | Globbing | `glob` / `globset` | 🟢 |
-| `chalk` | Terminal color | `owo-colors` / `nu-ansi-term` | 🟢 |
-| `diff` | Text diffing | `similar` | 🟢 |
-| `highlight.js` | Syntax highlighting | `syntect` | 🟢 |
-| `marked` | Markdown (TUI) | `pulldown-cmark` | 🟢 |
-| `get-east-asian-width` | Char width | `unicode-width` | 🟢 |
-| `cross-spawn` | Subprocess | `std`/`tokio::process` | 🟢 |
-| `proper-lockfile` | File locking | `fs4` / `fd-lock` | 🟢 |
-| `hosted-git-info` | Parse git host URLs | `git-url-parse` | 🟡 |
-| `semver` | Version ranges | `semver` | 🟢 |
-| `@silvia-odwyer/photon-node` | Image processing | `image` | 🟢 |
-| `@mariozechner/clipboard` | Clipboard | `arboard` | 🟢 |
-| **`jiti`** | **Runtime TS loader (extensions)** | **none** | 🔴 **architectural blocker** |
+| `@anthropic-ai/sdk` | Anthropic client | hand-roll on `reqwest` (community crates exist) | Yellow |
+| `openai` | OpenAI-compatible client | `async-openai` | Green |
+| `@google/genai` | Gemini client | hand-roll on `reqwest` (no first-party crate) | Red |
+| `@aws-sdk/client-bedrock-runtime` | Bedrock | `aws-sdk-bedrockruntime` | Green |
+| `@mistralai/mistralai` | Mistral client | hand-roll on `reqwest` | Red |
+| `@opentelemetry/api` | Tracing | `opentelemetry` + `tracing` | Green |
+| `undici` / proxy-agents | HTTP/fetch/proxy | `reqwest`/`hyper` (built-in proxy) | Green |
+| `typebox` | Runtime schema + JSON Schema (tool params) | `serde` + `schemars` (+ `jsonschema`) | Green mature but **load-bearing & pervasive** → real re-modeling |
+| `partial-json` | Parse incomplete streaming JSON | none — hand-roll | Red essential to streaming tool-calls |
+| `yaml` | Config | `serde_yaml` | Green |
+| `ignore` | .gitignore matching | `ignore` (ripgrep author) | Green |
+| `glob` / `minimatch` | Globbing | `glob` / `globset` | Green |
+| `chalk` | Terminal color | `owo-colors` / `nu-ansi-term` | Green |
+| `diff` | Text diffing | `similar` | Green |
+| `highlight.js` | Syntax highlighting | `syntect` | Green |
+| `marked` | Markdown (TUI) | `pulldown-cmark` | Green |
+| `get-east-asian-width` | Char width | `unicode-width` | Green |
+| `cross-spawn` | Subprocess | `std`/`tokio::process` | Green |
+| `proper-lockfile` | File locking | `fs4` / `fd-lock` | Green |
+| `hosted-git-info` | Parse git host URLs | `git-url-parse` | Yellow |
+| `semver` | Version ranges | `semver` | Green |
+| `@silvia-odwyer/photon-node` | Image processing | `image` | Green |
+| `@mariozechner/clipboard` | Clipboard | `arboard` | Green |
+| **`jiti`** | **Runtime TS loader (extensions)** | **none** | Red **architectural blocker** |
 
 **Dependency verdict:** ~85% of deps have mature Rust equivalents (several *better*: `ignore`, `globset`, `syntect`, `image`, AWS SDK). Genuine gaps forcing hand work: **`jiti` (blocker)**, **Google/Mistral clients** (no maintained crates), **`typebox`** (mature target but pervasive), **`partial-json`** (small but essential).
 
 ### Clean-transpile vs hand-rewrite
 
-- 🟢 **Clean (port largely mechanically):** `packages/agent/src` (~8.2k LOC, discriminated-union heavy, self-contained, well-tested — best starting point); the generated model catalogs (~5.9k → serde data file); `pi-ai` type/message-shape logic; pure tool algorithms in `coding-agent/src/core/tools/` (edit-diff, path-utils, glob/grep); utilities (diff, truncation, width, semver/glob wrappers).
-- 🟡 **Portable with real redesign:** `pi-ai` streaming layer (`openai-codex-responses.ts` 1,573, `anthropic-messages.ts` 1,313, `openai-completions.ts` 1,355 → `Stream` + custom incremental parser); `pi-tui` (12k LOC differential renderer, `editor.ts` 2,333, `keys.ts` 1,401 → crossterm/ratatui-style redesign; C addons reimplement cleanly); `coding-agent` session/settings managers (heavy async + env + fs).
-- 🔴 **Hand-rewrite / decision required:** the **extension system** (`loader.ts`, `runner.ts` 1,214, `types.ts` 1,682 + jiti); `interactive-mode.ts` (**6,008 LOC**, deeply event-driven, cross-loader duck-typing); `package-manager.ts` (2,650, npm/child_process orchestration); Google & Mistral clients; Bun entrypoints and native `.node` loading.
+- Green **Clean (port largely mechanically):** `packages/agent/src` (~8.2k LOC, discriminated-union heavy, self-contained, well-tested — best starting point); the generated model catalogs (~5.9k → serde data file); `pi-ai` type/message-shape logic; pure tool algorithms in `coding-agent/src/core/tools/` (edit-diff, path-utils, glob/grep); utilities (diff, truncation, width, semver/glob wrappers).
+- Yellow **Portable with real redesign:** `pi-ai` streaming layer (`openai-codex-responses.ts` 1,573, `anthropic-messages.ts` 1,313, `openai-completions.ts` 1,355 → `Stream` + custom incremental parser); `pi-tui` (12k LOC differential renderer, `editor.ts` 2,333, `keys.ts` 1,401 → crossterm/ratatui-style redesign; C addons reimplement cleanly); `coding-agent` session/settings managers (heavy async + env + fs).
+- Red **Hand-rewrite / decision required:** the **extension system** (`loader.ts`, `runner.ts` 1,214, `types.ts` 1,682 + jiti); `interactive-mode.ts` (**6,008 LOC**, deeply event-driven, cross-loader duck-typing); `package-manager.ts` (2,650, npm/child_process orchestration); Google & Mistral clients; Bun entrypoints and native `.node` loading.
 
 ---
 
@@ -142,8 +142,8 @@ A **coding-agent CLI + interactive TUI** (npm `@earendil-works/pi-coding-agent`,
 ### Path A — Custom purpose-built transpiler (swc/oxc + tsc oracle → Rust)
 Build a TS-subset transpiler mapping interfaces→structs/traits, unions→enums, async/await→tokio, closures→`Box<dyn Fn>`/redesign, using oxc for parse + tsgo for types.
 
-- **Up-front cost:** very high. You write the entire semantic-mapping layer (ownership inference, closure capture, structural→nominal typing, async lowering) that every abandoned project in §1a died on. `stc`'s abandonment is the warning.
-- **Coverage:** the clean ~40–50% of pi transpiles; the 🟡/🔴 half (closures, streaming, TUI, Node builtins, extensions) either fails or emits non-idiomatic Rust you'd rewrite anyway.
+- **Up-front cost:** substantial. You write the entire semantic-mapping layer (ownership inference, closure capture, structural→nominal typing, async lowering) that every abandoned project in §1a died on. `stc`'s abandonment is the warning.
+- **Coverage:** the clean ~40–50% of pi transpiles; the Yellow/Red half (closures, streaming, TUI, Node builtins, extensions) either fails or emits non-idiomatic Rust you'd rewrite anyway.
 - **Output quality:** machine-goo on the hard half — `Rc<RefCell<…>>` soup, cloned-everywhere, non-idiomatic error handling. **Directly poisons the "idiomatic Rust core for native extensions" goal.**
 - **Estimate:** ~2–3× the hand-rewrite for a *worse* result on the parts that matter. **Not recommended.**
 
@@ -156,7 +156,7 @@ Port module-by-module into idiomatic Rust, reading the TS (and its ~86k LOC of t
 - **Coverage:** everything, because a human decides the Rust shape (enums, traits, channels, `Stream`s) rather than mechanically mirroring JS.
 - **Output quality:** idiomatic by construction — the only path compatible with a clean native-extension surface.
 - **Order:** `pi-agent` core → `pi-ai` types + model-catalog data → `pi-ai` streaming → tools → session/settings → TUI → interactive mode. Extension system decided separately (below).
-- **Estimate:** baseline **1 unit**; AI-in-the-loop realistically shaves ~30–50% off the pure-manual figure on the clean/portable ~two-thirds, less on the 🔴 redesign parts. The generated model catalogs (~5.9k LOC) are near-free (data transform).
+- **Estimate:** baseline **1 unit**; AI-in-the-loop realistically shaves ~30–50% off the pure-manual figure on the clean/portable ~two-thirds, less on the Red redesign parts. The generated model catalogs (~5.9k LOC) are near-free (data transform).
 
 ---
 
