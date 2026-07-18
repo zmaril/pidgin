@@ -908,11 +908,13 @@ impl Agent {
         let get_follow_up: GetFollowUpMessages =
             Arc::new(move || follow_up_shared.follow_up_queue.lock().unwrap().drain());
 
+        // `StreamOptions` is `#[non_exhaustive]`, so it cannot be built with a
+        // struct literal from this crate; set the fields on a default value.
+        let mut stream_options = StreamOptions::default();
+        stream_options.session_id = session_id;
+
         AgentLoopConfig {
-            stream_options: StreamOptions {
-                session_id,
-                cache_retention: None,
-            },
+            stream_options,
             reasoning,
             model,
             convert_to_llm: self.shared.convert_to_llm.clone(),
