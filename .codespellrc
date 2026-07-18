@@ -1,4 +1,4 @@
 [codespell]
 skip = ./.git,./node_modules,./target,*.lock,*.svg,*.min.js,*.min.css
-ignore-words-list = edn,afterall,unparseable
+ignore-words-list = edn,afterall,unparseable,ratatui
 check-hidden = true
