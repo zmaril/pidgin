@@ -1,0 +1,29 @@
+# Standalone throwaway spike. The empty [workspace] table below makes cargo
+# treat this crate as its own workspace root, so it does NOT join atilla's
+# root workspace (which lists specific crates/* members).
+[workspace]
+
+[package]
+name = "deno-hello"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "deno-hello"
+path = "src/main.rs"
+
+[lib]
+name = "deno_hello"
+path = "src/lib.rs"
+
+[dependencies]
+# Pinned exact versions determined from crates.io on 2026-07-18.
+# deno_core pulls in the v8 crate, which downloads a prebuilt static V8 on
+# first build (needs network; the first `cargo build` is slow).
+deno_core = "=0.408.0"
+deno_ast = { version = "=0.53.3", features = ["transpiling"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync", "time"] }
