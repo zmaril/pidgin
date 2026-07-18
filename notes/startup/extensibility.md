@@ -16,13 +16,13 @@ commands the same way a JS/TS author does.
 Source material: `scratchpad/pi_extensibility.md` (pi, cited `file:line` against
 `/workspace/pi` @ `3da591ab`). Verified currency is mid-2026.
 
-**Relationship to `notes/deep-hooks.md`.** This document defines the overall
+**Relationship to `notes/startup/deep-hooks.md`.** This document defines the overall
 cross-language extension API *surface* — the tools, hooks, and commands exposed
 to host languages, and the one internal `Tool` / `Hook` / `Command` registry they
 lower onto. The detailed *dispatch* mechanics for deep block/modify/replace hooks
 across host-thread constraints — how a synchronous host closure acts as awaited
 middleware on the async core without deadlocking — are specified in the merged
-`notes/deep-hooks.md`, which this document tracks. Section 4 summarizes that model
+`notes/startup/deep-hooks.md`, which this document tracks. Section 4 summarizes that model
 and cites it; deep-hooks.md is the authoritative detailed spec.
 
 ---
@@ -120,7 +120,7 @@ and *on which thread* the host callable may be invoked — Section 4.
 This is the crux: a host-language closure (PHP, Python, Node, Ruby) has to act as
 awaited block/modify/replace middleware on the Rust core's multi-threaded tokio
 hot path, without deadlocking and without reentering a host virtual machine from
-a thread it does not own. `notes/deep-hooks.md` is the authoritative spec; the
+a thread it does not own. `notes/startup/deep-hooks.md` is the authoritative spec; the
 model below is its summary — see deep-hooks.md §2 (the per-host threading table),
 §4 (the two-flavor decision), §6 (the Rust sketch), and §7 (timeouts, ordering,
 cancellation).
@@ -238,7 +238,7 @@ pub trait Command: Send + Sync {
     async fn run(&self, args: Vec<String>, ctx: &CommandContext) -> anyhow::Result<()>;
 }
 
-/// Where an extension is allowed to run. Matches notes/deep-hooks.md.
+/// Where an extension is allowed to run. Matches notes/startup/deep-hooks.md.
 #[derive(Clone, Copy)]
 pub enum Affinity {
     AnyThread,      // Python: a worker thread calls it under the GIL (trampoline)
@@ -293,7 +293,7 @@ pins Node/PHP/Ruby to the owning host thread (trampoline for Node's `Send`
 handle, rendezvous for PHP/Ruby's `!Send` handle), and `OwnRuntime` routes the
 embedded deno_core JS plane on its own thread. This structurally enforces the
 Section 4 constraint rather than relying on discipline. Full dispatch mechanics
-are in `notes/deep-hooks.md` §4 and §6.
+are in `notes/startup/deep-hooks.md` §4 and §6.
 
 ---
 
@@ -330,7 +330,7 @@ binding rather than pi's own loader.
 
 **Ruby (marginal).** Lowest priority. `magnus::Value` is `!Send`, so Ruby takes
 the same flavor-2 rendezvous as PHP; whether it earns that machinery before
-demand is proven is an open question in `notes/deep-hooks.md` §9.
+demand is proven is an open question in `notes/startup/deep-hooks.md` §9.
 
 ---
 
@@ -338,7 +338,7 @@ demand is proven is an open question in `notes/deep-hooks.md` §9.
 
 Scoped to this narrow goal. The *dispatch* open questions — reentrancy depth,
 ZTS-vs-NTS shipping, Ruby placement, async-host-closure policy, trampoline
-return-value latency, and deep hooks over IPC — live in `notes/deep-hooks.md` §9
+return-value latency, and deep hooks over IPC — live in `notes/startup/deep-hooks.md` §9
 and are not repeated here. What remains specific to the API surface:
 
 1. **How literal must "the same API" be?** One shared method vocabulary across
@@ -357,7 +357,7 @@ and are not repeated here. What remains specific to the API surface:
 The threading and async-per-language mechanics that earlier drafts listed here —
 whether PHP's synchronous execution is acceptable, whether cancellation and
 streaming fidelity suffice per language — are now **decided** in
-`notes/deep-hooks.md` (two-flavor dispatch, per-hook timeout/fallback,
+`notes/startup/deep-hooks.md` (two-flavor dispatch, per-hook timeout/fallback,
 cooperative cancellation); reference them as settled rather than open.
 
 ---
@@ -382,7 +382,7 @@ dicts, and structs.
 **The main constraint.** A host closure must act as awaited middleware on the
 async core without reentering a host VM from a thread it does not own. This
 resolves into two dispatch flavors (Section 4, specified in
-`notes/deep-hooks.md`): a **trampoline** for hosts with a `Send` handle (Python
+`notes/startup/deep-hooks.md`): a **trampoline** for hosts with a `Send` handle (Python
 under the GIL, Node via a `ThreadsafeFunction` with a `Promise`-returning run),
 and a **thread-bound rendezvous** with a reentrant pump for `!Send` hosts (PHP,
 Ruby). Only `serde_json::Value` crosses the boundary, so `HostClosureHook` stays

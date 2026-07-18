@@ -4,6 +4,8 @@
 
 ## TL;DR
 
+Note (2026-07-18): the survey stands, but two recommendations in section 4 were later overruled — providers are hand-rolled thin clients (rust-genai rejected) and the TUI is a faithful port of pi's renderer rather than a ratatui rebuild. The repo-root design.md records the current decisions.
+
 **A clean-slate "no prior art" assumption is wrong.** pi has already been ported to Rust *many times over* — at least ~10 genuine standalone Rust ports/rewrites exist, plus a broad ring of Rust tooling that wraps the TS CLI. The standout is **[`Dicklesworthstone/pi_agent_rust`](https://github.com/Dicklesworthstone/pi_agent_rust)** (1,342★), a production-ready, **author-blessed** from-scratch port. Separately, the pi maintainers have **no plans for an official Rust rewrite** — lead maintainer `badlogic` filed a "Rewrite pi in Rust" issue as an explicit joke and their stance for non-TS users is "use pi's RPC mode."
 
 Implication: our value isn't proving feasibility (done) — it's picking the right architecture. Read the existing ports before writing code; the best adjacent Rust building blocks (codex-rs, rust-genai, ratatui, rig) are mature and permissively licensed.
