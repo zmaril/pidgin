@@ -1,3 +1,6 @@
+// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// `node-http-proxy.ts`: the http/https proxy-resolution arms are near-identical
+// by design.
 //! HTTP(S) proxy resolution, ported from pi-ai's
 //! `packages/ai/src/utils/node-http-proxy.ts` at pinned commit `3da591ab`.
 //!

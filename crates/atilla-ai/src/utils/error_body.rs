@@ -1,3 +1,6 @@
+// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// `error-body.ts`: the provider-shape extraction branches repeat the same
+// field-probing structure by design.
 //! Provider HTTP error-body normalization, ported from pi-ai's
 //! `packages/ai/src/utils/error-body.ts` at pinned commit `3da591ab`.
 //!

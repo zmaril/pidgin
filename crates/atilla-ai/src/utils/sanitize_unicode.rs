@@ -1,3 +1,6 @@
+// straitjacket-allow-file[:emoji] — a faithful transcription of pi's
+// `sanitize-unicode.ts`: the 🙈/🚀 literals are load-bearing test corpus that
+// exercise paired-surrogate preservation and must stay verbatim.
 //! Lone-surrogate stripping, ported from pi-ai's
 //! `packages/ai/src/utils/sanitize-unicode.ts` at pinned commit `3da591ab`.
 //!
