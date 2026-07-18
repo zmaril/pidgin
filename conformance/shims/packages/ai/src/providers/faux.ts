@@ -178,6 +178,7 @@ export function createFauxCore(options: RegisterFauxProviderOptions = {}) {
 			try {
 				await streamOptions?.onResponse?.({ status: 200, headers: {} }, requestModel);
 				if (!step) {
+					core.setNowMs(Date.now());
 					const parsed = JSON.parse(core.emptyQueueResult(modelJson, contextJson, optionsJson)) as {
 						events: AssistantMessageEvent[];
 						message: AssistantMessage;
@@ -191,6 +192,7 @@ export function createFauxCore(options: RegisterFauxProviderOptions = {}) {
 				// Rust builds the full non-aborted event sequence (`aborted: false`);
 				// mid-stream abort is honored during replay on the JS side, since Rust
 				// runs synchronously and cannot see an abort raised between deltas.
+				core.setNowMs(Date.now());
 				const parsed = JSON.parse(
 					core.streamResolved(modelJson, contextJson, optionsJson, JSON.stringify(resolved), false),
 				) as { events: AssistantMessageEvent[]; message: AssistantMessage };
