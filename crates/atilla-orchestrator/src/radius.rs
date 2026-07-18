@@ -35,6 +35,10 @@
 //! supervisor. pi's `index.ts` barrel does not re-export radius, so neither does
 //! this crate's `lib.rs`.
 
+// straitjacket-allow-file[:duplication] — the `format_iso_millis` epoch-to-ISO
+// helper and the `RadiusEnvGuard` test scaffold faithfully mirror the parallel
+// implementations in `atilla-coding`'s `session_manager.rs` and `config.rs`.
+
 use std::collections::BTreeMap;
 use std::fmt;
 use std::io;

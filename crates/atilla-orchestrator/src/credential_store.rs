@@ -36,6 +36,9 @@
 //! out of scope for this port. It is called out here so a future writer caller
 //! knows to revisit it.
 
+// straitjacket-allow-file[:duplication] — the `home_dir()` resolver faithfully
+// mirrors the parallel port in `config.rs`; the shared shape is deliberate.
+
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
