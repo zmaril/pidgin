@@ -1,0 +1,70 @@
+[
+	{
+		"input": "ำ",
+		"expected": "ํา"
+	},
+	{
+		"input": "ຳ",
+		"expected": "ໍາ"
+	},
+	{
+		"input": "ำabc",
+		"expected": "ําabc"
+	},
+	{
+		"input": "ຳabc",
+		"expected": "ໍາabc"
+	},
+	{
+		"input": "กำ",
+		"expected": "กํา"
+	},
+	{
+		"input": "ກຳ",
+		"expected": "ກໍາ"
+	},
+	{
+		"input": "no tabs no am",
+		"expected": "no tabs no am"
+	},
+	{
+		"input": "a\tb",
+		"expected": "a   b"
+	},
+	{
+		"input": "\ttext",
+		"expected": "   text"
+	},
+	{
+		"input": "a\tb\tc\t",
+		"expected": "a   b   c   "
+	},
+	{
+		"input": "\u001b]8;;https://example.test/a\tb\u0007label\ttext",
+		"expected": "\u001b]8;;https://example.test/a\tb\u0007label   text"
+	},
+	{
+		"input": "\u001b]0;window\ttitle\u001b\\label\ttext",
+		"expected": "\u001b]0;window\ttitle\u001b\\label   text"
+	},
+	{
+		"input": "\u001b_payload\tdata\u001b\\label\ttext",
+		"expected": "\u001b_payload\tdata\u001b\\label   text"
+	},
+	{
+		"input": "ำ\tabc",
+		"expected": "ํา   abc"
+	},
+	{
+		"input": "\u001b[31m\tred\u001b[0m",
+		"expected": "\u001b[31m   red\u001b[0m"
+	},
+	{
+		"input": "",
+		"expected": ""
+	},
+	{
+		"input": "plain",
+		"expected": "plain"
+	}
+]

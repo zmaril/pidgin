@@ -1,0 +1,178 @@
+[
+	{
+		"input": "\u001b[31m",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[31m",
+			"length": 5
+		}
+	},
+	{
+		"input": "\u001b[0m",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[0m",
+			"length": 4
+		}
+	},
+	{
+		"input": "\u001b[38;5;240m",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[38;5;240m",
+			"length": 11
+		}
+	},
+	{
+		"input": "\u001b[38;2;255;0;0m",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[38;2;255;0;0m",
+			"length": 15
+		}
+	},
+	{
+		"input": "\u001b[2J",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[2J",
+			"length": 4
+		}
+	},
+	{
+		"input": "\u001b[10G",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[10G",
+			"length": 5
+		}
+	},
+	{
+		"input": "\u001b[2K",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[2K",
+			"length": 4
+		}
+	},
+	{
+		"input": "\u001b[H",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[H",
+			"length": 3
+		}
+	},
+	{
+		"input": "\u001b[1;5H",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[1;5H",
+			"length": 6
+		}
+	},
+	{
+		"input": "\u001b]8;;https://x.co\u001b\\",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b]8;;https://x.co\u001b\\",
+			"length": 19
+		}
+	},
+	{
+		"input": "\u001b]8;;https://x.co\u0007",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b]8;;https://x.co\u0007",
+			"length": 18
+		}
+	},
+	{
+		"input": "\u001b]0;title\u0007",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b]0;title\u0007",
+			"length": 10
+		}
+	},
+	{
+		"input": "\u001b]133;A\u001b\\",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b]133;A\u001b\\",
+			"length": 9
+		}
+	},
+	{
+		"input": "\u001b_payload\u0007",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b_payload\u0007",
+			"length": 10
+		}
+	},
+	{
+		"input": "\u001b_Gdata\u001b\\",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b_Gdata\u001b\\",
+			"length": 9
+		}
+	},
+	{
+		"input": "prefix\u001b[31mred",
+		"pos": 6,
+		"expected": {
+			"code": "\u001b[31m",
+			"length": 5
+		}
+	},
+	{
+		"input": "\u001b[31munterminated",
+		"pos": 0,
+		"expected": {
+			"code": "\u001b[31m",
+			"length": 5
+		}
+	},
+	{
+		"input": "\u001b]8;;unterminated",
+		"pos": 0,
+		"expected": null
+	},
+	{
+		"input": "\u001b_unterminated",
+		"pos": 0,
+		"expected": null
+	},
+	{
+		"input": "\u001bX",
+		"pos": 0,
+		"expected": null
+	},
+	{
+		"input": "notescape",
+		"pos": 0,
+		"expected": null
+	},
+	{
+		"input": "a\u001b[31m",
+		"pos": 0,
+		"expected": null
+	},
+	{
+		"input": "",
+		"pos": 0,
+		"expected": null
+	},
+	{
+		"input": "\u001b",
+		"pos": 0,
+		"expected": null
+	},
+	{
+		"input": "\u001b[",
+		"pos": 0,
+		"expected": null
+	}
+]

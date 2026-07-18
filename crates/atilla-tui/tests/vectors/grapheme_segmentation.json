@@ -1,0 +1,237 @@
+[
+	{
+		"input": "hello",
+		"graphemes": [
+			"h",
+			"e",
+			"l",
+			"l",
+			"o"
+		]
+	},
+	{
+		"input": "café",
+		"graphemes": [
+			"c",
+			"a",
+			"f",
+			"é"
+		]
+	},
+	{
+		"input": "é",
+		"graphemes": [
+			"é"
+		]
+	},
+	{
+		"input": "áb̂c",
+		"graphemes": [
+			"á",
+			"b̂",
+			"c"
+		]
+	},
+	{
+		"input": "中文汉字",
+		"graphemes": [
+			"中",
+			"文",
+			"汉",
+			"字"
+		]
+	},
+	{
+		"input": "👍🏻",
+		"graphemes": [
+			"👍🏻"
+		]
+	},
+	{
+		"input": "👨‍💻",
+		"graphemes": [
+			"👨‍💻"
+		]
+	},
+	{
+		"input": "👨‍👩‍👧‍👦",
+		"graphemes": [
+			"👨‍👩‍👧‍👦"
+		]
+	},
+	{
+		"input": "🏳️‍🌈",
+		"graphemes": [
+			"🏳️‍🌈"
+		]
+	},
+	{
+		"input": "🇯🇵🇺🇸",
+		"graphemes": [
+			"🇯🇵",
+			"🇺🇸"
+		]
+	},
+	{
+		"input": "🇨🇳",
+		"graphemes": [
+			"🇨🇳"
+		]
+	},
+	{
+		"input": "🇨",
+		"graphemes": [
+			"🇨"
+		]
+	},
+	{
+		"input": "#️⃣",
+		"graphemes": [
+			"#️⃣"
+		]
+	},
+	{
+		"input": "⚡️",
+		"graphemes": [
+			"⚡️"
+		]
+	},
+	{
+		"input": "❤️",
+		"graphemes": [
+			"❤️"
+		]
+	},
+	{
+		"input": "a🙂b界c",
+		"graphemes": [
+			"a",
+			"🙂",
+			"b",
+			"界",
+			"c"
+		]
+	},
+	{
+		"input": "ก่",
+		"graphemes": [
+			"ก่"
+		]
+	},
+	{
+		"input": "กำ",
+		"graphemes": [
+			"กำ"
+		]
+	},
+	{
+		"input": "ກຳ",
+		"graphemes": [
+			"ກຳ"
+		]
+	},
+	{
+		"input": "This is an example 中文汉字测试段落内容中文汉字测试段落内容.",
+		"graphemes": [
+			"T",
+			"h",
+			"i",
+			"s",
+			" ",
+			"i",
+			"s",
+			" ",
+			"a",
+			"n",
+			" ",
+			"e",
+			"x",
+			"a",
+			"m",
+			"p",
+			"l",
+			"e",
+			" ",
+			"中",
+			"文",
+			"汉",
+			"字",
+			"测",
+			"试",
+			"段",
+			"落",
+			"内",
+			"容",
+			"中",
+			"文",
+			"汉",
+			"字",
+			"测",
+			"试",
+			"段",
+			"落",
+			"内",
+			"容",
+			"."
+		]
+	},
+	{
+		"input": "é̂̃",
+		"graphemes": [
+			"é̂̃"
+		]
+	},
+	{
+		"input": "🧑‍🤝‍🧑",
+		"graphemes": [
+			"🧑‍🤝‍🧑"
+		]
+	},
+	{
+		"input": "🏴‍☠️",
+		"graphemes": [
+			"🏴‍☠️"
+		]
+	},
+	{
+		"input": "tab\there",
+		"graphemes": [
+			"t",
+			"a",
+			"b",
+			"\t",
+			"h",
+			"e",
+			"r",
+			"e"
+		]
+	},
+	{
+		"input": "🙂界🙂界",
+		"graphemes": [
+			"🙂",
+			"界",
+			"🙂",
+			"界"
+		]
+	},
+	{
+		"input": "가",
+		"graphemes": [
+			"가"
+		]
+	},
+	{
+		"input": "각",
+		"graphemes": [
+			"각"
+		]
+	},
+	{
+		"input": "a‍b",
+		"graphemes": [
+			"a‍",
+			"b"
+		]
+	}
+]

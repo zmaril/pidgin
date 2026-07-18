@@ -1,0 +1,278 @@
+[
+	{
+		"text": "read this thread \u001b[4mhttps://example.com/very/long/path/that/will/wrap\u001b[24m",
+		"width": 40,
+		"expected": [
+			"read this thread",
+			"\u001b[4mhttps://example.com/very/long/path/that/\u001b[24m",
+			"\u001b[4mwill/wrap\u001b[24m"
+		]
+	},
+	{
+		"text": "\u001b[4munderlined text here \u001b[24mmore",
+		"width": 18,
+		"expected": [
+			"\u001b[4munderlined text\u001b[24m",
+			"\u001b[4mhere \u001b[24mmore"
+		]
+	},
+	{
+		"text": "prefix \u001b[4mhttps://example.com/very/long/path/that/will/definitely/wrap\u001b[24m suffix",
+		"width": 30,
+		"expected": [
+			"prefix",
+			"\u001b[4mhttps://example.com/very/long/\u001b[24m",
+			"\u001b[4mpath/that/will/definitely/wrap\u001b[24m",
+			"\u001b[4m\u001b[24m suffix"
+		]
+	},
+	{
+		"text": "\u001b[44mhello world this is blue background text\u001b[0m",
+		"width": 15,
+		"expected": [
+			"\u001b[44mhello world",
+			"\u001b[44mthis is blue",
+			"\u001b[44mbackground text\u001b[0m"
+		]
+	},
+	{
+		"text": "\u001b[41mprefix \u001b[4mUNDERLINED_CONTENT_THAT_WRAPS\u001b[24m suffix\u001b[0m",
+		"width": 20,
+		"expected": [
+			"\u001b[41mprefix",
+			"\u001b[41m\u001b[4mUNDERLINED_CONTENT_T\u001b[24m",
+			"\u001b[4;41mHAT_WRAPS\u001b[24m suffix\u001b[0m"
+		]
+	},
+	{
+		"text": "first\nsecond\r\nthird\rfourth",
+		"width": 80,
+		"expected": [
+			"first",
+			"second",
+			"third",
+			"fourth"
+		]
+	},
+	{
+		"text": "\u001b[31mfirst\r\nsecond\rthird\u001b[0m",
+		"width": 80,
+		"expected": [
+			"\u001b[31mfirst",
+			"\u001b[31msecond",
+			"\u001b[31mthird\u001b[0m"
+		]
+	},
+	{
+		"text": "hello world this is a test",
+		"width": 10,
+		"expected": [
+			"hello",
+			"world this",
+			"is a test"
+		]
+	},
+	{
+		"text": "This is an example 中文汉字测试段落内容中文汉字测试段落内容.",
+		"width": 40,
+		"expected": [
+			"This is an example 中文汉字测试段落内容",
+			"中文汉字测试段落内容."
+		]
+	},
+	{
+		"text": "\u001b[31mThis is an example 中文汉字测试段落内容中文汉字测试段落内容.\u001b[0m",
+		"width": 40,
+		"expected": [
+			"\u001b[31mThis is an example 中文汉字测试段落内容",
+			"\u001b[31m中文汉字测试段落内容.\u001b[0m"
+		]
+	},
+	{
+		"text": "  ",
+		"width": 1,
+		"expected": [
+			""
+		]
+	},
+	{
+		"text": "\u001b[31mhello world this is red\u001b[0m",
+		"width": 10,
+		"expected": [
+			"\u001b[31mhello",
+			"\u001b[31mworld this",
+			"\u001b[31mis red\u001b[0m"
+		]
+	},
+	{
+		"text": "      - 🇨",
+		"width": 9,
+		"expected": [
+			"      -",
+			"🇨"
+		]
+	},
+	{
+		"text": "\u001b]8;;https://example.com\u001b\\0123456789\u001b]8;;\u001b\\",
+		"width": 6,
+		"expected": [
+			"\u001b]8;;https://example.com\u001b\\012345\u001b]8;;\u001b\\",
+			"\u001b]8;;https://example.com\u001b\\6789\u001b]8;;\u001b\\"
+		]
+	},
+	{
+		"text": "\u001b]8;;https://example.com/oauth/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u0007https://example.com/oauth/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u001b]8;;\u0007",
+		"width": 20,
+		"expected": [
+			"\u001b]8;;https://example.com/oauth/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u0007https://example.com/\u001b]8;;\u0007",
+			"\u001b]8;;https://example.com/oauth/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u0007oauth/aaaaaaaaaaaaaa\u001b]8;;\u0007",
+			"\u001b]8;;https://example.com/oauth/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u0007aaaaaaaaaaaaaaaaaa\u001b]8;;\u0007"
+		]
+	},
+	{
+		"text": "before \u001b]8;;https://example.com\u001b\\link\u001b]8;;\u001b\\ after",
+		"width": 80,
+		"expected": [
+			"before \u001b]8;;https://example.com\u001b\\link\u001b]8;;\u001b\\ after"
+		]
+	},
+	{
+		"text": "",
+		"width": 10,
+		"expected": [
+			""
+		]
+	},
+	{
+		"text": "short",
+		"width": 80,
+		"expected": [
+			"short"
+		]
+	},
+	{
+		"text": "a b c d e f g h i j k l m n o p",
+		"width": 5,
+		"expected": [
+			"a b c",
+			"d e f",
+			"g h i",
+			"j k l",
+			"m n o",
+			"p"
+		]
+	},
+	{
+		"text": "supercalifragilisticexpialidocious",
+		"width": 10,
+		"expected": [
+			"supercalif",
+			"ragilistic",
+			"expialidoc",
+			"ious"
+		]
+	},
+	{
+		"text": "word1 word2 word3",
+		"width": 6,
+		"expected": [
+			"word1",
+			"word2",
+			"word3"
+		]
+	},
+	{
+		"text": "中文汉字测试段落内容",
+		"width": 6,
+		"expected": [
+			"中文汉",
+			"字测试",
+			"段落内",
+			"容"
+		]
+	},
+	{
+		"text": "日本語のテストです",
+		"width": 8,
+		"expected": [
+			"日本語の",
+			"テストで",
+			"す"
+		]
+	},
+	{
+		"text": "🙂🙂🙂🙂🙂🙂🙂🙂",
+		"width": 4,
+		"expected": [
+			"🙂🙂",
+			"🙂🙂",
+			"🙂🙂",
+			"🙂🙂"
+		]
+	},
+	{
+		"text": "line one\nline two\nline three",
+		"width": 10,
+		"expected": [
+			"line one",
+			"line two",
+			"line three"
+		]
+	},
+	{
+		"text": "\u001b[1mbold\u001b[0m normal \u001b[3mitalic\u001b[0m",
+		"width": 8,
+		"expected": [
+			"\u001b[1mbold\u001b[0m",
+			"normal",
+			"\u001b[3mitalic\u001b[0m"
+		]
+	},
+	{
+		"text": "trailing spaces here     ",
+		"width": 10,
+		"expected": [
+			"trailing",
+			"spaces",
+			"here"
+		]
+	},
+	{
+		"text": "tab\tseparated\ttext here",
+		"width": 10,
+		"expected": [
+			"tab\tsepa",
+			"rated\tte",
+			"xt here"
+		]
+	},
+	{
+		"text": "one",
+		"width": 1,
+		"expected": [
+			"o",
+			"n",
+			"e"
+		]
+	},
+	{
+		"text": "\u001b[38;5;208morange colored text that wraps around\u001b[0m",
+		"width": 12,
+		"expected": [
+			"\u001b[38;5;208morange",
+			"\u001b[38;5;208mcolored text",
+			"\u001b[38;5;208mthat wraps",
+			"\u001b[38;5;208maround\u001b[0m"
+		]
+	},
+	{
+		"text": "mixing ASCII and 中文 in one line for wrapping",
+		"width": 15,
+		"expected": [
+			"mixing ASCII",
+			"and 中文 in one",
+			"line for",
+			"wrapping"
+		]
+	}
+]

@@ -1,0 +1,1954 @@
+[
+	{
+		"input": " ",
+		"expected": 1
+	},
+	{
+		"input": "a",
+		"expected": 1
+	},
+	{
+		"input": "!",
+		"expected": 1
+	},
+	{
+		"input": "\"",
+		"expected": 1
+	},
+	{
+		"input": "#",
+		"expected": 1
+	},
+	{
+		"input": "$",
+		"expected": 1
+	},
+	{
+		"input": "%",
+		"expected": 1
+	},
+	{
+		"input": "&",
+		"expected": 1
+	},
+	{
+		"input": "'",
+		"expected": 1
+	},
+	{
+		"input": "(",
+		"expected": 1
+	},
+	{
+		"input": ")",
+		"expected": 1
+	},
+	{
+		"input": "*",
+		"expected": 1
+	},
+	{
+		"input": "+",
+		"expected": 1
+	},
+	{
+		"input": ",",
+		"expected": 1
+	},
+	{
+		"input": "-",
+		"expected": 1
+	},
+	{
+		"input": ".",
+		"expected": 1
+	},
+	{
+		"input": "/",
+		"expected": 1
+	},
+	{
+		"input": "0",
+		"expected": 1
+	},
+	{
+		"input": "1",
+		"expected": 1
+	},
+	{
+		"input": "2",
+		"expected": 1
+	},
+	{
+		"input": "3",
+		"expected": 1
+	},
+	{
+		"input": "4",
+		"expected": 1
+	},
+	{
+		"input": "5",
+		"expected": 1
+	},
+	{
+		"input": "6",
+		"expected": 1
+	},
+	{
+		"input": "7",
+		"expected": 1
+	},
+	{
+		"input": "8",
+		"expected": 1
+	},
+	{
+		"input": "9",
+		"expected": 1
+	},
+	{
+		"input": ":",
+		"expected": 1
+	},
+	{
+		"input": ";",
+		"expected": 1
+	},
+	{
+		"input": "<",
+		"expected": 1
+	},
+	{
+		"input": "=",
+		"expected": 1
+	},
+	{
+		"input": ">",
+		"expected": 1
+	},
+	{
+		"input": "?",
+		"expected": 1
+	},
+	{
+		"input": "@",
+		"expected": 1
+	},
+	{
+		"input": "A",
+		"expected": 1
+	},
+	{
+		"input": "B",
+		"expected": 1
+	},
+	{
+		"input": "C",
+		"expected": 1
+	},
+	{
+		"input": "D",
+		"expected": 1
+	},
+	{
+		"input": "E",
+		"expected": 1
+	},
+	{
+		"input": "F",
+		"expected": 1
+	},
+	{
+		"input": "G",
+		"expected": 1
+	},
+	{
+		"input": "H",
+		"expected": 1
+	},
+	{
+		"input": "I",
+		"expected": 1
+	},
+	{
+		"input": "J",
+		"expected": 1
+	},
+	{
+		"input": "K",
+		"expected": 1
+	},
+	{
+		"input": "L",
+		"expected": 1
+	},
+	{
+		"input": "M",
+		"expected": 1
+	},
+	{
+		"input": "N",
+		"expected": 1
+	},
+	{
+		"input": "O",
+		"expected": 1
+	},
+	{
+		"input": "P",
+		"expected": 1
+	},
+	{
+		"input": "Q",
+		"expected": 1
+	},
+	{
+		"input": "R",
+		"expected": 1
+	},
+	{
+		"input": "S",
+		"expected": 1
+	},
+	{
+		"input": "T",
+		"expected": 1
+	},
+	{
+		"input": "U",
+		"expected": 1
+	},
+	{
+		"input": "V",
+		"expected": 1
+	},
+	{
+		"input": "W",
+		"expected": 1
+	},
+	{
+		"input": "X",
+		"expected": 1
+	},
+	{
+		"input": "Y",
+		"expected": 1
+	},
+	{
+		"input": "Z",
+		"expected": 1
+	},
+	{
+		"input": "[",
+		"expected": 1
+	},
+	{
+		"input": "\\",
+		"expected": 1
+	},
+	{
+		"input": "]",
+		"expected": 1
+	},
+	{
+		"input": "^",
+		"expected": 1
+	},
+	{
+		"input": "_",
+		"expected": 1
+	},
+	{
+		"input": "`",
+		"expected": 1
+	},
+	{
+		"input": "b",
+		"expected": 1
+	},
+	{
+		"input": "c",
+		"expected": 1
+	},
+	{
+		"input": "d",
+		"expected": 1
+	},
+	{
+		"input": "e",
+		"expected": 1
+	},
+	{
+		"input": "f",
+		"expected": 1
+	},
+	{
+		"input": "g",
+		"expected": 1
+	},
+	{
+		"input": "h",
+		"expected": 1
+	},
+	{
+		"input": "i",
+		"expected": 1
+	},
+	{
+		"input": "j",
+		"expected": 1
+	},
+	{
+		"input": "k",
+		"expected": 1
+	},
+	{
+		"input": "l",
+		"expected": 1
+	},
+	{
+		"input": "m",
+		"expected": 1
+	},
+	{
+		"input": "n",
+		"expected": 1
+	},
+	{
+		"input": "o",
+		"expected": 1
+	},
+	{
+		"input": "p",
+		"expected": 1
+	},
+	{
+		"input": "q",
+		"expected": 1
+	},
+	{
+		"input": "r",
+		"expected": 1
+	},
+	{
+		"input": "s",
+		"expected": 1
+	},
+	{
+		"input": "t",
+		"expected": 1
+	},
+	{
+		"input": "u",
+		"expected": 1
+	},
+	{
+		"input": "v",
+		"expected": 1
+	},
+	{
+		"input": "w",
+		"expected": 1
+	},
+	{
+		"input": "x",
+		"expected": 1
+	},
+	{
+		"input": "y",
+		"expected": 1
+	},
+	{
+		"input": "z",
+		"expected": 1
+	},
+	{
+		"input": "{",
+		"expected": 1
+	},
+	{
+		"input": "|",
+		"expected": 1
+	},
+	{
+		"input": "}",
+		"expected": 1
+	},
+	{
+		"input": "~",
+		"expected": 1
+	},
+	{
+		"input": "\t",
+		"expected": 3
+	},
+	{
+		"input": "\u0000",
+		"expected": 0
+	},
+	{
+		"input": "\u0001",
+		"expected": 0
+	},
+	{
+		"input": "\u0002",
+		"expected": 0
+	},
+	{
+		"input": "\u0003",
+		"expected": 0
+	},
+	{
+		"input": "\u0004",
+		"expected": 0
+	},
+	{
+		"input": "\u0005",
+		"expected": 0
+	},
+	{
+		"input": "\u0006",
+		"expected": 0
+	},
+	{
+		"input": "\u0007",
+		"expected": 0
+	},
+	{
+		"input": "\b",
+		"expected": 0
+	},
+	{
+		"input": "\n",
+		"expected": 0
+	},
+	{
+		"input": "\u000b",
+		"expected": 0
+	},
+	{
+		"input": "\f",
+		"expected": 0
+	},
+	{
+		"input": "\r",
+		"expected": 0
+	},
+	{
+		"input": "\u000e",
+		"expected": 0
+	},
+	{
+		"input": "\u000f",
+		"expected": 0
+	},
+	{
+		"input": "\u0010",
+		"expected": 0
+	},
+	{
+		"input": "\u0011",
+		"expected": 0
+	},
+	{
+		"input": "\u0012",
+		"expected": 0
+	},
+	{
+		"input": "\u0013",
+		"expected": 0
+	},
+	{
+		"input": "\u0014",
+		"expected": 0
+	},
+	{
+		"input": "\u0015",
+		"expected": 0
+	},
+	{
+		"input": "\u0016",
+		"expected": 0
+	},
+	{
+		"input": "\u0017",
+		"expected": 0
+	},
+	{
+		"input": "\u0018",
+		"expected": 0
+	},
+	{
+		"input": "\u0019",
+		"expected": 0
+	},
+	{
+		"input": "\u001a",
+		"expected": 0
+	},
+	{
+		"input": "\u001c",
+		"expected": 0
+	},
+	{
+		"input": "\u001d",
+		"expected": 0
+	},
+	{
+		"input": "\u001e",
+		"expected": 0
+	},
+	{
+		"input": "\u001f",
+		"expected": 0
+	},
+	{
+		"input": "",
+		"expected": 0
+	},
+	{
+		"input": "́",
+		"expected": 0
+	},
+	{
+		"input": "é",
+		"expected": 1
+	},
+	{
+		"input": "à́̂",
+		"expected": 1
+	},
+	{
+		"input": "ก่",
+		"expected": 1
+	},
+	{
+		"input": "̨",
+		"expected": 0
+	},
+	{
+		"input": "̈́",
+		"expected": 0
+	},
+	{
+		"input": "​",
+		"expected": 0
+	},
+	{
+		"input": "‌",
+		"expected": 0
+	},
+	{
+		"input": "‍",
+		"expected": 0
+	},
+	{
+		"input": "﻿",
+		"expected": 0
+	},
+	{
+		"input": "­",
+		"expected": 0
+	},
+	{
+		"input": "⁠",
+		"expected": 0
+	},
+	{
+		"input": "᠎",
+		"expected": 0
+	},
+	{
+		"input": "⁤",
+		"expected": 0
+	},
+	{
+		"input": "界",
+		"expected": 2
+	},
+	{
+		"input": "あ",
+		"expected": 2
+	},
+	{
+		"input": "ア",
+		"expected": 2
+	},
+	{
+		"input": "한",
+		"expected": 2
+	},
+	{
+		"input": "ㄅ",
+		"expected": 2
+	},
+	{
+		"input": "龍",
+		"expected": 2
+	},
+	{
+		"input": "𠀀",
+		"expected": 2
+	},
+	{
+		"input": "Ａ",
+		"expected": 2
+	},
+	{
+		"input": "！",
+		"expected": 2
+	},
+	{
+		"input": "ｱ",
+		"expected": 1
+	},
+	{
+		"input": "ﾟ",
+		"expected": 1
+	},
+	{
+		"input": "＀",
+		"expected": 1
+	},
+	{
+		"input": "＂",
+		"expected": 2
+	},
+	{
+		"input": "＃",
+		"expected": 2
+	},
+	{
+		"input": "＄",
+		"expected": 2
+	},
+	{
+		"input": "％",
+		"expected": 2
+	},
+	{
+		"input": "＆",
+		"expected": 2
+	},
+	{
+		"input": "＇",
+		"expected": 2
+	},
+	{
+		"input": "（",
+		"expected": 2
+	},
+	{
+		"input": "）",
+		"expected": 2
+	},
+	{
+		"input": "＊",
+		"expected": 2
+	},
+	{
+		"input": "＋",
+		"expected": 2
+	},
+	{
+		"input": "，",
+		"expected": 2
+	},
+	{
+		"input": "－",
+		"expected": 2
+	},
+	{
+		"input": "．",
+		"expected": 2
+	},
+	{
+		"input": "／",
+		"expected": 2
+	},
+	{
+		"input": "０",
+		"expected": 2
+	},
+	{
+		"input": "１",
+		"expected": 2
+	},
+	{
+		"input": "２",
+		"expected": 2
+	},
+	{
+		"input": "３",
+		"expected": 2
+	},
+	{
+		"input": "４",
+		"expected": 2
+	},
+	{
+		"input": "５",
+		"expected": 2
+	},
+	{
+		"input": "６",
+		"expected": 2
+	},
+	{
+		"input": "７",
+		"expected": 2
+	},
+	{
+		"input": "８",
+		"expected": 2
+	},
+	{
+		"input": "９",
+		"expected": 2
+	},
+	{
+		"input": "：",
+		"expected": 2
+	},
+	{
+		"input": "；",
+		"expected": 2
+	},
+	{
+		"input": "＜",
+		"expected": 2
+	},
+	{
+		"input": "＝",
+		"expected": 2
+	},
+	{
+		"input": "＞",
+		"expected": 2
+	},
+	{
+		"input": "？",
+		"expected": 2
+	},
+	{
+		"input": "＠",
+		"expected": 2
+	},
+	{
+		"input": "Ｂ",
+		"expected": 2
+	},
+	{
+		"input": "Ｃ",
+		"expected": 2
+	},
+	{
+		"input": "Ｄ",
+		"expected": 2
+	},
+	{
+		"input": "Ｅ",
+		"expected": 2
+	},
+	{
+		"input": "Ｆ",
+		"expected": 2
+	},
+	{
+		"input": "Ｇ",
+		"expected": 2
+	},
+	{
+		"input": "Ｈ",
+		"expected": 2
+	},
+	{
+		"input": "Ｉ",
+		"expected": 2
+	},
+	{
+		"input": "Ｊ",
+		"expected": 2
+	},
+	{
+		"input": "Ｋ",
+		"expected": 2
+	},
+	{
+		"input": "Ｌ",
+		"expected": 2
+	},
+	{
+		"input": "Ｍ",
+		"expected": 2
+	},
+	{
+		"input": "Ｎ",
+		"expected": 2
+	},
+	{
+		"input": "Ｏ",
+		"expected": 2
+	},
+	{
+		"input": "Ｐ",
+		"expected": 2
+	},
+	{
+		"input": "Ｑ",
+		"expected": 2
+	},
+	{
+		"input": "Ｒ",
+		"expected": 2
+	},
+	{
+		"input": "Ｓ",
+		"expected": 2
+	},
+	{
+		"input": "Ｔ",
+		"expected": 2
+	},
+	{
+		"input": "Ｕ",
+		"expected": 2
+	},
+	{
+		"input": "Ｖ",
+		"expected": 2
+	},
+	{
+		"input": "Ｗ",
+		"expected": 2
+	},
+	{
+		"input": "Ｘ",
+		"expected": 2
+	},
+	{
+		"input": "Ｙ",
+		"expected": 2
+	},
+	{
+		"input": "Ｚ",
+		"expected": 2
+	},
+	{
+		"input": "［",
+		"expected": 2
+	},
+	{
+		"input": "＼",
+		"expected": 2
+	},
+	{
+		"input": "］",
+		"expected": 2
+	},
+	{
+		"input": "＾",
+		"expected": 2
+	},
+	{
+		"input": "＿",
+		"expected": 2
+	},
+	{
+		"input": "｀",
+		"expected": 2
+	},
+	{
+		"input": "ａ",
+		"expected": 2
+	},
+	{
+		"input": "ｂ",
+		"expected": 2
+	},
+	{
+		"input": "ｃ",
+		"expected": 2
+	},
+	{
+		"input": "ｄ",
+		"expected": 2
+	},
+	{
+		"input": "ｅ",
+		"expected": 2
+	},
+	{
+		"input": "ｆ",
+		"expected": 2
+	},
+	{
+		"input": "ｇ",
+		"expected": 2
+	},
+	{
+		"input": "ｈ",
+		"expected": 2
+	},
+	{
+		"input": "ｉ",
+		"expected": 2
+	},
+	{
+		"input": "ｊ",
+		"expected": 2
+	},
+	{
+		"input": "ｋ",
+		"expected": 2
+	},
+	{
+		"input": "ｌ",
+		"expected": 2
+	},
+	{
+		"input": "ｍ",
+		"expected": 2
+	},
+	{
+		"input": "ｎ",
+		"expected": 2
+	},
+	{
+		"input": "ｏ",
+		"expected": 2
+	},
+	{
+		"input": "ｐ",
+		"expected": 2
+	},
+	{
+		"input": "ｑ",
+		"expected": 2
+	},
+	{
+		"input": "ｒ",
+		"expected": 2
+	},
+	{
+		"input": "ｓ",
+		"expected": 2
+	},
+	{
+		"input": "ｔ",
+		"expected": 2
+	},
+	{
+		"input": "ｕ",
+		"expected": 2
+	},
+	{
+		"input": "ｖ",
+		"expected": 2
+	},
+	{
+		"input": "ｗ",
+		"expected": 2
+	},
+	{
+		"input": "ｘ",
+		"expected": 2
+	},
+	{
+		"input": "ｙ",
+		"expected": 2
+	},
+	{
+		"input": "ｚ",
+		"expected": 2
+	},
+	{
+		"input": "｛",
+		"expected": 2
+	},
+	{
+		"input": "｜",
+		"expected": 2
+	},
+	{
+		"input": "｝",
+		"expected": 2
+	},
+	{
+		"input": "～",
+		"expected": 2
+	},
+	{
+		"input": "｟",
+		"expected": 2
+	},
+	{
+		"input": "｠",
+		"expected": 2
+	},
+	{
+		"input": "｡",
+		"expected": 1
+	},
+	{
+		"input": "｢",
+		"expected": 1
+	},
+	{
+		"input": "｣",
+		"expected": 1
+	},
+	{
+		"input": "､",
+		"expected": 1
+	},
+	{
+		"input": "･",
+		"expected": 1
+	},
+	{
+		"input": "ｦ",
+		"expected": 1
+	},
+	{
+		"input": "ｧ",
+		"expected": 1
+	},
+	{
+		"input": "ｨ",
+		"expected": 1
+	},
+	{
+		"input": "ｩ",
+		"expected": 1
+	},
+	{
+		"input": "ｪ",
+		"expected": 1
+	},
+	{
+		"input": "ｫ",
+		"expected": 1
+	},
+	{
+		"input": "ｬ",
+		"expected": 1
+	},
+	{
+		"input": "ｭ",
+		"expected": 1
+	},
+	{
+		"input": "ｮ",
+		"expected": 1
+	},
+	{
+		"input": "ｯ",
+		"expected": 1
+	},
+	{
+		"input": "ｰ",
+		"expected": 1
+	},
+	{
+		"input": "ｲ",
+		"expected": 1
+	},
+	{
+		"input": "ｳ",
+		"expected": 1
+	},
+	{
+		"input": "ｴ",
+		"expected": 1
+	},
+	{
+		"input": "ｵ",
+		"expected": 1
+	},
+	{
+		"input": "ｶ",
+		"expected": 1
+	},
+	{
+		"input": "ｷ",
+		"expected": 1
+	},
+	{
+		"input": "ｸ",
+		"expected": 1
+	},
+	{
+		"input": "ｹ",
+		"expected": 1
+	},
+	{
+		"input": "ｺ",
+		"expected": 1
+	},
+	{
+		"input": "ｻ",
+		"expected": 1
+	},
+	{
+		"input": "ｼ",
+		"expected": 1
+	},
+	{
+		"input": "ｽ",
+		"expected": 1
+	},
+	{
+		"input": "ｾ",
+		"expected": 1
+	},
+	{
+		"input": "ｿ",
+		"expected": 1
+	},
+	{
+		"input": "ﾀ",
+		"expected": 1
+	},
+	{
+		"input": "ﾁ",
+		"expected": 1
+	},
+	{
+		"input": "ﾂ",
+		"expected": 1
+	},
+	{
+		"input": "ﾃ",
+		"expected": 1
+	},
+	{
+		"input": "ﾄ",
+		"expected": 1
+	},
+	{
+		"input": "ﾅ",
+		"expected": 1
+	},
+	{
+		"input": "ﾆ",
+		"expected": 1
+	},
+	{
+		"input": "ﾇ",
+		"expected": 1
+	},
+	{
+		"input": "ﾈ",
+		"expected": 1
+	},
+	{
+		"input": "ﾉ",
+		"expected": 1
+	},
+	{
+		"input": "ﾊ",
+		"expected": 1
+	},
+	{
+		"input": "ﾋ",
+		"expected": 1
+	},
+	{
+		"input": "ﾌ",
+		"expected": 1
+	},
+	{
+		"input": "ﾍ",
+		"expected": 1
+	},
+	{
+		"input": "ﾎ",
+		"expected": 1
+	},
+	{
+		"input": "ﾏ",
+		"expected": 1
+	},
+	{
+		"input": "ﾐ",
+		"expected": 1
+	},
+	{
+		"input": "ﾑ",
+		"expected": 1
+	},
+	{
+		"input": "ﾒ",
+		"expected": 1
+	},
+	{
+		"input": "ﾓ",
+		"expected": 1
+	},
+	{
+		"input": "ﾔ",
+		"expected": 1
+	},
+	{
+		"input": "ﾕ",
+		"expected": 1
+	},
+	{
+		"input": "ﾖ",
+		"expected": 1
+	},
+	{
+		"input": "ﾗ",
+		"expected": 1
+	},
+	{
+		"input": "ﾘ",
+		"expected": 1
+	},
+	{
+		"input": "ﾙ",
+		"expected": 1
+	},
+	{
+		"input": "ﾚ",
+		"expected": 1
+	},
+	{
+		"input": "ﾛ",
+		"expected": 1
+	},
+	{
+		"input": "ﾜ",
+		"expected": 1
+	},
+	{
+		"input": "ﾝ",
+		"expected": 1
+	},
+	{
+		"input": "ﾞ",
+		"expected": 1
+	},
+	{
+		"input": "ﾠ",
+		"expected": 0
+	},
+	{
+		"input": "ﾡ",
+		"expected": 1
+	},
+	{
+		"input": "ﾢ",
+		"expected": 1
+	},
+	{
+		"input": "ﾣ",
+		"expected": 1
+	},
+	{
+		"input": "ﾤ",
+		"expected": 1
+	},
+	{
+		"input": "ﾥ",
+		"expected": 1
+	},
+	{
+		"input": "ﾦ",
+		"expected": 1
+	},
+	{
+		"input": "ﾧ",
+		"expected": 1
+	},
+	{
+		"input": "ﾨ",
+		"expected": 1
+	},
+	{
+		"input": "ﾩ",
+		"expected": 1
+	},
+	{
+		"input": "ﾪ",
+		"expected": 1
+	},
+	{
+		"input": "ﾫ",
+		"expected": 1
+	},
+	{
+		"input": "ﾬ",
+		"expected": 1
+	},
+	{
+		"input": "ﾭ",
+		"expected": 1
+	},
+	{
+		"input": "ﾮ",
+		"expected": 1
+	},
+	{
+		"input": "ﾯ",
+		"expected": 1
+	},
+	{
+		"input": "ﾰ",
+		"expected": 1
+	},
+	{
+		"input": "ﾱ",
+		"expected": 1
+	},
+	{
+		"input": "ﾲ",
+		"expected": 1
+	},
+	{
+		"input": "ﾳ",
+		"expected": 1
+	},
+	{
+		"input": "ﾴ",
+		"expected": 1
+	},
+	{
+		"input": "ﾵ",
+		"expected": 1
+	},
+	{
+		"input": "ﾶ",
+		"expected": 1
+	},
+	{
+		"input": "ﾷ",
+		"expected": 1
+	},
+	{
+		"input": "ﾸ",
+		"expected": 1
+	},
+	{
+		"input": "ﾹ",
+		"expected": 1
+	},
+	{
+		"input": "ﾺ",
+		"expected": 1
+	},
+	{
+		"input": "ﾻ",
+		"expected": 1
+	},
+	{
+		"input": "ﾼ",
+		"expected": 1
+	},
+	{
+		"input": "ﾽ",
+		"expected": 1
+	},
+	{
+		"input": "ﾾ",
+		"expected": 1
+	},
+	{
+		"input": "﾿",
+		"expected": 1
+	},
+	{
+		"input": "￀",
+		"expected": 1
+	},
+	{
+		"input": "￁",
+		"expected": 1
+	},
+	{
+		"input": "ￂ",
+		"expected": 1
+	},
+	{
+		"input": "ￃ",
+		"expected": 1
+	},
+	{
+		"input": "ￄ",
+		"expected": 1
+	},
+	{
+		"input": "ￅ",
+		"expected": 1
+	},
+	{
+		"input": "ￆ",
+		"expected": 1
+	},
+	{
+		"input": "ￇ",
+		"expected": 1
+	},
+	{
+		"input": "￈",
+		"expected": 1
+	},
+	{
+		"input": "￉",
+		"expected": 1
+	},
+	{
+		"input": "ￊ",
+		"expected": 1
+	},
+	{
+		"input": "ￋ",
+		"expected": 1
+	},
+	{
+		"input": "ￌ",
+		"expected": 1
+	},
+	{
+		"input": "ￍ",
+		"expected": 1
+	},
+	{
+		"input": "ￎ",
+		"expected": 1
+	},
+	{
+		"input": "ￏ",
+		"expected": 1
+	},
+	{
+		"input": "￐",
+		"expected": 1
+	},
+	{
+		"input": "￑",
+		"expected": 1
+	},
+	{
+		"input": "ￒ",
+		"expected": 1
+	},
+	{
+		"input": "ￓ",
+		"expected": 1
+	},
+	{
+		"input": "ￔ",
+		"expected": 1
+	},
+	{
+		"input": "ￕ",
+		"expected": 1
+	},
+	{
+		"input": "ￖ",
+		"expected": 1
+	},
+	{
+		"input": "ￗ",
+		"expected": 1
+	},
+	{
+		"input": "￘",
+		"expected": 1
+	},
+	{
+		"input": "￙",
+		"expected": 1
+	},
+	{
+		"input": "ￚ",
+		"expected": 1
+	},
+	{
+		"input": "ￛ",
+		"expected": 1
+	},
+	{
+		"input": "ￜ",
+		"expected": 1
+	},
+	{
+		"input": "￝",
+		"expected": 1
+	},
+	{
+		"input": "￞",
+		"expected": 1
+	},
+	{
+		"input": "￟",
+		"expected": 1
+	},
+	{
+		"input": "￠",
+		"expected": 2
+	},
+	{
+		"input": "￡",
+		"expected": 2
+	},
+	{
+		"input": "￢",
+		"expected": 2
+	},
+	{
+		"input": "￣",
+		"expected": 2
+	},
+	{
+		"input": "￤",
+		"expected": 2
+	},
+	{
+		"input": "￥",
+		"expected": 2
+	},
+	{
+		"input": "￦",
+		"expected": 2
+	},
+	{
+		"input": "￧",
+		"expected": 1
+	},
+	{
+		"input": "￨",
+		"expected": 1
+	},
+	{
+		"input": "￩",
+		"expected": 1
+	},
+	{
+		"input": "￪",
+		"expected": 1
+	},
+	{
+		"input": "￫",
+		"expected": 1
+	},
+	{
+		"input": "￬",
+		"expected": 1
+	},
+	{
+		"input": "￭",
+		"expected": 1
+	},
+	{
+		"input": "￮",
+		"expected": 1
+	},
+	{
+		"input": "￯",
+		"expected": 1
+	},
+	{
+		"input": "§",
+		"expected": 1
+	},
+	{
+		"input": "±",
+		"expected": 1
+	},
+	{
+		"input": "×",
+		"expected": 1
+	},
+	{
+		"input": "÷",
+		"expected": 1
+	},
+	{
+		"input": "‐",
+		"expected": 1
+	},
+	{
+		"input": "’",
+		"expected": 1
+	},
+	{
+		"input": "“",
+		"expected": 1
+	},
+	{
+		"input": "…",
+		"expected": 1
+	},
+	{
+		"input": "←",
+		"expected": 1
+	},
+	{
+		"input": "○",
+		"expected": 1
+	},
+	{
+		"input": "★",
+		"expected": 1
+	},
+	{
+		"input": "♠",
+		"expected": 1
+	},
+	{
+		"input": "🙂",
+		"expected": 2
+	},
+	{
+		"input": "😀",
+		"expected": 2
+	},
+	{
+		"input": "👍",
+		"expected": 2
+	},
+	{
+		"input": "✅",
+		"expected": 2
+	},
+	{
+		"input": "⚡",
+		"expected": 2
+	},
+	{
+		"input": "👨",
+		"expected": 2
+	},
+	{
+		"input": "🎉",
+		"expected": 2
+	},
+	{
+		"input": "🔥",
+		"expected": 2
+	},
+	{
+		"input": "🌍",
+		"expected": 2
+	},
+	{
+		"input": "🚀",
+		"expected": 2
+	},
+	{
+		"input": "⚡️",
+		"expected": 2
+	},
+	{
+		"input": "✅️",
+		"expected": 2
+	},
+	{
+		"input": "❤️",
+		"expected": 2
+	},
+	{
+		"input": "☺️",
+		"expected": 2
+	},
+	{
+		"input": "©️",
+		"expected": 2
+	},
+	{
+		"input": "®️",
+		"expected": 2
+	},
+	{
+		"input": "™️",
+		"expected": 2
+	},
+	{
+		"input": "▶️",
+		"expected": 2
+	},
+	{
+		"input": "⏸️",
+		"expected": 2
+	},
+	{
+		"input": "#️",
+		"expected": 1
+	},
+	{
+		"input": "❤",
+		"expected": 1
+	},
+	{
+		"input": "#️⃣",
+		"expected": 2
+	},
+	{
+		"input": "*️⃣",
+		"expected": 2
+	},
+	{
+		"input": "0️⃣",
+		"expected": 2
+	},
+	{
+		"input": "1️⃣",
+		"expected": 2
+	},
+	{
+		"input": "9️⃣",
+		"expected": 2
+	},
+	{
+		"input": "👨‍💻",
+		"expected": 2
+	},
+	{
+		"input": "👨‍👩‍👧‍👦",
+		"expected": 2
+	},
+	{
+		"input": "👩‍🚀",
+		"expected": 2
+	},
+	{
+		"input": "🏳️‍🌈",
+		"expected": 2
+	},
+	{
+		"input": "🏴‍☠️",
+		"expected": 2
+	},
+	{
+		"input": "👨‍❤️‍👨",
+		"expected": 2
+	},
+	{
+		"input": "🧑‍🤝‍🧑",
+		"expected": 2
+	},
+	{
+		"input": "👍🏻",
+		"expected": 2
+	},
+	{
+		"input": "👍🏼",
+		"expected": 2
+	},
+	{
+		"input": "👍🏽",
+		"expected": 2
+	},
+	{
+		"input": "👍🏾",
+		"expected": 2
+	},
+	{
+		"input": "👍🏿",
+		"expected": 2
+	},
+	{
+		"input": "🤚🏽",
+		"expected": 2
+	},
+	{
+		"input": "👋🏿",
+		"expected": 2
+	},
+	{
+		"input": "🏻",
+		"expected": 2
+	},
+	{
+		"input": "🇦",
+		"expected": 2
+	},
+	{
+		"input": "🇧",
+		"expected": 2
+	},
+	{
+		"input": "🇨",
+		"expected": 2
+	},
+	{
+		"input": "🇩",
+		"expected": 2
+	},
+	{
+		"input": "🇪",
+		"expected": 2
+	},
+	{
+		"input": "🇫",
+		"expected": 2
+	},
+	{
+		"input": "🇬",
+		"expected": 2
+	},
+	{
+		"input": "🇭",
+		"expected": 2
+	},
+	{
+		"input": "🇮",
+		"expected": 2
+	},
+	{
+		"input": "🇯",
+		"expected": 2
+	},
+	{
+		"input": "🇰",
+		"expected": 2
+	},
+	{
+		"input": "🇱",
+		"expected": 2
+	},
+	{
+		"input": "🇲",
+		"expected": 2
+	},
+	{
+		"input": "🇳",
+		"expected": 2
+	},
+	{
+		"input": "🇴",
+		"expected": 2
+	},
+	{
+		"input": "🇵",
+		"expected": 2
+	},
+	{
+		"input": "🇶",
+		"expected": 2
+	},
+	{
+		"input": "🇷",
+		"expected": 2
+	},
+	{
+		"input": "🇸",
+		"expected": 2
+	},
+	{
+		"input": "🇹",
+		"expected": 2
+	},
+	{
+		"input": "🇺",
+		"expected": 2
+	},
+	{
+		"input": "🇻",
+		"expected": 2
+	},
+	{
+		"input": "🇼",
+		"expected": 2
+	},
+	{
+		"input": "🇽",
+		"expected": 2
+	},
+	{
+		"input": "🇾",
+		"expected": 2
+	},
+	{
+		"input": "🇿",
+		"expected": 2
+	},
+	{
+		"input": "🇯🇵",
+		"expected": 2
+	},
+	{
+		"input": "🇺🇸",
+		"expected": 2
+	},
+	{
+		"input": "🇬🇧",
+		"expected": 2
+	},
+	{
+		"input": "🇨🇳",
+		"expected": 2
+	},
+	{
+		"input": "🇩🇪",
+		"expected": 2
+	},
+	{
+		"input": "🇫🇷",
+		"expected": 2
+	},
+	{
+		"input": "⌚",
+		"expected": 2
+	},
+	{
+		"input": "⌨",
+		"expected": 1
+	},
+	{
+		"input": "⏰",
+		"expected": 2
+	},
+	{
+		"input": "☀",
+		"expected": 1
+	},
+	{
+		"input": "☎",
+		"expected": 1
+	},
+	{
+		"input": "♻",
+		"expected": 1
+	},
+	{
+		"input": "✂",
+		"expected": 1
+	},
+	{
+		"input": "➡",
+		"expected": 1
+	},
+	{
+		"input": "⭐",
+		"expected": 2
+	},
+	{
+		"input": "⭕",
+		"expected": 2
+	},
+	{
+		"input": "☕",
+		"expected": 2
+	},
+	{
+		"input": "ำ",
+		"expected": 1
+	},
+	{
+		"input": "ຳ",
+		"expected": 1
+	},
+	{
+		"input": "กำ",
+		"expected": 2
+	},
+	{
+		"input": "ກຳ",
+		"expected": 2
+	}
+]

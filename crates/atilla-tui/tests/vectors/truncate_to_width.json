@@ -1,0 +1,254 @@
+[
+	{
+		"text": "🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界",
+		"maxWidth": 40,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂界🙂\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "\u001b[31mhello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello hello \u001b[0m",
+		"maxWidth": 20,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "\u001b[31mhello hello hello h\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "abc\u001bnot-ansi 🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂🙂",
+		"maxWidth": 20,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "abc\u001bnot-ansi 🙂🙂🙂\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "abcdef",
+		"maxWidth": 1,
+		"ellipsis": "🙂",
+		"pad": false,
+		"expected": ""
+	},
+	{
+		"text": "abcdef",
+		"maxWidth": 2,
+		"ellipsis": "🙂",
+		"pad": false,
+		"expected": "\u001b[0m🙂\u001b[0m"
+	},
+	{
+		"text": "a",
+		"maxWidth": 2,
+		"ellipsis": "🙂",
+		"pad": false,
+		"expected": "a"
+	},
+	{
+		"text": "界",
+		"maxWidth": 2,
+		"ellipsis": "🙂",
+		"pad": false,
+		"expected": "界"
+	},
+	{
+		"text": "🙂界🙂界🙂界",
+		"maxWidth": 8,
+		"ellipsis": "…",
+		"pad": true,
+		"expected": "🙂界🙂\u001b[0m…\u001b[0m "
+	},
+	{
+		"text": "\u001b[31mhellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohello",
+		"maxWidth": 10,
+		"ellipsis": "",
+		"pad": false,
+		"expected": "\u001b[31mhellohello\u001b[0m"
+	},
+	{
+		"text": "🙂\t界 \u001b_abc\u0007",
+		"maxWidth": 7,
+		"ellipsis": "…",
+		"pad": true,
+		"expected": "🙂\t\u001b[0m…\u001b[0m "
+	},
+	{
+		"text": "hello",
+		"maxWidth": 10,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": "hello"
+	},
+	{
+		"text": "hello",
+		"maxWidth": 10,
+		"ellipsis": "...",
+		"pad": true,
+		"expected": "hello     "
+	},
+	{
+		"text": "hello world",
+		"maxWidth": 5,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": "he\u001b[0m...\u001b[0m"
+	},
+	{
+		"text": "hello world",
+		"maxWidth": 5,
+		"ellipsis": "...",
+		"pad": true,
+		"expected": "he\u001b[0m...\u001b[0m"
+	},
+	{
+		"text": "hello world",
+		"maxWidth": 8,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "hello w\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "",
+		"maxWidth": 5,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": ""
+	},
+	{
+		"text": "",
+		"maxWidth": 5,
+		"ellipsis": "...",
+		"pad": true,
+		"expected": "     "
+	},
+	{
+		"text": "abc",
+		"maxWidth": 0,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": ""
+	},
+	{
+		"text": "abc",
+		"maxWidth": 3,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": "abc"
+	},
+	{
+		"text": "abcdefgh",
+		"maxWidth": 3,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": "\u001b[0m...\u001b[0m"
+	},
+	{
+		"text": "abcdefgh",
+		"maxWidth": 4,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": "a\u001b[0m...\u001b[0m"
+	},
+	{
+		"text": "界界界界",
+		"maxWidth": 5,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "界界\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "界界界界",
+		"maxWidth": 5,
+		"ellipsis": "…",
+		"pad": true,
+		"expected": "界界\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "界界界界",
+		"maxWidth": 6,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": "界\u001b[0m...\u001b[0m"
+	},
+	{
+		"text": "🙂🙂🙂🙂",
+		"maxWidth": 5,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "🙂🙂\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "\u001b[1;32mgreen bold text here\u001b[0m",
+		"maxWidth": 12,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": "\u001b[1;32mgreen bol\u001b[0m...\u001b[0m"
+	},
+	{
+		"text": "\u001b[44mbg text long enough to truncate\u001b[0m",
+		"maxWidth": 10,
+		"ellipsis": "…",
+		"pad": true,
+		"expected": "\u001b[44mbg text l\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "tab\there\tmore",
+		"maxWidth": 8,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "tab\th\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "tab\there\tmore",
+		"maxWidth": 8,
+		"ellipsis": "…",
+		"pad": true,
+		"expected": "tab\th\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "ascii only text",
+		"maxWidth": 20,
+		"ellipsis": "...",
+		"pad": true,
+		"expected": "ascii only text     "
+	},
+	{
+		"text": "ascii only text",
+		"maxWidth": 20,
+		"ellipsis": "...",
+		"pad": false,
+		"expected": "ascii only text"
+	},
+	{
+		"text": "🇨🇳flags🇺🇸here",
+		"maxWidth": 6,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "🇨🇳fla\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "👨‍💻coding",
+		"maxWidth": 4,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "👨‍💻c\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "a\u001b[31mb\u001b[0mc",
+		"maxWidth": 2,
+		"ellipsis": "…",
+		"pad": false,
+		"expected": "a\u001b[0m…\u001b[0m"
+	},
+	{
+		"text": "日本語のテスト文字列",
+		"maxWidth": 10,
+		"ellipsis": "…",
+		"pad": true,
+		"expected": "日本語の\u001b[0m…\u001b[0m "
+	},
+	{
+		"text": "short",
+		"maxWidth": 100,
+		"ellipsis": "...",
+		"pad": true,
+		"expected": "short                                                                                               "
+	}
+]

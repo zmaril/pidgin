@@ -1,0 +1,210 @@
+[
+	{
+		"line": "out 192M\t.pi/skill-tests/results-ha",
+		"startCol": 0,
+		"length": 10,
+		"strict": true,
+		"expectedText": "out 192M",
+		"expectedWidth": 8
+	},
+	{
+		"line": "out 192M\t.pi/skill-tests/results-ha",
+		"startCol": 0,
+		"length": 10,
+		"strict": false,
+		"expectedText": "out 192M\t",
+		"expectedWidth": 11
+	},
+	{
+		"line": "hello world",
+		"startCol": 0,
+		"length": 5,
+		"strict": false,
+		"expectedText": "hello",
+		"expectedWidth": 5
+	},
+	{
+		"line": "hello world",
+		"startCol": 6,
+		"length": 5,
+		"strict": false,
+		"expectedText": "world",
+		"expectedWidth": 5
+	},
+	{
+		"line": "hello world",
+		"startCol": 2,
+		"length": 3,
+		"strict": false,
+		"expectedText": "llo",
+		"expectedWidth": 3
+	},
+	{
+		"line": "hello world",
+		"startCol": 0,
+		"length": 100,
+		"strict": false,
+		"expectedText": "hello world",
+		"expectedWidth": 11
+	},
+	{
+		"line": "hello world",
+		"startCol": 0,
+		"length": 0,
+		"strict": false,
+		"expectedText": "",
+		"expectedWidth": 0
+	},
+	{
+		"line": "hello world",
+		"startCol": 20,
+		"length": 5,
+		"strict": false,
+		"expectedText": "",
+		"expectedWidth": 0
+	},
+	{
+		"line": "\u001b[31mred text here\u001b[0m",
+		"startCol": 0,
+		"length": 3,
+		"strict": false,
+		"expectedText": "\u001b[31mred",
+		"expectedWidth": 3
+	},
+	{
+		"line": "\u001b[31mred text here\u001b[0m",
+		"startCol": 4,
+		"length": 4,
+		"strict": false,
+		"expectedText": "\u001b[31mtext",
+		"expectedWidth": 4
+	},
+	{
+		"line": "\u001b[31mred\u001b[0m normal",
+		"startCol": 2,
+		"length": 6,
+		"strict": false,
+		"expectedText": "\u001b[31md\u001b[0m norm",
+		"expectedWidth": 6
+	},
+	{
+		"line": "界界界界界",
+		"startCol": 0,
+		"length": 5,
+		"strict": false,
+		"expectedText": "界界界",
+		"expectedWidth": 6
+	},
+	{
+		"line": "界界界界界",
+		"startCol": 0,
+		"length": 5,
+		"strict": true,
+		"expectedText": "界界",
+		"expectedWidth": 4
+	},
+	{
+		"line": "界界界界界",
+		"startCol": 1,
+		"length": 4,
+		"strict": false,
+		"expectedText": "界界",
+		"expectedWidth": 4
+	},
+	{
+		"line": "界界界界界",
+		"startCol": 1,
+		"length": 4,
+		"strict": true,
+		"expectedText": "界",
+		"expectedWidth": 2
+	},
+	{
+		"line": "a界b界c",
+		"startCol": 0,
+		"length": 3,
+		"strict": false,
+		"expectedText": "a界",
+		"expectedWidth": 3
+	},
+	{
+		"line": "a界b界c",
+		"startCol": 0,
+		"length": 3,
+		"strict": true,
+		"expectedText": "a界",
+		"expectedWidth": 3
+	},
+	{
+		"line": "a界b界c",
+		"startCol": 1,
+		"length": 2,
+		"strict": true,
+		"expectedText": "界",
+		"expectedWidth": 2
+	},
+	{
+		"line": "🙂界🙂界",
+		"startCol": 0,
+		"length": 4,
+		"strict": false,
+		"expectedText": "🙂界",
+		"expectedWidth": 4
+	},
+	{
+		"line": "🙂界🙂界",
+		"startCol": 0,
+		"length": 3,
+		"strict": true,
+		"expectedText": "🙂",
+		"expectedWidth": 2
+	},
+	{
+		"line": "tab\there\tmore",
+		"startCol": 0,
+		"length": 5,
+		"strict": false,
+		"expectedText": "tab\t",
+		"expectedWidth": 6
+	},
+	{
+		"line": "tab\there\tmore",
+		"startCol": 0,
+		"length": 5,
+		"strict": true,
+		"expectedText": "tab",
+		"expectedWidth": 3
+	},
+	{
+		"line": "\u001b[1;44mstyled bg text\u001b[0m",
+		"startCol": 3,
+		"length": 5,
+		"strict": false,
+		"expectedText": "\u001b[1;44mled b",
+		"expectedWidth": 5
+	},
+	{
+		"line": "hello",
+		"startCol": 2,
+		"length": 10,
+		"strict": true,
+		"expectedText": "llo",
+		"expectedWidth": 3
+	},
+	{
+		"line": "中文abc英文",
+		"startCol": 0,
+		"length": 4,
+		"strict": true,
+		"expectedText": "中文",
+		"expectedWidth": 4
+	},
+	{
+		"line": "中文abc英文",
+		"startCol": 2,
+		"length": 5,
+		"strict": false,
+		"expectedText": "文abc",
+		"expectedWidth": 5
+	}
+]

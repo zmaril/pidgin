@@ -8,6 +8,7 @@ members = [
     "crates/atilla-coding",
     "crates/atilla-model-catalog",
     "crates/atilla-napi",
+    "crates/atilla-tui",
 ]
 
 [workspace.package]
