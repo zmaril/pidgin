@@ -27,7 +27,7 @@
 //! `atilla_ai::seams::storage::ExecutionEnv`, the reduced 5-method seam the
 //! session/storage layer injects; the two are deliberately not shared.
 
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::error::Error;
 use std::fmt;
 use std::sync::{Arc, Mutex};
@@ -403,6 +403,14 @@ enum ExecOutcome {
 struct MemState {
     cwd: String,
     files: BTreeMap<String, Vec<u8>>,
+    /// Directory paths present in the tree (kind `directory`). Directories are
+    /// otherwise implicit for plain files, but skills/prompt-template loading
+    /// stats and lists directories, so they are tracked explicitly.
+    dirs: BTreeSet<String>,
+    /// Symlink path -> target path. `file_info` reports these as `symlink`
+    /// (lstat-style, final component not followed); `read_text_file`,
+    /// `list_dir`, and `canonical_path` follow them (stat-style).
+    symlinks: BTreeMap<String, String>,
     temp_counter: u64,
     exec_queue: VecDeque<ExecOutcome>,
 }
@@ -437,6 +445,23 @@ impl MemoryExecutionEnv {
         self
     }
 
+    /// Seed a directory (kind `directory`).
+    pub fn with_dir(self, path: impl Into<String>) -> Self {
+        self.state.lock().unwrap().dirs.insert(path.into());
+        self
+    }
+
+    /// Seed a symlink from `path` to `target`. `file_info(path)` reports it as a
+    /// symlink; `read_text_file`/`list_dir`/`canonical_path` follow it.
+    pub fn with_symlink(self, path: impl Into<String>, target: impl Into<String>) -> Self {
+        self.state
+            .lock()
+            .unwrap()
+            .symlinks
+            .insert(path.into(), target.into());
+        self
+    }
+
     /// Queue a scripted successful `exec`: the given stdout chunks are streamed
     /// in order to `on_stdout`, then the given exit code is returned.
     pub fn push_exec_output(&self, stdout: Vec<String>, stderr: Vec<String>, exit_code: i32) {
@@ -463,6 +488,55 @@ impl MemoryExecutionEnv {
     fn basename(path: &str) -> String {
         path.rsplit('/').next().unwrap_or(path).to_string()
     }
+
+    /// Resolve a path component-by-component, following any symlink encountered
+    /// on an intermediate component. The final component's own symlink is
+    /// followed only when `follow_last` is set (stat vs lstat semantics).
+    ///
+    /// Symlink targets are taken as-is when absolute; a relative target is
+    /// resolved against the symlink's parent directory. This mirrors how a real
+    /// filesystem walks a path through symlinked directories.
+    fn resolve(state: &MemState, path: &str, follow_last: bool) -> String {
+        let parts: Vec<&str> = path.split('/').filter(|part| !part.is_empty()).collect();
+        let mut current = String::new();
+        for (index, part) in parts.iter().enumerate() {
+            current.push('/');
+            current.push_str(part);
+            let is_last = index + 1 == parts.len();
+            if is_last && !follow_last {
+                continue;
+            }
+            // Follow a chain of symlinks at the current component.
+            let mut guard = 0;
+            while let Some(target) = state.symlinks.get(&current) {
+                current = if target.starts_with('/') {
+                    target.clone()
+                } else {
+                    let parent = current.rsplit_once('/').map_or("", |(head, _)| head);
+                    format!("{parent}/{target}")
+                };
+                guard += 1;
+                if guard > 64 {
+                    break;
+                }
+            }
+        }
+        current
+    }
+
+    /// Classify a fully-resolved key as a [`FileKind`], if present. Symlinks are
+    /// checked first so an unfollowed final symlink reports as `symlink`.
+    fn classify(state: &MemState, key: &str) -> Option<FileKind> {
+        if state.symlinks.contains_key(key) {
+            Some(FileKind::Symlink)
+        } else if state.files.contains_key(key) {
+            Some(FileKind::File)
+        } else if state.dirs.contains(key) {
+            Some(FileKind::Directory)
+        } else {
+            None
+        }
+    }
 }
 
 impl FileSystem for MemoryExecutionEnv {
@@ -485,7 +559,8 @@ impl FileSystem for MemoryExecutionEnv {
 
     fn read_text_file(&self, path: &str) -> Result<String, FileError> {
         let state = self.state.lock().unwrap();
-        match state.files.get(path) {
+        let resolved = Self::resolve(&state, path, true);
+        match state.files.get(&resolved) {
             Some(bytes) => String::from_utf8(bytes.clone())
                 .map_err(|_| FileError::with_path(FileErrorCode::Invalid, "invalid UTF-8", path)),
             None => Err(FileError::with_path(
@@ -514,7 +589,8 @@ impl FileSystem for MemoryExecutionEnv {
 
     fn read_binary_file(&self, path: &str) -> Result<Vec<u8>, FileError> {
         let state = self.state.lock().unwrap();
-        state.files.get(path).cloned().ok_or_else(|| {
+        let resolved = Self::resolve(&state, path, true);
+        state.files.get(&resolved).cloned().ok_or_else(|| {
             FileError::with_path(
                 FileErrorCode::NotFound,
                 format!("no such file: {path}"),
@@ -545,12 +621,19 @@ impl FileSystem for MemoryExecutionEnv {
 
     fn file_info(&self, path: &str) -> Result<FileInfo, FileError> {
         let state = self.state.lock().unwrap();
-        match state.files.get(path) {
-            Some(bytes) => Ok(FileInfo {
+        // lstat semantics: intermediate symlinks are followed, the final
+        // component is not, so a symlink reports its own `symlink` kind.
+        let resolved = Self::resolve(&state, path, false);
+        match Self::classify(&state, &resolved) {
+            Some(kind) => Ok(FileInfo {
                 name: Self::basename(path),
                 path: path.to_string(),
-                kind: FileKind::File,
-                size: bytes.len() as u64,
+                kind,
+                size: if kind == FileKind::File {
+                    state.files.get(&resolved).map_or(0, Vec::len) as u64
+                } else {
+                    0
+                },
                 mtime_ms: 0,
             }),
             None => Err(FileError::with_path(
@@ -562,38 +645,75 @@ impl FileSystem for MemoryExecutionEnv {
     }
 
     fn list_dir(&self, path: &str) -> Result<Vec<FileInfo>, FileError> {
-        let prefix = format!("{}/", path.trim_end_matches('/'));
         let state = self.state.lock().unwrap();
-        let infos = state
+        // Listing follows the addressed path to its real directory, but reports
+        // each child under the *queried* path (as a real readdir does through a
+        // symlinked directory).
+        let real = Self::resolve(&state, path, true);
+        let query = path.trim_end_matches('/');
+        let real_prefix = format!("{}/", real.trim_end_matches('/'));
+        let mut seen = BTreeSet::new();
+        let mut infos = Vec::new();
+        // File, directory, and symlink keys share the flat namespace; gather the
+        // direct children of `real` from all three maps.
+        let keys = state
             .files
-            .iter()
-            .filter_map(|(file_path, bytes)| {
-                let rest = file_path.strip_prefix(&prefix)?;
-                if rest.is_empty() || rest.contains('/') {
-                    return None;
-                }
-                Some(FileInfo {
-                    name: rest.to_string(),
-                    path: file_path.clone(),
-                    kind: FileKind::File,
-                    size: bytes.len() as u64,
-                    mtime_ms: 0,
-                })
-            })
-            .collect();
+            .keys()
+            .chain(state.dirs.iter())
+            .chain(state.symlinks.keys());
+        for key in keys {
+            let Some(rest) = key.strip_prefix(&real_prefix) else {
+                continue;
+            };
+            if rest.is_empty() || rest.contains('/') {
+                continue;
+            }
+            if !seen.insert(rest.to_string()) {
+                continue;
+            }
+            let child_real = format!("{real_prefix}{rest}");
+            let Some(kind) = Self::classify(&state, &child_real) else {
+                continue;
+            };
+            infos.push(FileInfo {
+                name: rest.to_string(),
+                path: format!("{query}/{rest}"),
+                kind,
+                size: if kind == FileKind::File {
+                    state.files.get(&child_real).map_or(0, Vec::len) as u64
+                } else {
+                    0
+                },
+                mtime_ms: 0,
+            });
+        }
         Ok(infos)
     }
 
     fn canonical_path(&self, path: &str) -> Result<String, FileError> {
-        self.absolute_path(path)
+        let state = self.state.lock().unwrap();
+        Ok(Self::resolve(&state, path, true))
     }
 
     fn exists(&self, path: &str) -> Result<bool, FileError> {
-        Ok(self.state.lock().unwrap().files.contains_key(path))
+        let state = self.state.lock().unwrap();
+        let resolved = Self::resolve(&state, path, false);
+        Ok(Self::classify(&state, &resolved).is_some())
     }
 
-    fn create_dir(&self, _path: &str, _recursive: bool) -> Result<(), FileError> {
-        // Directories are implicit in the flat file map; nothing to do.
+    fn create_dir(&self, path: &str, recursive: bool) -> Result<(), FileError> {
+        let mut state = self.state.lock().unwrap();
+        if recursive {
+            // Register every ancestor so the whole chain is stat-able.
+            let mut prefix = String::new();
+            for part in path.split('/').filter(|part| !part.is_empty()) {
+                prefix.push('/');
+                prefix.push_str(part);
+                state.dirs.insert(prefix.clone());
+            }
+        } else {
+            state.dirs.insert(path.trim_end_matches('/').to_string());
+        }
         Ok(())
     }
 

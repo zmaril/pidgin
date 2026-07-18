@@ -72,8 +72,10 @@ name = "atilla-agent"
 version = "0.1.0"
 dependencies = [
  "atilla-ai",
+ "ignore",
  "serde",
  "serde_json",
+ "serde_yaml",
 ]
 
 [[package]]
