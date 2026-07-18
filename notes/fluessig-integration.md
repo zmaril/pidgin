@@ -1,21 +1,19 @@
 # Fluessig integration plan
 
-This note scopes what it would take to connect
-[`fluessig`](https://github.com/zmaril/fluessig) and atilla. It is a
-figuring-out document, not an implementation: it proposes paths and lists
-dependencies. Where this note and `design.md` disagree, `design.md` wins.
-This revision is grounded in fluessig's code and commit history rather
-than its README; the README is stale and, as section 1a records,
-understates the project.
+This note scopes connecting
+[`fluessig`](https://github.com/zmaril/fluessig) and atilla. The direction
+is decided: **A, fluessig generates atilla's bindings.** This note records
+that decision, the concrete work it implies on each side, the milestone
+that gates it, and the questions still open. It is grounded in fluessig's
+code and commit history, not its README, which is stale (see section 1a).
+Where this note and `design.md` disagree, `design.md` wins.
 
-The headline finding corrects the starting premise. fluessig is **not** a
-PHP application, so there is no `php.ini`, no `.so` to load, and no
-NTS/ZTS or PHP-version match to worry about. fluessig is a Rust plus Node
-build-time schema and code-generation tool with no runtime and no
-deployment. That reshapes the whole question: "enable atilla in fluessig"
-is not an extension-loading problem, it is a question of how two projects
-that both follow the same "one Rust core, native bindings per language"
-shape should meet.
+The starting premise needed correcting first. fluessig is **not** a PHP
+application, so there is no `php.ini`, no `.so` to load, and no NTS/ZTS or
+PHP-version match to worry about at fluessig's edge. fluessig is a Rust
+plus Node build-time schema and code-generation tool with no runtime. The
+integration is therefore not extension-loading; it is teaching fluessig to
+generate the binding layer that atilla writes by hand.
 
 ---
 
@@ -49,13 +47,12 @@ Facts that matter for integration:
   Rust-derive exercise rather than a TypeSpec one.
 - It already generates an agent-facing seam. `src/bindgen/mcp.rs` projects
   the op layer (`api.json`) into an MCP tool surface plus a generated Rust
-  `dispatch()` module (tool name plus JSON args -> trait call), wired into
-  the CLI via `--mcp` and covered by `tests/mcp.rs`. Op shapes are
-  `ctor | unary | stream | manual`.
+  `dispatch()` module, wired into the CLI via `--mcp` and covered by
+  `tests/mcp.rs`. Op shapes are `ctor | unary | stream | manual`.
 - It has no PHP back-end. The back ends present are node, python, and ruby
   (plus the MCP projection); there is no `src/bindgen/php.rs`, and no
   "php" token anywhere in the tree. atilla is PHP-first, so this gap is
-  real.
+  real and is the critical-path change (section 3).
 - Its consumers are [`entl`](https://github.com/zmaril/entl) (the
   committed fixture) and `disponent` (a second consumer named in code and
   notes).
@@ -65,7 +62,7 @@ Facts that matter for integration:
 ## 1a. What the README says versus what the code shows
 
 The README predates recent work and understates the project. The
-divergences that matter here, each confirmed against the code:
+divergences, each confirmed against the code:
 
 - The README presents the front end as TypeSpec-only. The code is
   mid-pivot to a Rust derive front end meant to replace TypeSpec
@@ -80,116 +77,81 @@ divergences that matter here, each confirmed against the code:
   build-time only (no runtime, server, or LLM dependency), and there is
   genuinely no PHP back-end.
 
-Recording the gap is itself useful: the README understates rather than
-overstates, so the integration surface is larger than the README implies
-(an MCP seam and a Rust-first front end both help), while the two
-constraints this plan depends on hold firm.
+---
+
+## 2. Why direction A
+
+Both projects are built on "one Rust core, exposed as native extensions
+per language." The difference is who writes the binding layer: atilla
+hand-writes it (`bindings/php` via ext-php-rs, `crates/atilla-napi` via
+napi-rs), and fluessig generates it from a schema. Direction A puts those
+together: atilla describes its façade surface once and fluessig emits the
+per-language bindings, so the ext-php-rs and napi glue stop being
+hand-maintained.
+
+The alternative, B (atilla as an agent driving a fluessig-described engine
+such as entl or disponent), is not the path chosen. It is recorded only so
+the decision is legible: B would need atilla's agent loop (M3) and tool
+plane (M6) plus an in-process bridge, since atilla has no MCP client by
+design. A is a build-time codegen relationship and can start against
+today's surface.
 
 ---
 
-## 2. The two projects share one shape
+## 3. Direction A: the concrete work
 
-Both atilla and fluessig are built on "one Rust core, exposed as native
-extensions per language." The difference is who writes the binding layer:
-atilla hand-writes it (`bindings/php` via ext-php-rs, `crates/atilla-napi`
-via napi-rs), and fluessig generates it from a schema. That overlap is the
-whole reason the two projects can meet, and it opens two genuinely
-different integrations. They are not the same project, and the intended
-one should be settled before any code is written (see section 6).
+On the fluessig side, the changes this needs:
 
----
+1. Add a PHP back-end. fluessig has `src/bindgen/{node,python,ruby}.rs`
+   and no `php.rs`. A new `src/bindgen/php.rs` (ext-php-rs templates), a
+   `php` language slug, and PHP type-map entries are the critical-path
+   change, because atilla is PHP-first.
+2. Cover atilla's op shapes. fluessig's op layer (`api.json`, the `Shape`
+   enum `ctor | unary | stream | manual`) is entity and data-model
+   centric. atilla's façade is behavioral: `version()` is a plain unary
+   call, `Session::open` returns an opaque handle (a `ctor`-shaped op),
+   and agent runs emit a streaming event union (a `stream`-shaped op).
+   Confirming, and where needed extending, the shape model and type map to
+   carry opaque handles and event-union streams is the main design risk
+   this direction has to retire.
 
-## 2a. Candidate A: fluessig generates atilla's bindings
+On the atilla side:
 
-Direction: fluessig serves atilla's build. atilla stops hand-writing
-ext-php-rs and napi glue and instead describes its façade surface, and
-fluessig emits the per-language bindings. With the front end going
-Rust-first, that description is itself a set of Rust derives rather than a
-TypeSpec file, which sits naturally beside atilla's Rust core.
-
-What has to happen on the fluessig side:
-
-- Add a PHP back-end `src/bindgen/php.rs` (ext-php-rs templates) plus a
-  `php` language slug and type-map entries. This does not exist today, and
-  atilla is PHP-first, so it is on the critical path for this direction.
-- Confirm the op model fits. fluessig is entity and data-model centric
-  (`@entity`, `@key`, `@edge`, Arrow data plane, SQL DDL). atilla's façade
-  is a behavioral agent API. Only fluessig's op layer (`api.json`, the
-  `Shape` enum) is relevant, not the entity or SQL projections. Whether
-  atilla's streaming-event agent surface lowers cleanly onto
-  `ctor | unary | stream | manual` is the open design risk, and the
-  front-end pivot does not change it.
-
-What this needs from atilla: a real surface worth generating. `version()`
-alone is a toy. This direction only pays off once there is `Session::open`
-(M1) and ideally the agent loop (M3), so the generated bindings cover
-something real.
+1. Provide a describable surface. Today the façade is only
+   `atilla_core::version()`; `Session::open` and the agent loop are not
+   built yet, so the surface fluessig would generate from grows with
+   atilla's milestones (section 4).
+2. Choose the source of truth. Because fluessig's front end is going
+   Rust-first, the natural model is to annotate the façade types in
+   `atilla-core` with fluessig derives, or to keep a small schema crate
+   that describes them. Either couples atilla to a pinned fluessig ref;
+   pick deliberately.
+3. Retire the hand-written bindings as generation takes over. `bindings/php`
+   and `crates/atilla-napi` become generated output. The napi binding is
+   also atilla's conformance harness (it fronts pi's test suite), so a
+   generated napi surface must stay a drop-in that keeps pi's tests
+   passing; the swap cannot regress conformance.
 
 ---
 
-## 2b. Candidate B: atilla as an agent over a fluessig-described engine
+## 4. Milestone gate and a sequencing that de-risks A
 
-Direction: atilla serves fluessig's consumers. A fluessig-described engine
-(such as entl or disponent) gains an agentic capability by letting an
-atilla agent drive its ops.
+The link itself is buildable today, and the payoff grows with atilla's
+façade:
 
-The important constraint: atilla, mirroring pi, has **no MCP by design**.
-So the natural-looking bridge (atilla speaks to fluessig's generated MCP
-server) does not exist, because atilla has no MCP client. The real bridge
-is in-process: an atilla extension (a Rust `Tool` in atilla's registry)
-that calls fluessig's generated `dispatch()` or trait impls directly.
+| Step | atilla surface | fluessig work | Gated at |
+| --- | --- | --- | --- |
+| Regenerate today's `Atilla::version()` from a schema, byte-comparable to the hand-written binding | `atilla_core::version()` | `src/bindgen/php.rs` MVP | M0 (today) |
+| First non-trivial generated binding | `Session::open(path)` -> messages plus stats | handle plus struct lowering | M1 |
+| Generate over the agent surface | agent loop, event stream | stream-shape lowering | M3 |
+| Replace the hand-written napi harness with generated napi | napi conformance surface | node back-end parity | M7 |
 
-What this needs from atilla: the agent loop (M3) plus the extension and
-tool plane (M6) to register such a `Tool`. `version()` and M1 are not
-enough on their own.
-
-What this needs from fluessig: little structurally. The generated
-`dispatch()` already exists; a non-MCP entrypoint may be convenient. This
-agent runs inside a consumer engine (entl or disponent), not inside
-fluessig core, because fluessig has no runtime.
-
----
-
-## 3. The minimal path, and what gates it
-
-Because fluessig core is Rust and atilla-core is Rust, the smallest real
-link is a direct Cargo dependency with no FFI:
-
-1. Add `atilla-core = { git = "https://github.com/zmaril/atilla" }` to a
-   fluessig crate's `Cargo.toml`.
-2. Call `atilla::version()` and surface it. This is a handshake that
-   proves the two builds link. It works **today** against M0.
-
-Everything past the handshake needs more of atilla's façade and a process
-to run it in:
-
-| Capability fluessig would call | atilla surface needed | Milestone |
-| --- | --- | --- |
-| Version handshake | `atilla_core::version()` | M0 (merged) |
-| Read a pi session file | `Session::open(path)` -> messages plus stats | M1 |
-| Run an agent (faux provider) | agent loop plus tool execution | M3 |
-| Run an agent (real provider) | Anthropic Messages provider | M5 |
-| Register atilla tools over an engine | extension and tool plane | M6 |
-
-The gating milestone depends on the target: a handshake is M0, reading
-sessions is M1, and any actual **agent run** is gated on **M3** (faux
-provider and agent loop), with live runs against a real model at **M5**.
-
----
-
-## 4. fluessig-side changes needed regardless of direction
-
-- Decide where the capability lives. fluessig itself is build-time only,
-  with no runtime and no async. An agent run cannot execute "inside
-  fluessig"; it runs inside a fluessig **consumer** engine (entl or
-  disponent) that has a process and a tokio runtime. atilla's own note is
-  that a tokio runtime must be created lazily, per process, after any
-  fork.
-- Add the dependency edge. Either a Cargo dep on `atilla-core` (Candidate
-  B and the handshake) or a new bindgen back-end (Candidate A).
-- For Candidate A only: add `src/bindgen/php.rs`, a `php` language slug,
-  and type-map entries; then author atilla's façade surface as fluessig
-  derives (the front end is going Rust-first).
+Recommended first move, doable now: build the PHP back-end far enough to
+regenerate the existing M0 `Atilla::version()` binding and diff it against
+the hand-written one. That proves the whole direction end-to-end against a
+trivial surface before atilla's API grows, and it is the concrete answer
+to "what needs to happen with fluessig to enable atilla": a `php.rs` back
+end is step one.
 
 ---
 
@@ -201,23 +163,24 @@ exists only as an M1 placeholder marker in `bindings/php/src/lib.rs`; the
 mirror crates (`atilla-agent`, `atilla-ai`, `atilla-coding`) are empty
 scaffolds.
 
-So any integration beyond a version handshake is blocked on atilla
+So any generated binding beyond a version call is blocked on atilla
 roadmap work, not on fluessig. The dependency list is short and
-milestone-shaped: M1 for sessions, M3 for agent runs, M6 for a tool plane.
+milestone-shaped: M1 for sessions, M3 for the agent surface, M7 for the
+napi harness swap.
 
 ---
 
-## 6. Open questions for the user
+## 6. Open questions now that A is chosen
 
-1. Which direction is intended: Candidate A (fluessig generates atilla's
-   bindings) or Candidate B (atilla is an agent over a fluessig-described
-   engine)? They are different projects with different critical paths.
-2. Is the target really fluessig, or a consumer engine (entl or
-   disponent)? fluessig has no runtime, so an agent run has to live in a
-   consumer engine.
-3. If Candidate A: is adding a PHP bindgen back-end to fluessig in scope?
-   With the front end going Rust-first, atilla's surface would be authored
-   as fluessig derives rather than TypeSpec, but the open risk is still
-   whether atilla's behavioral façade fits fluessig's entity and op model.
-4. atilla has no MCP by design, but fluessig's agent seam is its MCP
-   generator. Confirm the intended bridge is in-process Rust, not MCP.
+1. Source of truth: does atilla describe its façade with fluessig derives
+   inside `atilla-core`, or in a separate schema crate? The first is
+   tighter but couples the core to a fluessig ref.
+2. Op-model fit: can fluessig's `ctor | unary | stream | manual` shapes
+   and type map carry atilla's opaque session handles and streaming event
+   unions as they stand, or does the op model need extending first? This
+   is the key design risk.
+3. Ownership: the PHP back-end lives in the fluessig repo. Does atilla
+   drive that work upstream in fluessig, and on whose milestone?
+4. Harness swap: `atilla-napi` is the conformance harness. At which
+   milestone does generated napi replace the hand-written harness without
+   regressing pi's test suite, before or after M7?
