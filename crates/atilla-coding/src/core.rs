@@ -30,6 +30,7 @@ pub mod resolve_config_value;
 pub mod resource_loader;
 pub mod session_cwd;
 pub mod session_manager;
+pub mod settings_manager;
 pub mod skills;
 pub mod slash_commands;
 pub mod source_info;
