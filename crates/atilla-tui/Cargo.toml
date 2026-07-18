@@ -8,9 +8,20 @@ repository.workspace = true
 
 [dependencies]
 unicode-segmentation = "1.12"
-# crossterm is used strictly as the ANSI output sink / event backend for the
-# real terminal (CrosstermTerminal); all diff/layout logic is our own port.
+# crossterm is used strictly as the OS backend for the real terminal
+# (CrosstermTerminal / ProcessTerminal): raw mode, terminal size, event source.
+# All key decoding stays in keys.rs; all diff/layout logic is our own port.
 crossterm = "0.29"
+
+# macOS-only: replaces pi's darwin-modifiers.c native addon. Used to poll live
+# modifier flags for the Apple Terminal Shift+Enter path (see terminal/modifiers.rs).
+[target.'cfg(target_os = "macos")'.dependencies]
+core-graphics = "0.25"
+
+# Windows-only: replaces pi's win32-console-mode.c native addon. Used to set
+# ENABLE_VIRTUAL_TERMINAL_INPUT on the stdin console (see terminal/console_mode.rs).
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Console"] }
 
 [dev-dependencies]
 serde = { version = "1", features = ["derive"] }
