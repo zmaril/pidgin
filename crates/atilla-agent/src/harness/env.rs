@@ -32,6 +32,10 @@ use std::error::Error;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
+mod nodejs;
+
+pub use nodejs::NodeExecutionEnv;
+
 // ---------------------------------------------------------------------------
 // Result monad helpers (`types.ts:5-38`)
 // ---------------------------------------------------------------------------
