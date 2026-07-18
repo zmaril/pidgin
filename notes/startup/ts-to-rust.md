@@ -12,7 +12,7 @@
 
 ## Decision (2026-07-18)
 
-Correction (later the same day): the "no napi bridge" consequence below is superseded. The project now builds napi-rs shim packages that present pi's exact module surface and runs pi's own unit suites against them — see notes/startup/testing-strategy.md and the repo-root design.md. The idiomatic-first, big-bang, no-strangler-fig decision itself stands.
+Correction (later the same day): the "no napi bridge" consequence below is superseded. The project now builds napi-rs shim packages that present pi's exact module surface and runs pi's own unit suites against them — see notes/startup/testing-strategy.md and the design doc (`notes/design.md`). The idiomatic-first, big-bang, no-strangler-fig decision itself stands.
 
 The project owner has chosen: **idiomatic-first, big-bang, no strangler-fig.** A rewrite that fails a ported test fails honestly; a test that passes does so because the behavior genuinely works in Rust, not because a Node shim made it pass. This supersedes the napi-rs strangler-fig fallback below — that fallback is recorded for completeness but is not the chosen path.
 

@@ -1,6 +1,6 @@
 # notes/startup
 
-The July 2026 research and planning phase, one file per workstream. These are the source material for the repo-root `design.md`, which is authoritative where they disagree.
+The July 2026 research and planning phase, one file per workstream. These are the source material for `../design.md`, which is authoritative where they disagree.
 
 - `PLAN.md` — the original end-to-end plan: goals, workspace layout, binding architecture, conformance, upstream tracking, and milestones.
 - `porting-map.md` — inventory of pi at pinned commit `3da591ab`: per-package LOC, the dependency DAG, recommended porting order, and the porting ledger.
