@@ -252,7 +252,7 @@ fn grapheme_width(segment: &str) -> i64 {
     // base. pi iterates `segment.slice(1)` (drop the first UTF-16 code unit); we
     // drop the first char. When the first char is astral, pi additionally visits
     // a lone low surrogate that contributes 0, so the totals match.
-    if segment.chars().count() > 1 || segment.encode_utf16().count() > 1 {
+    if segment.encode_utf16().count() > 1 {
         for c in segment.chars().skip(1) {
             let c = c as u32;
             if (0xff00..=0xffef).contains(&c) {
@@ -594,11 +594,6 @@ impl AnsiCodeTracker {
         // SGR reset does not affect OSC 8 hyperlink state.
     }
 
-    fn clear(&mut self) {
-        self.reset();
-        self.active_hyperlink = None;
-    }
-
     fn get_active_codes(&self) -> String {
         let mut codes: Vec<String> = Vec::new();
         if self.bold {
@@ -863,11 +858,10 @@ fn wrap_single_line(line: &str, width: usize) -> Vec<String> {
                 line_to_wrap.push_str(&line_end_reset);
             }
             wrapped.push(line_to_wrap);
+            current_line = tracker.get_active_codes();
             if is_whitespace {
-                current_line = tracker.get_active_codes();
                 current_visible_length = 0;
             } else {
-                current_line = tracker.get_active_codes();
                 current_line.push_str(&token);
                 current_visible_length = token_visible_length;
             }
@@ -1319,7 +1313,6 @@ pub fn extract_segments(
     let after_end = after_start + after_len;
 
     let mut tracker = AnsiCodeTracker::new();
-    tracker.clear();
 
     while i < line.len() {
         if let Some((code, len)) = extract_ansi_code(line, i) {

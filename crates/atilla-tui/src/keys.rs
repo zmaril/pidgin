@@ -1072,7 +1072,7 @@ fn matches_printable_key(data: &str, key: &str, modifier: i64, kitty: bool) -> b
         }
     }
 
-    if modifier == MOD_ALT && !kitty && (is_letter || is_digit || is_symbol) {
+    if modifier == MOD_ALT && !kitty {
         let mut expected = String::from('\x1b');
         expected.push(key_char);
         if data == expected {
@@ -1188,11 +1188,10 @@ fn format_parsed_key(
         Some("left".to_string())
     } else if effective_codepoint == ARROW_RIGHT {
         Some("right".to_string())
-    } else if (48..=57).contains(&effective_codepoint) {
-        from_char_code(effective_codepoint).map(|c| c.to_string())
-    } else if (97..=122).contains(&effective_codepoint) {
-        from_char_code(effective_codepoint).map(|c| c.to_string())
-    } else if is_symbol_codepoint(effective_codepoint) {
+    } else if (48..=57).contains(&effective_codepoint)
+        || (97..=122).contains(&effective_codepoint)
+        || is_symbol_codepoint(effective_codepoint)
+    {
         from_char_code(effective_codepoint).map(|c| c.to_string())
     } else {
         None
@@ -1348,7 +1347,7 @@ pub fn parse_key(data: &str) -> Option<String> {
 // Event-type detection (substring scans, protocol-state independent)
 // =============================================================================
 
-/// Whether the input encodes a Kitty key-release event (flag 2). Mirrors pi.
+/// Whether the input encodes a Kitty key-release event (flag 3). Mirrors pi.
 pub fn is_key_release(data: &str) -> bool {
     // Never treat bracketed-paste content as a release event.
     if data.contains("\x1b[200~") {
