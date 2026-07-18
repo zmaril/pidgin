@@ -13,15 +13,19 @@
 #      later, once a trusted baseline exists. Hence continue-on-error on the
 #      pi-setup and test-run steps.
 #
-# Smoke-subset choice (per-PR): we run only `agent` and `tui`. Both are fully
-# green today and fast (~4s / ~13s). Running just these two still needs the full
-# monorepo `npm install` (canvas builds against system libs) because pi is a
-# workspace, but it avoids coding-agent's flaky sandbox-sensitive suite
-# (extensions discovery/runner, fswatch, stdout cleanliness) and ai's heavy
-# provider-key-gated skips. The full five-package suite runs on the weekly cron
-# with --setup, not on every PR. agent+tui do not import canvas themselves, but
-# the shared workspace install does, so we install the canvas system libs and
-# let the setup step continue-on-error rather than trying to prune the install.
+# Smoke-subset choice (per-PR): we run `agent`, `ai`, and `tui`. agent and tui
+# are fully green and fast (~4s / ~11s); ai runs offline in ~35s (562 pass /
+# 24 fail / 708 provider-key-gated skips) and is included so the native flips
+# landing in packages/ai — starting with the Anthropic SSE parser — are actually
+# exercised and show up in the sticky comment's per-package native count. The
+# run needs the full monorepo `npm install` (canvas builds against system libs)
+# plus the generated ai model-catalog (`npm run generate-models`); both are done
+# by `scripts/conformance.sh --setup`. We still skip coding-agent's flaky
+# sandbox-sensitive suite (extensions discovery/runner, fswatch, stdout
+# cleanliness). The full five-package suite runs on the weekly cron with
+# --setup, not on every PR. agent/tui do not import canvas themselves, but the
+# shared workspace install does, so we install the canvas system libs and let
+# the setup step continue-on-error rather than trying to prune the install.
 
 name: conformance
 
@@ -66,9 +70,10 @@ jobs:
 
       # --- conformance smoke (NON-gating) --------------------------------
       # System libs for canvas (a packages/ai devDependency pulled in by the
-      # workspace install). Ubuntu runner, so apt is available.
+      # workspace install). The ai smoke package builds canvas, so these must be
+      # present before the setup step's npm install. Ubuntu runner, apt available.
       - name: Install canvas system libs
-        run: sudo apt-get update && sudo apt-get install -y libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+        run: sudo apt-get update && sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
         continue-on-error: true
 
       # Snapshot the committed baseline before the run overwrites conformance.json,
@@ -77,12 +82,12 @@ jobs:
         if: github.event_name == 'pull_request'
         run: cp conformance.json "$RUNNER_TEMP/conformance-baseline.json"
 
-      - name: Conformance smoke (agent + tui)
-        run: CONFORMANCE_PACKAGES="agent tui" scripts/conformance.sh --setup
+      - name: Conformance smoke (agent + ai + tui)
+        run: CONFORMANCE_PACKAGES="agent ai tui" scripts/conformance.sh --setup
         continue-on-error: true
 
-      # Render the sticky-comment body: fresh agent+tui totals plus the passing/
-      # failing delta versus the committed baseline snapshot taken above.
+      # Render the sticky-comment body: fresh agent+ai+tui totals plus the
+      # passing/failing delta versus the committed baseline snapshot taken above.
       - name: Build conformance PR comment
         if: always() && github.event_name == 'pull_request'
         run: node conformance/pr-comment.mjs conformance.json "$RUNNER_TEMP/conformance-baseline.json" > "$RUNNER_TEMP/conformance-comment.md"
