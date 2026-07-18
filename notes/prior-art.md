@@ -27,7 +27,7 @@ No fork of upstream diverged into Rust — every port below is a **standalone re
 - **Notable engineering choices** (things to learn from):
   - Rolls its **own async runtime** `asupersync` (replaces Node's event loop) and its **own TUI lib** `rich_rust`/`charmed_rust` (a Rust port of Python Rich) instead of reusing ecosystem crates. This is a *lot* of surface area to own — a caution as much as a model.
   - **TS/JS pi extensions run unchanged in embedded QuickJS** with Node-API shims — no Node/Bun required. Claims 224/224 pi extensions pass a conformance suite. This is the single most important design idea if we want extension compatibility.
-- **Caveat:** the "MIT + Rider" license is non-standard (crates.io lists it as `non-standard`) — **not safe to vendor** without legal review. Read it, don't copy it. Early skeptical HN reception noted a very-early version was largely AI-generated and buggy; the current version is far more built-out.
+- **Caveat:** the "MIT + Rider" license is non-standard (crates.io lists it as `non-standard`) — **not safe to vendor** without legal review. Read it, don't copy it. Early skeptical HN reception noted an early-stage version was largely AI-generated and buggy; the current version is far more built-out.
 
 ### Tier 2 — real multi-crate ports, smaller / partial
 
@@ -79,7 +79,7 @@ Also: `64bit/async-openai` (MIT, gold-standard OpenAI adapter reference); `bosun
 **Reuse:**
 - Study `codex-rs` for the agent-core architecture and take its sandbox crate for the exec tool.
 - Use `rust-genai` for the provider layer, `ratatui`+`crossterm` for the TUI — do **not** hand-roll a Rich port the way `pi_agent_rust` did (`asupersync`/`rich_rust` is a huge maintenance surface it chose to own).
-- Read `pi_agent_rust` and `c4pt0r/pie` closely as the two most complete same-target ports — but treat `pi_agent_rust`'s "MIT + Rider" license as non-vendorable until reviewed.
+- Read `pi_agent_rust` and `c4pt0r/pie` closely as the two most mature same-target ports — but treat `pi_agent_rust`'s "MIT + Rider" license as non-vendorable until reviewed.
 - Because our goal is a *continually-updating Rust mirror that tracks upstream pi* (not a one-shot rewrite), ports structured to track a specific upstream version are the most relevant prior art — `c4pt0r/pie` and `nktkt/pi` both explicitly reference tracking pinned upstream versions, which favors an architecture with a thin, mechanically-regenerable provider/tool layer over a hand-crafted divergent fork.
 
 **Decide early — extension compatibility.** The ports split three ways: embedded QuickJS (keep TS extensions, `pi_agent_rust`), Bun sidecar (`metaphorics`), or native scripting/no-TS (Rhai/Lua). This is the load-bearing architectural choice and it's where the ports most disagree.
