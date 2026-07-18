@@ -14,8 +14,30 @@
 //! * [`CrosstermTerminal`] — a real backend that emits to any [`std::io::Write`]
 //!   using crossterm for cursor visibility and bracketed paste. crossterm is
 //!   kept strictly as the output/event backend.
+//! * [`ProcessTerminal`] — a full port of pi's real terminal: raw-mode
+//!   enter/leave, bracketed paste, Kitty-keyboard-protocol negotiation with
+//!   `modifyOtherKeys` fallback, and the stdin event pipeline that splits raw
+//!   input into key/paste events for [`crate::keys`]. It replaces pi's two C
+//!   addons with cfg-gated Rust ([`is_native_modifier_pressed`],
+//!   [`enable_virtual_terminal_input`]). See the `process` submodule.
 
 use std::io::Write;
+
+mod console_mode;
+mod modifiers;
+mod negotiation;
+mod process;
+mod stdin_buffer;
+
+pub use console_mode::enable_virtual_terminal_input;
+pub use modifiers::{is_native_modifier_pressed, ModifierKey};
+pub use negotiation::{
+    is_negotiation_sequence_prefix, normalize_apple_terminal_input, parse_negotiation_sequence,
+    NegotiationSequence, DESIRED_KITTY_KEYBOARD_PROTOCOL_FLAGS,
+    KEYBOARD_PROTOCOL_RESPONSE_FRAGMENT_TIMEOUT_MS, TERMINAL_PROGRESS_KEEPALIVE_MS,
+};
+pub use process::{ProcessTerminal, TerminalInput};
+pub use stdin_buffer::{StdinBuffer, StdinBufferOptions, StdinEvent};
 
 /// Minimal terminal interface the renderer drives. Mirrors the subset of pi's
 /// `Terminal` used by `doRender`: dimensions, `write`, cursor visibility, and

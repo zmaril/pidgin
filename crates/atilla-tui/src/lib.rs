@@ -27,7 +27,12 @@ pub use renderer::{
     delete_kitty_image, is_image_line, Component, Container, RenderError, SharedLines, Tui,
     CURSOR_MARKER,
 };
-pub use terminal::{CrosstermTerminal, LoggingTerminal, Terminal};
+pub use terminal::{
+    enable_virtual_terminal_input, is_native_modifier_pressed, is_negotiation_sequence_prefix,
+    normalize_apple_terminal_input, parse_negotiation_sequence, CrosstermTerminal, LoggingTerminal,
+    ModifierKey, NegotiationSequence, ProcessTerminal, StdinBuffer, StdinBufferOptions, StdinEvent,
+    Terminal, TerminalInput,
+};
 pub use width::{
     extract_ansi_code, extract_segments, normalize_terminal_output, slice_by_column,
     slice_with_width, truncate_to_width, visible_width, wrap_text_with_ansi, ExtractSegments,
