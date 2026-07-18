@@ -17,6 +17,13 @@ pub mod node;
 pub mod proxy;
 pub mod types;
 
+// Crate-root re-exports of the tool-facing boundary types, so downstream crates
+// (e.g. atilla-coding's tool wrappers) can reach them by the shorter path.
+pub use types::{
+    AgentTool, AgentToolCall, AgentToolExecute, AgentToolResult, AgentToolUpdateCallback,
+    PrepareArguments, ToolExecutionMode,
+};
+
 // Compaction subsystem public surface, mirroring the re-exports in
 // `packages/agent/src/index.ts` (lines ~6-27).
 pub use harness::compaction::{
