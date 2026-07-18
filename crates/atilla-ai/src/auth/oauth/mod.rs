@@ -28,4 +28,5 @@ pub mod radius;
 pub mod xai;
 
 pub use bridge::{oauth_flow_for, OAuthFlowMode};
+pub use device_code::{DeviceCodePollMachine, DevicePollInput, DevicePollStep};
 pub use flow::{run_flow, run_login, run_refresh, OAuthFlowMachine, Step, StepInput};
