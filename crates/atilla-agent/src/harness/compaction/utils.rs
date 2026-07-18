@@ -1,3 +1,4 @@
+// straitjacket-allow-file:duplication — faithful-mirror pair with crates/atilla-coding/src/core/compaction (coding-agent copy); parallel structure is intentional
 //! File-operation accumulation and conversation serialization, mirroring
 //! `packages/agent/src/harness/compaction/utils.ts`.
 //!
