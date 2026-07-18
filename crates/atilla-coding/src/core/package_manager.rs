@@ -30,6 +30,8 @@
 //! which owns the filesystem seam; the machines remain pure command planners.
 
 use atilla_ai::seams::subprocess::{CommandOutput, CommandRequest};
+use serde::Serialize;
+use serde_json::{json, Value};
 use std::path::PathBuf;
 
 use crate::core::command_flow::{CommandFlowMachine, CommandStep, OneShotCommand};
@@ -308,7 +310,7 @@ pub fn git_dependency_install(cfg: &PackageManagerConfig, target_dir: &str) -> O
 ///
 /// For bun, pi runs `pm bin -g` then derives
 /// `dirname(binDir)/install/global/node_modules`; every other manager runs
-/// `root -g` and trims. The [`CommandFlowMachine::Output`] is the computed root.
+/// `root -g` and trims. `Done` carries the computed root as a JSON string.
 #[derive(Debug, Clone)]
 pub struct GlobalNpmRootMachine {
     request: Option<CommandRequest>,
@@ -332,18 +334,14 @@ impl GlobalNpmRootMachine {
 }
 
 impl CommandFlowMachine for GlobalNpmRootMachine {
-    type Output = String;
-
-    fn start(&mut self) -> CommandStep<String> {
+    fn start(&mut self) -> CommandStep {
         match self.request.take() {
             Some(request) => CommandStep::Run { request },
-            None => CommandStep::Done {
-                result: String::new(),
-            },
+            None => CommandStep::Done { result: json!("") },
         }
     }
 
-    fn advance(&mut self, output: CommandOutput) -> CommandStep<String> {
+    fn advance(&mut self, output: CommandOutput) -> CommandStep {
         let trimmed = output.stdout.trim();
         let result = if self.is_bun {
             let bin_dir = PathBuf::from(trimmed);
@@ -355,7 +353,9 @@ impl CommandFlowMachine for GlobalNpmRootMachine {
         } else {
             trimmed.to_string()
         };
-        CommandStep::Done { result }
+        CommandStep::Done {
+            result: json!(result),
+        }
     }
 }
 
@@ -380,18 +380,20 @@ impl PnpmGlobalListMachine {
 }
 
 impl CommandFlowMachine for PnpmGlobalListMachine {
-    type Output = Option<String>;
-
-    fn start(&mut self) -> CommandStep<Option<String>> {
+    fn start(&mut self) -> CommandStep {
         match self.request.take() {
             Some(request) => CommandStep::Run { request },
-            None => CommandStep::Done { result: None },
+            None => CommandStep::Done {
+                result: Value::Null,
+            },
         }
     }
 
-    fn advance(&mut self, output: CommandOutput) -> CommandStep<Option<String>> {
+    fn advance(&mut self, output: CommandOutput) -> CommandStep {
         let result = parse_pnpm_global_path(&output.stdout, &self.package_name);
-        CommandStep::Done { result }
+        CommandStep::Done {
+            result: json!(result),
+        }
     }
 }
 
@@ -486,12 +488,10 @@ impl NpmUpdateMachine {
     }
 }
 
+// `Done` carries `true` when an install command was planned, `false` for the
+// up-to-date no-op.
 impl CommandFlowMachine for NpmUpdateMachine {
-    /// `true` when an install command was planned, `false` for the up-to-date
-    /// no-op.
-    type Output = bool;
-
-    fn start(&mut self) -> CommandStep<bool> {
+    fn start(&mut self) -> CommandStep {
         // No installed version: pi's shouldUpdateNpmSource returns true without a
         // probe, and the batch installs directly.
         if self.installed_version.is_none() {
@@ -506,7 +506,7 @@ impl CommandFlowMachine for NpmUpdateMachine {
         }
     }
 
-    fn advance(&mut self, output: CommandOutput) -> CommandStep<bool> {
+    fn advance(&mut self, output: CommandOutput) -> CommandStep {
         match self.phase {
             UpdatePhase::AwaitView => {
                 let installed = self.installed_version.clone().unwrap_or_default();
@@ -527,14 +527,20 @@ impl CommandFlowMachine for NpmUpdateMachine {
                     }
                 } else {
                     self.phase = UpdatePhase::Done;
-                    CommandStep::Done { result: false }
+                    CommandStep::Done {
+                        result: json!(false),
+                    }
                 }
             }
             UpdatePhase::AwaitInstall => {
                 self.phase = UpdatePhase::Done;
-                CommandStep::Done { result: true }
+                CommandStep::Done {
+                    result: json!(true),
+                }
             }
-            UpdatePhase::Start | UpdatePhase::Done => CommandStep::Done { result: false },
+            UpdatePhase::Start | UpdatePhase::Done => CommandStep::Done {
+                result: json!(false),
+            },
         }
     }
 }
@@ -650,16 +656,14 @@ impl GitEnsureRefMachine {
 }
 
 impl CommandFlowMachine for GitEnsureRefMachine {
-    type Output = ();
-
-    fn start(&mut self) -> CommandStep<()> {
+    fn start(&mut self) -> CommandStep {
         self.phase = EnsurePhase::AwaitFetch;
         CommandStep::Run {
             request: git_run(self.fetch_args.clone(), &self.target_dir),
         }
     }
 
-    fn advance(&mut self, output: CommandOutput) -> CommandStep<()> {
+    fn advance(&mut self, output: CommandOutput) -> CommandStep {
         match self.phase {
             EnsurePhase::AwaitFetch => {
                 self.phase = EnsurePhase::AwaitLocalHead;
@@ -681,7 +685,9 @@ impl CommandFlowMachine for GitEnsureRefMachine {
                 let target_head = output.stdout.trim();
                 if self.local_head == target_head {
                     self.phase = EnsurePhase::Done;
-                    return CommandStep::Done { result: () };
+                    return CommandStep::Done {
+                        result: Value::Null,
+                    };
                 }
                 self.phase = EnsurePhase::AwaitReset;
                 CommandStep::Run {
@@ -709,12 +715,16 @@ impl CommandFlowMachine for GitEnsureRefMachine {
                     }
                 } else {
                     self.phase = EnsurePhase::Done;
-                    CommandStep::Done { result: () }
+                    CommandStep::Done {
+                        result: Value::Null,
+                    }
                 }
             }
             EnsurePhase::AwaitInstall | EnsurePhase::Start | EnsurePhase::Done => {
                 self.phase = EnsurePhase::Done;
-                CommandStep::Done { result: () }
+                CommandStep::Done {
+                    result: Value::Null,
+                }
             }
         }
     }
@@ -764,7 +774,7 @@ impl GitCloneMachine {
         }
     }
 
-    fn install_or_done(&mut self) -> CommandStep<()> {
+    fn install_or_done(&mut self) -> CommandStep {
         if self.has_package_json {
             self.phase = ClonePhase::AwaitInstall;
             let sub_args = git_dependency_install_args(self.cfg.npm_configured());
@@ -775,15 +785,15 @@ impl GitCloneMachine {
             }
         } else {
             self.phase = ClonePhase::Done;
-            CommandStep::Done { result: () }
+            CommandStep::Done {
+                result: Value::Null,
+            }
         }
     }
 }
 
 impl CommandFlowMachine for GitCloneMachine {
-    type Output = ();
-
-    fn start(&mut self) -> CommandStep<()> {
+    fn start(&mut self) -> CommandStep {
         self.phase = ClonePhase::AwaitClone;
         CommandStep::Run {
             request: CommandRequest::new(
@@ -797,7 +807,7 @@ impl CommandFlowMachine for GitCloneMachine {
         }
     }
 
-    fn advance(&mut self, _output: CommandOutput) -> CommandStep<()> {
+    fn advance(&mut self, _output: CommandOutput) -> CommandStep {
         match self.phase {
             ClonePhase::AwaitClone => match self.ref_.clone() {
                 Some(ref_) => {
@@ -811,7 +821,9 @@ impl CommandFlowMachine for GitCloneMachine {
             ClonePhase::AwaitCheckout => self.install_or_done(),
             ClonePhase::AwaitInstall | ClonePhase::Start | ClonePhase::Done => {
                 self.phase = ClonePhase::Done;
-                CommandStep::Done { result: () }
+                CommandStep::Done {
+                    result: Value::Null,
+                }
             }
         }
     }
@@ -822,14 +834,17 @@ impl CommandFlowMachine for GitCloneMachine {
 // ---------------------------------------------------------------------------
 
 /// The resolved local git update target, mirroring pi's
-/// `getLocalGitUpdateTarget` return.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// `getLocalGitUpdateTarget` return `{ ref, head, fetchArgs }`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GitUpdateTarget {
-    /// The ref to reconcile to (`@{upstream}` or `origin/HEAD`).
+    /// The ref to reconcile to (`@{upstream}` or `origin/HEAD`). `ref` is a Rust
+    /// keyword, so the field is `ref_` but serializes to exactly `ref`.
+    #[serde(rename = "ref")]
     pub ref_: String,
     /// The resolved head commit of that ref.
     pub head: String,
-    /// The `git fetch` argv to fetch it.
+    /// The `git fetch` argv to fetch it (serializes to `fetchArgs`).
     pub fetch_args: Vec<String>,
 }
 
@@ -876,7 +891,7 @@ impl GitLocalUpdateTargetMachine {
         }
     }
 
-    fn enter_fallback(&mut self) -> CommandStep<GitUpdateTarget> {
+    fn enter_fallback(&mut self) -> CommandStep {
         self.phase = TargetPhase::AwaitSetHead;
         CommandStep::Run {
             request: git_run(
@@ -885,12 +900,16 @@ impl GitLocalUpdateTargetMachine {
             ),
         }
     }
+
+    fn done(&self, target: GitUpdateTarget) -> CommandStep {
+        CommandStep::Done {
+            result: serde_json::to_value(&target).expect("GitUpdateTarget serializes"),
+        }
+    }
 }
 
 impl CommandFlowMachine for GitLocalUpdateTargetMachine {
-    type Output = GitUpdateTarget;
-
-    fn start(&mut self) -> CommandStep<GitUpdateTarget> {
+    fn start(&mut self) -> CommandStep {
         self.phase = TargetPhase::AwaitUpstream;
         CommandStep::Run {
             request: git_capture(
@@ -900,7 +919,7 @@ impl CommandFlowMachine for GitLocalUpdateTargetMachine {
         }
     }
 
-    fn advance(&mut self, output: CommandOutput) -> CommandStep<GitUpdateTarget> {
+    fn advance(&mut self, output: CommandOutput) -> CommandStep {
         match self.phase {
             TargetPhase::AwaitUpstream => {
                 let trimmed = output.stdout.trim();
@@ -926,13 +945,11 @@ impl CommandFlowMachine for GitLocalUpdateTargetMachine {
             }
             TargetPhase::AwaitUpstreamHead => {
                 self.phase = TargetPhase::Done;
-                CommandStep::Done {
-                    result: GitUpdateTarget {
-                        ref_: "@{upstream}".to_string(),
-                        head: output.stdout.trim().to_string(),
-                        fetch_args: self.pending_fetch_args.clone(),
-                    },
-                }
+                self.done(GitUpdateTarget {
+                    ref_: "@{upstream}".to_string(),
+                    head: output.stdout.trim().to_string(),
+                    fetch_args: self.pending_fetch_args.clone(),
+                })
             }
             TargetPhase::AwaitSetHead => {
                 // set-head failure is ignored (pi's `.catch(() => {})`).
@@ -975,21 +992,17 @@ impl CommandFlowMachine for GitLocalUpdateTargetMachine {
                     ])
                 };
                 self.phase = TargetPhase::Done;
-                CommandStep::Done {
-                    result: GitUpdateTarget {
-                        ref_: "origin/HEAD".to_string(),
-                        head: self.head.clone(),
-                        fetch_args,
-                    },
-                }
-            }
-            TargetPhase::Start | TargetPhase::Done => CommandStep::Done {
-                result: GitUpdateTarget {
+                self.done(GitUpdateTarget {
                     ref_: "origin/HEAD".to_string(),
                     head: self.head.clone(),
-                    fetch_args: Vec::new(),
-                },
-            },
+                    fetch_args,
+                })
+            }
+            TargetPhase::Start | TargetPhase::Done => self.done(GitUpdateTarget {
+                ref_: "origin/HEAD".to_string(),
+                head: self.head.clone(),
+                fetch_args: Vec::new(),
+            }),
         }
     }
 }
@@ -999,7 +1012,12 @@ impl CommandFlowMachine for GitLocalUpdateTargetMachine {
 // ---------------------------------------------------------------------------
 
 /// The outcome of resolving a remote git head.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// pi's `getRemoteGitHead` resolves to the SHA string or throws; the
+/// `#[serde(untagged)]` shape mirrors that across the napi boundary — `Head`
+/// serializes to the bare SHA string and `Failed` to `null`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(untagged)]
 pub enum RemoteHead {
     /// The resolved 40-char commit SHA.
     Head(String),
@@ -1045,7 +1063,7 @@ impl GitRemoteHeadMachine {
         }
     }
 
-    fn ls_remote_head(&mut self) -> CommandStep<RemoteHead> {
+    fn ls_remote_head(&mut self) -> CommandStep {
         self.phase = RemoteHeadPhase::AwaitHeadLsRemote;
         CommandStep::Run {
             request: git_remote(
@@ -1054,12 +1072,16 @@ impl GitRemoteHeadMachine {
             ),
         }
     }
+
+    fn done(head: RemoteHead) -> CommandStep {
+        CommandStep::Done {
+            result: json!(head),
+        }
+    }
 }
 
 impl CommandFlowMachine for GitRemoteHeadMachine {
-    type Output = RemoteHead;
-
-    fn start(&mut self) -> CommandStep<RemoteHead> {
+    fn start(&mut self) -> CommandStep {
         self.phase = RemoteHeadPhase::AwaitUpstream;
         CommandStep::Run {
             request: git_capture(
@@ -1069,7 +1091,7 @@ impl CommandFlowMachine for GitRemoteHeadMachine {
         }
     }
 
-    fn advance(&mut self, output: CommandOutput) -> CommandStep<RemoteHead> {
+    fn advance(&mut self, output: CommandOutput) -> CommandStep {
         match self.phase {
             RemoteHeadPhase::AwaitUpstream => {
                 // getGitUpstreamRef: only origin/<branch> yields a usable ref.
@@ -1099,16 +1121,12 @@ impl CommandFlowMachine for GitRemoteHeadMachine {
             RemoteHeadPhase::AwaitUpstreamLsRemote => {
                 if !output.success() {
                     self.phase = RemoteHeadPhase::Done;
-                    return CommandStep::Done {
-                        result: RemoteHead::Failed,
-                    };
+                    return Self::done(RemoteHead::Failed);
                 }
                 match first_sha(&output.stdout) {
                     Some(sha) => {
                         self.phase = RemoteHeadPhase::Done;
-                        CommandStep::Done {
-                            result: RemoteHead::Head(sha),
-                        }
+                        Self::done(RemoteHead::Head(sha))
                     }
                     None => self.ls_remote_head(),
                 }
@@ -1123,11 +1141,9 @@ impl CommandFlowMachine for GitRemoteHeadMachine {
                         None => RemoteHead::Failed,
                     }
                 };
-                CommandStep::Done { result }
+                Self::done(result)
             }
-            RemoteHeadPhase::Start | RemoteHeadPhase::Done => CommandStep::Done {
-                result: RemoteHead::Failed,
-            },
+            RemoteHeadPhase::Start | RemoteHeadPhase::Done => Self::done(RemoteHead::Failed),
         }
     }
 }
@@ -1164,53 +1180,58 @@ impl GitHasUpdateMachine {
 }
 
 impl CommandFlowMachine for GitHasUpdateMachine {
-    type Output = bool;
-
-    fn start(&mut self) -> CommandStep<bool> {
+    fn start(&mut self) -> CommandStep {
         self.phase = HasUpdatePhase::AwaitLocalHead;
         CommandStep::Run {
             request: git_capture(strings(&["rev-parse", "HEAD"]), &self.installed_path),
         }
     }
 
-    fn advance(&mut self, output: CommandOutput) -> CommandStep<bool> {
+    fn advance(&mut self, output: CommandOutput) -> CommandStep {
         match self.phase {
             HasUpdatePhase::AwaitLocalHead => {
                 if !output.success() {
                     self.phase = HasUpdatePhase::Done;
-                    return CommandStep::Done { result: false };
+                    return CommandStep::Done {
+                        result: json!(false),
+                    };
                 }
                 self.local_head = output.stdout.trim().to_string();
                 self.phase = HasUpdatePhase::InRemote;
-                match self.remote.start() {
-                    CommandStep::Run { request } => CommandStep::Run { request },
-                    CommandStep::Done { result } => {
-                        self.phase = HasUpdatePhase::Done;
-                        CommandStep::Done {
-                            result: self.compare(result),
-                        }
-                    }
-                }
+                let step = self.remote.start();
+                self.wrap_remote(step)
             }
-            HasUpdatePhase::InRemote => match self.remote.advance(output) {
-                CommandStep::Run { request } => CommandStep::Run { request },
-                CommandStep::Done { result } => {
-                    self.phase = HasUpdatePhase::Done;
-                    CommandStep::Done {
-                        result: self.compare(result),
-                    }
-                }
+            HasUpdatePhase::InRemote => {
+                let step = self.remote.advance(output);
+                self.wrap_remote(step)
+            }
+            HasUpdatePhase::Start | HasUpdatePhase::Done => CommandStep::Done {
+                result: json!(false),
             },
-            HasUpdatePhase::Start | HasUpdatePhase::Done => CommandStep::Done { result: false },
         }
     }
 }
 
 impl GitHasUpdateMachine {
-    fn compare(&self, remote: RemoteHead) -> bool {
-        match remote {
-            RemoteHead::Head(head) => self.local_head != head.trim(),
-            RemoteHead::Failed => false,
+    /// Forward the embedded remote-head machine's step, finishing with the
+    /// local-vs-remote comparison once the remote resolves.
+    fn wrap_remote(&mut self, step: CommandStep) -> CommandStep {
+        match step {
+            run @ CommandStep::Run { .. } => run,
+            CommandStep::Done { result } => {
+                self.phase = HasUpdatePhase::Done;
+                CommandStep::Done {
+                    result: json!(self.compare(result)),
+                }
+            }
+        }
+    }
+
+    fn compare(&self, remote: Value) -> bool {
+        // RemoteHead serializes untagged: a bare SHA string, or null on failure.
+        match remote.as_str() {
+            Some(head) => self.local_head != head.trim(),
+            None => false,
         }
     }
 }
@@ -1224,11 +1245,11 @@ mod tests {
     }
 
     /// Drive a machine to completion, returning every planned request in order
-    /// plus the final result. Each scripted output is fed in sequence.
+    /// plus the final serialized result. Each scripted output is fed in sequence.
     fn drive<M: CommandFlowMachine>(
         machine: &mut M,
         outputs: Vec<CommandOutput>,
-    ) -> (Vec<CommandRequest>, M::Output) {
+    ) -> (Vec<CommandRequest>, Value) {
         let mut requests = Vec::new();
         let mut outputs = outputs.into_iter();
         let mut step = machine.start();
@@ -1258,6 +1279,16 @@ mod tests {
         }
     }
 
+    /// Drive a fresh git clone (no ref, package.json present) for `cfg`, returning
+    /// the checkout dir and the planned requests. Shared by the git-clone argv
+    /// tests so the setup boilerplate is not duplicated.
+    fn drive_git_clone_fresh(cfg: &PackageManagerConfig) -> (String, Vec<CommandRequest>) {
+        let target = join_path("/tmp/proj/agent", &["git", "github.com", "user", "repo"]);
+        let mut machine = GitCloneMachine::new(cfg, "github.com/user/repo", &target, None, true);
+        let (requests, _) = drive(&mut machine, vec![ok(""), ok("")]);
+        (target, requests)
+    }
+
     // --- npm install argv parity (mirrors "should use npmCommand argv for npm
     // installs") ---
     #[test]
@@ -1268,7 +1299,7 @@ mod tests {
             Some(s(&["mise", "exec", "node@20", "--", "npm"])),
         );
         let mut machine = npm_install(&cfg, &s(&["@scope/pkg"]), InstallScope::User);
-        let (requests, ()) = drive(&mut machine, vec![ok("")]);
+        let (requests, _) = drive(&mut machine, vec![ok("")]);
         assert_eq!(requests.len(), 1);
         assert_eq!(
             requests[0],
@@ -1300,7 +1331,7 @@ mod tests {
             Some(s(&["mise", "exec", "bun@1", "--", "bun"])),
         );
         let mut machine = npm_install(&cfg, &s(&["@scope/pkg"]), InstallScope::User);
-        let (requests, ()) = drive(&mut machine, vec![ok("")]);
+        let (requests, _) = drive(&mut machine, vec![ok("")]);
         assert_eq!(
             requests[0],
             CommandRequest::new(
@@ -1326,7 +1357,7 @@ mod tests {
     fn npm_install_uses_pnpm_config_flags() {
         let cfg = PackageManagerConfig::new("/tmp/proj", "/tmp/proj/agent", Some(s(&["pnpm"])));
         let mut machine = npm_install(&cfg, &s(&["pnpm-pkg"]), InstallScope::User);
-        let (requests, ()) = drive(&mut machine, vec![ok("")]);
+        let (requests, _) = drive(&mut machine, vec![ok("")]);
         assert_eq!(
             requests[0],
             CommandRequest::new(
@@ -1350,7 +1381,7 @@ mod tests {
     fn npm_uninstall_adds_legacy_peer_deps() {
         let cfg = PackageManagerConfig::new("/tmp/proj", "/tmp/proj/agent", None);
         let mut machine = npm_uninstall(&cfg, "@scope/pkg", InstallScope::User);
-        let (requests, ()) = drive(&mut machine, vec![ok("")]);
+        let (requests, _) = drive(&mut machine, vec![ok("")]);
         assert_eq!(
             requests[0],
             CommandRequest::new(
@@ -1371,9 +1402,7 @@ mod tests {
     #[test]
     fn git_clone_then_omit_dev_install() {
         let cfg = PackageManagerConfig::new("/tmp/proj", "/tmp/proj/agent", None);
-        let target = join_path("/tmp/proj/agent", &["git", "github.com", "user", "repo"]);
-        let mut machine = GitCloneMachine::new(&cfg, "github.com/user/repo", &target, None, true);
-        let (requests, ()) = drive(&mut machine, vec![ok(""), ok("")]);
+        let (target, requests) = drive_git_clone_fresh(&cfg);
         assert_eq!(
             requests[0],
             CommandRequest::new("git", s(&["clone", "github.com/user/repo", &target])),
@@ -1389,9 +1418,7 @@ mod tests {
     #[test]
     fn git_clone_plain_install_when_configured() {
         let cfg = PackageManagerConfig::new("/tmp/proj", "/tmp/proj/agent", Some(s(&["pnpm"])));
-        let target = join_path("/tmp/proj/agent", &["git", "github.com", "user", "repo"]);
-        let mut machine = GitCloneMachine::new(&cfg, "github.com/user/repo", &target, None, true);
-        let (requests, ()) = drive(&mut machine, vec![ok(""), ok("")]);
+        let (target, requests) = drive_git_clone_fresh(&cfg);
         assert_eq!(
             requests[1],
             CommandRequest::new("pnpm", s(&["install"])).with_cwd(&target),
@@ -1413,7 +1440,7 @@ mod tests {
         );
         // fetch, rev-parse HEAD -> old, rev-parse FETCH_HEAD^{commit} -> new,
         // reset, clean, npm install.
-        let (requests, ()) = drive(
+        let (requests, _) = drive(
             &mut machine,
             vec![
                 ok(""),
@@ -1467,7 +1494,7 @@ mod tests {
             "FETCH_HEAD",
             true,
         );
-        let (requests, ()) = drive(&mut machine, vec![ok(""), ok("same"), ok("same")]);
+        let (requests, _) = drive(&mut machine, vec![ok(""), ok("same"), ok("same")]);
         // fetch + two rev-parse captures only; no reset/clean/install.
         assert_eq!(requests.len(), 3);
     }
@@ -1488,7 +1515,7 @@ mod tests {
         ]);
         let mut machine =
             GitEnsureRefMachine::new(&cfg, &target, fetch_args.clone(), "origin/HEAD", false);
-        let (requests, ()) = drive(
+        let (requests, _) = drive(
             &mut machine,
             vec![ok(""), ok("old-head"), ok("new-head"), ok(""), ok("")],
         );
@@ -1526,7 +1553,7 @@ mod tests {
             "@{upstream}",
             true,
         );
-        let (requests, ()) = drive(
+        let (requests, _) = drive(
             &mut machine,
             vec![
                 ok(""),
@@ -1560,7 +1587,7 @@ mod tests {
             requests[0],
             CommandRequest::new("mise", s(&["exec", "node@20", "--", "npm", "root", "-g"])),
         );
-        assert_eq!(result, root);
+        assert_eq!(result, json!(root));
     }
 
     // --- bun global root derives install/global/node_modules ---
@@ -1575,7 +1602,10 @@ mod tests {
         );
         assert_eq!(
             result,
-            join_path("/home/u/.bun", &["install", "global", "node_modules"])
+            json!(join_path(
+                "/home/u/.bun",
+                &["install", "global", "node_modules"]
+            ))
         );
     }
 
@@ -1598,7 +1628,7 @@ mod tests {
                 s(&["exec", "node@20", "--", "pnpm", "list", "-g", "--depth", "0", "--json"]),
             ),
         );
-        assert_eq!(result, Some("/root/nm/pnpm-pkg".to_string()));
+        assert_eq!(result, json!("/root/nm/pnpm-pkg"));
     }
 
     #[test]
@@ -1606,7 +1636,7 @@ mod tests {
         let cfg = PackageManagerConfig::new("/tmp/proj", "/tmp/proj/agent", Some(s(&["pnpm"])));
         let mut machine = PnpmGlobalListMachine::new(&cfg, "pnpm-pkg");
         let (_requests, result) = drive(&mut machine, vec![ok("not json")]);
-        assert_eq!(result, None);
+        assert_eq!(result, Value::Null);
     }
 
     // --- npm update: view then install (mirrors "should update npm range
@@ -1642,7 +1672,7 @@ mod tests {
                 ]),
             )
         );
-        assert!(updated);
+        assert_eq!(updated, json!(true));
     }
 
     // --- npm update up-to-date no-op (mirrors "should skip project npm update
@@ -1662,7 +1692,11 @@ mod tests {
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].program, "npm");
         assert_eq!(requests[0].args[0], "view");
-        assert!(!updated, "no install should be planned when up to date");
+        assert_eq!(
+            updated,
+            json!(false),
+            "no install should be planned when up to date"
+        );
     }
 
     // --- npm update: no installed version installs directly, no probe (mirrors
@@ -1694,7 +1728,7 @@ mod tests {
                 ]),
             )
         );
-        assert!(updated);
+        assert_eq!(updated, json!(true));
     }
 
     // --- batch update argv (mirrors "should batch npm updates per scope ...") ---
@@ -1706,7 +1740,7 @@ mod tests {
             &s(&["user-old@latest", "user-unknown@latest"]),
             InstallScope::User,
         );
-        let (requests, ()) = drive(&mut machine, vec![ok("")]);
+        let (requests, _) = drive(&mut machine, vec![ok("")]);
         assert_eq!(
             requests[0],
             CommandRequest::new(
@@ -1773,17 +1807,17 @@ mod tests {
         );
         assert_eq!(
             target,
-            GitUpdateTarget {
-                ref_: "@{upstream}".to_string(),
-                head: "remote-head".to_string(),
-                fetch_args: s(&[
+            json!({
+                "ref": "@{upstream}",
+                "head": "remote-head",
+                "fetchArgs": [
                     "fetch",
                     "--prune",
                     "--no-tags",
                     "origin",
                     "+refs/heads/main:refs/remotes/origin/main",
-                ]),
-            }
+                ],
+            })
         );
     }
 
@@ -1821,17 +1855,17 @@ mod tests {
         );
         assert_eq!(
             target,
-            GitUpdateTarget {
-                ref_: "origin/HEAD".to_string(),
-                head: "head-sha".to_string(),
-                fetch_args: s(&[
+            json!({
+                "ref": "origin/HEAD",
+                "head": "head-sha",
+                "fetchArgs": [
                     "fetch",
                     "--prune",
                     "--no-tags",
                     "origin",
                     "+refs/heads/trunk:refs/remotes/origin/trunk",
-                ]),
-            }
+                ],
+            })
         );
     }
 
@@ -1845,8 +1879,8 @@ mod tests {
             vec![ok("weird/remote"), ok(""), ok("head-sha"), fail()],
         );
         assert_eq!(
-            target.fetch_args,
-            s(&[
+            target["fetchArgs"],
+            json!([
                 "fetch",
                 "--prune",
                 "--no-tags",
@@ -1854,7 +1888,7 @@ mod tests {
                 "+HEAD:refs/remotes/origin/HEAD",
             ])
         );
-        assert_eq!(target.ref_, "origin/HEAD");
+        assert_eq!(target["ref"], "origin/HEAD");
     }
 
     // --- getRemoteGitHead upstream ls-remote chain ---
@@ -1873,7 +1907,7 @@ mod tests {
                 .with_env("GIT_TERMINAL_PROMPT", "0")
                 .with_timeout(NETWORK_TIMEOUT_MS),
         );
-        assert_eq!(result, RemoteHead::Head(sha.to_string()));
+        assert_eq!(result, json!(sha));
     }
 
     #[test]
@@ -1889,7 +1923,7 @@ mod tests {
                 .with_env("GIT_TERMINAL_PROMPT", "0")
                 .with_timeout(NETWORK_TIMEOUT_MS),
         );
-        assert_eq!(result, RemoteHead::Head(sha.to_string()));
+        assert_eq!(result, json!(sha));
     }
 
     // --- gitHasAvailableUpdate boolean ---
@@ -1911,7 +1945,7 @@ mod tests {
                 .with_cwd("/tmp/checkout")
                 .with_timeout(NETWORK_TIMEOUT_MS),
         );
-        assert!(has_update);
+        assert_eq!(has_update, json!(true));
     }
 
     #[test]
@@ -1919,7 +1953,7 @@ mod tests {
         let mut machine = GitHasUpdateMachine::new("/tmp/checkout");
         let (requests, has_update) = drive(&mut machine, vec![fail()]);
         assert_eq!(requests.len(), 1);
-        assert!(!has_update);
+        assert_eq!(has_update, json!(false));
     }
 
     // --- config helpers ---

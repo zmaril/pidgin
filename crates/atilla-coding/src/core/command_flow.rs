@@ -30,24 +30,29 @@
 //! upstream→ls-remote resolution) thread output back through `advance`.
 
 use atilla_ai::seams::subprocess::{CommandOutput, CommandRequest};
+use serde_json::Value;
 
 /// One step of a command flow: either a command the host must run, or the
 /// finished result.
 ///
-/// `Done` carries the machine's operation-specific output (`()` for one-shots
-/// that plan a command and nothing more).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum CommandStep<T> {
+/// `Done` carries the machine's operation-specific output erased to a
+/// [`serde_json::Value`] so a single object-safe `dyn CommandFlowMachine` can
+/// hold every operation and hand its result across the napi JSON boundary
+/// unchanged. One-shots that plan a command and nothing more finish with
+/// [`Value::Null`]; typed operations serialize their result into pi's return
+/// shape (see the machines in [`crate::core::package_manager`]).
+#[derive(Debug, Clone, PartialEq)]
+pub enum CommandStep {
     /// The host must run `request` and feed the [`CommandOutput`] back through
     /// [`CommandFlowMachine::advance`].
     Run {
         /// The command to execute.
         request: CommandRequest,
     },
-    /// The flow is complete; `result` is the operation's output.
+    /// The flow is complete; `result` is the operation's serialized output.
     Done {
-        /// The operation-specific result.
-        result: T,
+        /// The operation-specific result, serialized to pi's return shape.
+        result: Value,
     },
 }
 
@@ -57,15 +62,16 @@ pub enum CommandStep<T> {
 /// the first command, and each [`advance`](Self::advance) consumes one
 /// [`CommandOutput`] and plans the next command (or finishes). Once a machine
 /// returns [`CommandStep::Done`], further calls keep returning `Done`.
+///
+/// The result carried by [`CommandStep::Done`] is a [`serde_json::Value`], which
+/// keeps the trait object-safe: a single `Box<dyn CommandFlowMachine>` can hold
+/// any of pi's operations regardless of their native return type.
 pub trait CommandFlowMachine {
-    /// The operation-specific result produced when the flow finishes.
-    type Output;
-
     /// Plan the first command (or finish immediately for a no-op).
-    fn start(&mut self) -> CommandStep<Self::Output>;
+    fn start(&mut self) -> CommandStep;
 
     /// Consume the output of the command last planned and plan the next one.
-    fn advance(&mut self, output: CommandOutput) -> CommandStep<Self::Output>;
+    fn advance(&mut self, output: CommandOutput) -> CommandStep;
 }
 
 /// A machine that plans exactly one command and then finishes with `()`.
@@ -88,23 +94,34 @@ impl OneShotCommand {
 }
 
 impl CommandFlowMachine for OneShotCommand {
-    type Output = ();
-
-    fn start(&mut self) -> CommandStep<()> {
+    fn start(&mut self) -> CommandStep {
         match self.request.take() {
             Some(request) => CommandStep::Run { request },
-            None => CommandStep::Done { result: () },
+            None => CommandStep::Done {
+                result: Value::Null,
+            },
         }
     }
 
-    fn advance(&mut self, _output: CommandOutput) -> CommandStep<()> {
-        CommandStep::Done { result: () }
+    fn advance(&mut self, _output: CommandOutput) -> CommandStep {
+        CommandStep::Done {
+            result: Value::Null,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // The erased `CommandStep` makes the trait object-safe so a single
+    // `CommandCore` can hold every operation as a `dyn CommandFlowMachine`.
+    #[test]
+    fn command_flow_machine_is_object_safe() {
+        let machine = OneShotCommand::new(CommandRequest::new("git", ["status"]));
+        let mut boxed: Box<dyn CommandFlowMachine> = Box::new(machine);
+        assert!(matches!(boxed.start(), CommandStep::Run { .. }));
+    }
 
     #[test]
     fn one_shot_runs_once_then_done() {
@@ -117,7 +134,9 @@ mod tests {
         }
         assert_eq!(
             machine.advance(CommandOutput::ok("")),
-            CommandStep::Done { result: () }
+            CommandStep::Done {
+                result: Value::Null
+            }
         );
     }
 }
