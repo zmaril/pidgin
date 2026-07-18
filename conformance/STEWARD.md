@@ -35,36 +35,32 @@ and less stable, so it is a follow-up rather than part of this change.
 ## Baseline auto-refresh
 
 The committed `conformance.json` baseline is refreshed automatically by
-`.github/workflows/conformance-baseline.yml` — option (c): **per-PR, on the PR's
-own branch.** On every PR (opened/synchronize/reopened) from a same-repo branch
-the workflow regenerates the full five-package baseline (`scripts/conformance.sh
---setup`) and, if the result drifted, commits `conformance.json` back to the
-PR's HEAD branch under the `github-actions[bot]` identity.
+`.github/workflows/conformance-baseline.yml`. On every push/merge to `main` the
+workflow regenerates the full five-package baseline (`scripts/conformance.sh
+--setup`) and, if the result drifted, commits `conformance.json` back to `main`
+under the `github-actions[bot]` identity with a `[skip ci]` message.
 
-Two design points to keep in mind when touching this:
+Three design points to keep in mind when touching this:
 
-- **Per-PR, on the PR branch — no protected-main bypass.** The refreshed
-  baseline is committed to the PR's own head branch, never to `main`. Because
-  PR branches are not the protected `main`, the default `GITHUB_TOKEN`'s
-  `contents: write` is enough and no branch-protection bypass is needed. Each PR
-  thus carries a baseline already reflecting its own changes, so the sticky
-  per-PR delta reads against a current file (its passing/failing deltas settle
-  to ±0; the absolute rust-backed numbers and the `conformance.json` git diff
-  show the real change). Fork PRs get a read-only token and cannot push, so the
-  same-repo guard skips them.
-- **Determinism is what bounds the loop.** Creds-stripping is baked into
-  `scripts/conformance.sh` itself (#85) — `AWS_ACCESS_KEY_ID`,
-  `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, and `ANTHROPIC_BASE_URL` are
-  unset for the vitest run so packages/ai stays on the offline profile
-  (ai 556/0/738) and the baseline is byte-deterministic. Do not re-add a manual
-  `env -u` in the workflow.
+- **Main only, never per-PR.** The baseline moves only on `main`. PR runs stay
+  read-only, so a PR's conformance delta always compares against the last merged
+  baseline rather than a moving target. Do not add per-PR baseline writes.
+- **Offline profile is enforced inside `conformance.sh`.** The regen runs
+  `scripts/conformance.sh --setup` plainly; the script strips `AWS_ACCESS_KEY_ID`,
+  `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, and `ANTHROPIC_BASE_URL` from the
+  vitest invocation itself (#85), so packages/ai stays on the offline profile (ai
+  556/0/738). With ambient creds present, ai flips to the live-failing profile
+  (562/24/708) and the baseline would be non-deterministic. No manual `env -u`
+  wrapper is needed in the workflow.
+- **Pushing to protected `main` needs the bot ruleset bypass.** The commit-back
+  pushes `conformance.json` straight to protected `main`, so `main`'s branch
+  ruleset must grant `github-actions[bot]` a one-time bypass for the default
+  `GITHUB_TOKEN` push to be accepted. Without it, branch protection rejects the
+  push.
 
-Loop termination: committing to the PR branch pushes a new HEAD and **does**
-re-trigger the PR workflows — intentionally, so the required checks re-run on the
-new HEAD and the PR stays mergeable (hence **no** `[skip ci]`). Determinism
-bounds this to exactly one extra run: the re-triggered regen produces an
-identical `conformance.json`, the `git diff` is empty, no second commit is made,
-and the loop stops.
+Loop prevention: the commit-back is a no-op when the baseline is unchanged (the
+steady state), and the `[skip ci]` message stops the commit-back push from
+re-triggering CI.
 
 ## Merge queue
 
