@@ -620,6 +620,32 @@ impl<T: Terminal> Tui<T> {
         self.previous_height = height;
     }
 
+    /// Emit a relative vertical cursor move onto `buffer`: `\x1b[nB` (down) for a
+    /// positive delta, `\x1b[nA` (up) for a negative one, nothing for zero.
+    fn emit_vertical_move(buffer: &mut String, delta: i64) {
+        if delta > 0 {
+            buffer.push_str(&format!("\x1b[{delta}B"));
+        } else if delta < 0 {
+            buffer.push_str(&format!("\x1b[{}A", -delta));
+        }
+    }
+
+    /// pi's `computeLineDiff` closure plus the vertical move it always drives:
+    /// translate `target_row` into a screen-relative delta from the current
+    /// hardware cursor and emit the move. pi reuses one `computeLineDiff` closure
+    /// from both the all-deleted and band paths; this restores that factoring.
+    fn emit_line_diff_move(
+        buffer: &mut String,
+        target_row: i64,
+        hardware_cursor_row: i64,
+        prev_viewport_top: i64,
+        viewport_top: i64,
+    ) {
+        let current_screen_row = hardware_cursor_row - prev_viewport_top;
+        let target_screen_row = target_row - viewport_top;
+        Self::emit_vertical_move(buffer, target_screen_row - current_screen_row);
+    }
+
     /// The heart of the renderer. Ported from `TUI::doRender`.
     fn do_render(&mut self) -> Result<(), RenderError> {
         if self.stopped {
@@ -724,15 +750,14 @@ impl<T: Terminal> Tui<T> {
                     self.full_render(true, &new_lines, cursor_pos, width_i, height_i);
                     return Ok(());
                 }
-                // computeLineDiff(targetRow)
-                let current_screen_row = hardware_cursor_row - prev_viewport_top;
-                let target_screen_row = target_row - viewport_top;
-                let line_diff = target_screen_row - current_screen_row;
-                if line_diff > 0 {
-                    buffer.push_str(&format!("\x1b[{line_diff}B"));
-                } else if line_diff < 0 {
-                    buffer.push_str(&format!("\x1b[{}A", -line_diff));
-                }
+                // computeLineDiff(targetRow), then emit the vertical move.
+                Self::emit_line_diff_move(
+                    &mut buffer,
+                    target_row,
+                    hardware_cursor_row,
+                    prev_viewport_top,
+                    viewport_top,
+                );
                 buffer.push('\r');
                 let extra_lines = self.previous_lines.len() as i64 - new_lines.len() as i64;
                 if extra_lines > height_i {
@@ -800,14 +825,13 @@ impl<T: Terminal> Tui<T> {
         }
 
         // Move cursor to first changed line (computeLineDiff(moveTargetRow)).
-        let current_screen_row = hardware_cursor_row - prev_viewport_top;
-        let target_screen_row = move_target_row - viewport_top;
-        let line_diff = target_screen_row - current_screen_row;
-        if line_diff > 0 {
-            buffer.push_str(&format!("\x1b[{line_diff}B"));
-        } else if line_diff < 0 {
-            buffer.push_str(&format!("\x1b[{}A", -line_diff));
-        }
+        Self::emit_line_diff_move(
+            &mut buffer,
+            move_target_row,
+            hardware_cursor_row,
+            prev_viewport_top,
+            viewport_top,
+        );
 
         buffer.push_str(if append_start { "\r\n" } else { "\r" });
 
@@ -957,11 +981,7 @@ impl<T: Terminal> Tui<T> {
         let target_col = col.max(0);
         let row_delta = target_row - self.hardware_cursor_row;
         let mut buffer = String::new();
-        if row_delta > 0 {
-            buffer.push_str(&format!("\x1b[{row_delta}B"));
-        } else if row_delta < 0 {
-            buffer.push_str(&format!("\x1b[{}A", -row_delta));
-        }
+        Self::emit_vertical_move(&mut buffer, row_delta);
         buffer.push_str(&format!("\x1b[{}G", target_col + 1));
         if !buffer.is_empty() {
             self.terminal.write(&buffer);
