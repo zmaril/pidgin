@@ -5,6 +5,7 @@
 //! `system_prompt` / `slash_commands` shell modules; remaining sibling
 //! submodules land later.
 
+pub mod auth;
 pub mod cache_stats;
 pub mod command_flow;
 pub mod compaction;
