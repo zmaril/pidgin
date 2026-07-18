@@ -4,5 +4,6 @@
 
 pub mod command_flow;
 pub mod export_html;
+pub mod keybindings;
 pub mod package_manager;
 pub mod tools;
