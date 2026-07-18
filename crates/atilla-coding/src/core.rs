@@ -7,6 +7,7 @@ pub mod command_flow;
 pub mod defaults;
 pub mod experimental;
 pub mod export_html;
+pub mod keybindings;
 pub mod package_manager;
 pub mod project_trust;
 pub mod radius;

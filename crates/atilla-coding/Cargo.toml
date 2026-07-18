@@ -15,6 +15,7 @@ globset = "0.4"
 grep-matcher = "0.1"
 grep-regex = "0.1"
 ignore = "0.4"
+indexmap = { version = "2", features = ["serde"] }
 regex = "1"
 semver = "1"
 serde = { version = "1", features = ["derive"] }
