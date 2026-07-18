@@ -1,3 +1,5 @@
+// straitjacket-allow-file:duplication — the header-row and data-row rendering
+// loops mirror pi's `renderTable` verbatim (same wrap/pad/join per cell).
 //! Verbatim port of pi's bespoke terminal table layout
 //! (`renderTable` / `getLongestWordWidth` / `wrapCellText` in
 //! `vendor/pi/packages/tui/src/components/markdown.ts`).

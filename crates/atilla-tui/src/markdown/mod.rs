@@ -1,3 +1,6 @@
+// straitjacket-allow-file:duplication — `render_inline_tokens` mirrors pi's
+// `renderInlineTokens` switch verbatim (strong/em/codespan/del arms each render
+// children then re-append the style prefix); a faithful parallel structure.
 //! Byte-exact Rust port of pi's Markdown terminal renderer
 //! (`vendor/pi/packages/tui/src/components/markdown.ts`).
 //!
@@ -9,6 +12,7 @@
 //! resets. Correctness == byte-identical output vs pi, validated against the 70
 //! vectors extracted from `markdown.test.ts`.
 
+mod inline;
 mod lexer;
 mod tables;
 
