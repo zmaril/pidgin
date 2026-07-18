@@ -1,3 +1,4 @@
+// straitjacket-allow-file:duplication — byte-faithful mirror of pi's CLI test file, repointed only at the atilla binary (ATILLA_BIN); the shared temp-dir/spawn boilerplate is pi's own parallel test structure.
 import { spawn } from "node:child_process";
 import {
 	existsSync,
