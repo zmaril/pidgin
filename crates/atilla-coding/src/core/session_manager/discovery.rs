@@ -244,7 +244,7 @@ fn list_sessions_from_dir(dir: &str) -> Vec<SessionInfo> {
 /// Sort a listing by `modified` descending (newest first), stably. Mirrors pi's
 /// `sessions.sort((a, b) => b.modified.getTime() - a.modified.getTime())`.
 fn sort_by_modified_desc(sessions: &mut [SessionInfo]) {
-    sessions.sort_by(|a, b| parse_iso_millis(&b.modified).cmp(&parse_iso_millis(&a.modified)));
+    sessions.sort_by_key(|b| std::cmp::Reverse(parse_iso_millis(&b.modified)));
 }
 
 /// Resolve the directory to scan and whether cwd filtering applies for the
