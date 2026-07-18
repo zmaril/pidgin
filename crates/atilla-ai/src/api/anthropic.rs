@@ -31,6 +31,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
+pub mod boundary;
 pub mod cache;
 pub mod client;
 pub mod compat;
