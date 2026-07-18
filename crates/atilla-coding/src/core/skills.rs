@@ -20,12 +20,6 @@
 //! sibling `source-info`/`diagnostics` modules are not yet ported; they mirror
 //! those shapes so a later refactor can lift them out unchanged.
 
-// straitjacket-allow-file[:duplication] — `format_skills_for_prompt` here and the
-// placeholder of the same name in `system_prompt.rs` are both faithful
-// transcriptions of pi's `skills.ts` `formatSkillsForPrompt`. They render the
-// identical `<available_skills>` XML over parallel skill types; the overlap is
-// intentional until `system_prompt.rs` is refactored to call this module.
-
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
