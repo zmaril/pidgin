@@ -95,7 +95,7 @@ pub struct WordSegment {
 // of the ideographic / syllabic scripts that ICU dictionary-segments (Han,
 // Hiragana, Katakana, Hangul, Bopomofo — the cjkBreakRegex scripts). Those are
 // not ALetter, so `:` never joins them, matching ICU4C.
-fn is_cjk_script(ch: char) -> bool {
+pub(crate) fn is_cjk_script(ch: char) -> bool {
     let c = ch as u32;
     (0x2e80..=0x2eff).contains(&c) // CJK Radicals Supplement
         || (0x2f00..=0x2fdf).contains(&c) // Kangxi Radicals
