@@ -249,10 +249,9 @@ fn join_text_content(content: &Value) -> String {
 /// The text content of a `user`/`toolResult` message, or the empty string when
 /// absent. Both roles read content identically in `serializeConversation`.
 fn message_text_content(msg: &AgentMessage) -> String {
-    match msg.get("content") {
-        Some(c) => join_text_content(c),
-        None => String::new(),
-    }
+    msg.get("content")
+        .map(join_text_content)
+        .unwrap_or_default()
 }
 
 /// Serialize LLM messages to plain text for summarization prompts. Mirrors pi's
@@ -360,7 +359,9 @@ fn bash_execution_to_text(msg: &Value) -> String {
     let output = msg.get("output").and_then(Value::as_str).unwrap_or("");
     let mut text = format!("Ran `{command}`\n");
     if !output.is_empty() {
-        text.push_str(&format!("```\n{output}\n```"));
+        text.push_str("```\n");
+        text.push_str(output);
+        text.push_str("\n```");
     } else {
         text.push_str("(no output)");
     }

@@ -5,12 +5,15 @@
 use std::collections::HashSet;
 use std::fmt;
 
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use atilla_ai::seams::AbortSignal;
-use atilla_ai::{Context, Message, Model, StopReason};
+use atilla_ai::{Model, StopReason};
 
-use super::compaction::{estimate_tokens, CompletionOptions, Models, SUMMARIZATION_SYSTEM_PROMPT};
+use super::compaction::{
+    build_summarization_context, estimate_tokens, CompletionOptions, Models,
+    SUMMARIZATION_SYSTEM_PROMPT,
+};
 use super::utils::{
     compute_file_lists, convert_to_llm, create_file_ops, error_message_or,
     extract_file_ops_from_details, extract_file_ops_from_message, format_file_operations,
@@ -328,18 +331,7 @@ pub fn generate_branch_summary(
     let prompt_text =
         format!("<conversation>\n{conversation_text}\n</conversation>\n\n{instructions}");
 
-    let user_message = json!({
-        "role": "user",
-        "content": [{ "type": "text", "text": prompt_text }],
-        "timestamp": 0,
-    });
-    let user_message: Message =
-        serde_json::from_value(user_message).expect("branch summary user message is valid");
-    let context = Context {
-        system_prompt: Some(SUMMARIZATION_SYSTEM_PROMPT.to_string()),
-        messages: vec![user_message],
-        tools: None,
-    };
+    let context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt_text);
     let completion_options = CompletionOptions {
         max_tokens: 2048,
         signal: Some(options.signal.clone()),

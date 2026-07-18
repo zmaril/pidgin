@@ -276,7 +276,7 @@ fn get_assistant_usage(msg: &AgentMessage) -> Option<Usage> {
         return None;
     }
     let stop_reason = msg.get("stopReason").and_then(Value::as_str);
-    if stop_reason == Some("aborted") || stop_reason == Some("error") {
+    if matches!(stop_reason, Some("aborted" | "error")) {
         return None;
     }
     let usage_value = msg.get("usage")?;
@@ -314,10 +314,7 @@ fn get_last_assistant_usage_info(messages: &[AgentMessage]) -> Option<(Usage, us
 /// Mirrors pi's `estimateContextTokens`.
 pub fn estimate_context_tokens(messages: &[AgentMessage]) -> ContextUsageEstimate {
     let Some((usage, index)) = get_last_assistant_usage_info(messages) else {
-        let mut estimated = 0;
-        for message in messages {
-            estimated += estimate_tokens(message);
-        }
+        let estimated: i64 = messages.iter().map(estimate_tokens).sum();
         return ContextUsageEstimate {
             tokens: estimated,
             usage_tokens: 0,
@@ -327,10 +324,7 @@ pub fn estimate_context_tokens(messages: &[AgentMessage]) -> ContextUsageEstimat
     };
 
     let usage_tokens = calculate_context_tokens(&usage);
-    let mut trailing_tokens = 0;
-    for message in &messages[index + 1..] {
-        trailing_tokens += estimate_tokens(message);
-    }
+    let trailing_tokens: i64 = messages[index + 1..].iter().map(estimate_tokens).sum();
 
     ContextUsageEstimate {
         tokens: usage_tokens + trailing_tokens,
@@ -664,7 +658,7 @@ Be concise. Focus on what's needed to understand the kept suffix.";
 // ---------------------------------------------------------------------------
 
 /// Build the single-user-message context summarization sends to the model.
-fn build_summarization_context(system_prompt: &str, prompt_text: String) -> Context {
+pub(crate) fn build_summarization_context(system_prompt: &str, prompt_text: String) -> Context {
     let message = json!({
         "role": "user",
         "content": [{ "type": "text", "text": prompt_text }],
