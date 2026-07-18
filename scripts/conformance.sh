@@ -93,11 +93,26 @@ if [ "$DO_SETUP" -eq 1 ]; then
 fi
 
 # --- napi addon (best effort) ----------------------------------------------
-# The all-original baseline does not import the addon yet, so a build failure
-# here is non-fatal — it is logged and the run continues.
+# Native modules (e.g. providers/faux) import the addon, so it must be current.
+# A build failure here is non-fatal — it is logged and the run continues; the
+# native shim's import would then throw and surface as test failures.
+#
+# Rebuild when the addon is missing OR any Rust source under crates/atilla-napi
+# or crates/atilla-ai is newer than the built .node. A plain "a .node exists"
+# check skipped the rebuild and could leave a stale addon from an earlier stage
+# that lacks newly-added exports (e.g. FauxCore), making the native faux shim's
+# `import { FauxCore } from "atilla-napi"` throw at load time in CI.
 log "verifying atilla-napi addon (best effort)"
-if ls "$REPO_ROOT"/crates/atilla-napi/*.node >/dev/null 2>&1; then
-  log "napi addon already built; skipping rebuild"
+NODE_ADDON="$(ls "$REPO_ROOT"/crates/atilla-napi/*.node 2>/dev/null | head -n1 || true)"
+NAPI_SRC_PATHS=(
+  "$REPO_ROOT/crates/atilla-napi/src"
+  "$REPO_ROOT/crates/atilla-napi/Cargo.toml"
+  "$REPO_ROOT/crates/atilla-ai/src"
+  "$REPO_ROOT/crates/atilla-ai/Cargo.toml"
+)
+if [ -n "$NODE_ADDON" ] && \
+  [ -z "$(find "${NAPI_SRC_PATHS[@]}" -newer "$NODE_ADDON" -print -quit 2>/dev/null)" ]; then
+  log "napi addon up to date (newer than Rust sources); skipping rebuild"
 elif (cd "$REPO_ROOT/crates/atilla-napi" && npm install && npx napi build --platform) \
   >"$OUT/napi-build.log" 2>&1; then
   log "napi addon built"

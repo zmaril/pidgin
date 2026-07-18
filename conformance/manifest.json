@@ -529,7 +529,7 @@
     {
       "package": "ai",
       "src": "packages/ai/src/providers/faux.ts",
-      "status": "original"
+      "status": "native"
     },
     {
       "package": "ai",
