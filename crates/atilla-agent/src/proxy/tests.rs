@@ -4,6 +4,13 @@
 //! here is derived directly from the `proxy.ts` source semantics (quoted inline
 //! where a golden value is non-obvious), not ported from an upstream test.
 
+// straitjacket-allow-file:duplication — each `#[test]` drives the same
+// arrange-act-assert scaffold (build a `ProxyPartial`/event vector, pump it
+// through `process_proxy_event`/`stream_proxy`, then re-`let`-destructure the
+// resulting `ContentBlock`/`AssistantMessageEvent` to assert on it); the
+// parallel bodies and repeated `delta: "…".to_string()` event literals read as
+// duplicates but are distinct, load-bearing golden cases.
+
 use super::*;
 
 use atilla_ai::seams::clock::FakeClock;
