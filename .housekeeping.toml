@@ -5,3 +5,13 @@ fleet = "zmaril/powderworks"
 website = "off"
 # Adopted on enrollment; the fleet default is "recommended".
 conventional-commits = "required"
+
+[scripts]
+# test.sh is bindings/php's build + load + version harness; it must sit next to
+# the crate it drives (a standalone workspace), not under the repo-wide scripts/.
+allow = ["bindings/php/test.sh"]
+
+[stray-todos]
+# The M1 Session::open marker in the PHP binding is a deliberate, milestone-
+# tagged placeholder for the next binding surface, not untracked work.
+ignore = ["bindings/php/src/lib.rs"]

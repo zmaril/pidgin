@@ -12,3 +12,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `atilla` binary), with an `atilla run` placeholder command.
 - CI (fmt, clippy, test), Dependabot, CODEOWNERS, and the fleet housekeeping,
   Straitjacket, conventional-commits, codespell, and vale workflows.
+- PHP binding scaffold (M0): `bindings/php`, an ext-php-rs cdylib exposing
+  `Atilla::version()` through the `atilla-core` façade, plus its build/test
+  harness and a dedicated `php` CI job.
+- `atilla_core::version()`, surfacing the workspace version through the façade
+  for bindings to report.

@@ -11,6 +11,13 @@ pub use atilla_coding as coding;
 
 use anyhow::Result;
 
+/// The atilla engine version. This is the workspace version, surfaced through
+/// the façade so every language binding reports one authoritative number
+/// instead of hardcoding its own.
+pub fn version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
+
 /// Placeholder engine entry point. Replace with the real surface as it lands.
 pub fn run() -> Result<String> {
     Ok("atilla: nothing to do yet".to_string())
@@ -23,5 +30,11 @@ mod tests {
     #[test]
     fn run_returns_a_message() {
         assert!(run().unwrap().starts_with("atilla:"));
+    }
+
+    #[test]
+    fn version_is_the_workspace_version() {
+        assert_eq!(version(), env!("CARGO_PKG_VERSION"));
+        assert!(!version().is_empty());
     }
 }
