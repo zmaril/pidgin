@@ -90,62 +90,53 @@ struct SplitRef {
     git_ref: Option<String>,
 }
 
+/// Split an `@ref` suffix off the repo path. `path_with_maybe_ref` is the
+/// portion after the host; `rebuild_repo` reconstructs the ref-free clone URL
+/// from the repo path for the matched form. Falls back to the unmodified `url`
+/// with no ref when there is no `@`, or either side of it is empty.
+fn split_at_ref<F>(url: &str, path_with_maybe_ref: &str, rebuild_repo: F) -> SplitRef
+where
+    F: FnOnce(&str) -> String,
+{
+    match path_with_maybe_ref.find('@') {
+        None => SplitRef {
+            repo: url.to_string(),
+            git_ref: None,
+        },
+        Some(sep) => {
+            let repo_path = &path_with_maybe_ref[..sep];
+            let git_ref = &path_with_maybe_ref[sep + 1..];
+            if repo_path.is_empty() || git_ref.is_empty() {
+                SplitRef {
+                    repo: url.to_string(),
+                    git_ref: None,
+                }
+            } else {
+                SplitRef {
+                    repo: rebuild_repo(repo_path),
+                    git_ref: Some(git_ref.to_string()),
+                }
+            }
+        }
+    }
+}
+
 fn split_ref(url: &str) -> SplitRef {
     if let Some(caps) = scp_like_regex().captures(url) {
         let host = caps.get(1).map(|m| m.as_str()).unwrap_or("");
         let path_with_maybe_ref = caps.get(2).map(|m| m.as_str()).unwrap_or("");
-        match path_with_maybe_ref.find('@') {
-            None => {
-                return SplitRef {
-                    repo: url.to_string(),
-                    git_ref: None,
-                }
-            }
-            Some(sep) => {
-                let repo_path = &path_with_maybe_ref[..sep];
-                let git_ref = &path_with_maybe_ref[sep + 1..];
-                if repo_path.is_empty() || git_ref.is_empty() {
-                    return SplitRef {
-                        repo: url.to_string(),
-                        git_ref: None,
-                    };
-                }
-                return SplitRef {
-                    repo: format!("git@{host}:{repo_path}"),
-                    git_ref: Some(git_ref.to_string()),
-                };
-            }
-        }
+        return split_at_ref(url, path_with_maybe_ref, |repo_path| {
+            format!("git@{host}:{repo_path}")
+        });
     }
 
     if url.contains("://") {
         return match parse_url(url) {
             Some(parsed) => {
                 let path_with_maybe_ref = strip_leading_slashes(&parsed.path);
-                match path_with_maybe_ref.find('@') {
-                    None => SplitRef {
-                        repo: url.to_string(),
-                        git_ref: None,
-                    },
-                    Some(sep) => {
-                        let repo_path = &path_with_maybe_ref[..sep];
-                        let git_ref = &path_with_maybe_ref[sep + 1..];
-                        if repo_path.is_empty() || git_ref.is_empty() {
-                            SplitRef {
-                                repo: url.to_string(),
-                                git_ref: None,
-                            }
-                        } else {
-                            SplitRef {
-                                repo: format!(
-                                    "{}://{}/{}",
-                                    parsed.scheme, parsed.authority, repo_path
-                                ),
-                                git_ref: Some(git_ref.to_string()),
-                            }
-                        }
-                    }
-                }
+                split_at_ref(url, path_with_maybe_ref, |repo_path| {
+                    format!("{}://{}/{}", parsed.scheme, parsed.authority, repo_path)
+                })
             }
             None => SplitRef {
                 repo: url.to_string(),
@@ -162,56 +153,17 @@ fn split_ref(url: &str) -> SplitRef {
         Some(slash_index) => {
             let host = &url[..slash_index];
             let path_with_maybe_ref = &url[slash_index + 1..];
-            match path_with_maybe_ref.find('@') {
-                None => SplitRef {
-                    repo: url.to_string(),
-                    git_ref: None,
-                },
-                Some(sep) => {
-                    let repo_path = &path_with_maybe_ref[..sep];
-                    let git_ref = &path_with_maybe_ref[sep + 1..];
-                    if repo_path.is_empty() || git_ref.is_empty() {
-                        SplitRef {
-                            repo: url.to_string(),
-                            git_ref: None,
-                        }
-                    } else {
-                        SplitRef {
-                            repo: format!("{host}/{repo_path}"),
-                            git_ref: Some(git_ref.to_string()),
-                        }
-                    }
-                }
-            }
+            split_at_ref(url, path_with_maybe_ref, |repo_path| {
+                format!("{host}/{repo_path}")
+            })
         }
     }
-}
-
-/// Percent-decode a value; `None` signals a malformed escape (treated as
-/// unsafe), mirroring a `decodeURIComponent` that throws.
-fn decode_for_validation(value: &str) -> Option<String> {
-    let bytes = value.as_bytes();
-    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' {
-            if i + 2 >= bytes.len() {
-                return None;
-            }
-            let hi = (bytes[i + 1] as char).to_digit(16)?;
-            let lo = (bytes[i + 2] as char).to_digit(16)?;
-            out.push((hi * 16 + lo) as u8);
-            i += 3;
-        } else {
-            out.push(bytes[i]);
-            i += 1;
-        }
-    }
-    String::from_utf8(out).ok()
 }
 
 fn has_unsafe_git_install_part(value: &str, allow_slash: bool) -> bool {
-    let decoded = match decode_for_validation(value) {
+    // A malformed escape (a `decodeURIComponent` that throws) is treated as
+    // unsafe.
+    let decoded = match super::bytes::percent_decode(value) {
         Some(d) => d,
         None => return true,
     };

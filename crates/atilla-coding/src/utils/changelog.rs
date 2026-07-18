@@ -120,37 +120,7 @@ fn split_local_target(target: &str) -> LocalTarget {
 /// Lexically normalize a POSIX path, preserving a trailing slash when the input
 /// had one (mirrors `path.posix.normalize` for the cases these links exercise).
 fn posix_normalize_preserve(path: &str) -> String {
-    let is_abs = path.starts_with('/');
-    let has_trailing = path.len() > 1 && path.ends_with('/');
-    let mut out: Vec<&str> = Vec::new();
-    for part in path.split('/') {
-        match part {
-            "" | "." => continue,
-            ".." => {
-                if let Some(last) = out.last() {
-                    if *last != ".." {
-                        out.pop();
-                        continue;
-                    }
-                }
-                if !is_abs {
-                    out.push("..");
-                }
-            }
-            other => out.push(other),
-        }
-    }
-    let mut joined = out.join("/");
-    if joined.is_empty() {
-        return ".".to_string();
-    }
-    if is_abs {
-        joined = format!("/{joined}");
-    }
-    if has_trailing {
-        joined.push('/');
-    }
-    joined
+    super::bytes::posix_normalize(path, true)
 }
 
 fn resolve_repository_path(target_path: &str) -> Option<String> {
@@ -267,15 +237,19 @@ pub fn parse_changelog_str(content: &str) -> Vec<ChangelogEntry> {
     let mut current_lines: Vec<&str> = Vec::new();
     let mut current_version: Option<(u64, u64, u64)> = None;
 
+    let mut flush = |version: (u64, u64, u64), lines: &[&str]| {
+        entries.push(ChangelogEntry {
+            major: version.0,
+            minor: version.1,
+            patch: version.2,
+            content: lines.join("\n").trim().to_string(),
+        });
+    };
+
     for line in content.split('\n') {
         if line.starts_with("## ") {
             if let (Some(version), false) = (current_version, current_lines.is_empty()) {
-                entries.push(ChangelogEntry {
-                    major: version.0,
-                    minor: version.1,
-                    patch: version.2,
-                    content: current_lines.join("\n").trim().to_string(),
-                });
+                flush(version, &current_lines);
             }
 
             if let Some(caps) = heading_re.captures(line) {
@@ -295,12 +269,7 @@ pub fn parse_changelog_str(content: &str) -> Vec<ChangelogEntry> {
     }
 
     if let (Some(version), false) = (current_version, current_lines.is_empty()) {
-        entries.push(ChangelogEntry {
-            major: version.0,
-            minor: version.1,
-            patch: version.2,
-            content: current_lines.join("\n").trim().to_string(),
-        });
+        flush(version, &current_lines);
     }
 
     entries

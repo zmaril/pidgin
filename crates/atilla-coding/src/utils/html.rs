@@ -16,10 +16,10 @@ pub struct DecodedHtmlEntity {
 
 /// Convert a Unicode scalar value to a string, rejecting values outside the
 /// valid range (`0..=0x10FFFF`) and surrogate code points.
+///
+/// `char::from_u32` already returns `None` for out-of-range values and
+/// surrogate code points, so no separate range guard is needed.
 fn decode_code_point(code_point: u32) -> Option<String> {
-    if code_point > 0x10FFFF {
-        return None;
-    }
     char::from_u32(code_point).map(|c| c.to_string())
 }
 

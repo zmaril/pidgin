@@ -14,17 +14,10 @@
 //! usable EXIF orientation block (equivalent to pi's default of `1`, which
 //! callers treat as "no transform").
 
-fn byte_at(bytes: &[u8], pos: usize) -> u32 {
-    bytes.get(pos).copied().unwrap_or(0) as u32
-}
+use super::bytes::{byte_at, read_u16_be, read_u16_le, read_u32_be, read_u32_le};
 
 fn has_exif_header(bytes: &[u8], offset: usize) -> bool {
-    byte_at(bytes, offset) == 0x45
-        && byte_at(bytes, offset + 1) == 0x78
-        && byte_at(bytes, offset + 2) == 0x69
-        && byte_at(bytes, offset + 3) == 0x66
-        && byte_at(bytes, offset + 4) == 0x00
-        && byte_at(bytes, offset + 5) == 0x00
+    bytes.get(offset..offset + 6) == Some(&b"Exif\0\0"[..])
 }
 
 fn read_orientation_from_tiff(bytes: &[u8], tiff_start: usize) -> u8 {
@@ -37,22 +30,16 @@ fn read_orientation_from_tiff(bytes: &[u8], tiff_start: usize) -> u8 {
 
     let read16 = |pos: usize| -> u32 {
         if le {
-            byte_at(bytes, pos) | (byte_at(bytes, pos + 1) << 8)
+            read_u16_le(bytes, pos)
         } else {
-            (byte_at(bytes, pos) << 8) | byte_at(bytes, pos + 1)
+            read_u16_be(bytes, pos)
         }
     };
     let read32 = |pos: usize| -> u32 {
         if le {
-            byte_at(bytes, pos)
-                | (byte_at(bytes, pos + 1) << 8)
-                | (byte_at(bytes, pos + 2) << 16)
-                | (byte_at(bytes, pos + 3) << 24)
+            read_u32_le(bytes, pos)
         } else {
-            (byte_at(bytes, pos) << 24)
-                | (byte_at(bytes, pos + 1) << 16)
-                | (byte_at(bytes, pos + 2) << 8)
-                | byte_at(bytes, pos + 3)
+            read_u32_be(bytes, pos)
         }
     };
 
@@ -110,7 +97,7 @@ fn find_jpeg_tiff_offset(bytes: &[u8]) -> Option<usize> {
         if offset + 4 > bytes.len() {
             return None;
         }
-        let length = ((byte_at(bytes, offset + 2) << 8) | byte_at(bytes, offset + 3)) as usize;
+        let length = read_u16_be(bytes, offset + 2) as usize;
         offset += 2 + length;
     }
 
@@ -120,19 +107,11 @@ fn find_jpeg_tiff_offset(bytes: &[u8]) -> Option<usize> {
 fn find_webp_tiff_offset(bytes: &[u8]) -> Option<usize> {
     let mut offset = 12usize;
     while offset + 8 <= bytes.len() {
-        let chunk_id = [
-            byte_at(bytes, offset) as u8,
-            byte_at(bytes, offset + 1) as u8,
-            byte_at(bytes, offset + 2) as u8,
-            byte_at(bytes, offset + 3) as u8,
-        ];
-        let chunk_size = (byte_at(bytes, offset + 4)
-            | (byte_at(bytes, offset + 5) << 8)
-            | (byte_at(bytes, offset + 6) << 16)
-            | (byte_at(bytes, offset + 7) << 24)) as usize;
+        let chunk_size = read_u32_le(bytes, offset + 4) as usize;
         let data_start = offset + 8;
 
-        if &chunk_id == b"EXIF" {
+        // The loop guard guarantees `bytes[offset..offset + 4]` is present.
+        if &bytes[offset..offset + 4] == b"EXIF" {
             if data_start + chunk_size > bytes.len() {
                 return None;
             }

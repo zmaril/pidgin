@@ -8,7 +8,7 @@
 //!
 //! Ported modules: [`ansi`], [`html`], [`json`], [`pi_user_agent`], [`mime`],
 //! [`paths`], [`changelog`], [`version_check`], [`git_url`], [`frontmatter`],
-//! [`deprecation`], [`exif`].
+//! [`deprecation`], [`exif`]. Shared low-level primitives live in [`bytes`].
 //!
 //! Deferred modules: [`sleep`], [`clipboard`], [`clipboard_native`],
 //! [`clipboard_image`], [`child_process`], [`open_browser`], [`shell`],
@@ -17,6 +17,7 @@
 
 // Ported modules.
 pub mod ansi;
+pub mod bytes;
 pub mod changelog;
 pub mod deprecation;
 pub mod exif;

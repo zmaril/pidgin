@@ -9,6 +9,8 @@
 //! pi's file-reading wrapper (`detectSupportedImageMimeTypeFromFile`) is not
 //! ported here; callers can read the header bytes and pass them in.
 
+use super::bytes::{read_u16_le, read_u32_be, read_u32_le, starts_with, starts_with_ascii};
+
 const PNG_SIGNATURE: [u8; 8] = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 /// Detect a supported image MIME type from a byte prefix, or `None`.
@@ -96,40 +98,6 @@ fn is_bmp(buffer: &[u8]) -> bool {
     };
 
     color_planes == 1 && matches!(bits_per_pixel, 1 | 4 | 8 | 16 | 24 | 32)
-}
-
-fn read_u16_le(buffer: &[u8], offset: usize) -> u32 {
-    let b0 = *buffer.get(offset).unwrap_or(&0) as u32;
-    let b1 = *buffer.get(offset + 1).unwrap_or(&0) as u32;
-    b0 + (b1 << 8)
-}
-
-fn read_u32_be(buffer: &[u8], offset: usize) -> u32 {
-    let b0 = *buffer.get(offset).unwrap_or(&0) as u32;
-    let b1 = *buffer.get(offset + 1).unwrap_or(&0) as u32;
-    let b2 = *buffer.get(offset + 2).unwrap_or(&0) as u32;
-    let b3 = *buffer.get(offset + 3).unwrap_or(&0) as u32;
-    (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
-}
-
-fn read_u32_le(buffer: &[u8], offset: usize) -> u32 {
-    let b0 = *buffer.get(offset).unwrap_or(&0) as u32;
-    let b1 = *buffer.get(offset + 1).unwrap_or(&0) as u32;
-    let b2 = *buffer.get(offset + 2).unwrap_or(&0) as u32;
-    let b3 = *buffer.get(offset + 3).unwrap_or(&0) as u32;
-    b0 + (b1 << 8) + (b2 << 16) + (b3 << 24)
-}
-
-fn starts_with(buffer: &[u8], bytes: &[u8]) -> bool {
-    buffer.len() >= bytes.len() && buffer[..bytes.len()] == *bytes
-}
-
-fn starts_with_ascii(buffer: &[u8], offset: usize, text: &str) -> bool {
-    let text_bytes = text.as_bytes();
-    if buffer.len() < offset + text_bytes.len() {
-        return false;
-    }
-    &buffer[offset..offset + text_bytes.len()] == text_bytes
 }
 
 #[cfg(test)]

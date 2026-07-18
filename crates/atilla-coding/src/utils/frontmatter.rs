@@ -8,6 +8,42 @@
 
 use serde_yaml::{Mapping, Value};
 
+/// Error returned when frontmatter YAML fails to parse.
+///
+/// Wraps the underlying parser error so the dependency's error type does not
+/// leak into this module's public API (mirroring the [`PathError`] precedent in
+/// [`paths`](super::paths)), while still surfacing the error's source location.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FrontmatterError {
+    message: String,
+    location: Option<(usize, usize)>,
+}
+
+impl FrontmatterError {
+    /// The `(line, column)` where parsing failed, if the parser reported one.
+    pub fn location(&self) -> Option<(usize, usize)> {
+        self.location
+    }
+}
+
+impl std::fmt::Display for FrontmatterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for FrontmatterError {}
+
+impl From<serde_yaml::Error> for FrontmatterError {
+    fn from(err: serde_yaml::Error) -> Self {
+        let location = err.location().map(|loc| (loc.line(), loc.column()));
+        FrontmatterError {
+            message: err.to_string(),
+            location,
+        }
+    }
+}
+
 fn normalize_newlines(value: &str) -> String {
     value.replace("\r\n", "\n").replace('\r', "\n")
 }
@@ -50,7 +86,7 @@ fn extract_frontmatter(content: &str) -> Extracted {
 
 /// Parse frontmatter, returning `(value, body)`. When there is no frontmatter
 /// (or the value is empty/comment-only) the value is an empty mapping.
-pub fn parse_frontmatter(content: &str) -> Result<(Value, String), serde_yaml::Error> {
+pub fn parse_frontmatter(content: &str) -> Result<(Value, String), FrontmatterError> {
     let extracted = extract_frontmatter(content);
     let Some(yaml_string) = extracted.yaml_string else {
         return Ok((Value::Mapping(Mapping::new()), extracted.body));

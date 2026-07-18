@@ -72,33 +72,7 @@ fn current_dir() -> String {
 /// Lexically normalize a POSIX path, resolving `.` and `..` without touching
 /// the filesystem (mirrors `path.posix.normalize` for resolved paths).
 fn posix_normalize(path: &str) -> String {
-    let is_abs = path.starts_with('/');
-    let mut out: Vec<&str> = Vec::new();
-    for part in path.split('/') {
-        match part {
-            "" | "." => continue,
-            ".." => {
-                if let Some(last) = out.last() {
-                    if *last != ".." {
-                        out.pop();
-                        continue;
-                    }
-                }
-                if !is_abs {
-                    out.push("..");
-                }
-            }
-            other => out.push(other),
-        }
-    }
-    let joined = out.join("/");
-    if is_abs {
-        format!("/{joined}")
-    } else if joined.is_empty() {
-        ".".to_string()
-    } else {
-        joined
-    }
+    super::bytes::posix_normalize(path, false)
 }
 
 /// Resolve a single path against the current directory, like `path.resolve`.
@@ -146,30 +120,8 @@ fn posix_relative(from: &str, to: &str) -> String {
 
 /// Decode a percent-encoded string into UTF-8, erroring on malformed escapes.
 fn percent_decode(input: &str) -> Result<String, PathError> {
-    let bytes = input.as_bytes();
-    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' {
-            if i + 2 >= bytes.len() {
-                return Err(PathError(format!(
-                    "malformed percent-encoding in {input:?}"
-                )));
-            }
-            let hi = (bytes[i + 1] as char)
-                .to_digit(16)
-                .ok_or_else(|| PathError(format!("invalid percent-escape in {input:?}")))?;
-            let lo = (bytes[i + 2] as char)
-                .to_digit(16)
-                .ok_or_else(|| PathError(format!("invalid percent-escape in {input:?}")))?;
-            out.push((hi * 16 + lo) as u8);
-            i += 3;
-        } else {
-            out.push(bytes[i]);
-            i += 1;
-        }
-    }
-    String::from_utf8(out).map_err(|_| PathError(format!("invalid UTF-8 in {input:?}")))
+    super::bytes::percent_decode(input)
+        .ok_or_else(|| PathError(format!("malformed percent-encoding in {input:?}")))
 }
 
 /// Convert a `file://` URL to a filesystem path (POSIX semantics).
