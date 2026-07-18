@@ -16,6 +16,10 @@ use serde_json::Value;
 // provider's deterministic streaming and cache accounting from JS. Additive.
 mod faux;
 
+// Bridge slice 1: the first Rust→JS blocking callback bridge (`AgentBridge`),
+// driving the Rust agent loop while live JS closures fire mid-run. Additive.
+mod agent_bridge;
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `atillaNativeVersion`.
