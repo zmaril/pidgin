@@ -23,6 +23,10 @@
 //! reads `std::env::consts::OS` (also a runtime value) and exposes [`Platform`]
 //! so the platform-dependent defaults stay testable.
 
+// straitjacket-allow-file:duplication — faithful parallel-structure mirror of
+// pi-tui's rebuild()/conflict-detection, inlined here while the tui base was
+// unported; the pi-tui port now lives at crates/atilla-tui/src/keybindings.rs.
+
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
