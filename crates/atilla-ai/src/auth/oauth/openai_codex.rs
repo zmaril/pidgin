@@ -432,28 +432,27 @@ struct DeviceAuthInfo {
     interval_seconds: f64,
 }
 
-/// Parse the device user-code response, or an error [`Step`]
-/// (`openai-codex.ts:198-231`).
-fn parse_device_auth(response: &HttpResponse) -> Result<DeviceAuthInfo, Step> {
+/// Parse the device user-code response, or an error message
+/// (`openai-codex.ts:198-231`). The caller wraps the message in a
+/// [`Step::Error`]; returning the bare `String` keeps `Step` (a large enum) out
+/// of the `Result` error slot (`clippy::result_large_err`).
+fn parse_device_auth(response: &HttpResponse) -> Result<DeviceAuthInfo, String> {
     if !response.is_ok() {
         if response.status == 404 {
-            return Err(Step::Error {
-                message:
-                    "OpenAI Codex device code login is not enabled for this server. Use browser login or verify the server URL."
-                        .to_string(),
-            });
+            return Err(
+                "OpenAI Codex device code login is not enabled for this server. Use browser login or verify the server URL."
+                    .to_string(),
+            );
         }
-        return Err(Step::Error {
-            message: format!(
-                "OpenAI Codex device code request failed with status {}{}",
-                response.status,
-                if response.body.is_empty() {
-                    String::new()
-                } else {
-                    format!(": {}", response.body)
-                }
-            ),
-        });
+        return Err(format!(
+            "OpenAI Codex device code request failed with status {}{}",
+            response.status,
+            if response.body.is_empty() {
+                String::new()
+            } else {
+                format!(": {}", response.body)
+            }
+        ));
     }
 
     let json: Value = serde_json::from_str(&response.body).unwrap_or(Value::Null);
@@ -479,12 +478,10 @@ fn parse_device_auth(response: &HttpResponse) -> Result<DeviceAuthInfo, Step> {
                 interval_seconds,
             })
         }
-        _ => Err(Step::Error {
-            message: format!(
-                "Invalid OpenAI Codex device code response: {}",
-                response.body
-            ),
-        }),
+        _ => Err(format!(
+            "Invalid OpenAI Codex device code response: {}",
+            response.body
+        )),
     }
 }
 
@@ -889,9 +886,9 @@ impl OAuthFlowMachine for OpenAICodexLoginMachine {
                         self.phase = LoginPhase::DeviceAwaitingAck;
                         Step::Notify { event }
                     }
-                    Err(error) => {
+                    Err(message) => {
                         self.phase = LoginPhase::Done;
-                        error
+                        Step::Error { message }
                     }
                 }
             }
