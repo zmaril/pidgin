@@ -6,6 +6,32 @@ running pi's own TypeScript. "Native" = a hand-written shim in
 manifest row's `status` is `native` and codegen preserves pi's original beside
 the shim as `*.__pi_original__.ts`.
 
+## Determinism of the baseline
+
+The baseline in `conformance.json` must be reproducible: an auto-refresh workflow
+regenerates it and diffs the result, so any run-to-run flap shows up as noise.
+
+The runner used to flap by +/-1 because the environment injects AWS credentials
+and an `ANTHROPIC_BASE_URL`. With those visible, packages/ai's provider tests take
+the live path instead of the offline/skip path the baseline documents, and that
+drift also perturbed one coding-agent test
+(`test/session-manager/file-operations.test.ts`). `scripts/conformance.sh` now
+strips `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` /
+`ANTHROPIC_BASE_URL` from the vitest invocation (setup steps keep the full
+environment), which pins every suite offline. Two back-to-back full runs now
+produce byte-identical `conformance.json`.
+
+Deterministic per-package baseline (offline): agent 180/0/0, ai 556/0/738,
+coding-agent 1491/87/47, tui 678/0, orchestrator 0/0/0 (passing/failing/skipped);
+total 2905 passing, 87 failing, 785 skipped.
+
+A second hardening idea -- running the vitest step as an unprivileged user so the
+coding-agent chmod/EACCES asserts (which the root harness silently bypasses)
+would exercise real permission errors -- was evaluated and deferred. In this tree
+many suites create working dirs inside the package tree and transpile extensions
+at runtime, which is fragile under a dropped uid: it made the baseline both worse
+and less stable, so it is a follow-up rather than part of this change.
+
 ## Merge queue
 
 Current native count on main: **10** (ai anthropic-messages + ai faux, tui keys
