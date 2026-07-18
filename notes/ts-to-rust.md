@@ -10,6 +10,17 @@
 
 ---
 
+## Decision (2026-07-18)
+
+The project owner has chosen: **idiomatic-first, big-bang, no strangler-fig.** A rewrite that fails a ported test fails honestly; a test that passes passes because the behavior genuinely works in Rust, not because a Node shim made it pass. This supersedes the napi-rs strangler-fig fallback below — that fallback is recorded for completeness but is not the chosen path.
+
+Two consequences that follow from pi's actual code and tests:
+
+- **Port surface is ~95,500 LOC.** Excluding all tests and ~5,200 LOC of generated model-catalog files (which become a serde/JSON data table, effectively free), the source to rewrite is ~95,478 LOC across 362 files, dominated by `coding-agent` (54,662), then `ai` (18,424 non-generated), `tui` (12,166), `agent` (8,244), `orchestrator` (1,982).
+- **pi's existing tests are almost all unusable as a runnable oracle for a bridge-free Rust rewrite.** Of 319 test files / ~82,800 test LOC / ~3,631 cases, ~99.6% are in-process unit tests that `import` directly from `src/` (vitest, plus node:test in `tui`) and are welded to the JS module graph. Without an FFI/napi bridge (which the no-strangler-fig decision rules out) they cannot execute against a Rust binary and become a **spec to read, not a suite to run.** Only 4 files / ~15 cases (`stdout-cleanliness`, `session-file-invalid`, `session-id-readonly`, `startup-session-name` in `coding-agent/test/`) are black-box tests that spawn the CLI; they are reusable by repointing the spawn target from `node src/cli.ts` to the compiled Rust binary (~2 lines each). To get a runnable oracle consistent with "pass = works in Rust," expect to build a thin black-box CLI/e2e harness that drives the Rust `pi` binary and reuses pi's fixtures and assertions — that is the only test layer that validates Rust behavior rather than Node's.
+
+---
+
 ## 1. State of existing TS/JS → Rust tooling (2026)
 
 ### 1a. Direct TS→Rust transpilers — a graveyard
@@ -172,7 +183,7 @@ Port module-by-module into idiomatic Rust, reading the TS (and its ~86k LOC of t
 
 **Decide the extension system first.** It is the single largest scope risk and has no transpile path. Recommended default: **redefine extensions as a stable Rust plugin/host contract** (trait-based dylib or WASM component), accepting that existing `jiti` TS extensions won't port 1:1 — surface this as a product decision before committing to a rewrite budget. If runtime *TypeScript* extensibility must survive verbatim, the only option is embedding a JS engine (Deno core / QuickJS) for the extension sandbox while the core is Rust — a hybrid, not a pure port.
 
-**Fallback:** if a full rewrite proves too large to justify at once, do a **strangler-fig hybrid** — extract the hottest, cleanest, most CPU-bound cores first (agent tool loop, streaming JSON/diff, TUI renderer) into a Rust library exposed to the existing Node/TS app via napi-rs, and migrate outward from there. This banks idiomatic-Rust wins incrementally without a big-bang cutover and keeps the `jiti` extension host on the TS side until the plugin contract is settled.
+**Fallback:** if a full rewrite proves too large to justify at once, do a **strangler-fig hybrid** — extract the hottest, cleanest, most CPU-bound cores first (agent tool loop, streaming JSON/diff, TUI renderer) into a Rust library exposed to the existing Node/TS app via napi-rs, and migrate outward from there. This banks idiomatic-Rust wins incrementally without a big-bang cutover and keeps the `jiti` extension host on the TS side until the plugin contract is settled. Note (2026-07-18): superseded by the idiomatic-first / no-strangler-fig decision recorded at the top of this document; retained here only as analysis of the alternative.
 
 ---
 
