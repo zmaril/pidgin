@@ -20,7 +20,7 @@ Because roughly 58 of pi's test files mock internal collaborators and roughly 68
 
 ## Architecture
 
-- **Workspace.** A Cargo workspace whose crates mirror pi's five packages (`ai`, `agent`, `coding-agent`, `tui`, `orchestrator`), funneled through one `atilla-core` facade crate. Every language binding depends only on the facade, which absorbs async-to-sync bridging, opaque handles, and error normalization once, so each binding stays a thin mechanical translation of the same surface. Module boundaries and naming stay deliberately close to pi's so upstream diffs map to tractable atilla diffs.
+- **Workspace.** A Cargo workspace whose crates mirror pi's five packages (`ai`, `agent`, `coding-agent`, `tui`, `orchestrator`), funneled through one `atilla-core` façade crate. Every language binding depends only on the façade, which absorbs async-to-sync bridging, opaque handles, and error normalization once, so each binding stays a thin mechanical translation of the same surface. Module boundaries and naming stay deliberately close to pi's so upstream diffs map to tractable atilla diffs.
 - **Rewrite mode.** AI-accelerated hand-rewrite: idiomatic-first, big-bang, no transpiler and no strangler-fig. pi's TypeScript and its test suite are the executable spec.
 - **Providers.** Hand-rolled thin clients, one per wire dialect, on `reqwest` + `eventsource-stream`, all converging on pi's `AssistantMessageEvent` union. Order: Anthropic, then the OpenAI-compatible client (reused across compatible vendors), then Google, then Mistral, with Bedrock last (SigV4 via the AWS SDK). No multi-provider crate — we own the wire.
 - **Sessions.** A byte-exact mirror of pi's version-3 JSONL session-tree format, read and write.
@@ -38,7 +38,7 @@ One Rust extension registry (`Tool` / `Hook` / `Command`) is the successor to pi
 
 ## Languages
 
-All major languages, eventually; ordering matters less than proving the model. PHP goes first because it is the weirdest host (synchronous, request-scoped, thread-bound) — if the facade survives PHP, easier hosts follow. Node is first-class from day one out of necessity: the test harness is a Node binding. Python follows; Ruby and others as demand shows.
+All major languages, eventually; ordering matters less than proving the model. PHP goes first because it is the weirdest host (synchronous, request-scoped, thread-bound) — if the façade survives PHP, easier hosts follow. Node is first-class from day one out of necessity: the test harness is a Node binding. Python follows; Ruby and others as demand shows.
 
 ## TUI
 
@@ -48,7 +48,7 @@ Shadow pi faithfully. pi's TUI is an inline line-diff renderer with a crash-on-m
 
 1. The napi bridge harness first: shim packages, module manifest, codegen, and one `ai` test file green against Rust. The conformance mechanism precedes everything it gates.
 2. `ai` bottom-up (Anthropic SSE parsing, request shaping, providers), flipping manifest modules to `native` as their tests pass; the dashboard and CI gate ship here.
-3. `agent`, then `coding-agent` dependencies-first; the PHP binding surface grows in parallel once the facade exists.
+3. `agent`, then `coding-agent` dependencies-first; the PHP binding surface grows in parallel once the façade exists.
 4. `tui` (faithful port) and the extension plane per the porting order in `notes/startup/porting-map.md`; `orchestrator` last.
 
 Distribution and packaging (PECL matrices, wheels, prebuilt binaries) are explicitly deferred until the core and first bindings are proven.
