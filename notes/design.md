@@ -1,6 +1,6 @@
 # atilla — design
 
-The one-page picture of what this project is and the decisions that govern it. The research behind every statement here lives in `notes/startup/` (see its `index.md`); where an old note disagrees with this file, this file wins.
+The one-page picture of what this project is and the decisions that govern it. The research behind every statement here lives in `startup/` (see its `index.md`); where an old note disagrees with this file, this file wins.
 
 ## What we are building
 
@@ -32,7 +32,7 @@ Because roughly 58 of pi's test files mock internal collaborators and roughly 68
 One Rust extension registry (`Tool` / `Hook` / `Command`) is the successor to pi's `ExtensionAPI`, and everything lowers onto it.
 
 - **pi's own TypeScript extensions** run unchanged on an embedded `deno_core` runtime with a Node-compat layer; passing pi's extension tests is part of the bar.
-- **Host languages** get the same `(pi) => {}` shape: a handle with `registerTool` / `on` / `registerCommand` that wraps PHP/Python/JS closures as registry entries. Dispatch follows the two-flavor model in `notes/startup/deep-hooks.md`: a direct trampoline for hosts with a `Send` handle (Python under the GIL, Node via threadsafe functions), a thread-bound reentrant rendezvous pump for hosts without one (PHP, Ruby). Only JSON crosses the boundary; VM handles never enter the tokio world.
+- **Host languages** get the same `(pi) => {}` shape: a handle with `registerTool` / `on` / `registerCommand` that wraps PHP/Python/JS closures as registry entries. Dispatch follows the two-flavor model in `startup/deep-hooks.md`: a direct trampoline for hosts with a `Send` handle (Python under the GIL, Node via threadsafe functions), a thread-bound reentrant rendezvous pump for hosts without one (PHP, Ruby). Only JSON crosses the boundary; VM handles never enter the tokio world.
 - **Hook exposure policy: implemented-only.** Each binding exposes exactly the hook events the core has actually implemented at that point — the surface grows with the port, and no binding advertises events that are stubs.
 - **Discovery.** pi discovers extensions as TypeScript entrypoint files (project-level `.pi/extensions/*.ts` and configured paths), each default-exporting a factory `(pi) => void` that pi loads in-process via jiti and calls with the live API object — there is no separate manifest file in pi today; the filesystem convention is the manifest. atilla mirrors that convention for TS extensions, and extends it for host languages with a small per-extension declaration (language plus entrypoint) so a PHP or Python extension can be discovered the same way. The inventory of what is loaded — every registered tool, hook, and command, whatever language it came from — lives in Rust: the core registry is the single source of truth, and bindings query it rather than keeping their own lists.
 
@@ -49,6 +49,6 @@ Shadow pi faithfully. pi's TUI is an inline line-diff renderer with a crash-on-m
 1. The napi bridge harness first: shim packages, module manifest, codegen, and one `ai` test file green against Rust. The conformance mechanism precedes everything it gates.
 2. `ai` bottom-up (Anthropic SSE parsing, request shaping, providers), flipping manifest modules to `native` as their tests pass; the dashboard and CI gate ship here.
 3. `agent`, then `coding-agent` dependencies-first; the PHP binding surface grows in parallel once the façade exists.
-4. `tui` (faithful port) and the extension plane per the porting order in `notes/startup/porting-map.md`; `orchestrator` last.
+4. `tui` (faithful port) and the extension plane per the porting order in `startup/porting-map.md`; `orchestrator` last.
 
 Distribution and packaging (PECL matrices, wheels, prebuilt binaries) are explicitly deferred until the core and first bindings are proven.

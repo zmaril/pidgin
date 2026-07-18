@@ -34,8 +34,35 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Fan-out: only run the heavy napi build + smoke when the PR actually touches
+  # the Rust crates, the conformance harness, or the vendored pi submodule. A
+  # skipped required check still reports green, so branch protection stays happy.
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      conformance: ${{ steps.filter.outputs.conformance }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            conformance:
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'conformance/**'
+              - 'conformance.json'
+              - 'scripts/conformance.sh'
+              - 'vendor/pi'
+              - '.github/workflows/conformance.yml'
+
   conformance:
     name: napi build + conformance smoke
+    needs: changes
+    if: needs.changes.outputs.conformance == 'true' || github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

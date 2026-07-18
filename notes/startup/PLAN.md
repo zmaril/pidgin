@@ -2,7 +2,7 @@
 
 > Status: planning. This document is decision-ready but describes work not yet started.
 > Upstream: [`earendil-works/pi`](https://github.com/earendil-works/pi) — MIT, studied at commit `3da591ab` (pkg version `0.80.10`).
-> Historical note (2026-07-18): decisions made after this plan landed are recorded in the repo-root design.md, which is authoritative where they disagree. Known deltas: the TUI is a faithful port of pi's renderer (crossterm as the ANSI sink, ratatui-image for images only, not a ratatui recreation), and the napi-rs bridge and test harness are built first rather than at M7, because the conformance bar depends on them.
+> Historical note (2026-07-18): decisions made after this plan landed are recorded in the design doc (`notes/design.md`), which is authoritative where they disagree. Known deltas: the TUI is a faithful port of pi's renderer (crossterm as the ANSI sink, ratatui-image for images only, not a ratatui recreation), and the napi-rs bridge and test harness are built first rather than at M7, because the conformance bar depends on them.
 
 ## 1. What `pi` is (and what we are mirroring)
 
