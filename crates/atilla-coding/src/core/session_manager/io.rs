@@ -138,6 +138,17 @@ fn resolve(input: &str, base: &str) -> String {
         .unwrap_or_else(|_| normalize(input))
 }
 
+/// Resolve `input` against the process cwd. The `resolvePath(x)` the discovery
+/// surface ([`super::discovery`]) applies to session cwds and fork paths.
+pub(crate) fn resolve_input(input: &str) -> String {
+    resolve(input, &process_cwd())
+}
+
+/// `normalizePath(input)` for the discovery surface (custom session dirs).
+pub(crate) fn normalize_input(input: &str) -> String {
+    normalize(input)
+}
+
 // ===========================================================================
 // Session-directory computation
 // ===========================================================================
@@ -173,13 +184,22 @@ fn encode_cwd_segment(resolved_cwd: &str) -> String {
     format!("--{body}--")
 }
 
+/// The sessions root directory (`<agentDir>/sessions`). Mirrors pi's
+/// `getSessionsDir`; the parent of every per-cwd session directory and the root
+/// [`SessionManager::list_all`](super::SessionManager) scans when no explicit
+/// directory is given.
+pub(crate) fn sessions_dir_path() -> String {
+    let base = process_cwd();
+    let resolved_agent = resolve(agent_dir().to_str().unwrap_or("."), &base);
+    lexical(&format!("{resolved_agent}/sessions"))
+}
+
 /// The default per-cwd session directory path. Mirrors
 /// `getDefaultSessionDirPath`: `<agentDir>/sessions/--<safeCwd>--`.
 pub fn default_session_dir_path(cwd_input: &str) -> String {
     let base = process_cwd();
-    let resolved_agent = resolve(agent_dir().to_str().unwrap_or("."), &base);
     let segment = encode_cwd_segment(&resolve(cwd_input, &base));
-    lexical(&format!("{resolved_agent}/sessions/{segment}"))
+    lexical(&format!("{}/{segment}", sessions_dir_path()))
 }
 
 /// The default per-cwd session directory, creating it if absent. Mirrors
@@ -281,26 +301,32 @@ pub fn read_session_header(path: &Path) -> Option<SessionHeader> {
     Some(header_from_value(&value, id))
 }
 
-fn session_cwd_matches(cwd: &str, resolved_cwd: &str) -> bool {
+/// Whether a session header `cwd` resolves to `resolved_cwd`. Mirrors pi's
+/// `sessionCwdMatches`: an empty cwd never matches.
+pub(crate) fn session_cwd_matches(cwd: &str, resolved_cwd: &str) -> bool {
     !cwd.is_empty() && resolve(cwd, &process_cwd()) == resolved_cwd
 }
 
-/// Collect the `*.jsonl` files in `dir` paired with their parsed session
-/// headers, skipping non-jsonl files and any without a valid header. Shared by
-/// both discovery functions.
-fn session_files_with_headers(dir: &str) -> Vec<(PathBuf, SessionHeader)> {
+/// The `*.jsonl` files directly in `dir` (empty when the directory is
+/// unreadable). The single dir-scan primitive shared by the discovery surface.
+pub(crate) fn jsonl_files_in_dir(dir: &str) -> Vec<PathBuf> {
     let Ok(read_dir) = std::fs::read_dir(dir) else {
         return Vec::new();
     };
     read_dir
         .flatten()
-        .filter_map(|entry| {
-            let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) != Some("jsonl") {
-                return None;
-            }
-            read_session_header(&path).map(|header| (path, header))
-        })
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().and_then(|e| e.to_str()) == Some("jsonl"))
+        .collect()
+}
+
+/// Collect the `*.jsonl` files in `dir` paired with their parsed session
+/// headers, skipping any without a valid header. Shared by both discovery
+/// functions.
+fn session_files_with_headers(dir: &str) -> Vec<(PathBuf, SessionHeader)> {
+    jsonl_files_in_dir(dir)
+        .into_iter()
+        .filter_map(|path| read_session_header(&path).map(|header| (path, header)))
         .collect()
 }
 
