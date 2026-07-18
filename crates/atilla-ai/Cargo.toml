@@ -1,0 +1,9 @@
+[package]
+name = "atilla-ai"
+description = "Rust mirror of @earendil-works/pi-ai — provider and model surface (scaffold)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
