@@ -21,4 +21,7 @@ allow = [
 # tagged placeholder for the next binding surface, not untracked work.
 # The fluessig integration note quotes that same M1 placeholder marker as prose
 # when describing what atilla exposes today — a reference, not untracked work.
-ignore = ["bindings/php/src/lib.rs", "notes/fluessig-integration.md"]
+ignore = [
+    "bindings/php/src/lib.rs",
+    "notes/fluessig-integration.md",
+]
