@@ -19,8 +19,9 @@ pub use keys::{
     is_kitty_protocol_active, matches_key, parse_key, set_kitty_protocol_active, KeyEventType,
 };
 pub use renderer::{
-    delete_kitty_image, is_image_line, Component, Container, RenderError, SharedLines, Tui,
-    CURSOR_MARKER,
+    delete_kitty_image, is_image_line, Component, ComponentId, Container, MarginSpec,
+    OverlayAnchor, OverlayHandleId, OverlayMargin, OverlayOptions, ReactionAction, RenderError,
+    SharedLines, SizeValue, Tui, CURSOR_MARKER,
 };
 pub use terminal::{CrosstermTerminal, LoggingTerminal, Terminal};
 pub use width::{
