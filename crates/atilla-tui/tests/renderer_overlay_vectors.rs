@@ -1,3 +1,8 @@
+// straitjacket-allow-file:duplication — like keys_vectors.rs/width_vectors.rs,
+// this standalone integration-test binary repeats the per-field state-comparison
+// boilerplate (fullRedraws/cursorRow/... assertions) that renderer_vectors.rs
+// also has; test binaries cannot share a private helper without a common module,
+// which is more indirection than these `fails.push` reporters warrant.
 //! Replays the PR-R2 overlay-compositing and focus-restore vectors extracted
 //! from pi's own `TUI` (`vectors/gen/generate_renderer_r2.mjs`, driven through
 //! the `@xterm/headless` harness) and asserts the Rust renderer emits a
@@ -17,10 +22,10 @@ use std::rc::Rc;
 
 use serde::Deserialize;
 
-use atilla_tui::renderer::{
-    Component, MarginSpec, OverlayAnchor, OverlayMargin, OverlayOptions, ReactionAction, SizeValue,
+use atilla_tui::{
+    Component, LoggingTerminal, MarginSpec, OverlayAnchor, OverlayMargin, OverlayOptions,
+    ReactionAction, SizeValue, Tui,
 };
-use atilla_tui::{LoggingTerminal, Tui};
 
 /// A component that renders a fixed set of lines (base content or an overlay).
 struct VecLines {

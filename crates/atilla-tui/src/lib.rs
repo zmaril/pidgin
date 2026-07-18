@@ -9,6 +9,7 @@
 
 mod eaw_table;
 pub mod keys;
+pub mod overlay;
 pub mod renderer;
 pub mod terminal;
 mod unicode_tables;
@@ -18,10 +19,13 @@ pub use keys::{
     decode_kitty_printable, decode_printable_key, is_key_release, is_key_repeat,
     is_kitty_protocol_active, matches_key, parse_key, set_kitty_protocol_active, KeyEventType,
 };
+pub use overlay::{
+    ComponentId, MarginSpec, OverlayAnchor, OverlayHandleId, OverlayMargin, OverlayOptions,
+    ReactionAction, SizeValue,
+};
 pub use renderer::{
-    delete_kitty_image, is_image_line, Component, ComponentId, Container, MarginSpec,
-    OverlayAnchor, OverlayHandleId, OverlayMargin, OverlayOptions, ReactionAction, RenderError,
-    SharedLines, SizeValue, Tui, CURSOR_MARKER,
+    delete_kitty_image, is_image_line, Component, Container, RenderError, SharedLines, Tui,
+    CURSOR_MARKER,
 };
 pub use terminal::{CrosstermTerminal, LoggingTerminal, Terminal};
 pub use width::{
