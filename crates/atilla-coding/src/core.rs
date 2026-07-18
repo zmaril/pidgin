@@ -12,6 +12,8 @@ pub mod package_manager;
 pub mod project_trust;
 pub mod radius;
 pub mod resolve_config_value;
+pub mod session_cwd;
+pub mod session_manager;
 pub mod tools;
 pub mod trust_manager;
 
