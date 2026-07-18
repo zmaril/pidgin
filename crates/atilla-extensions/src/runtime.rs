@@ -7,6 +7,12 @@
 //! through a per-request `oneshot`. Only `serde_json::Value` (and the source
 //! string) crosses the boundary — V8 handles never leave the owning thread.
 
+// straitjacket-allow-file:duplication -- the request/reply channel boilerplate
+// (build a oneshot, send a Command, await the answer) and the event-loop error
+// mapping are deliberate parallel structure of the flavor-2 rendezvous pattern
+// (notes/startup/deep-hooks.md §5); the same shape recurs for every off-thread
+// host plane, so it is mirror duplication, not an accident to hoist away.
+
 use anyhow::{anyhow, Result};
 use deno_core::{JsRuntime, PollEventLoopOptions, RuntimeOptions};
 use serde_json::Value;
