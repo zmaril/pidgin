@@ -7,6 +7,7 @@
 //! extracted from pi itself (see `tests/width_vectors.rs` and
 //! `tests/keys_vectors.rs`).
 
+pub mod components;
 mod eaw_table;
 pub mod fuzzy;
 pub mod keybindings;
@@ -24,6 +25,11 @@ pub mod widgets;
 pub mod width;
 pub mod word_navigation;
 
+pub use components::{
+    Input, SelectItem, SelectList, SelectListLayoutOptions, SelectListTheme,
+    SelectListTruncatePrimaryContext, SettingItem, SettingsList, SettingsListOptions,
+    SettingsListTheme, SubmenuDone, SubmenuFactory,
+};
 pub use fuzzy::{fuzzy_filter, fuzzy_match, FuzzyMatch};
 pub use keybindings::{
     tui_keybindings, KeybindingConflict, KeybindingDefinition, KeybindingsManager,
