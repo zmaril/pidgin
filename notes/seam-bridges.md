@@ -192,9 +192,26 @@ pub trait CommandFlowMachine {
 
 The shim runs each `Run.request`, feeds the `CommandOutput` back through `advance`, and loops until `Done`. A flow that decides no command is needed returns `Done` from `start` with no `Run` — which is how the version-check test sees `runCommand` never called. `CommandRequest` carries `env` and `timeout_ms` (`GIT_TERMINAL_PROMPT`, npm-view timeouts) as of PR #63.
 
+`Done.result` crosses as JSON — each machine serializes its own result — so a single `CommandCore` wraps every op as `Box<dyn CommandFlowMachine>`. Keep the trait object-safe: no per-op associated output type, and every result type derives `Serialize`.
+
 ### Injected-collaborator variant
 
 Some tool tests do not spy the spawn; they inject a fake operations object (`createBashTool({ operations })`) and assert against it. That is a collaborator mock. Under the one-way boundary the mapping is the same build/consume split — Rust decides the operation, the shim's operations object performs it — not a Rust tool holding a JS-backed trait object, which would need a callback into JS mid-call. A Rust tool that keeps its operations as a pluggable trait backs either shape: the scripted double for pure-Rust tests, the shim-driven split for conformance.
+
+### Shim reconstruction rules
+
+`CommandRequest` is a flat struct, and pi's three runners take different option shapes, so the shim reconstructs pi's exact call: `runCommand(program, args, { cwd? })`, `runCommandCapture(program, args, { cwd?, timeoutMs?, env? })` where `env` is a `Record`, and `runCommandSync(program, args)` with no options. Three rules keep the calls byte-identical to pi:
+
+- Emit the options argument as `undefined` when `cwd`, `env`, and `timeout_ms` are all empty — never `{}`. A test that deep-equals `{}` against `undefined` treats them as unequal, so `toHaveBeenCalledWith(program, args, undefined)` (npm install, uninstall, `npm root -g`) fails against a `{}`.
+- Build the options object from present keys only, so exact `{ cwd }` assertions hold.
+- Convert `env` from the wire's array of pairs (`[["GIT_TERMINAL_PROMPT", "0"]]`) to a `Record` with `Object.fromEntries`.
+
+### Host preconditions
+
+Two behaviors stay with the host, not the machine:
+
+- Bulk npm updates issue one batched install per scope. Probe each source with the machine or the standalone version parser, collect the specs, then run a single batch install — not a per-source install machine.
+- The offline gate short-circuits update checks before the first command, so apply it before `start()`; the machine always plans its first `Run`.
 
 ---
 
