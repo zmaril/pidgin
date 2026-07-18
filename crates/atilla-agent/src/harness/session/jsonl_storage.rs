@@ -8,6 +8,10 @@
 //! Non-version-3 headers are hard-rejected (no migration), which is why pi's
 //! legacy v1 fixtures do not parse through this surface.
 
+// straitjacket-allow-file:duplication — the SessionStorage impl mirrors the
+// in-memory impl in storage.rs (pi keeps these as two parallel storage classes);
+// the trivial trait-method bodies are identical by design.
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::OpenOptions;

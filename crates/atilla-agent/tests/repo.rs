@@ -1,5 +1,9 @@
 //! Ports `test/harness/repo.test.ts` for both the in-memory and JSONL repos.
 
+// straitjacket-allow-file:duplication — the in-memory and JSONL test bodies are
+// deliberate parallel ports of the same repo.test.ts cases and mirror each other
+// by design.
+
 mod common;
 
 use atilla_agent::harness::session::{
