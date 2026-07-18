@@ -1,5 +1,8 @@
 // straitjacket-allow-file:duplication — this generator's dump()/paths boilerplate
 // intentionally mirrors generate_keys.mjs; each generator is a standalone script.
+// straitjacket-allow-file:emoji — the emoji literal is UTF-8 segmentation/width
+// test data fed to pi's own functions, not decorative prose (mirrors
+// generate_keys.mjs's emoji allow-file).
 //
 // Vector generator for the bit-exact Rust port of pi's TUI component support
 // layer (PR C1). Runs pi's OWN exported functions from

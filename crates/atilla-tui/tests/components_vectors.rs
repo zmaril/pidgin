@@ -418,13 +418,10 @@ fn keybindings_vectors() {
             Some(entries) => entries
                 .iter()
                 .map(|(id, keys)| {
-                    let keys = match keys {
-                        None => None,
-                        Some(sv) => Some(match sv {
-                            StringOrVec::One(s) => vec![s.clone()],
-                            StringOrVec::Many(v) => v.clone(),
-                        }),
-                    };
+                    let keys = keys.as_ref().map(|sv| match sv {
+                        StringOrVec::One(s) => vec![s.clone()],
+                        StringOrVec::Many(v) => v.clone(),
+                    });
                     (id.as_str(), keys)
                 })
                 .collect(),
