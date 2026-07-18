@@ -212,10 +212,7 @@ mod tests {
         );
         assert_eq!(resp["success"], false);
         assert_eq!(resp["command"], "prompt");
-        assert!(resp["error"]
-            .as_str()
-            .unwrap()
-            .contains("not implemented"));
+        assert!(resp["error"].as_str().unwrap().contains("not implemented"));
     }
 
     #[test]

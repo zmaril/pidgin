@@ -314,10 +314,8 @@ impl RpcSession {
             },
         };
 
-        let written =
-            export_html::export_session_data_to_html(&session_data, &options).map_err(|e| {
-                format!("failed to write export: {e}")
-            })?;
+        let written = export_html::export_session_data_to_html(&session_data, &options)
+            .map_err(|e| format!("failed to write export: {e}"))?;
         Ok(json!({ "path": written.to_string_lossy() }))
     }
 
@@ -431,12 +429,8 @@ fn build_tree(session: &Session, entries: &[SessionTreeEntry]) -> Vec<Value> {
     ) -> Value {
         let entry = entry_by_id[id];
         let mut child_ids = children_of.get(id).cloned().unwrap_or_default();
-        // Sort children oldest-first by timestamp.
-        child_ids.sort_by(|a, b| {
-            let ta = timestamp(entry_by_id[a.as_str()]);
-            let tb = timestamp(entry_by_id[b.as_str()]);
-            ta.cmp(&tb)
-        });
+        // Sort children oldest-first by timestamp, computing each key once.
+        child_ids.sort_by_cached_key(|id| timestamp(entry_by_id[id.as_str()]));
         let children: Vec<Value> = child_ids
             .iter()
             .map(|c| build_node(c, entry_by_id, children_of, session))

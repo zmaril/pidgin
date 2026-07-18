@@ -27,6 +27,16 @@ use crate::cli::output_guard::is_stdout_taken_over;
 /// `trusted` mirrors `settingsManager.isProjectTrusted()` for this run
 /// (`--approve` => trusted, `--no-approve`/default => untrusted when the
 /// project carries trust-requiring resources such as `packages`).
+/// Read a JSON array of strings from `settings[key]`, returning `None` when the
+/// key is absent or not an array (so callers can pick their own default).
+fn string_array(settings: &Value, key: &str) -> Option<Vec<String>> {
+    settings.get(key).and_then(Value::as_array).map(|arr| {
+        arr.iter()
+            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+            .collect()
+    })
+}
+
 pub fn maybe_install_project_packages(cwd: &str, trusted: bool) {
     if !trusted {
         return;
@@ -40,15 +50,7 @@ pub fn maybe_install_project_packages(cwd: &str, trusted: bool) {
         return;
     };
 
-    let packages: Vec<String> = settings
-        .get("packages")
-        .and_then(Value::as_array)
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                .collect()
-        })
-        .unwrap_or_default();
+    let packages = string_array(&settings, "packages").unwrap_or_default();
 
     // Only npm-source packages are handled by the configured npmCommand.
     let npm_specs: Vec<String> = packages
@@ -59,15 +61,8 @@ pub fn maybe_install_project_packages(cwd: &str, trusted: bool) {
         return;
     }
 
-    let npm_command: Vec<String> = settings
-        .get("npmCommand")
-        .and_then(Value::as_array)
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                .collect()
-        })
-        .unwrap_or_else(|| vec!["npm".to_string()]);
+    let npm_command =
+        string_array(&settings, "npmCommand").unwrap_or_else(|| vec!["npm".to_string()]);
 
     let Some((command, base_args)) = npm_command.split_first() else {
         return;

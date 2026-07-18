@@ -174,7 +174,13 @@ fn default_session_dir_path(cwd: &str) -> String {
     let trimmed = resolved_cwd.trim_start_matches(['/', '\\']);
     let safe: String = trimmed
         .chars()
-        .map(|c| if c == '/' || c == '\\' || c == ':' { '-' } else { c })
+        .map(|c| {
+            if c == '/' || c == '\\' || c == ':' {
+                '-'
+            } else {
+                c
+            }
+        })
         .collect();
     let safe_path = format!("--{safe}--");
     lexical_normalize(&format!("{resolved_agent}/sessions/{safe_path}"))
@@ -211,25 +217,36 @@ fn iso_timestamp() -> String {
     let rem = secs % 86_400;
     let (hour, minute, second) = (rem / 3600, (rem % 3600) / 60, rem % 60);
     let (year, month, day) = civil_from_days(days as i64);
-    format!(
-        "{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}.{millis:03}Z"
-    )
+    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}.{millis:03}Z")
 }
 
-/// Convert days since the Unix epoch to (year, month, day). Howard Hinnant's
-/// civil-from-days algorithm.
-fn civil_from_days(z: i64) -> (i64, u32, u32) {
-    let z = z + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let year = if m <= 2 { y + 1 } else { y };
-    (year, m as u32, d as u32)
+/// Convert days since the Unix epoch (`>= 0`) to (year, month, day) by walking
+/// the Gregorian calendar year- then month-at-a-time. `SystemTime` since the
+/// epoch is always non-negative, so the forward walk is sufficient here.
+fn civil_from_days(days: i64) -> (i64, u32, u32) {
+    fn is_leap(year: i64) -> bool {
+        (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+    }
+
+    let mut year = 1970;
+    let mut remaining = days.max(0);
+    loop {
+        let year_len = if is_leap(year) { 366 } else { 365 };
+        if remaining < year_len {
+            break;
+        }
+        remaining -= year_len;
+        year += 1;
+    }
+
+    let feb = if is_leap(year) { 29 } else { 28 };
+    let month_lengths = [31, feb, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let mut month = 0;
+    while remaining >= month_lengths[month] {
+        remaining -= month_lengths[month];
+        month += 1;
+    }
+    (year, month as u32 + 1, remaining as u32 + 1)
 }
 
 /// The subset of pi's `SessionManager` that the CLI shell needs.
@@ -291,7 +308,9 @@ impl SessionManager {
                 // Empty parse but the file has bytes => not a valid pi session.
                 let size = std::fs::metadata(&resolved).map(|m| m.len()).unwrap_or(0);
                 if size > 0 {
-                    return Err(format!("Session file is not a valid pi session: {resolved}"));
+                    return Err(format!(
+                        "Session file is not a valid pi session: {resolved}"
+                    ));
                 }
                 // Genuinely empty file: initialize an in-memory header (pi would
                 // rewrite it here; not exercised by the black-box contract).
@@ -346,7 +365,9 @@ impl SessionManager {
 
     fn new_session(&mut self, id: Option<&str>) {
         let timestamp = iso_timestamp();
-        let session_id = id.map(|s| s.to_string()).unwrap_or_else(|| generate_id(&HashSet::new()));
+        let session_id = id
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| generate_id(&HashSet::new()));
         let header = serde_json::json!({
             "type": "session",
             "version": CURRENT_SESSION_VERSION,
@@ -435,10 +456,10 @@ impl SessionManager {
         };
 
         if !self.has_assistant() {
+            // Before any assistant message the file is not yet flushed, so the
+            // pre-flush entries stay buffered in memory until the first flush.
             if self.flushed {
                 append_line(&file, entry);
-            } else {
-                self.flushed = false;
             }
             return;
         }
@@ -459,7 +480,11 @@ impl SessionManager {
 
 fn append_line(file: &str, entry: &Value) {
     use std::io::Write;
-    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(file) {
+    if let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(file)
+    {
         let line = serde_json::to_string(entry).unwrap_or_default();
         let _ = writeln!(f, "{line}");
     }
@@ -495,4 +520,18 @@ pub fn find_local_session_by_exact_id(
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::civil_from_days;
+
+    #[test]
+    fn civil_from_days_matches_known_dates() {
+        assert_eq!(civil_from_days(0), (1970, 1, 1));
+        assert_eq!(civil_from_days(18628), (2021, 1, 1));
+        // 2020 is a leap year, so day 59 of the year is Feb 29.
+        assert_eq!(civil_from_days(18321), (2020, 2, 29));
+        assert_eq!(civil_from_days(18322), (2020, 3, 1));
+    }
 }

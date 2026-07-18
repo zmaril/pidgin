@@ -70,7 +70,10 @@ mod tests {
         let input = b"{\"a\":1}\r\n{\"b\":2}\n" as &[u8];
         let mut lines = Vec::new();
         read_json_lines(input, |l| lines.push(l.to_string())).unwrap();
-        assert_eq!(lines, vec!["{\"a\":1}".to_string(), "{\"b\":2}".to_string()]);
+        assert_eq!(
+            lines,
+            vec!["{\"a\":1}".to_string(), "{\"b\":2}".to_string()]
+        );
     }
 
     #[test]

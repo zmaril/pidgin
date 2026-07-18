@@ -79,7 +79,11 @@ fn handle_line(session: &mut RpcSession, line: &str) {
     let value: Value = match serde_json::from_str(line) {
         Ok(v) => v,
         Err(e) => {
-            write_line(&err_value(None, "parse", format!("Failed to parse command: {e}")));
+            write_line(&err_value(
+                None,
+                "parse",
+                format!("Failed to parse command: {e}"),
+            ));
             return;
         }
     };
@@ -90,10 +94,7 @@ fn handle_line(session: &mut RpcSession, line: &str) {
         return;
     }
 
-    let id = value
-        .get("id")
-        .and_then(Value::as_str)
-        .map(str::to_owned);
+    let id = value.get("id").and_then(Value::as_str).map(str::to_owned);
     let ty = value
         .get("type")
         .and_then(Value::as_str)

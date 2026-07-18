@@ -293,10 +293,14 @@ pub fn parse_args(args: &[String]) -> Args {
                             .insert(flag_name, FlagValue::Str(next.clone()));
                         i += 1;
                     } else {
-                        result.unknown_flags.insert(flag_name, FlagValue::Bool(true));
+                        result
+                            .unknown_flags
+                            .insert(flag_name, FlagValue::Bool(true));
                     }
                 } else {
-                    result.unknown_flags.insert(flag_name, FlagValue::Bool(true));
+                    result
+                        .unknown_flags
+                        .insert(flag_name, FlagValue::Bool(true));
                 }
             }
         } else if arg.starts_with('-') && !arg.starts_with("--") {

@@ -17,7 +17,7 @@ use std::io::IsTerminal;
 use std::path::Path;
 use std::process::exit;
 
-use args::{Args, DiagnosticKind, ListModels, Mode};
+use args::{Args, DiagnosticKind, Mode};
 use config::{ENV_SESSION_DIR, VERSION};
 use output_guard::{err_line, out_line, take_over_stdout};
 use session::SessionManager;
@@ -101,10 +101,11 @@ pub fn run(argv: &[String]) -> i32 {
         .unwrap_or_else(|| ".".to_string());
 
     // Session directory: --session-dir > $..SESSION_DIR > default (per-cwd).
-    let session_dir: Option<String> = parsed
-        .session_dir
-        .clone()
-        .or_else(|| std::env::var(ENV_SESSION_DIR).ok().filter(|s| !s.is_empty()));
+    let session_dir: Option<String> = parsed.session_dir.clone().or_else(|| {
+        std::env::var(ENV_SESSION_DIR)
+            .ok()
+            .filter(|s| !s.is_empty())
+    });
 
     let mut session_manager = match create_session_manager(&parsed, &cwd, session_dir.as_deref()) {
         Ok(mgr) => mgr,
@@ -150,9 +151,6 @@ pub fn run(argv: &[String]) -> i32 {
         // pi lists available models to stdout; with no model runtime there is
         // nothing to print. The read-only contract only requires exit 0 and no
         // session reservation (guaranteed by the in-memory session above).
-        match &parsed.list_models {
-            Some(ListModels::Search(_)) | Some(ListModels::All) | None => {}
-        }
         return 0;
     }
 
@@ -206,32 +204,39 @@ fn is_plain_runtime_metadata(parsed: &Args) -> bool {
     !parsed.print && parsed.mode.is_none() && (parsed.help || parsed.list_models.is_some())
 }
 
+/// Emit pi's `<flag> cannot be combined with <...>` error and return
+/// `Some(1)` when any of `checks` (predicate, flag-name) is active. Shared by
+/// the fork and session-id validators.
+fn reject_flag_conflicts(flag: &str, checks: &[(bool, &str)]) -> Option<i32> {
+    let conflicting: Vec<&str> = checks
+        .iter()
+        .filter(|(active, _)| *active)
+        .map(|(_, name)| *name)
+        .collect();
+    if conflicting.is_empty() {
+        return None;
+    }
+    err_line(&format!(
+        "Error: {flag} cannot be combined with {}",
+        conflicting.join(", ")
+    ));
+    Some(1)
+}
+
 /// Mirrors `validateForkFlags`. Returns `Some(exit_code)` to abort.
 fn validate_fork_flags(parsed: &Args) -> Option<i32> {
     let Some(_fork) = &parsed.fork else {
         return None;
     };
-    let mut conflicting = Vec::new();
-    if parsed.session.is_some() {
-        conflicting.push("--session");
-    }
-    if parsed.continue_ {
-        conflicting.push("--continue");
-    }
-    if parsed.resume {
-        conflicting.push("--resume");
-    }
-    if parsed.no_session {
-        conflicting.push("--no-session");
-    }
-    if !conflicting.is_empty() {
-        err_line(&format!(
-            "Error: --fork cannot be combined with {}",
-            conflicting.join(", ")
-        ));
-        return Some(1);
-    }
-    None
+    reject_flag_conflicts(
+        "--fork",
+        &[
+            (parsed.session.is_some(), "--session"),
+            (parsed.continue_, "--continue"),
+            (parsed.resume, "--resume"),
+            (parsed.no_session, "--no-session"),
+        ],
+    )
 }
 
 /// Mirrors `validateSessionIdFlags`. Returns `Some(exit_code)` to abort.
@@ -239,22 +244,15 @@ fn validate_session_id_flags(parsed: &Args) -> Option<i32> {
     let Some(session_id) = &parsed.session_id else {
         return None;
     };
-    let mut conflicting = Vec::new();
-    if parsed.session.is_some() {
-        conflicting.push("--session");
-    }
-    if parsed.continue_ {
-        conflicting.push("--continue");
-    }
-    if parsed.resume {
-        conflicting.push("--resume");
-    }
-    if !conflicting.is_empty() {
-        err_line(&format!(
-            "Error: --session-id cannot be combined with {}",
-            conflicting.join(", ")
-        ));
-        return Some(1);
+    if let Some(code) = reject_flag_conflicts(
+        "--session-id",
+        &[
+            (parsed.session.is_some(), "--session"),
+            (parsed.continue_, "--continue"),
+            (parsed.resume, "--resume"),
+        ],
+    ) {
+        return Some(code);
     }
     if let Err(message) = session::assert_valid_session_id(session_id) {
         err_line(&format!("Error: {message}"));
@@ -321,7 +319,9 @@ fn create_session_manager(
 
     if let Some(session_arg) = &parsed.session {
         return match resolve_session_path(session_arg, cwd, session_dir) {
-            ResolvedSession::Path(path) | ResolvedSession::Local(path) => open_session_or_exit(&path),
+            ResolvedSession::Path(path) | ResolvedSession::Local(path) => {
+                open_session_or_exit(&path)
+            }
             ResolvedSession::NotFound(arg) => {
                 err_line(&format!("No session found matching '{arg}'"));
                 Err(1)

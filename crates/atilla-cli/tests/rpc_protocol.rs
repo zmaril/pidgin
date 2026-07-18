@@ -73,7 +73,10 @@ fn framing_round_trips_every_command() {
         assert_eq!(r["success"], true, "command {} should succeed: {r}", i + 1);
     }
     // ids echoed back in order.
-    let ids: Vec<&str> = responses.iter().map(|r| r["id"].as_str().unwrap()).collect();
+    let ids: Vec<&str> = responses
+        .iter()
+        .map(|r| r["id"].as_str().unwrap())
+        .collect();
     assert_eq!(ids, ["1", "2", "3", "4", "5", "6"]);
 }
 
@@ -85,7 +88,10 @@ fn parse_error_yields_parse_failure_shape() {
     assert_eq!(r["type"], "response");
     assert_eq!(r["command"], "parse");
     assert_eq!(r["success"], false);
-    assert!(r["error"].as_str().unwrap().starts_with("Failed to parse command:"));
+    assert!(r["error"]
+        .as_str()
+        .unwrap()
+        .starts_with("Failed to parse command:"));
     // The parse-error line carries no `id`.
     assert!(r.get("id").is_none());
 }

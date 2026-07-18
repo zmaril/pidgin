@@ -1,3 +1,7 @@
+// straitjacket-allow-file[:duplication] — each black-box case is a self-contained
+// spawn-assert scenario that deliberately repeats the small temp-dir/agent/project
+// setup and the run_cli(...) invocation shape, mirroring pi's per-file vitest cases;
+// collapsing that scaffolding would obscure what each case actually exercises.
 //! Black-box CLI tests, mirroring pi's four spawn-the-binary test files
 //! (`stdout-cleanliness`, `session-id-readonly`, `startup-session-name`,
 //! `session-file-invalid`). Each test spawns the built `atilla` binary and
@@ -105,7 +109,10 @@ fn write_session(session_dir: &Path, cwd: &Path, id: &str) {
 }
 
 fn node_path() -> Option<String> {
-    let out = Command::new("sh").args(["-c", "command -v node"]).output().ok()?;
+    let out = Command::new("sh")
+        .args(["-c", "command -v node"])
+        .output()
+        .ok()?;
     if !out.status.success() {
         return None;
     }
@@ -162,8 +169,12 @@ fn version_goes_to_stdout_with_empty_stderr() {
     let trimmed = r.stdout.trim();
     // /^\d+\.\d+\.\d+/
     let mut parts = trimmed.split('.');
-    let ok = parts.next().is_some_and(|s| s.chars().all(|c| c.is_ascii_digit()) && !s.is_empty())
-        && parts.next().is_some_and(|s| s.chars().all(|c| c.is_ascii_digit()) && !s.is_empty())
+    let ok = parts
+        .next()
+        .is_some_and(|s| s.chars().all(|c| c.is_ascii_digit()) && !s.is_empty())
+        && parts
+            .next()
+            .is_some_and(|s| s.chars().all(|c| c.is_ascii_digit()) && !s.is_empty())
         && parts
             .next()
             .is_some_and(|s| s.chars().take_while(|c| c.is_ascii_digit()).count() >= 1);
@@ -181,7 +192,10 @@ fn plain_help_goes_to_stdout() {
     );
     assert_eq!(r.code, Some(0));
     assert!(r.stdout.contains("Usage:"), "stdout must contain Usage:");
-    assert!(!r.stderr.contains("Usage:"), "stderr must not contain Usage:");
+    assert!(
+        !r.stderr.contains("Usage:"),
+        "stderr must not contain Usage:"
+    );
 }
 
 #[test]
@@ -254,7 +268,11 @@ fn setup_session_dirs(tag: &str) -> SessionDirs {
     let sessions = root.join("sessions");
     fs::create_dir_all(&agent).unwrap();
     fs::create_dir_all(&project).unwrap();
-    SessionDirs { agent, project, sessions }
+    SessionDirs {
+        agent,
+        project,
+        sessions,
+    }
 }
 
 fn readonly_env(agent: &Path) -> Vec<(&'static str, String)> {
@@ -275,23 +293,38 @@ fn does_not_reserve_session_for_help() {
     let dirs = setup_session_dirs("ro-help");
     let r = run_readonly(&dirs, &["--session-id", "read-only-help", "--help"]);
     assert_eq!(r.code, Some(0));
-    assert!(!has_session_with_id(&dirs.agent.join("sessions"), "read-only-help"));
+    assert!(!has_session_with_id(
+        &dirs.agent.join("sessions"),
+        "read-only-help"
+    ));
 }
 
 #[test]
 fn allows_no_session_with_session_id() {
     let dirs = setup_session_dirs("ro-nosession");
-    let r = run_readonly(&dirs, &["--no-session", "--session-id", "ephemeral-id", "--help"]);
+    let r = run_readonly(
+        &dirs,
+        &["--no-session", "--session-id", "ephemeral-id", "--help"],
+    );
     assert_eq!(r.code, Some(0));
-    assert!(!has_session_with_id(&dirs.agent.join("sessions"), "ephemeral-id"));
+    assert!(!has_session_with_id(
+        &dirs.agent.join("sessions"),
+        "ephemeral-id"
+    ));
 }
 
 #[test]
 fn does_not_reserve_session_for_list_models() {
     let dirs = setup_session_dirs("ro-models");
-    let r = run_readonly(&dirs, &["--session-id", "read-only-models", "--list-models"]);
+    let r = run_readonly(
+        &dirs,
+        &["--session-id", "read-only-models", "--list-models"],
+    );
     assert_eq!(r.code, Some(0));
-    assert!(!has_session_with_id(&dirs.agent.join("sessions"), "read-only-models"));
+    assert!(!has_session_with_id(
+        &dirs.agent.join("sessions"),
+        "read-only-models"
+    ));
 }
 
 #[test]
@@ -335,7 +368,9 @@ fn does_not_warn_when_session_id_opens_existing_session() {
         ],
     );
     assert_eq!(r.code, Some(1));
-    assert!(!r.stderr.contains("No project session found with id 'existing-session-id'"));
+    assert!(!r
+        .stderr
+        .contains("No project session found with id 'existing-session-id'"));
 }
 
 #[test]
@@ -358,7 +393,9 @@ fn rejects_existing_fork_target_session_id() {
         ],
     );
     assert_eq!(r.code, Some(1));
-    assert!(r.stderr.contains("Session already exists with id 'existing-id'"));
+    assert!(r
+        .stderr
+        .contains("Session already exists with id 'existing-id'"));
 }
 
 #[test]
@@ -367,8 +404,15 @@ fn rejects_invalid_session_ids_without_stack_traces() {
     for id in ["-bad", "bad id"] {
         let r = run_readonly(&dirs, &["--session-id", id, "-p", "hi"]);
         assert_eq!(r.code, Some(1), "id {id:?}");
-        assert!(r.stderr.contains("Session id must be non-empty"), "id {id:?}: {}", r.stderr);
-        assert!(!r.stderr.contains("SessionManager.create"), "id {id:?} leaked a stack frame");
+        assert!(
+            r.stderr.contains("Session id must be non-empty"),
+            "id {id:?}: {}",
+            r.stderr
+        );
+        assert!(
+            !r.stderr.contains("SessionManager.create"),
+            "id {id:?} leaked a stack frame"
+        );
     }
 }
 
@@ -408,7 +452,12 @@ fn read_session_info_names(session_file: &Path) -> Vec<String> {
         .split('\n')
         .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
         .filter(|v| v.get("type").and_then(|t| t.as_str()) == Some("session_info"))
-        .map(|v| v.get("name").and_then(|n| n.as_str()).unwrap_or("").to_string())
+        .map(|v| {
+            v.get("name")
+                .and_then(|n| n.as_str())
+                .unwrap_or("")
+                .to_string()
+        })
         .collect()
 }
 
@@ -439,7 +488,10 @@ fn sets_name_on_selected_session_before_model_validation() {
         &env_refs,
     );
     assert_eq!(r.code, Some(1));
-    assert_eq!(read_session_info_names(&session_file), vec!["CLI Named Session".to_string()]);
+    assert_eq!(
+        read_session_info_names(&session_file),
+        vec!["CLI Named Session".to_string()]
+    );
 }
 
 #[test]
