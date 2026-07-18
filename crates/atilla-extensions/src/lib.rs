@@ -22,7 +22,21 @@
 //! caller. The pi-facing surface (tool/hook ops, TypeScript transpile,
 //! discovery, the registry) is layered on in later PRs. The shape is
 //! productionized from the `throwaway/deno-hello` spike.
+//!
+//! # The `deno` feature gate
+//!
+//! Everything above is compiled only under the non-default **`deno`** feature.
+//! `deno_core` embeds V8, whose prebuilt static blob is downloaded from GitHub
+//! release assets on first build — a download blocked (HTTP 403) by the sandbox
+//! egress proxy every atilla session runs behind. If this crate built V8 by
+//! default, `cargo build --workspace` / `cargo test --workspace` would break in
+//! every sandbox the moment it landed. So the runtime lives behind
+//! `#[cfg(feature = "deno")]`; the default build is an empty, V8-free crate that
+//! compiles everywhere. Build the real runtime with `--features deno` (CI does
+//! this in a dedicated job where the blob download succeeds).
 
+#[cfg(feature = "deno")]
 mod runtime;
 
+#[cfg(feature = "deno")]
 pub use runtime::JsPlaneHandle;
