@@ -43,7 +43,7 @@
 
 use serde_json::Value;
 
-use crate::seams::clock::{Clock, SystemClock};
+use crate::seams::clock::{Clock, FakeClock, SystemClock};
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, CacheRetention, ContentBlock, Context,
@@ -731,6 +731,18 @@ impl FauxProvider {
             prompt_cache: Mutex::new(std::collections::BTreeMap::new()),
             clock,
         }
+    }
+
+    /// Construct a faux provider driven by a fresh, shared [`FakeClock`],
+    /// returning the provider and a clone of that clock. Both handles share the
+    /// same interior state, so mutating the returned clock (e.g. `set_now_ms`)
+    /// changes the `now` the provider reads. This is the ergonomic entry point
+    /// for a binding that wants to inject a settable clock without assembling an
+    /// `Arc<dyn Clock>` itself; the clock starts at `0`.
+    pub fn with_fake_clock(options: RegisterFauxProviderOptions) -> (Self, FakeClock) {
+        let clock = FakeClock::new(0);
+        let provider = Self::with_clock(options, Arc::new(clock.clone()));
+        (provider, clock)
     }
 
     /// The provider's model catalog (pi's `core.models`).
