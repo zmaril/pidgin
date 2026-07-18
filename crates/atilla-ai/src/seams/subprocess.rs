@@ -20,6 +20,7 @@
 //!   every argv it was asked to run so a test can assert on the command line
 //!   exactly as pi's `package-manager` tests do.
 
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::io;
 use std::sync::{Arc, Mutex};
@@ -28,7 +29,12 @@ use std::sync::{Arc, Mutex};
 ///
 /// Mirrors the `(command, args, options)` shape pi passes to its private
 /// `runCommand*` helpers.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Serde-serializable with camelCase fields so it round-trips across the napi
+/// JSON boundary as `{program, args, cwd, env, timeoutMs}` for the host command
+/// shim (`env` is an array of `[name, value]` pairs).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CommandRequest {
     /// The program to execute (pi's `command`).
     pub program: String,
@@ -36,10 +42,17 @@ pub struct CommandRequest {
     pub args: Vec<String>,
     /// Working directory, if pinned (pi's `options.cwd`).
     pub cwd: Option<String>,
+    /// Extra environment variables to set for the child, as `(name, value)`
+    /// pairs. Empty by default (inherit the parent environment unchanged).
+    pub env: Vec<(String, String)>,
+    /// Wall-clock timeout in milliseconds, if the caller caps the run. `None`
+    /// leaves the command unbounded.
+    pub timeout_ms: Option<u64>,
 }
 
 impl CommandRequest {
-    /// Build a request for `program` with `args`, no explicit cwd.
+    /// Build a request for `program` with `args`, no explicit cwd, no extra env,
+    /// and no timeout.
     pub fn new(
         program: impl Into<String>,
         args: impl IntoIterator<Item = impl Into<String>>,
@@ -48,6 +61,8 @@ impl CommandRequest {
             program: program.into(),
             args: args.into_iter().map(Into::into).collect(),
             cwd: None,
+            env: Vec::new(),
+            timeout_ms: None,
         }
     }
 
@@ -56,12 +71,28 @@ impl CommandRequest {
         self.cwd = Some(cwd.into());
         self
     }
+
+    /// Add an environment variable for the child (builder style).
+    pub fn with_env(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
+        self.env.push((name.into(), value.into()));
+        self
+    }
+
+    /// Cap the run at `timeout_ms` milliseconds (builder style).
+    pub fn with_timeout(mut self, timeout_ms: u64) -> Self {
+        self.timeout_ms = Some(timeout_ms);
+        self
+    }
 }
 
 /// The captured result of running a command: exit status plus captured streams.
 ///
 /// Mirrors what pi's `runCommandCapture` returns (`{ stdout, stderr, code }`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Serde-serializable so the host command shim can return `{code, stdout,
+/// stderr}` across the napi JSON boundary.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CommandOutput {
     /// Process exit code; `None` when the process was signalled.
     pub code: Option<i32>,
@@ -116,6 +147,9 @@ impl CommandRunner for SystemCommandRunner {
         command.args(&request.args);
         if let Some(cwd) = &request.cwd {
             command.current_dir(cwd);
+        }
+        for (name, value) in &request.env {
+            command.env(name, value);
         }
         let output = command.output()?;
         Ok(CommandOutput {
@@ -211,6 +245,67 @@ mod tests {
         assert_eq!(calls.len(), 2);
         assert_eq!(calls[0], CommandRequest::new("git", ["rev-parse", "HEAD"]));
         assert_eq!(calls[1].cwd.as_deref(), Some("/repo"));
+    }
+
+    #[test]
+    fn command_request_serde_round_trips_to_camel_case_wire_shape() {
+        // Pins the wire contract the host command shim consumes, including
+        // `timeoutMs` (camelCase) and `env` as an array of `[name, value]` pairs.
+        let request = CommandRequest::new("git", ["clone", "https://example/repo"])
+            .with_cwd("/repo")
+            .with_env("GIT_TERMINAL_PROMPT", "0")
+            .with_timeout(30_000);
+        let json = serde_json::to_value(&request).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "program": "git",
+                "args": ["clone", "https://example/repo"],
+                "cwd": "/repo",
+                "env": [["GIT_TERMINAL_PROMPT", "0"]],
+                "timeoutMs": 30_000
+            })
+        );
+        let back: CommandRequest = serde_json::from_value(json).unwrap();
+        assert_eq!(back, request);
+    }
+
+    #[test]
+    fn command_request_serde_defaults_are_empty_env_and_no_timeout() {
+        let request = CommandRequest::new("git", ["status"]);
+        let json = serde_json::to_value(&request).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "program": "git",
+                "args": ["status"],
+                "cwd": null,
+                "env": [],
+                "timeoutMs": null
+            })
+        );
+        let back: CommandRequest = serde_json::from_value(json).unwrap();
+        assert_eq!(back, request);
+    }
+
+    #[test]
+    fn command_output_serde_round_trips_to_camel_case_wire_shape() {
+        let output = CommandOutput {
+            code: Some(1),
+            stdout: "out".to_string(),
+            stderr: "boom".to_string(),
+        };
+        let json = serde_json::to_value(&output).unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "code": 1,
+                "stdout": "out",
+                "stderr": "boom"
+            })
+        );
+        let back: CommandOutput = serde_json::from_value(json).unwrap();
+        assert_eq!(back, output);
     }
 
     #[test]
