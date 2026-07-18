@@ -1,0 +1,2582 @@
+[
+  {
+    "file": "packages/agent/test/harness/session-uuid.test.ts",
+    "line": 26,
+    "pattern": "vi.stubGlobal",
+    "target": "crypto",
+    "category": "c",
+    "seam": "OTHER:crypto",
+    "port": true,
+    "note": "uuidv7() (subject, ../../src/harness/session/uuid.ts) calls crypto.getRandomValues; stub feeds deterministic random bytes so the RFC 9562 layout and monotonic-order output are exact. Post-port uuidv7 runs in Rust and won't touch JS global crypto, so this stub won't fire -- Rust shim needs an injectable RNG seam (not one of the four planned seams; OTHER:crypto)."
+  },
+  {
+    "file": "packages/agent/test/harness/session-uuid.test.ts",
+    "line": 27,
+    "pattern": "vi.spyOn",
+    "target": "Date.now",
+    "category": "b",
+    "seam": "clock",
+    "port": true,
+    "note": "spyOn(Date,'now').mockReturnValue(TIMESTAMP) pins the clock so uuidv7's embedded 48-bit timestamp is asserted exactly (parseTimestamp===TIMESTAMP, and +1 on counter rollover). Date.now is an internal clock dependency of the subject that moves into Rust; the JS spy won't fire post-port, so a ported test must inject now via the clock seam."
+  },
+  {
+    "file": "packages/ai/test/anthropic-oauth.test.ts",
+    "line": 54,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/anthropic-oauth.test.ts",
+    "line": 90,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/anthropic-oauth.test.ts",
+    "line": 112,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/azure-openai-base-url.test.ts",
+    "line": 24,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/bedrock-convert-messages.test.ts",
+    "line": 7,
+    "pattern": "vi.mock",
+    "target": "@aws-sdk/client-bedrock-runtime",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/bedrock-custom-headers.test.ts",
+    "line": 12,
+    "pattern": "vi.mock",
+    "target": "@aws-sdk/client-bedrock-runtime",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/bedrock-endpoint-resolution.test.ts",
+    "line": 7,
+    "pattern": "vi.mock",
+    "target": "@aws-sdk/client-bedrock-runtime",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/github-copilot-anthropic.test.ts",
+    "line": 12,
+    "pattern": "vi.mock",
+    "target": "@anthropic-ai/sdk",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/github-copilot-oauth.test.ts",
+    "line": 102,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/github-copilot-oauth.test.ts",
+    "line": 158,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/github-copilot-oauth.test.ts",
+    "line": 196,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/github-copilot-oauth.test.ts",
+    "line": 251,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/github-copilot-oauth.test.ts",
+    "line": 340,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/github-copilot-oauth.test.ts",
+    "line": 414,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/google-vertex-api-key-resolution.test.ts",
+    "line": 7,
+    "pattern": "vi.mock",
+    "target": "@google/genai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/oauth-auth.test.ts",
+    "line": 67,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/oauth-auth.test.ts",
+    "line": 91,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-oauth.test.ts",
+    "line": 146,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-oauth.test.ts",
+    "line": 191,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-oauth.test.ts",
+    "line": 279,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-oauth.test.ts",
+    "line": 323,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-oauth.test.ts",
+    "line": 376,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-oauth.test.ts",
+    "line": 425,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-oauth.test.ts",
+    "line": 453,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": null,
+    "port": false,
+    "note": "suppresses console.error; shim owns logging boundary"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-oauth.test.ts",
+    "line": 454,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 170,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 237,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 297,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 354,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 448,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 569,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 598,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 648,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 723,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 758,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 877,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 974,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1078,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1108,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1181,
+    "pattern": "vi.stubGlobal",
+    "target": "WebSocket",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global WebSocket stub for streaming transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1239,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1264,
+    "pattern": "vi.stubGlobal",
+    "target": "WebSocket",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global WebSocket stub for streaming transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1309,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1338,
+    "pattern": "vi.stubGlobal",
+    "target": "WebSocket",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global WebSocket stub for streaming transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1389,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1428,
+    "pattern": "vi.stubGlobal",
+    "target": "WebSocket",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global WebSocket stub for streaming transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1473,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1519,
+    "pattern": "vi.stubGlobal",
+    "target": "WebSocket",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global WebSocket stub for streaming transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1613,
+    "pattern": "vi.stubGlobal",
+    "target": "WebSocket",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global WebSocket stub for streaming transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1748,
+    "pattern": "vi.stubGlobal",
+    "target": "WebSocket",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global WebSocket stub for streaming transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1816,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"setTimeout\"",
+    "category": "b",
+    "seam": "clock",
+    "port": false,
+    "note": "observes retry backoff delay via fake timers; needs clock seam to observe or port"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1846,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1905,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1955,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"setTimeout\"",
+    "category": "b",
+    "seam": "clock",
+    "port": false,
+    "note": "observes retry backoff delay via fake timers; needs clock seam to observe or port"
+  },
+  {
+    "file": "packages/ai/test/openai-codex-stream.test.ts",
+    "line": 1985,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/openai-completions-cache-control-format.test.ts",
+    "line": 35,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/openai-completions-empty-tools.test.ts",
+    "line": 14,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/openai-completions-prompt-cache.test.ts",
+    "line": 24,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/openai-completions-reasoning-details.test.ts",
+    "line": 11,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/openai-completions-response-model.test.ts",
+    "line": 12,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/openai-completions-retry.test.ts",
+    "line": 9,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/openai-completions-tool-choice.test.ts",
+    "line": 23,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/openai-responses-compat.test.ts",
+    "line": 43,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers fetch responses via mockImplementation/mockResolvedValue; needs http-transport seam"
+  },
+  {
+    "file": "packages/ai/test/openai-responses-compat.test.ts",
+    "line": 78,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers fetch responses via mockImplementation/mockResolvedValue; needs http-transport seam"
+  },
+  {
+    "file": "packages/ai/test/openai-responses-compat.test.ts",
+    "line": 112,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers fetch responses via mockImplementation/mockResolvedValue; needs http-transport seam"
+  },
+  {
+    "file": "packages/ai/test/openai-responses-compat.test.ts",
+    "line": 171,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers fetch responses via mockImplementation/mockResolvedValue; needs http-transport seam"
+  },
+  {
+    "file": "packages/ai/test/openai-responses-compat.test.ts",
+    "line": 207,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers fetch responses via mockImplementation/mockResolvedValue; needs http-transport seam"
+  },
+  {
+    "file": "packages/ai/test/openai-responses-compat.test.ts",
+    "line": 248,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers fetch responses via mockImplementation/mockResolvedValue; needs http-transport seam"
+  },
+  {
+    "file": "packages/ai/test/openai-responses-compat.test.ts",
+    "line": 450,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers fetch responses via mockImplementation/mockResolvedValue; needs http-transport seam"
+  },
+  {
+    "file": "packages/ai/test/openai-responses-partial-json-cleanup.test.ts",
+    "line": 83,
+    "pattern": "vi.spyOn",
+    "target": "stream, \"push\"",
+    "category": "b",
+    "seam": "OTHER:event-stream",
+    "port": true,
+    "note": "observation-only spy on internal stream transform (processResponsesStream); needs port"
+  },
+  {
+    "file": "packages/ai/test/openai-responses-terminal-event.test.ts",
+    "line": 8,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/openrouter-images.test.ts",
+    "line": 10,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/provider-error-body-passthrough.test.ts",
+    "line": 33,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/provider-error-body-regression.test.ts",
+    "line": 40,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/provider-error-body-regression.test.ts",
+    "line": 55,
+    "pattern": "vi.mock",
+    "target": "@aws-sdk/client-bedrock-runtime",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks external LLM provider SDK to steer/observe provider adapter under test"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 115,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 158,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 178,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 207,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 224,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 238,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 259,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 285,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 302,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 312,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-oauth.test.ts",
+    "line": 321,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "global fetch stub for HTTP transport"
+  },
+  {
+    "file": "packages/ai/test/xai-responses.test.ts",
+    "line": 42,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers fetch responses via mockImplementation/mockResolvedValue; needs http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/agent-session-auto-compaction-queue.test.ts",
+    "line": 123,
+    "pattern": "vi.spyOn",
+    "target": "session.agent, \"continue\"",
+    "category": "b",
+    "seam": "OTHER:agent-continue",
+    "port": true,
+    "note": "steers+observes Agent.continue collaborator (mockResolvedValue + not.toHaveBeenCalled); Agent core boundary needs seam or port"
+  },
+  {
+    "file": "packages/coding-agent/test/agent-session-auto-compaction-queue.test.ts",
+    "line": 158,
+    "pattern": "vi.spyOn",
+    "target": "session ... _runAutoCompaction",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's own private _runAutoCompaction to isolate _checkCompaction/queue logic; cannot stub a Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/agent-session-auto-compaction-queue.test.ts",
+    "line": 229,
+    "pattern": "vi.spyOn",
+    "target": "session ... _runAutoCompaction",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's own private _runAutoCompaction to isolate _checkCompaction/queue logic; cannot stub a Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/agent-session-auto-compaction-queue.test.ts",
+    "line": 302,
+    "pattern": "vi.spyOn",
+    "target": "session ... _runAutoCompaction",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's own private _runAutoCompaction to isolate _checkCompaction/queue logic; cannot stub a Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/agent-session-auto-compaction-queue.test.ts",
+    "line": 350,
+    "pattern": "vi.spyOn",
+    "target": "session ... _runAutoCompaction",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's own private _runAutoCompaction to isolate _checkCompaction/queue logic; cannot stub a Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/agent-session-auto-compaction-queue.test.ts",
+    "line": 431,
+    "pattern": "vi.spyOn",
+    "target": "session ... _runAutoCompaction",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's own private _runAutoCompaction to isolate _checkCompaction/queue logic; cannot stub a Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/auth-storage.test.ts",
+    "line": 143,
+    "pattern": "vi.spyOn",
+    "target": "lockfile, \"lock\"",
+    "category": "b",
+    "seam": "storage-env",
+    "port": true,
+    "note": "steers proper-lockfile lock to simulate acquisition failure in AuthStorage.modify; file-lock detail, needs storage seam or port"
+  },
+  {
+    "file": "packages/coding-agent/test/auth-storage.test.ts",
+    "line": 200,
+    "pattern": "vi.spyOn",
+    "target": "lockfile, \"lock\"",
+    "category": "b",
+    "seam": "storage-env",
+    "port": true,
+    "note": "steers lock onCompromised callback to test OAuth refresh lock handling; deep file-lock behavior, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/clipboard-image-bmp-conversion.test.ts",
+    "line": 45,
+    "pattern": "vi.mock",
+    "target": "child_process",
+    "category": "b",
+    "seam": "OTHER:clipboard",
+    "port": true,
+    "note": "mocks spawnSync(wl-paste) to feed BMP bytes and steer BMP->PNG conversion in readClipboardImage; process-spawn boundary Rust would own internally"
+  },
+  {
+    "file": "packages/coding-agent/test/clipboard-image-bmp-conversion.test.ts",
+    "line": 62,
+    "pattern": "vi.mock",
+    "target": "@mariozechner/clipboard",
+    "category": "b",
+    "seam": "OTHER:clipboard",
+    "port": true,
+    "note": "neutralizes native clipboard binding so Wayland path is taken; collaborator steer"
+  },
+  {
+    "file": "packages/coding-agent/test/clipboard-image.test.ts",
+    "line": 15,
+    "pattern": "vi.mock",
+    "target": "child_process",
+    "category": "b",
+    "seam": "OTHER:clipboard",
+    "port": true,
+    "note": "mocks spawnSync(wl-paste) to steer readClipboardImage backend selection/data"
+  },
+  {
+    "file": "packages/coding-agent/test/clipboard-image.test.ts",
+    "line": 21,
+    "pattern": "vi.mock",
+    "target": "../src/utils/clipboard-native.js",
+    "category": "b",
+    "seam": "OTHER:clipboard",
+    "port": true,
+    "note": "steers native clipboard hasImage/getImageBinary to drive readClipboardImage path"
+  },
+  {
+    "file": "packages/coding-agent/test/clipboard.test.ts",
+    "line": 19,
+    "pattern": "vi.mock",
+    "target": "../src/utils/clipboard-native.js",
+    "category": "b",
+    "seam": "OTHER:clipboard",
+    "port": true,
+    "note": "steers native clipboard getText/setText collaborator of copyToClipboard/readClipboardText"
+  },
+  {
+    "file": "packages/coding-agent/test/clipboard.test.ts",
+    "line": 25,
+    "pattern": "vi.mock",
+    "target": "child_process",
+    "category": "b",
+    "seam": "OTHER:clipboard",
+    "port": true,
+    "note": "mocks execSync/spawn (xclip/osc52) to steer clipboard backend logic"
+  },
+  {
+    "file": "packages/coding-agent/test/clipboard.test.ts",
+    "line": 32,
+    "pattern": "vi.mock",
+    "target": "os",
+    "category": "b",
+    "seam": "OTHER:clipboard",
+    "port": true,
+    "note": "mocks os.platform to steer which clipboard backend the module-under-test selects"
+  },
+  {
+    "file": "packages/coding-agent/test/clipboard.test.ts",
+    "line": 38,
+    "pattern": "vi.mock",
+    "target": "../src/utils/clipboard-image.js",
+    "category": "b",
+    "seam": "OTHER:clipboard",
+    "port": true,
+    "note": "steers isWaylandSession collaborator to drive clipboard path selection"
+  },
+  {
+    "file": "packages/coding-agent/test/compaction-summary-reasoning.test.ts",
+    "line": 10,
+    "pattern": "vi.mock",
+    "target": "@earendil-works/pi-ai/compat",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "mocks completeSimple (LLM call) to steer generateSummary; satisfied by provider seam"
+  },
+  {
+    "file": "packages/coding-agent/test/config-value-migration.test.ts",
+    "line": 57,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to silence/inspect migration output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/config-value-migration.test.ts",
+    "line": 129,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to silence/inspect migration output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/extensions-runner.test.ts",
+    "line": 155,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy to capture warning; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/extensions-runner.test.ts",
+    "line": 178,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy to capture warning; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/extensions-runner.test.ts",
+    "line": 205,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy to capture warning; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/extensions-runner.test.ts",
+    "line": 230,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy to capture warning; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/extensions-runner.test.ts",
+    "line": 254,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy to capture warning; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/extensions-runner.test.ts",
+    "line": 277,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy to capture warning; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/extensions-runner.test.ts",
+    "line": 301,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy to capture warning; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/extensions-runner.test.ts",
+    "line": 337,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy to capture warning; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/first-time-setup-fork.test.ts",
+    "line": 6,
+    "pattern": "vi.mock",
+    "target": "../src/config.ts",
+    "category": "b",
+    "seam": "storage-env",
+    "port": true,
+    "note": "overrides PACKAGE_NAME config constant to simulate a fork for shouldRunFirstTimeSetup; constant would come from Rust config, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/footer-data-provider.test.ts",
+    "line": 9,
+    "pattern": "vi.mock",
+    "target": "child_process",
+    "category": "b",
+    "seam": "OTHER:git",
+    "port": true,
+    "note": "mocks execFile/spawnSync git symbolic-ref to steer FooterDataProvider branch resolution; git-subprocess boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/image-resize-callers.test.ts",
+    "line": 6,
+    "pattern": "vi.mock",
+    "target": "../src/utils/image-resize.js",
+    "category": "b",
+    "seam": "OTHER:image-resize",
+    "port": true,
+    "note": "stubs resizeImage collaborator (returns null) to test read-tool/file-processor fallback; needs image-resize seam or port"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 44,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 45,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 46,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 47,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 78,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 79,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 80,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 86,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 93,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 95,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 126,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 127,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 128,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 132,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 134,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/interactive-mode-suspend.test.ts",
+    "line": 137,
+    "pattern": "vi.spyOn",
+    "target": "process/globalThis signal+timer",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "spies process on/once/kill and setInterval/clearInterval for Ctrl+Z suspend; interactive TUI process-signal plumbing, stays JS / runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/model-registry.test.ts",
+    "line": 1069,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/model-resolver.test.ts",
+    "line": 213,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/model-resolver.test.ts",
+    "line": 243,
+    "pattern": "vi.spyOn",
+    "target": "console, \"warn\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.warn spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/model-runtime-cloudflare-compat.test.ts",
+    "line": 9,
+    "pattern": "vi.mock",
+    "target": "openai",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "fakes the openai SDK client to capture baseURL/headers passed by ModelRuntime; provider/transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 69,
+    "pattern": "vi.spyOn",
+    "target": "process, \"exit\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "process.exit spy to prevent test-process exit; runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 135,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to capture CLI output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 152,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to capture CLI output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 171,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to capture CLI output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 188,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to capture CLI output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 207,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to capture CLI output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 225,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to capture CLI output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 262,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to capture CLI output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 299,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to capture CLI output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 316,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy to capture CLI output; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 333,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 358,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 359,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 377,
+    "pattern": "vi.spyOn",
+    "target": "ModelRuntime, \"create\"",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "stubs ModelRuntime.create to return fake refresh and asserts paths/refresh args; model-runtime/provider layer seam"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 378,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 379,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 399,
+    "pattern": "vi.spyOn",
+    "target": "ModelRuntime, \"create\"",
+    "category": "b",
+    "seam": "provider",
+    "port": false,
+    "note": "observation-only spy asserting ModelRuntime.create not called; provider layer, needs seam or port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 400,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 443,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 458,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 502,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for version-check API; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 504,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 505,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 550,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for version-check API; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 552,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 553,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 599,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for self-update version check; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 604,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 605,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 643,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for self-update version check; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 648,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 649,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 696,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for self-update version check; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 701,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 702,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 727,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-command-paths.test.ts",
+    "line": 728,
+    "pattern": "vi.spyOn",
+    "target": "console, \"log\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.log spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 704,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 727,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 748,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 763,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 784,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 793,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 812,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 817,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 826,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 850,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 871,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 884,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 907,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 920,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 944,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 980,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 984,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 1032,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 1047,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 1072,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 1094,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 1702,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2127,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2129,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2152,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2154,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2174,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2175,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2177,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2246,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2269,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2283,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2345,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2362,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2377,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2391,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2400,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2413,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2436,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2437,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2446,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2468,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/package-manager.test.ts",
+    "line": 2493,
+    "pattern": "vi.spyOn",
+    "target": "packageManager private (runCommand*/git*/npm*)",
+    "category": "b",
+    "seam": "OTHER:process-exec",
+    "port": true,
+    "note": "spies DefaultPackageManager's private subprocess/git/npm command runner to steer or assert argv; process-exec boundary Rust owns internally, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/print-mode.test.ts",
+    "line": 131,
+    "pattern": "vi.spyOn",
+    "target": "console, \"error\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "console.error spy; logging boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/radius.test.ts",
+    "line": 67,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers/observes global fetch for Radius catalog fetch in ModelRuntime; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/radius.test.ts",
+    "line": 95,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers/observes global fetch for Radius catalog fetch in ModelRuntime; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/radius.test.ts",
+    "line": 108,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers/observes global fetch for Radius catalog fetch in ModelRuntime; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/remote-catalog-provider.test.ts",
+    "line": 25,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers/observes global fetch for remote model catalog + version headers; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/remote-catalog-provider.test.ts",
+    "line": 86,
+    "pattern": "vi.spyOn",
+    "target": "globalThis, \"fetch\"",
+    "category": "b",
+    "seam": "http-transport",
+    "port": false,
+    "note": "steers/observes global fetch for remote model catalog + version headers; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/resolve-config-value.test.ts",
+    "line": 108,
+    "pattern": "vi.spyOn",
+    "target": "shellModule, \"getShellConfig\"",
+    "category": "b",
+    "seam": "OTHER:shell-config",
+    "port": true,
+    "note": "steers getShellConfig to simulate Windows stdin shell transport for resolveConfigValueUncached; shell/terminal collaborator"
+  },
+  {
+    "file": "packages/coding-agent/test/restore-sandbox-env.test.ts",
+    "line": 5,
+    "pattern": "vi.mock",
+    "target": "node:fs",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "mocks node:fs readFileSync of /proc/self/environ for bun sandbox env bootstrap; runtime-owned boot shim, no Rust business seam"
+  },
+  {
+    "file": "packages/coding-agent/test/rpc-prompt-response-semantics.test.ts",
+    "line": 27,
+    "pattern": "vi.mock",
+    "target": "../src/core/output-guard.js",
+    "category": "b",
+    "seam": "OTHER:rpc-stdio",
+    "port": true,
+    "note": "replaces raw stdout writer to capture RPC output while driving runRpcMode; stdin/stdout jsonl transport boundary"
+  },
+  {
+    "file": "packages/coding-agent/test/rpc-prompt-response-semantics.test.ts",
+    "line": 36,
+    "pattern": "vi.mock",
+    "target": "../src/modes/interactive/theme/theme.js",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "empty theme stub to avoid importing TUI theme; not steering logic"
+  },
+  {
+    "file": "packages/coding-agent/test/rpc-prompt-response-semantics.test.ts",
+    "line": 38,
+    "pattern": "vi.mock",
+    "target": "../src/modes/rpc/jsonl.js",
+    "category": "b",
+    "seam": "OTHER:rpc-stdio",
+    "port": true,
+    "note": "injects jsonl line reader/serializer to feed/capture RPC frames; transport seam, heavy integration -> port"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/agent-session-compaction.test.ts",
+    "line": 242,
+    "pattern": "vi.spyOn",
+    "target": "sessionInternals, \"_runAutoCompaction\"",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's private _runAutoCompaction to isolate _checkCompaction retry logic; cannot stub Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/agent-session-compaction.test.ts",
+    "line": 321,
+    "pattern": "vi.spyOn",
+    "target": "sessionInternals, \"_runAutoCompaction\"",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's private _runAutoCompaction to isolate _checkCompaction retry logic; cannot stub Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/agent-session-compaction.test.ts",
+    "line": 349,
+    "pattern": "vi.spyOn",
+    "target": "sessionInternals, \"_runAutoCompaction\"",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's private _runAutoCompaction to isolate _checkCompaction retry logic; cannot stub Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/agent-session-compaction.test.ts",
+    "line": 370,
+    "pattern": "vi.spyOn",
+    "target": "sessionInternals, \"_runAutoCompaction\"",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's private _runAutoCompaction to isolate _checkCompaction retry logic; cannot stub Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/agent-session-compaction.test.ts",
+    "line": 415,
+    "pattern": "vi.spyOn",
+    "target": "sessionInternals, \"_runAutoCompaction\"",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's private _runAutoCompaction to isolate _checkCompaction retry logic; cannot stub Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/agent-session-compaction.test.ts",
+    "line": 433,
+    "pattern": "vi.spyOn",
+    "target": "sessionInternals, \"_runAutoCompaction\"",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's private _runAutoCompaction to isolate _checkCompaction retry logic; cannot stub Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/agent-session-compaction.test.ts",
+    "line": 434,
+    "pattern": "vi.spyOn",
+    "target": "sessionInternals, \"_runAutoCompaction\"",
+    "category": "b",
+    "seam": "OTHER:internal-compaction-method",
+    "port": true,
+    "note": "spies module-under-test's private _runAutoCompaction to isolate _checkCompaction retry logic; cannot stub Rust-internal method, needs port"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5080-signal-shutdown-extension-cleanup.test.ts",
+    "line": 111,
+    "pattern": "vi.spyOn",
+    "target": "process, \"exit\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "process.exit spy to prevent exit during shutdown-order test; runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5080-signal-shutdown-extension-cleanup.test.ts",
+    "line": 124,
+    "pattern": "vi.spyOn",
+    "target": "process, \"exit\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "process.exit spy to prevent exit during shutdown-order test; runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5080-signal-shutdown-extension-cleanup.test.ts",
+    "line": 136,
+    "pattern": "vi.spyOn",
+    "target": "process, \"exit\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "process.exit spy to prevent exit during shutdown-order test; runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5080-signal-shutdown-extension-cleanup.test.ts",
+    "line": 140,
+    "pattern": "vi.spyOn",
+    "target": "process.stdout, \"write\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "stdout.write spy to assert resume-hint text; terminal output the TUI/shim owns"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5080-signal-shutdown-extension-cleanup.test.ts",
+    "line": 155,
+    "pattern": "vi.spyOn",
+    "target": "process, \"exit\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "process.exit spy to prevent exit during shutdown-order test; runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5080-signal-shutdown-extension-cleanup.test.ts",
+    "line": 159,
+    "pattern": "vi.spyOn",
+    "target": "process.stdout, \"write\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "stdout.write spy to assert resume-hint text; terminal output the TUI/shim owns"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5080-signal-shutdown-extension-cleanup.test.ts",
+    "line": 173,
+    "pattern": "vi.spyOn",
+    "target": "process, \"exit\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "process.exit spy to prevent exit during shutdown-order test; runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5433-extension-oauth-prompt-input.test.ts",
+    "line": 8,
+    "pattern": "vi.mock",
+    "target": "../../../src/utils/open-browser.ts",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "no-op stub to prevent openBrowser side effect; test asserts TUI LoginDialog input rendering, not browser"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5724-sigterm-signal-exit.test.ts",
+    "line": 53,
+    "pattern": "vi.spyOn",
+    "target": "process, \"exit\"",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "process.exit spy to prevent exit during SIGTERM test; runtime-owned"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5868-rpc-unknown-command-id.test.ts",
+    "line": 13,
+    "pattern": "vi.mock",
+    "target": "../../../src/core/output-guard.js",
+    "category": "b",
+    "seam": "OTHER:rpc-stdio",
+    "port": true,
+    "note": "replaces raw stdout writer to capture RPC output while driving runRpcMode"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5868-rpc-unknown-command-id.test.ts",
+    "line": 22,
+    "pattern": "vi.mock",
+    "target": "../../../src/modes/interactive/theme/theme.js",
+    "category": "d",
+    "seam": "",
+    "port": false,
+    "note": "empty theme stub to avoid importing TUI theme"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/5868-rpc-unknown-command-id.test.ts",
+    "line": 24,
+    "pattern": "vi.mock",
+    "target": "../../../src/modes/rpc/jsonl.js",
+    "category": "b",
+    "seam": "OTHER:rpc-stdio",
+    "port": true,
+    "note": "injects jsonl reader/serializer to feed/capture RPC frames"
+  },
+  {
+    "file": "packages/coding-agent/test/suite/regressions/pre-prompt-compaction-no-continue.test.ts",
+    "line": 62,
+    "pattern": "vi.spyOn",
+    "target": "harness.session.agent, \"continue\"",
+    "category": "b",
+    "seam": "OTHER:agent-continue",
+    "port": true,
+    "note": "observation-only spy; asserts Agent.continue not called after pre-prompt compaction; needs seam or port"
+  },
+  {
+    "file": "packages/coding-agent/test/tools.test.ts",
+    "line": 541,
+    "pattern": "vi.spyOn",
+    "target": "shellModule, \"getShellConfig\"",
+    "category": "b",
+    "seam": "OTHER:shell-config",
+    "port": true,
+    "note": "steers getShellConfig to simulate bad shell path (ENOENT) in bash tool; shell/terminal collaborator"
+  },
+  {
+    "file": "packages/coding-agent/test/tools.test.ts",
+    "line": 552,
+    "pattern": "vi.spyOn",
+    "target": "shellModule, \"getShellConfig\"",
+    "category": "b",
+    "seam": "OTHER:shell-config",
+    "port": true,
+    "note": "observation-only spy asserting getShellConfig call/skip with custom shellPath; needs seam or port"
+  },
+  {
+    "file": "packages/coding-agent/test/tools.test.ts",
+    "line": 574,
+    "pattern": "vi.spyOn",
+    "target": "shellModule, \"getShellConfig\"",
+    "category": "b",
+    "seam": "OTHER:shell-config",
+    "port": true,
+    "note": "steers getShellConfig to force stdin command transport in bash tool; shell/terminal collaborator"
+  },
+  {
+    "file": "packages/coding-agent/test/version-check.test.ts",
+    "line": 39,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for pi.dev version check API; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/version-check.test.ts",
+    "line": 47,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for pi.dev version check API; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/version-check.test.ts",
+    "line": 68,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for pi.dev version check API; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/version-check.test.ts",
+    "line": 78,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for pi.dev version check API; http-transport seam"
+  },
+  {
+    "file": "packages/coding-agent/test/version-check.test.ts",
+    "line": 86,
+    "pattern": "vi.stubGlobal",
+    "target": "fetch",
+    "category": "c",
+    "seam": "http-transport",
+    "port": false,
+    "note": "stubs global fetch for pi.dev version check API; http-transport seam"
+  }
+]
