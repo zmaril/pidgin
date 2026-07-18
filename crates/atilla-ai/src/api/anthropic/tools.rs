@@ -133,7 +133,7 @@ pub fn split_deferred_tools(
 
     let mut immediate = Vec::new();
     let mut deferred = Vec::new();
-    for (name, tool) in order.into_iter().zip(values.into_iter()) {
+    for (name, tool) in order.into_iter().zip(values) {
         if deferred_names.contains(&name) {
             deferred.push((name, tool));
         } else {
