@@ -141,6 +141,23 @@ fn widget_truncated_text_vectors() {
     }
 }
 
+#[test]
+fn truncated_text_render_matches_component() {
+    // The public one-shot wrapper must return exactly what the Component
+    // trait's `render` produces for the same construction.
+    let vectors: Vec<TruncatedVec> = load("widget_truncated_text");
+    assert!(!vectors.is_empty());
+    for v in &vectors {
+        let direct = TruncatedText::new(&v.text, v.padding_x, v.padding_y).render(v.width);
+        let wrapped = atilla_tui::truncated_text_render(&v.text, v.padding_x, v.padding_y, v.width);
+        assert_eq!(
+            wrapped, direct,
+            "truncated_text_render({:?}, {}, {}, {})",
+            v.text, v.padding_x, v.padding_y, v.width
+        );
+    }
+}
+
 // --- box ------------------------------------------------------------------
 
 #[derive(Deserialize)]

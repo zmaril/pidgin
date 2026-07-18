@@ -70,3 +70,16 @@ impl Component for TruncatedText {
         // No cached state to invalidate currently.
     }
 }
+
+/// One-shot render for a [`TruncatedText`], mirroring pi's
+/// `new TruncatedText(text, paddingX, paddingY).render(width)`. Convenience
+/// entry point so callers (e.g. the napi shim) need not bring the
+/// [`Component`] trait into scope.
+pub fn truncated_text_render(
+    text: &str,
+    padding_x: usize,
+    padding_y: usize,
+    width: usize,
+) -> Vec<String> {
+    TruncatedText::new(text, padding_x, padding_y).render(width)
+}

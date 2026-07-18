@@ -21,4 +21,4 @@ pub use image::{Image, ImageOptions, ImageTheme};
 pub use loader::{Loader, LoaderIndicatorOptions};
 pub use spacer::Spacer;
 pub use text::{BgFn, Text};
-pub use truncated_text::TruncatedText;
+pub use truncated_text::{truncated_text_render, TruncatedText};

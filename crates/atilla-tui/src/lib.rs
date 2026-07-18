@@ -39,7 +39,10 @@ pub use keys::{
     is_kitty_protocol_active, matches_key, parse_key, set_kitty_protocol_active, KeyEventType,
 };
 pub use kill_ring::{KillRing, PushOpts};
-pub use markdown::{DefaultTextStyle, Markdown, MarkdownOptions, MarkdownTheme, StyleFn};
+pub use markdown::{
+    default_markdown_theme, markdown_render, DefaultTextStyle, Markdown, MarkdownOptions,
+    MarkdownTheme, StyleFn,
+};
 pub use overlay::{
     ComponentId, MarginSpec, OverlayAnchor, OverlayHandleId, OverlayMargin, OverlayOptions,
     ReactionAction, SizeValue,
@@ -66,8 +69,8 @@ pub use text_util::{
 };
 pub use undo_stack::UndoStack;
 pub use widgets::{
-    BgFn, BoxWidget, Image, ImageOptions, ImageTheme, Loader, LoaderIndicatorOptions, Spacer, Text,
-    TruncatedText,
+    truncated_text_render, BgFn, BoxWidget, Image, ImageOptions, ImageTheme, Loader,
+    LoaderIndicatorOptions, Spacer, Text, TruncatedText,
 };
 pub use width::{
     extract_ansi_code, extract_segments, normalize_terminal_output, slice_by_column,
