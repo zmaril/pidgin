@@ -1,0 +1,1990 @@
+{
+  "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
+  "modules": [
+    {
+      "package": "agent",
+      "src": "packages/agent/src/agent-loop.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/agent.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/agent-harness.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/compaction/branch-summarization.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/compaction/compaction.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/compaction/utils.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/env/nodejs.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/messages.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/prompt-templates.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/session/jsonl-repo.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/session/jsonl-storage.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/session/memory-repo.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/session/memory-storage.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/session/repo-utils.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/session/session.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/session/uuid.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/skills.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/system-prompt.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/types.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/utils/shell-output.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/harness/utils/truncate.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/node.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/proxy.ts",
+      "status": "original"
+    },
+    {
+      "package": "agent",
+      "src": "packages/agent/src/types.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/anthropic-messages.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/anthropic-messages.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/azure-openai-responses.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/azure-openai-responses.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/bedrock-converse-stream.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/bedrock-converse-stream.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/cloudflare.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/github-copilot-headers.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/google-generative-ai.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/google-generative-ai.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/google-shared.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/google-vertex.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/google-vertex.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/mistral-conversations.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/mistral-conversations.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openai-codex-responses.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openai-codex-responses.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openai-completions.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openai-completions.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openai-prompt-cache.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openai-responses-shared.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openai-responses.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openai-responses.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openrouter-images.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/openrouter-images.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/pi-messages.lazy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/pi-messages.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/simple-options.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/api/transform-messages.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/context.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/credential-store.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/helpers.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/oauth/anthropic.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/oauth/device-code.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/oauth/github-copilot.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/oauth/load.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/oauth/oauth-page.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/oauth/openai-codex.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/oauth/pkce.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/oauth/radius.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/oauth/xai.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/resolve.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/auth/types.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/bedrock-provider.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/bun-oauth.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/cli.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/compat.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/compat/extension-oauth-types.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/env-api-keys.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/image-models.generated.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/image-models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/images-api-registry.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/images-models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/images.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/legacy-api-aliases.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/models-store.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/models.generated.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/oauth.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/all.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/amazon-bedrock.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/amazon-bedrock.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/ant-ling.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/ant-ling.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/anthropic.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/anthropic.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/azure-openai-responses.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/azure-openai-responses.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/cerebras.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/cerebras.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/cloudflare-ai-gateway.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/cloudflare-ai-gateway.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/cloudflare-auth.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/cloudflare-stream.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/cloudflare-workers-ai.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/cloudflare-workers-ai.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/deepseek.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/deepseek.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/faux.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/fireworks.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/fireworks.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/github-copilot.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/github-copilot.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/google-vertex.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/google-vertex.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/google.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/google.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/groq.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/groq.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/huggingface.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/huggingface.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/images/register-builtins.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/kimi-coding.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/kimi-coding.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/minimax-cn.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/minimax-cn.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/minimax.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/minimax.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/mistral.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/mistral.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/moonshotai-cn.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/moonshotai-cn.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/moonshotai.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/moonshotai.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/nvidia.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/nvidia.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/openai-codex.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/openai-codex.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/openai.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/openai.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/opencode-go.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/opencode-go.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/opencode.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/opencode.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/openrouter-images.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/openrouter.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/openrouter.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/radius-config.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/radius.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/together.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/together.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/vercel-ai-gateway.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/vercel-ai-gateway.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xai.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xai.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xiaomi-token-plan-ams.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xiaomi-token-plan-ams.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xiaomi-token-plan-cn.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xiaomi-token-plan-cn.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xiaomi-token-plan-sgp.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xiaomi-token-plan-sgp.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xiaomi.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/xiaomi.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/zai-coding-cn.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/zai-coding-cn.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/zai.models.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/providers/zai.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/session-resources.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/types.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/abort-signals.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/deferred-tools.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/diagnostics.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/error-body.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/estimate.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/event-stream.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/hash.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/headers.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/json-parse.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/node-http-proxy.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/overflow.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/provider-env.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/retry.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/sanitize-unicode.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/typebox-helpers.ts",
+      "status": "original"
+    },
+    {
+      "package": "ai",
+      "src": "packages/ai/src/utils/validation.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/bun/cli.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/bun/register-bedrock.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/bun/restore-sandbox-env.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/cli.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/cli/args.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/cli/config-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/cli/file-processor.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/cli/initial-message.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/cli/list-models.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/cli/project-trust.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/cli/session-picker.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/cli/startup-ui.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/config.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/agent-session-runtime.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/agent-session-services.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/agent-session.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/auth-guidance.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/auth-storage.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/bash-executor.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/cache-stats.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/compaction/branch-summarization.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/compaction/compaction.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/compaction/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/compaction/utils.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/defaults.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/diagnostics.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/event-bus.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/exec.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/experimental.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/export-html/ansi-to-html.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/export-html/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/export-html/tool-renderer.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/extensions/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/extensions/loader.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/extensions/runner.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/extensions/types.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/extensions/wrapper.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/footer-data-provider.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/http-dispatcher.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/keybindings.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/messages.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/model-config.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/model-registry.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/model-resolver.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/model-runtime.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/models-store.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/output-guard.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/package-manager.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/project-trust.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/prompt-templates.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/provider-attribution.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/provider-composer.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/radius.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/remote-catalog-provider.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/resolve-config-value.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/resource-loader.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/runtime-credentials.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/sdk.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/session-cwd.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/session-manager.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/settings-manager.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/skills.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/slash-commands.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/source-info.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/system-prompt.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/telemetry.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/timings.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/bash.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/edit-diff.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/edit.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/file-mutation-queue.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/find.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/grep.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/ls.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/output-accumulator.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/path-utils.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/read.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/render-utils.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/truncate.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/tools/write.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/core/trust-manager.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/extensions/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/extensions/llama/client.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/extensions/llama/huggingface.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/extensions/llama/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/extensions/llama/provider.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/extensions/llama/ui.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/main.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/migrations.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/armin.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/assistant-message.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/bash-execution.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/bordered-loader.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/branch-summary-message.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/compaction-summary-message.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/config-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/countdown-timer.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/custom-editor.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/custom-entry.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/custom-message.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/daxnuts.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/diff.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/earendil-announcement.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/extension-editor.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/extension-input.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/extension-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/first-time-setup.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/footer.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/login-dialog.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/model-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/oauth-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/session-selector-search.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/session-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/settings-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/show-images-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/skill-invocation-message.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/status-indicator.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/theme-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/thinking-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/tool-execution.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/tree-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/trust-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/user-message-selector.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/user-message.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/components/visual-truncate.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/interactive-mode.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/model-search.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/theme/theme-controller.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/print-mode.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/rpc/jsonl.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/rpc/rpc-client.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/rpc/rpc-mode.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/modes/rpc/rpc-types.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/package-manager-cli.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/rpc-entry.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/ansi.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/changelog.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/child-process.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/clipboard-image.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/clipboard-native.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/clipboard.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/deprecation.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/exif-orientation.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/frontmatter.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/fs-watch.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/git.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/html.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/image-convert.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/image-process.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/image-resize-core.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/image-resize-worker.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/image-resize.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/json.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/mime.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/open-browser.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/paths.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/photon.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/pi-user-agent.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/shell.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/sleep.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/syntax-highlight.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/tools-manager.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/version-check.ts",
+      "status": "original"
+    },
+    {
+      "package": "coding-agent",
+      "src": "packages/coding-agent/src/utils/windows-self-update.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/cli.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/config.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/handler.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/ipc/client.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/ipc/protocol.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/ipc/server.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/radius.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/rpc-process.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/serve.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/storage.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/supervisor.ts",
+      "status": "original"
+    },
+    {
+      "package": "orchestrator",
+      "src": "packages/orchestrator/src/types.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/autocomplete.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/box.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/cancellable-loader.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/editor.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/image.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/input.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/loader.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/markdown.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/select-list.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/settings-list.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/spacer.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/text.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/components/truncated-text.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/editor-component.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/fuzzy.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/index.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/keybindings.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/keys.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/kill-ring.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/native-modifiers.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/stdin-buffer.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/terminal-colors.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/terminal-image.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/terminal.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/tui.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/undo-stack.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/utils.ts",
+      "status": "original"
+    },
+    {
+      "package": "tui",
+      "src": "packages/tui/src/word-navigation.ts",
+      "status": "original"
+    }
+  ]
+}
