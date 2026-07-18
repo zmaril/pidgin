@@ -1,6 +1,8 @@
 //! System-prompt formatting for skills, mirroring
 //! `packages/agent/src/harness/system-prompt.ts`.
 
+// straitjacket-allow-file:duplication — <available_skills> formatter is a faithful mirror of coding-agent's skills/prompt-templates formatters (parallel structure intentional)
+
 use crate::harness::skills::Skill;
 
 /// Render the model-visible `<available_skills>` block. Mirrors pi's

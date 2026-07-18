@@ -23,9 +23,16 @@
 //! Everything else — the seven shared entry structs, `uuidv7`, the context
 //! message creators, and [`SessionError`] — is reused from `atilla_agent`.
 //!
-//! This is slice A of the port: pure, in-memory tree + context. The file-I/O
-//! fidelity (deferred-flush persistence, lenient reader, invalid-session
-//! guarantees) and discovery/fork surfaces land in later slices.
+//! Slice A landed the pure, in-memory tree + context. Slice B (the
+//! [`io`] submodule) adds the file-I/O fidelity layer: the persisted
+//! [`SessionManager::create`] / [`SessionManager::open`] factories, the
+//! deferred-flush write path ([`_persist`](SessionManager) buffers until the
+//! first assistant message, then flushes the whole buffer once with create-new
+//! `wx` semantics and appends line-by-line thereafter), the lenient streaming
+//! reader, the invalid-session guarantees (byte-identical on failure, no
+//! `{"type":"leaf"}` line, no rewrite of a valid v3 file), and the
+//! discovery free functions. Its public surface is a superset drop-in of the
+//! CLI's stopgap `crates/atilla-cli/src/cli/session.rs`.
 
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
@@ -694,17 +701,23 @@ fn month_lengths(year: i64) -> [i64; 12] {
 
 /// Manages a conversation as an append-only entry tree.
 ///
-/// This slice implements the pure, in-memory surface: construction via
-/// [`SessionManager::in_memory`], the `append_*` mutators, tree navigation, and
-/// context building. Persisted construction (`create`/`open`), the
-/// deferred-flush write path, and discovery/fork land in later slices.
+/// The in-memory surface — construction via [`SessionManager::in_memory`], the
+/// `append_*` mutators, tree navigation, and context building — lives here. The
+/// persisted factories ([`SessionManager::create`], [`SessionManager::open`]),
+/// the deferred-flush write path, and the discovery free functions live in the
+/// [`io`] submodule (slice B).
 pub struct SessionManager {
     session_id: String,
     session_file: Option<String>,
     session_dir: String,
     cwd: String,
     persist: bool,
-    uses_default_dir: bool,
+    /// Whether the buffered pre-flush entries have been written to disk yet.
+    /// Mirrors pi's `flushed`; see [`io`] for the deferred-flush protocol.
+    flushed: bool,
+    /// The clock/id source. Real in production; a fixed seam in byte-exact
+    /// write tests. See [`io::Seam`].
+    seam: io::Seam,
     header: SessionHeader,
     entries: Vec<SessionEntry>,
     by_id: HashMap<String, usize>,
@@ -716,54 +729,51 @@ pub struct SessionManager {
 
 impl SessionManager {
     /// Create an in-memory session (never persisted). Mirrors
-    /// `SessionManager.inMemory`.
+    /// `SessionManager.inMemory` (`new SessionManager(cwd, "", undefined,
+    /// false)`).
     pub fn in_memory(cwd: &str) -> Self {
-        let mut manager = SessionManager {
-            session_id: String::new(),
-            session_file: None,
-            session_dir: String::new(),
-            cwd: cwd.to_string(),
-            persist: false,
-            uses_default_dir: false,
-            header: placeholder_header(),
-            entries: Vec::new(),
-            by_id: HashMap::new(),
-            ids: HashSet::new(),
-            labels_by_id: HashMap::new(),
-            label_timestamps_by_id: HashMap::new(),
-            leaf_id: None,
-        };
+        let mut manager = SessionManager::empty(cwd, "", false, io::Seam::Real);
         // A bare `inMemory()` never carries an id, so this cannot fail.
         let _ = manager.new_session(NewSessionOptions::default());
         manager
     }
 
     /// Reset in-memory state and start a fresh session. Mirrors `newSession`:
-    /// it computes the (would-be) session file path when persisting but writes
-    /// nothing. Returns the session file path, if any.
+    /// when persisting it computes the (would-be) session file path
+    /// (`<dir>/<file-ts>_<id>.jsonl`) but writes nothing until the first
+    /// assistant message. Returns the session file path, if any.
     pub fn new_session(&mut self, options: NewSessionOptions) -> Result<Option<String>, String> {
         if let Some(id) = &options.id {
             assert_valid_session_id(id)?;
         }
-        let session_id = options.id.clone().unwrap_or_else(create_session_id);
-        let timestamp = now_iso();
+        let session_id = match options.id.clone() {
+            Some(id) => id,
+            None => self.gen_session_id(),
+        };
+        let timestamp = self.gen_timestamp();
         self.header = SessionHeader {
             tag: SessionTag::Session,
             version: Some(CURRENT_SESSION_VERSION),
             id: session_id.clone(),
-            timestamp,
+            timestamp: timestamp.clone(),
             cwd: self.cwd.clone(),
             parent_session: options.parent_session,
         };
-        self.session_id = session_id;
+        self.session_id = session_id.clone();
         self.entries.clear();
         self.by_id.clear();
         self.ids.clear();
         self.labels_by_id.clear();
         self.label_timestamps_by_id.clear();
         self.leaf_id = None;
-        // The persisted file path is computed here in the file-I/O slice; an
-        // in-memory session reserves nothing.
+        self.flushed = false;
+        if self.persist && !self.session_dir.is_empty() {
+            self.session_file = Some(io::compose_session_file(
+                &self.session_dir,
+                &timestamp,
+                &session_id,
+            ));
+        }
         Ok(self.session_file.clone())
     }
 
@@ -804,11 +814,12 @@ impl SessionManager {
         self.persist
     }
 
-    /// Whether the session directory is the encoded per-cwd default. Always
-    /// `false` for in-memory sessions; the persisted comparison lands in the
-    /// file-I/O slice.
+    /// Whether the session directory is the encoded per-cwd default. Mirrors
+    /// `usesDefaultSessionDir`: `sessionDir === getDefaultSessionDirPath(cwd)`.
+    /// In-memory sessions have an empty `session_dir`, so this is `false` for
+    /// them.
     pub fn uses_default_session_dir(&self) -> bool {
-        self.uses_default_dir
+        self.session_dir == io::default_session_dir_path(&self.cwd)
     }
 
     // --- append operations --------------------------------------------------
@@ -818,7 +829,7 @@ impl SessionManager {
         let entry = SessionEntry::Message(MessageEntry {
             id: self.next_id(),
             parent_id: self.leaf_id.clone(),
-            timestamp: now_iso(),
+            timestamp: self.gen_timestamp(),
             message,
         });
         self.push_entry(entry)
@@ -829,7 +840,7 @@ impl SessionManager {
         let entry = SessionEntry::ThinkingLevelChange(ThinkingLevelChangeEntry {
             id: self.next_id(),
             parent_id: self.leaf_id.clone(),
-            timestamp: now_iso(),
+            timestamp: self.gen_timestamp(),
             thinking_level: thinking_level.to_string(),
         });
         self.push_entry(entry)
@@ -840,7 +851,7 @@ impl SessionManager {
         let entry = SessionEntry::ModelChange(ModelChangeEntry {
             id: self.next_id(),
             parent_id: self.leaf_id.clone(),
-            timestamp: now_iso(),
+            timestamp: self.gen_timestamp(),
             provider: provider.to_string(),
             model_id: model_id.to_string(),
         });
@@ -859,7 +870,7 @@ impl SessionManager {
         let entry = SessionEntry::Compaction(CompactionEntry {
             id: self.next_id(),
             parent_id: self.leaf_id.clone(),
-            timestamp: now_iso(),
+            timestamp: self.gen_timestamp(),
             summary: summary.to_string(),
             first_kept_entry_id: first_kept_entry_id.to_string(),
             tokens_before,
@@ -876,7 +887,7 @@ impl SessionManager {
             data,
             id: self.next_id(),
             parent_id: self.leaf_id.clone(),
-            timestamp: now_iso(),
+            timestamp: self.gen_timestamp(),
         });
         self.push_entry(entry)
     }
@@ -887,7 +898,7 @@ impl SessionManager {
         let entry = SessionEntry::SessionInfo(SessionInfoEntry {
             id: self.next_id(),
             parent_id: self.leaf_id.clone(),
-            timestamp: now_iso(),
+            timestamp: self.gen_timestamp(),
             name: Some(sanitize_session_name(name)),
         });
         self.push_entry(entry)
@@ -909,7 +920,7 @@ impl SessionManager {
             details,
             id: self.next_id(),
             parent_id: self.leaf_id.clone(),
-            timestamp: now_iso(),
+            timestamp: self.gen_timestamp(),
         });
         self.push_entry(entry)
     }
@@ -924,7 +935,7 @@ impl SessionManager {
         if !self.by_id.contains_key(target_id) {
             return Err(SessionError::entry_not_found(target_id));
         }
-        let timestamp = now_iso();
+        let timestamp = self.gen_timestamp();
         let entry = SessionEntry::Label(LabelEntry {
             id: self.next_id(),
             parent_id: self.leaf_id.clone(),
@@ -1125,7 +1136,7 @@ impl SessionManager {
         let entry = SessionEntry::BranchSummary(BranchSummaryEntry {
             id: self.next_id(),
             parent_id: branch_from_id.map(str::to_string),
-            timestamp: now_iso(),
+            timestamp: self.gen_timestamp(),
             from_id: branch_from_id.unwrap_or("root").to_string(),
             summary: summary.to_string(),
             details,
@@ -1135,12 +1146,21 @@ impl SessionManager {
     }
 
     /// Replace the session with only the root-to-`leaf_id` path, stripping and
-    /// re-chaining labels. Mirrors the in-memory arm of `createBranchedSession`
-    /// (persisted forking lands in the file-I/O slice); always returns `None`.
+    /// re-chaining labels. Mirrors `createBranchedSession`.
+    ///
+    /// In-memory sessions replace their state and return `None`. Persisted
+    /// sessions additionally mint a new session file
+    /// (`<dir>/<file-ts>_<id>.jsonl`), point its header's `parentSession` at the
+    /// previous file, and return the new path. The new file is written eagerly
+    /// only when the retained path already contains an assistant message;
+    /// otherwise the write is deferred to [`_persist`](Self::persist_last_entry)
+    /// exactly like [`Self::create`], so a leaf-only fork never lands a
+    /// duplicate header on disk.
     pub fn create_branched_session(
         &mut self,
         leaf_id: &str,
     ) -> Result<Option<String>, SessionError> {
+        let previous_session_file = self.session_file.clone();
         let path = self.get_branch(Some(leaf_id));
         if path.is_empty() {
             return Err(SessionError::entry_not_found(leaf_id));
@@ -1160,14 +1180,21 @@ impl SessionManager {
             path_without_labels.push(rechained);
         }
 
-        let new_session_id = create_session_id();
+        let new_session_id = self.gen_session_id();
+        let timestamp = self.gen_timestamp();
         let header = SessionHeader {
             tag: SessionTag::Session,
             version: Some(CURRENT_SESSION_VERSION),
             id: new_session_id.clone(),
-            timestamp: now_iso(),
+            timestamp: timestamp.clone(),
             cwd: self.cwd.clone(),
-            parent_session: None,
+            // Persisted forks point back at the file they were cut from;
+            // in-memory forks have no parent file.
+            parent_session: if self.persist {
+                previous_session_file
+            } else {
+                None
+            },
         };
 
         // Recreate labels for retained entries, chained after the last one,
@@ -1182,7 +1209,7 @@ impl SessionManager {
             let Some(label) = self.labels_by_id.get(entry.id()) else {
                 continue;
             };
-            let timestamp = self
+            let label_timestamp = self
                 .label_timestamps_by_id
                 .get(entry.id())
                 .cloned()
@@ -1192,7 +1219,7 @@ impl SessionManager {
             label_entries.push(SessionEntry::Label(LabelEntry {
                 id: id.clone(),
                 parent_id: label_parent.clone(),
-                timestamp,
+                timestamp: label_timestamp,
                 target_id: entry.id().to_string(),
                 label: Some(label.clone()),
             }));
@@ -1200,10 +1227,24 @@ impl SessionManager {
         }
 
         self.header = header;
-        self.session_id = new_session_id;
+        self.session_id = new_session_id.clone();
         self.entries = path_without_labels;
         self.entries.extend(label_entries);
         self.rebuild_index();
+
+        if self.persist {
+            let new_file = io::compose_session_file(&self.session_dir, &timestamp, &new_session_id);
+            self.session_file = Some(new_file.clone());
+            // Only write eagerly if there is already an assistant message;
+            // otherwise defer to `_persist` on the first assistant response.
+            if self.has_assistant_message() {
+                self.rewrite_file();
+                self.flushed = true;
+            } else {
+                self.flushed = false;
+            }
+            return Ok(Some(new_file));
+        }
         Ok(None)
     }
 
@@ -1214,7 +1255,18 @@ impl SessionManager {
     }
 
     fn next_id(&self) -> String {
-        generate_id(&self.ids)
+        self.seam.generate_entry_id(&self.ids)
+    }
+
+    /// A `Date.toISOString()`-shaped timestamp from the active seam (real clock
+    /// in production, a fixed value in byte-exact tests).
+    fn gen_timestamp(&self) -> String {
+        self.seam.timestamp()
+    }
+
+    /// A fresh session id from the active seam (`uuidv7` in production).
+    fn gen_session_id(&self) -> String {
+        self.seam.session_id()
     }
 
     fn push_entry(&mut self, entry: SessionEntry) -> String {
@@ -1223,8 +1275,9 @@ impl SessionManager {
         self.ids.insert(id.clone());
         self.leaf_id = Some(id.clone());
         self.entries.push(entry);
-        // Slice A is in-memory only; the deferred-flush write path lands in the
-        // file-I/O slice.
+        // Deferred-flush persistence (slice B): buffers until the first
+        // assistant message, then flushes once and appends thereafter.
+        self.persist_last_entry();
         id
     }
 
@@ -1313,5 +1366,27 @@ impl ReadonlySessionManager for SessionManager {
     }
 }
 
+// Slice B: the file-I/O fidelity layer (factories, deferred-flush write path,
+// lenient reader, discovery). Kept in a child module so it can reach the
+// `SessionManager` private fields while keeping each source file well under the
+// 1500-line limit.
+mod io;
+
+pub use io::{
+    default_session_dir_path, find_local_session_by_exact_id, find_most_recent_session,
+    get_default_session_dir, load_entries_from_file, read_session_header,
+};
+
+// Slice C: the discovery / list / fork surface (`build_session_info`, the `list`
+// / `list_all` / `continue_recent` / `fork_from` factories). Kept in its own
+// child module so it can reach the private fields + io helpers while every source
+// file stays well under the 1500-line limit.
+mod discovery;
+
+pub use discovery::build_session_info;
+
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod io_tests;

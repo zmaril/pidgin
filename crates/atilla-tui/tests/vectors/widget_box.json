@@ -1,0 +1,364 @@
+[
+	{
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"children": [],
+		"width": 12,
+		"expected": []
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"children": [],
+		"width": 24,
+		"expected": []
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"children": [],
+		"width": 40,
+		"expected": []
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Hello",
+				"paddingX": 0,
+				"paddingY": 0
+			}
+		],
+		"width": 12,
+		"expected": [
+			"            ",
+			" Hello      ",
+			"            "
+		]
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Hello",
+				"paddingX": 0,
+				"paddingY": 0
+			}
+		],
+		"width": 24,
+		"expected": [
+			"                        ",
+			" Hello                  ",
+			"                        "
+		]
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Hello",
+				"paddingX": 0,
+				"paddingY": 0
+			}
+		],
+		"width": 40,
+		"expected": [
+			"                                        ",
+			" Hello                                  ",
+			"                                        "
+		]
+	},
+	{
+		"paddingX": 2,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Hello world",
+				"paddingX": 1,
+				"paddingY": 0
+			}
+		],
+		"width": 12,
+		"expected": [
+			"\u001b[41m            \u001b[0m",
+			"\u001b[41m   Hello    \u001b[0m",
+			"\u001b[41m   world    \u001b[0m",
+			"\u001b[41m            \u001b[0m"
+		]
+	},
+	{
+		"paddingX": 2,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Hello world",
+				"paddingX": 1,
+				"paddingY": 0
+			}
+		],
+		"width": 24,
+		"expected": [
+			"\u001b[41m                        \u001b[0m",
+			"\u001b[41m   Hello world          \u001b[0m",
+			"\u001b[41m                        \u001b[0m"
+		]
+	},
+	{
+		"paddingX": 2,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Hello world",
+				"paddingX": 1,
+				"paddingY": 0
+			}
+		],
+		"width": 40,
+		"expected": [
+			"\u001b[41m                                        \u001b[0m",
+			"\u001b[41m   Hello world                          \u001b[0m",
+			"\u001b[41m                                        \u001b[0m"
+		]
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "cyan",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Line one",
+				"paddingX": 0,
+				"paddingY": 0
+			},
+			{
+				"kind": "spacer",
+				"n": 1
+			},
+			{
+				"kind": "truncated",
+				"text": "A truncated child line that is quite long",
+				"paddingX": 0,
+				"paddingY": 0
+			}
+		],
+		"width": 12,
+		"expected": [
+			"\u001b[36m Line one   \u001b[0m",
+			"\u001b[36m            \u001b[0m",
+			"\u001b[36m A trunc\u001b[0m...\u001b[0m \u001b[0m"
+		]
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "cyan",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Line one",
+				"paddingX": 0,
+				"paddingY": 0
+			},
+			{
+				"kind": "spacer",
+				"n": 1
+			},
+			{
+				"kind": "truncated",
+				"text": "A truncated child line that is quite long",
+				"paddingX": 0,
+				"paddingY": 0
+			}
+		],
+		"width": 24,
+		"expected": [
+			"\u001b[36m Line one               \u001b[0m",
+			"\u001b[36m                        \u001b[0m",
+			"\u001b[36m A truncated child l\u001b[0m...\u001b[0m \u001b[0m"
+		]
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "cyan",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Line one",
+				"paddingX": 0,
+				"paddingY": 0
+			},
+			{
+				"kind": "spacer",
+				"n": 1
+			},
+			{
+				"kind": "truncated",
+				"text": "A truncated child line that is quite long",
+				"paddingX": 0,
+				"paddingY": 0
+			}
+		],
+		"width": 40,
+		"expected": [
+			"\u001b[36m Line one                               \u001b[0m",
+			"\u001b[36m                                        \u001b[0m",
+			"\u001b[36m A truncated child line that is quit\u001b[0m...\u001b[0m \u001b[0m"
+		]
+	},
+	{
+		"paddingX": 3,
+		"paddingY": 2,
+		"bgTag": "none",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Nested wrapping text that goes on for a while here",
+				"paddingX": 1,
+				"paddingY": 0
+			}
+		],
+		"width": 12,
+		"expected": [
+			"            ",
+			"            ",
+			"    Nest    ",
+			"    ed      ",
+			"    wrap    ",
+			"    ping    ",
+			"    text    ",
+			"    that    ",
+			"    goes    ",
+			"    on      ",
+			"    for     ",
+			"    a       ",
+			"    whil    ",
+			"    e       ",
+			"    here    ",
+			"            ",
+			"            "
+		]
+	},
+	{
+		"paddingX": 3,
+		"paddingY": 2,
+		"bgTag": "none",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Nested wrapping text that goes on for a while here",
+				"paddingX": 1,
+				"paddingY": 0
+			}
+		],
+		"width": 24,
+		"expected": [
+			"                        ",
+			"                        ",
+			"    Nested wrapping     ",
+			"    text that goes      ",
+			"    on for a while      ",
+			"    here                ",
+			"                        ",
+			"                        "
+		]
+	},
+	{
+		"paddingX": 3,
+		"paddingY": 2,
+		"bgTag": "none",
+		"children": [
+			{
+				"kind": "text",
+				"text": "Nested wrapping text that goes on for a while here",
+				"paddingX": 1,
+				"paddingY": 0
+			}
+		],
+		"width": 40,
+		"expected": [
+			"                                        ",
+			"                                        ",
+			"    Nested wrapping text that goes      ",
+			"    on for a while here                 ",
+			"                                        ",
+			"                                        "
+		]
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "bold",
+		"children": [
+			{
+				"kind": "text",
+				"text": "日本語 box",
+				"paddingX": 0,
+				"paddingY": 0
+			}
+		],
+		"width": 12,
+		"expected": [
+			"\u001b[1m            \u001b[0m",
+			"\u001b[1m 日本語 box \u001b[0m",
+			"\u001b[1m            \u001b[0m"
+		]
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "bold",
+		"children": [
+			{
+				"kind": "text",
+				"text": "日本語 box",
+				"paddingX": 0,
+				"paddingY": 0
+			}
+		],
+		"width": 24,
+		"expected": [
+			"\u001b[1m                        \u001b[0m",
+			"\u001b[1m 日本語 box             \u001b[0m",
+			"\u001b[1m                        \u001b[0m"
+		]
+	},
+	{
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "bold",
+		"children": [
+			{
+				"kind": "text",
+				"text": "日本語 box",
+				"paddingX": 0,
+				"paddingY": 0
+			}
+		],
+		"width": 40,
+		"expected": [
+			"\u001b[1m                                        \u001b[0m",
+			"\u001b[1m 日本語 box                             \u001b[0m",
+			"\u001b[1m                                        \u001b[0m"
+		]
+	}
+]
