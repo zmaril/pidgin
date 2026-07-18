@@ -11,6 +11,7 @@ pub mod diagnostics;
 pub mod event_bus;
 pub mod experimental;
 pub mod export_html;
+pub mod extensions;
 pub mod footer_data_provider;
 pub mod http_dispatcher;
 pub mod keybindings;
