@@ -452,19 +452,27 @@ fn login_aborts_with_cancel_message() {
     }
 }
 
-/// Polling past the device-code deadline times out with the plain message.
+/// The deadline is pre-checked (behavior (b)): a pending poll whose next
+/// inter-poll sleep would land on the deadline times out immediately, with NO
+/// trailing poll `Wait` — matching pi's "break before the final poll" and
+/// `github_copilot`'s timeout test.
 #[test]
 fn poll_past_deadline_times_out() {
     let mut machine = start_login();
-    let mut device = device_code_response();
-    device["expires_in"] = json!(10); // 10s lifetime.
+    let mut device = device_code_response(); // interval = 5s.
+    device["expires_in"] = json!(10); // 10s lifetime → deadline at START_MS + 10s.
     machine.advance(StepInput::Response(json_ok(device)), START_MS);
-    machine.advance(StepInput::Ack, START_MS);
-    // A pending poll arriving at/after the deadline times out.
+    // Ack anchors polling; first poll waits one 5s interval.
+    match machine.advance(StepInput::Ack, START_MS) {
+        Step::Wait { delay_ms, .. } => assert_eq!(delay_ms, 5000),
+        other => panic!("expected first poll wait, got {other:?}"),
+    }
+    // Pending at t+5s: the next 5s sleep would land exactly on the 10s deadline,
+    // so we time out immediately instead of scheduling that final poll.
     let pending = json_status(json!({ "error": "authorization_pending" }), 400);
-    match machine.advance(StepInput::Response(pending), START_MS + 10_000) {
+    match machine.advance(StepInput::Response(pending), START_MS + 5000) {
         Step::Error { message } => assert_eq!(message, "Device flow timed out"),
-        other => panic!("expected timeout, got {other:?}"),
+        other => panic!("expected immediate timeout with no trailing poll, got {other:?}"),
     }
 }
 

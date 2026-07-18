@@ -399,7 +399,11 @@ fn cancels_device_flow_while_waiting() {
 
 /// pi `openai-codex-oauth.test.ts:319-360`: the device flow times out after 15
 /// minutes with every poll pending (interval 60). Steps the machine through the
-/// full deadline, advancing the simulated clock by each Wait's delay.
+/// deadline, advancing the simulated clock by each Wait's delay.
+///
+/// The deadline is pre-checked (behavior (b)): the poll whose next 60s sleep would
+/// land on the 900s deadline times out immediately with NO trailing poll, so the
+/// error fires at t+840s rather than scheduling a final poll to the exact deadline.
 #[test]
 fn device_flow_times_out_after_fifteen_minutes() {
     let mut machine = OpenAICodexLoginMachine::with_pkce_bytes([3u8; 32]);
@@ -413,7 +417,7 @@ fn device_flow_times_out_after_fifteen_minutes() {
     }
 
     // Feed pending responses; each Wait advances the clock by its delay until the
-    // deadline is reached.
+    // next sleep would reach the deadline.
     let mut poll_count = 1;
     let error_message = loop {
         match machine.advance(StepInput::Response(device_pending_response()), now) {
@@ -427,9 +431,11 @@ fn device_flow_times_out_after_fifteen_minutes() {
         }
     };
     assert_eq!(error_message, TIMEOUT_MESSAGE);
-    // 900s / 60s = 15 waits; the poll at the exact deadline then times out.
-    assert!(poll_count >= 15, "poll_count = {poll_count}");
-    assert_eq!(now, START_MS + 900_000);
+    // 14 waits after the first poll → 15 polls scheduled; the poll whose next 60s
+    // sleep would land on the deadline times out immediately (no trailing poll),
+    // so the clock stops one interval short of the 900s deadline.
+    assert_eq!(poll_count, 15);
+    assert_eq!(now, START_MS + 840_000);
 }
 
 /// pi `openai-codex-oauth.test.ts:362-422`: 403 and 404 poll responses are both

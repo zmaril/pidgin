@@ -24,15 +24,17 @@
 //! deadline / interval / `slow_down` arithmetic (`device-code.ts:46-98`) against
 //! the `now_ms` the driver threads in.
 //!
-//! # Deviation from pi's poll deadline boundary
+//! # Poll deadline boundary (behavior (b))
 //!
 //! pi's poller re-checks `while (now < deadline)` *after* each inter-poll sleep,
 //! so a sleep that lands exactly on the deadline skips the final poll. Because a
 //! [`Step::Wait`] couples the sleep to the request it fires unconditionally, this
-//! machine instead times out when a poll response arrives at or past the deadline
-//! — at the exact-boundary case it may perform one extra poll pi would not. The
-//! shared [`super::device_code`] poller retains pi's exact semantics; every timing
-//! the pi tests assert is reproduced identically.
+//! machine **pre-checks** the deadline: when the next inter-poll sleep would land
+//! on or after it (`now_ms + interval_ms >= deadline`) it emits the timeout
+//! [`Step::Error`] immediately with no trailing poll, so the request count matches
+//! pi's "break before the final poll" exactly (mirrors `github_copilot.rs`). Only
+//! the wall-clock instant of the error moves earlier; the shared
+//! [`super::device_code`] poller retains pi's exact semantics.
 
 use serde_json::{Map, Value};
 
@@ -364,23 +366,28 @@ impl XaiLoginMachine {
         )
     }
 
-    /// Yield the next poll `Wait` at `now_ms`, or the timeout error when the
-    /// deadline is reached (`device-code.ts:148-191`).
+    /// Yield the next poll `Wait` at `now_ms`, or the timeout error when the next
+    /// inter-poll sleep would land on or after the deadline (`device-code.ts:148-191`).
+    ///
+    /// Deadline is pre-checked (behavior (b)): when `now_ms + interval_ms >=
+    /// deadline` the timeout `Step::Error` is emitted immediately with no trailing
+    /// poll, matching pi's "break before the final poll" (`github_copilot.rs`).
     fn next_poll(&self, now_ms: i64) -> Step {
         let remaining = self.deadline_ms - now_ms;
-        if remaining <= 0 {
-            return Step::Error {
+        if remaining > 0 && self.interval_ms < remaining {
+            Step::Wait {
+                delay_ms: self.interval_ms as u64,
+                request: self.poll_request(),
+            }
+        } else {
+            Step::Error {
                 message: if self.slow_down_responses > 0 {
                     SLOW_DOWN_TIMEOUT_MESSAGE
                 } else {
                     TIMEOUT_MESSAGE
                 }
                 .to_string(),
-            };
-        }
-        Step::Wait {
-            delay_ms: self.interval_ms.min(remaining) as u64,
-            request: self.poll_request(),
+            }
         }
     }
 

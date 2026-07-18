@@ -526,11 +526,13 @@ fn device_code_notify_falls_back_to_verification_endpoint() {
     }
 }
 
-/// Device polling times out once the deadline passes, and after a slow_down the
-/// timeout carries the WSL/VM wording.
+/// Device polling times out when the next inter-poll sleep would reach the
+/// deadline, and after a slow_down the timeout carries the WSL/VM wording. The
+/// deadline is pre-checked (behavior (b)): the boundary poll errors immediately
+/// with NO trailing poll, matching pi's "break before the final poll".
 #[test]
 fn device_login_times_out() {
-    // Plain timeout: pending until the deadline (900s) passes.
+    // Plain timeout: deadline is 900s, interval 5s.
     let mut machine = RadiusLoginMachine::with_seed(GATEWAY, "Radius", PKCE_SEED, STATE);
     device_up_to_first_poll(&mut machine);
     let pending = || HttpResponse {
@@ -538,15 +540,20 @@ fn device_login_times_out() {
         headers: Default::default(),
         body: json!({ "error": "authorization_pending" }).to_string(),
     };
-    // First pending schedules a Wait; feeding a response at/after the deadline
-    // hits the top-of-loop deadline guard.
-    machine.advance(StepInput::Response(pending()), NOW_MS);
-    match machine.advance(StepInput::Response(pending()), NOW_MS + 900_000) {
+    // First pending schedules a 5s Wait before the next poll.
+    match machine.advance(StepInput::Response(pending()), NOW_MS) {
+        Step::Wait { delay_ms, .. } => assert_eq!(delay_ms, 5000),
+        other => panic!("expected wait, got {other:?}"),
+    }
+    // A pending whose next 5s sleep would land on the 900s deadline times out
+    // immediately, without scheduling that final poll.
+    match machine.advance(StepInput::Response(pending()), NOW_MS + 895_000) {
         Step::Error { message } => assert_eq!(message, TIMEOUT_MESSAGE),
-        other => panic!("expected timeout, got {other:?}"),
+        other => panic!("expected immediate timeout with no trailing poll, got {other:?}"),
     }
 
-    // slow_down timeout wording.
+    // slow_down timeout wording. The slow_down bumps the interval to 10s, so a
+    // pending 5s before the deadline can no longer fit another poll → timeout.
     let mut machine = RadiusLoginMachine::with_seed(GATEWAY, "Radius", PKCE_SEED, STATE);
     device_up_to_first_poll(&mut machine);
     let slow = HttpResponse {
@@ -554,10 +561,15 @@ fn device_login_times_out() {
         headers: Default::default(),
         body: json!({ "error": "slow_down" }).to_string(),
     };
-    machine.advance(StepInput::Response(slow), NOW_MS);
-    match machine.advance(StepInput::Response(pending()), NOW_MS + 900_000) {
+    match machine.advance(StepInput::Response(slow), NOW_MS) {
+        Step::Wait { delay_ms, .. } => assert_eq!(delay_ms, 10_000),
+        other => panic!("expected wait, got {other:?}"),
+    }
+    match machine.advance(StepInput::Response(pending()), NOW_MS + 895_000) {
         Step::Error { message } => assert_eq!(message, SLOW_DOWN_TIMEOUT_MESSAGE),
-        other => panic!("expected slow_down timeout, got {other:?}"),
+        other => {
+            panic!("expected immediate slow_down timeout with no trailing poll, got {other:?}")
+        }
     }
 }
 

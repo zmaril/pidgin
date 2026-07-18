@@ -27,6 +27,14 @@
 //! Refresh: `start` → `Request(GET /v1/oauth)`; on the config response →
 //! `Request(POST token, refresh_token)` → `Done`.
 //!
+//! # Poll deadline boundary (behavior (b))
+//!
+//! The device-code deadline is **pre-checked**: when the next inter-poll sleep
+//! would land on or after the deadline (`now_ms + interval_ms >= deadline`), the
+//! poll step emits the timeout [`Step::Error`] immediately with no trailing poll,
+//! matching pi's "break before the final poll" (mirrors `github_copilot.rs`). Only
+//! the wall-clock instant of the error moves earlier; the request count matches pi.
+//!
 //! # Scope
 //!
 //! Binding the real TCP loopback callback listener (`node:http` on port
@@ -509,22 +517,12 @@ impl RadiusLoginMachine {
     /// Handle a poll response, mapping the RFC 8628 statuses and pi's device
     /// oauth-error cases, then either finishing or scheduling the next poll
     /// (`radius.ts:319-340`, `device-code.ts:46-98`).
+    ///
+    /// The deadline is pre-checked (behavior (b)): when the next inter-poll sleep
+    /// would land on or after the deadline (`now_ms + interval_ms >= deadline`) the
+    /// timeout `Step::Error` is emitted immediately with no trailing poll, matching
+    /// pi's "break before the final poll" (mirrors `github_copilot.rs`).
     fn advance_poll(&mut self, response: &HttpResponse, now_ms: i64) -> Step {
-        // Top-of-loop `while now < deadline` guard for a poll that followed a
-        // Wait (whose sleep advanced the clock). Deviation from pi's driver: the
-        // yield-based contract has no bare sleep, so the Wait already performed
-        // the trailing poll pi would skip at the exact deadline; the terminal
-        // timeout result is identical.
-        {
-            let device = self.device.as_ref().expect("device state before poll");
-            if now_ms as f64 >= device.deadline_ms {
-                self.phase = LoginPhase::Done;
-                return Step::Error {
-                    message: device.timeout_message().to_string(),
-                };
-            }
-        }
-
         match interpret_token_response(response, now_ms) {
             TokenResult::Credential(credential) => {
                 self.phase = LoginPhase::Done;
@@ -563,21 +561,24 @@ impl RadiusLoginMachine {
             },
         }
 
-        // Pending / slow_down: schedule the next poll unless the deadline passed.
+        // Pending / slow_down: schedule the next poll only when its inter-poll
+        // sleep lands before the deadline; otherwise time out immediately with no
+        // trailing poll (behavior (b), pre-checked as in `github_copilot.rs`).
         let device = self.device.as_ref().expect("device state");
         let remaining_ms = device.deadline_ms - now_ms as f64;
-        if remaining_ms <= 0.0 {
-            self.phase = LoginPhase::Done;
-            return Step::Error {
-                message: device.timeout_message().to_string(),
+        if remaining_ms > 0.0 && (device.interval_ms as f64) < remaining_ms {
+            let delay_ms = device.interval_ms as u64;
+            let request = match self.poll_request() {
+                Step::Request { request } => request,
+                _ => unreachable!("poll_request always yields a Request"),
             };
+            Step::Wait { delay_ms, request }
+        } else {
+            self.phase = LoginPhase::Done;
+            Step::Error {
+                message: device.timeout_message().to_string(),
+            }
         }
-        let delay_ms = (device.interval_ms as f64).min(remaining_ms) as u64;
-        let request = match self.poll_request() {
-            Step::Request { request } => request,
-            _ => unreachable!("poll_request always yields a Request"),
-        };
-        Step::Wait { delay_ms, request }
     }
 
     /// The login-method select prompt (`radius.ts:369-380`).

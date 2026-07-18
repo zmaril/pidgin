@@ -25,6 +25,14 @@
 //! ported in full: user-code request, device_code notify, RFC 8628 poll loop
 //! (via [`Step::Wait`]), then the final code exchange whose verifier comes from
 //! the server.
+//!
+//! # Poll deadline boundary (behavior (b))
+//!
+//! The device-code deadline is **pre-checked**: when the next inter-poll sleep
+//! would land on or after the deadline (`now_ms + interval_ms >= deadline`), the
+//! poll step emits the timeout [`Step::Error`] immediately with no trailing poll,
+//! matching pi's "break before the final poll" (mirrors `github_copilot.rs`). Only
+//! the wall-clock instant of the error moves earlier; the request count matches pi.
 
 use serde_json::{json, Map, Value};
 
@@ -579,21 +587,26 @@ impl DevicePollState {
 
     /// After a pending/slow_down poll at `now_ms`, either the next timed poll or
     /// the deadline-exceeded error (`device-code.ts:156-191`).
+    ///
+    /// The deadline is pre-checked (behavior (b)): when the next inter-poll sleep
+    /// would land on or after the deadline (`now_ms + interval_ms >= deadline`) the
+    /// timeout `Step::Error` is emitted immediately with no trailing poll, matching
+    /// pi's "break before the final poll" (mirrors `github_copilot.rs`).
     fn next_wait_or_timeout(&self, now_ms: i64) -> Step {
         let remaining_ms = self.deadline_ms - now_ms;
-        if remaining_ms <= 0 {
-            return Step::Error {
+        if remaining_ms > 0 && self.interval_ms < remaining_ms {
+            Step::Wait {
+                delay_ms: self.interval_ms as u64,
+                request: self.poll_request(),
+            }
+        } else {
+            Step::Error {
                 message: if self.slow_down_responses > 0 {
                     SLOW_DOWN_TIMEOUT_MESSAGE.to_string()
                 } else {
                     TIMEOUT_MESSAGE.to_string()
                 },
-            };
-        }
-        let delay_ms = self.interval_ms.min(remaining_ms) as u64;
-        Step::Wait {
-            delay_ms,
-            request: self.poll_request(),
+            }
         }
     }
 }
