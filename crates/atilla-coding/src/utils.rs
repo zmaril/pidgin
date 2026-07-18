@@ -8,10 +8,10 @@
 //!
 //! Ported modules: [`ansi`], [`html`], [`json`], [`pi_user_agent`], [`mime`],
 //! [`paths`], [`changelog`], [`version_check`], [`git_url`], [`frontmatter`],
-//! [`deprecation`], [`exif`]. Shared low-level primitives live in [`bytes`].
+//! [`deprecation`], [`exif`], [`sleep`], [`shell`], [`child_process`],
+//! [`open_browser`]. Shared low-level primitives live in [`bytes`].
 //!
-//! Deferred modules: [`sleep`], [`clipboard`], [`clipboard_native`],
-//! [`clipboard_image`], [`child_process`], [`open_browser`], [`shell`],
+//! Deferred modules: [`clipboard`], [`clipboard_native`], [`clipboard_image`],
 //! [`fs_watch`], [`tools_manager`], [`windows_self_update`], [`image`],
 //! [`syntax_highlight`].
 

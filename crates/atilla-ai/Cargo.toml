@@ -9,9 +9,15 @@ repository.workspace = true
 [dependencies]
 base64 = "0.22"
 getrandom = "0.4.3"
+# Context-overflow detection (utils/overflow.rs) compiles pi's provider error
+# patterns as case-insensitive regexes.
+regex = "1"
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = "0.11.0"
+# WHATWG-compatible URL parsing/normalization for utils/node_http_proxy.rs, so
+# target parsing and the proxy URL's string form match pi's `URL` byte-for-byte.
+url = "2"
 
 [dev-dependencies]
 serde_json = { workspace = true }

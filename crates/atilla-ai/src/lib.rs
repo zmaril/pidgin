@@ -20,8 +20,17 @@ pub mod seams;
 pub mod types;
 pub mod utils;
 
+pub use compat::{
+    get_api_provider, get_api_providers, register_api_provider, register_builtin_api_providers,
+    register_faux_provider, reset_api_providers, unregister_api_providers, ApiProvider,
+    CompatError, FauxProviderRegistration,
+};
 pub use cost::{calculate_cost, calculate_cost_with};
 pub use types::*;
+pub use utils::event_stream::{
+    create_assistant_message_event_stream, AssistantMessageEventStream, EventStream,
+};
+pub use utils::retry::is_retryable_assistant_error;
 
 /// Name of the pi package this crate mirrors.
 pub const PI_PACKAGE: &str = "@earendil-works/pi-ai";
