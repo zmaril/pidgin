@@ -16,6 +16,10 @@ use serde_json::Value;
 // provider's deterministic streaming and cache accounting from JS. Additive.
 mod faux;
 
+// The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
+// Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
+mod oauth;
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `atillaNativeVersion`.
