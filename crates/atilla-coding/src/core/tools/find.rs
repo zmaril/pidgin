@@ -176,46 +176,7 @@ pub fn run_find(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
-    use std::path::PathBuf;
-
-    struct TempDir {
-        path: PathBuf,
-    }
-
-    impl TempDir {
-        fn new(tag: &str) -> Self {
-            let path = std::env::temp_dir().join(format!(
-                "atilla-find-{tag}-{}-{}",
-                std::process::id(),
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos()
-            ));
-            fs::create_dir_all(&path).unwrap();
-            TempDir { path }
-        }
-        fn mkdir(&self, rel: &str) {
-            fs::create_dir_all(self.path.join(rel)).unwrap();
-        }
-        fn write(&self, name: &str, content: &str) {
-            let p = self.path.join(name);
-            if let Some(parent) = p.parent() {
-                fs::create_dir_all(parent).unwrap();
-            }
-            fs::write(&p, content).unwrap();
-        }
-        fn cwd(&self) -> &str {
-            self.path.to_str().unwrap()
-        }
-    }
-
-    impl Drop for TempDir {
-        fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.path);
-        }
-    }
+    use crate::core::tools::test_support::TempDir;
 
     fn matched_files(text: &str) -> Vec<String> {
         if text == "No files found matching pattern" {
@@ -230,24 +191,29 @@ mod tests {
         v
     }
 
+    /// Run a find rooted at `dir` and return the sorted matched paths.
+    fn find_files(dir: &TempDir, pattern: &str) -> Vec<String> {
+        let out = run_find(dir.cwd(), pattern, Some(dir.cwd()), None).unwrap();
+        matched_files(&out.text)
+    }
+
+    /// Assert that `name` appears among `files`.
+    fn assert_has(files: &[String], name: &str) {
+        assert!(
+            files.contains(&name.to_string()),
+            "expected {name} in {files:?}"
+        );
+    }
+
     #[test]
     fn includes_hidden_files_not_gitignored() {
         let dir = TempDir::new("hidden");
         dir.mkdir(".secret");
         dir.write(".secret/hidden.txt", "hidden");
         dir.write("visible.txt", "visible");
-        let out = run_find(dir.cwd(), "**/*.txt", Some(dir.cwd()), None).unwrap();
-        let files = matched_files(&out.text);
-        assert!(
-            files.contains(&"visible.txt".to_string()),
-            "got: {:?}",
-            files
-        );
-        assert!(
-            files.contains(&".secret/hidden.txt".to_string()),
-            "got: {:?}",
-            files
-        );
+        let files = find_files(&dir, "**/*.txt");
+        assert_has(&files, "visible.txt");
+        assert_has(&files, ".secret/hidden.txt");
     }
 
     #[test]
@@ -291,11 +257,7 @@ mod tests {
     #[test]
     fn r3302_basename_pattern_matches() {
         let dir = setup_3302();
-        let files = matched_files(
-            &run_find(dir.cwd(), "*.spec.ts", Some(dir.cwd()), None)
-                .unwrap()
-                .text,
-        );
+        let files = find_files(&dir, "*.spec.ts");
         assert_eq!(
             files,
             vec![
@@ -308,59 +270,30 @@ mod tests {
     #[test]
     fn r3302_directory_prefixed_subtree() {
         let dir = setup_3302();
-        let files = matched_files(
-            &run_find(dir.cwd(), "some/parent/child/**", Some(dir.cwd()), None)
-                .unwrap()
-                .text,
-        );
-        assert!(
-            files.contains(&"some/parent/child/file.ext".to_string()),
-            "got: {:?}",
-            files
-        );
-        assert!(
-            files.contains(&"some/parent/child/test.spec.ts".to_string()),
-            "got: {:?}",
-            files
-        );
+        let files = find_files(&dir, "some/parent/child/**");
+        assert_has(&files, "some/parent/child/file.ext");
+        assert_has(&files, "some/parent/child/test.spec.ts");
     }
 
     #[test]
     fn r3302_leading_wildcard_with_path_segments() {
         let dir = setup_3302();
-        let files = matched_files(
-            &run_find(dir.cwd(), "**/parent/child/*", Some(dir.cwd()), None)
-                .unwrap()
-                .text,
-        );
-        assert!(
-            files.contains(&"some/parent/child/file.ext".to_string()),
-            "got: {:?}",
-            files
-        );
-        assert!(
-            files.contains(&"some/parent/child/test.spec.ts".to_string()),
-            "got: {:?}",
-            files
-        );
+        let files = find_files(&dir, "**/parent/child/*");
+        assert_has(&files, "some/parent/child/file.ext");
+        assert_has(&files, "some/parent/child/test.spec.ts");
     }
 
     #[test]
     fn r3302_src_path_glob_matches_nested_spec() {
         let dir = setup_3302();
-        let files = matched_files(
-            &run_find(dir.cwd(), "src/**/*.spec.ts", Some(dir.cwd()), None)
-                .unwrap()
-                .text,
-        );
+        let files = find_files(&dir, "src/**/*.spec.ts");
         assert_eq!(files, vec!["src/foo/bar/example.spec.ts".to_string()]);
     }
 
     // --- regression 3303: nested .gitignore scoping ---
 
-    #[test]
-    fn r3303_flat_sibling_scoping() {
-        let dir = TempDir::new("3303-flat");
+    fn setup_3303() -> TempDir {
+        let dir = TempDir::new("3303");
         dir.mkdir("a");
         dir.mkdir("b");
         dir.write("a/.gitignore", "ignored.txt\n");
@@ -369,11 +302,13 @@ mod tests {
         dir.write("b/ignored.txt", "");
         dir.write("b/kept.txt", "");
         dir.write("root.txt", "");
-        let files = matched_files(
-            &run_find(dir.cwd(), "**/*.txt", Some(dir.cwd()), None)
-                .unwrap()
-                .text,
-        );
+        dir
+    }
+
+    #[test]
+    fn r3303_flat_sibling_scoping() {
+        let dir = setup_3303();
+        let files = find_files(&dir, "**/*.txt");
         assert_eq!(
             files,
             vec![
@@ -387,24 +322,13 @@ mod tests {
 
     #[test]
     fn r3303_deeply_nested_scoping() {
-        let dir = TempDir::new("3303-deep");
+        let dir = setup_3303();
         dir.mkdir("a/deep");
-        dir.mkdir("b");
-        dir.write("a/.gitignore", "ignored.txt\n");
         dir.write("a/deep/.gitignore", "secret.txt\n");
-        dir.write("a/ignored.txt", "");
-        dir.write("a/kept.txt", "");
         dir.write("a/deep/ignored.txt", "");
         dir.write("a/deep/secret.txt", "");
         dir.write("a/deep/kept.txt", "");
-        dir.write("b/ignored.txt", "");
-        dir.write("b/kept.txt", "");
-        dir.write("root.txt", "");
-        let files = matched_files(
-            &run_find(dir.cwd(), "**/*.txt", Some(dir.cwd()), None)
-                .unwrap()
-                .text,
-        );
+        let files = find_files(&dir, "**/*.txt");
         assert_eq!(
             files,
             vec![

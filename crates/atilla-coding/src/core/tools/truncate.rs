@@ -1,3 +1,7 @@
+// straitjacket-allow-file:duplication — truncate_head and truncate_tail are a
+// deliberate 1:1 mirror of pi's separate truncateHead/truncateTail exports; the
+// shared setup preamble and TruncationResult construction are intentional
+// head/tail symmetry that keeps each variant auditable against the source.
 //! Shared truncation utilities for tool outputs.
 //!
 //! Ported from pi's `core/tools/truncate.ts`. Truncation is based on two

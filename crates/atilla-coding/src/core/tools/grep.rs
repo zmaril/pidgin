@@ -279,41 +279,7 @@ pub fn run_grep(cwd: &str, params: &GrepParams) -> Result<GrepResult, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
-    use std::path::PathBuf;
-
-    struct TempDir {
-        path: PathBuf,
-    }
-
-    impl TempDir {
-        fn new(tag: &str) -> Self {
-            let path = std::env::temp_dir().join(format!(
-                "atilla-grep-{tag}-{}-{}",
-                std::process::id(),
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos()
-            ));
-            fs::create_dir_all(&path).unwrap();
-            TempDir { path }
-        }
-        fn write(&self, name: &str, content: &str) -> PathBuf {
-            let p = self.path.join(name);
-            if let Some(parent) = p.parent() {
-                fs::create_dir_all(parent).unwrap();
-            }
-            fs::write(&p, content).unwrap();
-            p
-        }
-    }
-
-    impl Drop for TempDir {
-        fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.path);
-        }
-    }
+    use crate::core::tools::test_support::TempDir;
 
     fn params<'a>(pattern: &'a str, path: &'a str) -> GrepParams<'a> {
         GrepParams {
