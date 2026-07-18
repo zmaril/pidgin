@@ -35,7 +35,10 @@
     {
       "package": "agent",
       "src": "packages/agent/src/harness/env/nodejs.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "packages/agent/test/harness/nodejs-env.test.ts"
+      ]
     },
     {
       "package": "agent",
