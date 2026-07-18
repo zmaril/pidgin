@@ -27,6 +27,7 @@ pub mod prompt_templates;
 pub mod provider_attribution;
 pub mod radius;
 pub mod resolve_config_value;
+pub mod resource_loader;
 pub mod session_cwd;
 pub mod session_manager;
 pub mod slash_commands;
