@@ -90,7 +90,10 @@
     {
       "package": "agent",
       "src": "packages/agent/src/harness/system-prompt.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "packages/agent/test/harness/system-prompt.test.ts"
+      ]
     },
     {
       "package": "agent",
