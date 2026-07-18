@@ -7,6 +7,7 @@
 //! extracted from pi itself (see `tests/width_vectors.rs` and
 //! `tests/keys_vectors.rs`).
 
+pub mod autocomplete;
 pub mod components;
 mod eaw_table;
 pub mod fuzzy;
@@ -25,6 +26,10 @@ pub mod widgets;
 pub mod width;
 pub mod word_navigation;
 
+pub use autocomplete::{
+    AppliedCompletion, AutocompleteItem, AutocompleteSuggestions, CombinedAutocompleteProvider,
+    Command, DirEntry, FdOutput, FileProvider, ProviderError, SlashCommand,
+};
 pub use components::{
     Input, SelectItem, SelectList, SelectListLayoutOptions, SelectListTheme,
     SelectListTruncatePrimaryContext, SettingItem, SettingsList, SettingsListOptions,
