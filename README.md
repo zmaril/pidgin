@@ -1,9 +1,39 @@
 # atilla
 
-A Rust command-line tool, laid out as a Cargo workspace so the engine and the
-shell stay separate.
+A continually updating mirror of [pi](https://github.com/earendil-works/pi),
+rewritten in Rust. atilla tracks upstream pi and re-implements it crate by
+crate, keeping pace as pi evolves.
 
-The workspace splits into two crates:
+pi is an open-source agent harness — a self-extensible coding agent, an agent
+runtime with tool calling and state management, and a unified multi-provider
+LLM API — written in TypeScript and running on Node.js. atilla is the same
+thing in Rust.
+
+## Why
+
+- **A native Rust core.** pi's runtime, tool calling, and multi-provider LLM
+  surface, re-implemented in Rust so it can ship as a single static binary and
+  embed anywhere Rust does.
+- **Native extensions in every language.** The Rust core is meant to be
+  re-exposed through first-class native extensions — PHP first (a PECL-style
+  extension via [ext-php-rs](https://github.com/davidcole1340/ext-php-rs)),
+  then Python, Node, Ruby, and others — with the goal of exposing pi's full API
+  in each language rather than wrapping a subprocess.
+- **Correctness pinned to pi.** The Rust mirror is only "done" for a given
+  piece when it passes pi's own test suite. pi's tests are the specification;
+  matching them is the definition of correctness.
+
+## How the rewrite works
+
+This is an AI-accelerated hand-rewrite, not a transpiler. pi's TypeScript
+source and its test suite are used as the executable spec: read the upstream
+behavior, re-implement it idiomatically in Rust, and prove it against pi's
+tests. Nothing is machine-translated from TypeScript to Rust — the output is
+hand-written Rust that happens to be produced quickly.
+
+## Layout
+
+The workspace is a Cargo workspace so the engine and the shell stay separate:
 
 - **`atilla-core`** — the library. All the real work lives here so it stays
   testable without going through argv.
@@ -12,8 +42,18 @@ The workspace splits into two crates:
   `atilla` binary.
 
 This is early scaffolding: the CLI exposes a single `run` placeholder command
-while the actual surface is designed. Everything below already works, so new
+while the actual surface is designed. The structure already works, so new
 functionality slots into an established shape rather than a blank repo.
+
+## Status
+
+Early — research phase. There is no working port of pi yet; the current focus
+is understanding upstream and planning the rewrite.
+
+- **`notes/`** — research reports on pi's architecture and behavior, landed via
+  pull requests. (Intended location; the directory appears as reports arrive.)
+- **`throwaway/`** — spikes and experiments that inform the rewrite but are not
+  meant to ship. (Intended location.)
 
 ## Install
 
@@ -63,6 +103,14 @@ Pull request titles follow
 (`type(scope): summary`) — CI enforces it. Keep `cargo fmt`, `cargo clippy`,
 and `cargo test` green before opening a PR.
 
+## Credits
+
+atilla is a Rust port of [pi](https://github.com/earendil-works/pi) by
+[earendil-works](https://github.com/earendil-works) (Mario Zechner and
+contributors). All credit for the design and behavior atilla mirrors belongs to
+the pi authors. pi is licensed under the MIT License.
+
 ## License
 
-[MIT](LICENSE) © Zack Maril
+[MIT](LICENSE) © Zack Maril. pi is separately licensed under the MIT License ©
+Mario Zechner.
