@@ -1,10 +1,10 @@
 {
   "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
   "generated_by": "scripts/conformance.sh",
-  "manifest_native_modules": 0,
+  "manifest_native_modules": 1,
   "total": 3777,
-  "passing": 2901,
-  "failing": 121,
+  "passing": 2911,
+  "failing": 111,
   "skipped": 755,
   "by_package": {
     "agent": {
@@ -25,8 +25,8 @@
     },
     "coding-agent": {
       "total": 1625,
-      "passing": 1481,
-      "failing": 97,
+      "passing": 1491,
+      "failing": 87,
       "skipped": 47,
       "status": "ok",
       "note": "vitest run, exit 1"
@@ -1683,8 +1683,8 @@
     {
       "package": "coding-agent",
       "file": "packages/coding-agent/test/tools.test.ts",
-      "passing": 68,
-      "failing": 6,
+      "passing": 72,
+      "failing": 2,
       "skipped": 0
     },
     {
@@ -1733,6 +1733,55 @@
       "package": "coding-agent",
       "file": "packages/coding-agent/test/version-check.test.ts",
       "passing": 6,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/build-context.test.ts",
+      "passing": 16,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/custom-session-id.test.ts",
+      "passing": 12,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/file-operations.test.ts",
+      "passing": 21,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/labels.test.ts",
+      "passing": 9,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/migration.test.ts",
+      "passing": 2,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/save-entry.test.ts",
+      "passing": 1,
+      "failing": 0,
+      "skipped": 0
+    },
+    {
+      "package": "coding-agent",
+      "file": "packages/coding-agent/test/session-manager/tree-traversal.test.ts",
+      "passing": 30,
       "failing": 0,
       "skipped": 0
     },
@@ -1789,55 +1838,6 @@
       "package": "coding-agent",
       "file": "packages/coding-agent/test/suite/lax-message-content.test.ts",
       "passing": 6,
-      "failing": 0,
-      "skipped": 0
-    },
-    {
-      "package": "coding-agent",
-      "file": "packages/coding-agent/test/session-manager/build-context.test.ts",
-      "passing": 16,
-      "failing": 0,
-      "skipped": 0
-    },
-    {
-      "package": "coding-agent",
-      "file": "packages/coding-agent/test/session-manager/custom-session-id.test.ts",
-      "passing": 12,
-      "failing": 0,
-      "skipped": 0
-    },
-    {
-      "package": "coding-agent",
-      "file": "packages/coding-agent/test/session-manager/file-operations.test.ts",
-      "passing": 21,
-      "failing": 0,
-      "skipped": 0
-    },
-    {
-      "package": "coding-agent",
-      "file": "packages/coding-agent/test/session-manager/labels.test.ts",
-      "passing": 9,
-      "failing": 0,
-      "skipped": 0
-    },
-    {
-      "package": "coding-agent",
-      "file": "packages/coding-agent/test/session-manager/migration.test.ts",
-      "passing": 2,
-      "failing": 0,
-      "skipped": 0
-    },
-    {
-      "package": "coding-agent",
-      "file": "packages/coding-agent/test/session-manager/save-entry.test.ts",
-      "passing": 1,
-      "failing": 0,
-      "skipped": 0
-    },
-    {
-      "package": "coding-agent",
-      "file": "packages/coding-agent/test/session-manager/tree-traversal.test.ts",
-      "passing": 30,
       "failing": 0,
       "skipped": 0
     },
@@ -1900,15 +1900,15 @@
     {
       "package": "coding-agent",
       "file": "packages/coding-agent/test/suite/regressions/3302-find-path-glob.test.ts",
-      "passing": 0,
-      "failing": 4,
+      "passing": 4,
+      "failing": 0,
       "skipped": 0
     },
     {
       "package": "coding-agent",
       "file": "packages/coding-agent/test/suite/regressions/3303-find-nested-gitignore.test.ts",
-      "passing": 0,
-      "failing": 2,
+      "passing": 2,
+      "failing": 0,
       "skipped": 0
     },
     {
