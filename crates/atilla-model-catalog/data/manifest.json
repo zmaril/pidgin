@@ -1,0 +1,9 @@
+{
+  "upstream_repo": "https://github.com/earendil-works/pi",
+  "pi_pin": "3da591ab74ab9ab407e72ed882600b2c851fae21",
+  "generated_at": "2026-07-18T10:03:10Z",
+  "source": "https://models.dev/api.json + supplemental provider endpoints",
+  "generator": "vendor/pi/packages/ai/scripts/generate-models.ts --strict --json-only",
+  "provider_count": 35,
+  "model_count": 1070
+}
