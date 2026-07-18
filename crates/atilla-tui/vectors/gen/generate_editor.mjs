@@ -4,6 +4,9 @@
 // straitjacket-allow-file:emoji — the CJK/emoji/umlaut string literals are
 // UTF-8 width/segmentation test data fed to pi's own Editor, not decorative
 // prose (mirrors generate_input_lists.mjs's emoji allow-file).
+// straitjacket-allow-file:color — the `#2983` literal is the GitHub-issue-style
+// autocomplete suggestion value from pi's "#" debounce test (test/editor.test.ts),
+// recorded verbatim as test data, not a hex color code.
 //
 // Vector generator for the byte-exact Rust port of pi's TUI Editor. Runs pi's
 // OWN Editor + exported wordWrapLine from
