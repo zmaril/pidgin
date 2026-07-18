@@ -40,6 +40,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: recursive  # vendor/pi fixtures back atilla-coding's skills tests
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
