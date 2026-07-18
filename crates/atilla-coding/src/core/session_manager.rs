@@ -1377,6 +1377,14 @@ pub use io::{
     get_default_session_dir, load_entries_from_file, read_session_header,
 };
 
+// Slice C: the discovery / list / fork surface (`build_session_info`, the `list`
+// / `list_all` / `continue_recent` / `fork_from` factories). Kept in its own
+// child module so it can reach the private fields + io helpers while every source
+// file stays well under the 1500-line limit.
+mod discovery;
+
+pub use discovery::build_session_info;
+
 #[cfg(test)]
 mod tests;
 
