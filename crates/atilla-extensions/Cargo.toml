@@ -1,0 +1,27 @@
+[package]
+name = "atilla-extensions"
+description = "Embedded deno_core JavaScript extension plane for atilla (off-thread !Send runtime host)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+# deno_core pulls in the `v8` crate, which downloads a prebuilt static V8 blob
+# (~38 MB) from github.com/denoland/rusty_v8/releases on the FIRST build. This
+# is the first V8 dependency in the workspace; the initial `cargo build` is slow
+# and needs network. Pinned exact to match the throwaway/deno-hello spike.
+deno_core = "=0.408.0"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { version = "1", features = [
+    "rt",
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "time",
+] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
