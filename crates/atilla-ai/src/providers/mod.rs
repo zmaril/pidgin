@@ -6,4 +6,15 @@
 //! pi's agent and coding-agent tests drive via `registerFauxProvider`. The real
 //! wire providers implement the same seam as their HTTP/streaming paths land.
 
+pub mod builtins;
 pub mod faux;
+pub mod registry;
+
+pub use builtins::{
+    builtin_models, builtin_providers, catalog_model_to_ai, provider_from_catalog, radius_provider,
+};
+pub use registry::{
+    clamp_thinking_level, create_models, create_provider, get_supported_thinking_levels,
+    models_are_equal, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
+    ProviderHeaders, RefreshContext, RegistryProvider, StreamBackendRef,
+};

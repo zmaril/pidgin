@@ -30,6 +30,7 @@ dependencies = [
 name = "atilla-ai"
 version = "0.1.0"
 dependencies = [
+ "atilla-model-catalog",
  "regex",
  "serde",
  "serde_json",
