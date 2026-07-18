@@ -11,17 +11,17 @@ conventional-commits = "required"
 # the crate it drives (a standalone workspace), not under the repo-wide scripts/.
 # gen_eaw_table.sh is a vector-generator that lives beside its sibling .mjs
 # generators for the atilla-tui bit-exact port, not under the repo-wide scripts/.
+# regen.sh is the fluessig->PHP regeneration driver; it must sit next to the
+# standalone crate it regenerates, not under the repo-wide scripts/.
 allow = [
     "bindings/php/test.sh",
+    "bindings/php/regen.sh",
     "crates/atilla-tui/vectors/gen/gen_eaw_table.sh",
 ]
 
 [stray-todos]
-# The M1 Session::open marker in the PHP binding is a deliberate, milestone-
-# tagged placeholder for the next binding surface, not untracked work.
-# The fluessig integration note quotes that same M1 placeholder marker as prose
-# when describing what atilla exposes today — a reference, not untracked work.
+# The fluessig integration note quotes an M1 placeholder marker as prose when
+# describing what atilla exposes today — a reference, not untracked work.
 ignore = [
-    "bindings/php/src/lib.rs",
     "notes/fluessig-integration.md",
 ]
