@@ -1,0 +1,522 @@
+[
+	{
+		"name": "normalizes multiline descriptions to single line",
+		"items": [
+			{
+				"value": "test",
+				"label": "test",
+				"description": "Line one\nLine two\nLine three"
+			}
+		],
+		"maxVisible": 5,
+		"layout": null,
+		"steps": [
+			{
+				"op": "render",
+				"width": 100,
+				"selectedItem": "test",
+				"render": [
+					"→ test                            Line one Line two Line three"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "keeps descriptions aligned when primary text truncated",
+		"items": [
+			{
+				"value": "short",
+				"label": "short",
+				"description": "short description"
+			},
+			{
+				"value": "very-long-command-name-that-needs-truncation",
+				"label": "very-long-command-name-that-needs-truncation",
+				"description": "long description"
+			}
+		],
+		"maxVisible": 5,
+		"layout": null,
+		"steps": [
+			{
+				"op": "render",
+				"width": 80,
+				"selectedItem": "short",
+				"render": [
+					"→ short                           short description",
+					"  very-long-command-name-that-ne\u001b[0m  long description"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "uses configured minimum primary column width",
+		"items": [
+			{
+				"value": "a",
+				"label": "a",
+				"description": "first"
+			},
+			{
+				"value": "bb",
+				"label": "bb",
+				"description": "second"
+			}
+		],
+		"maxVisible": 5,
+		"layout": {
+			"min": 12,
+			"max": 20
+		},
+		"steps": [
+			{
+				"op": "render",
+				"width": 80,
+				"selectedItem": "a",
+				"render": [
+					"→ a           first",
+					"  bb          second"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "uses configured maximum primary column width",
+		"items": [
+			{
+				"value": "very-long-command-name-that-needs-truncation",
+				"label": "very-long-command-name-that-needs-truncation",
+				"description": "first"
+			},
+			{
+				"value": "short",
+				"label": "short",
+				"description": "second"
+			}
+		],
+		"maxVisible": 5,
+		"layout": {
+			"min": 12,
+			"max": 20
+		},
+		"steps": [
+			{
+				"op": "render",
+				"width": 80,
+				"selectedItem": "very-long-command-name-that-needs-truncation",
+				"render": [
+					"→ very-long-command-\u001b[0m  first",
+					"  short               second"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "allows overriding primary truncation while preserving alignment",
+		"items": [
+			{
+				"value": "very-long-command-name-that-needs-truncation",
+				"label": "very-long-command-name-that-needs-truncation",
+				"description": "first"
+			},
+			{
+				"value": "short",
+				"label": "short",
+				"description": "second"
+			}
+		],
+		"maxVisible": 5,
+		"layout": {
+			"min": 12,
+			"max": 12,
+			"truncateTag": "ellipsis"
+		},
+		"steps": [
+			{
+				"op": "render",
+				"width": 80,
+				"selectedItem": "very-long-command-name-that-needs-truncation",
+				"render": [
+					"→ very-long…  first",
+					"  short       second"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "empty list shows no-match",
+		"items": [],
+		"maxVisible": 5,
+		"layout": null,
+		"steps": [
+			{
+				"op": "render",
+				"width": 40,
+				"selectedItem": null,
+				"render": [
+					"  No matching commands"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "scrolling many items renders indicator",
+		"items": [
+			{
+				"value": "cmd0",
+				"label": "command-0",
+				"description": "description number 0"
+			},
+			{
+				"value": "cmd1",
+				"label": "command-1",
+				"description": "description number 1"
+			},
+			{
+				"value": "cmd2",
+				"label": "command-2",
+				"description": "description number 2"
+			},
+			{
+				"value": "cmd3",
+				"label": "command-3",
+				"description": "description number 3"
+			},
+			{
+				"value": "cmd4",
+				"label": "command-4",
+				"description": "description number 4"
+			},
+			{
+				"value": "cmd5",
+				"label": "command-5",
+				"description": "description number 5"
+			},
+			{
+				"value": "cmd6",
+				"label": "command-6",
+				"description": "description number 6"
+			},
+			{
+				"value": "cmd7",
+				"label": "command-7",
+				"description": "description number 7"
+			}
+		],
+		"maxVisible": 3,
+		"layout": null,
+		"steps": [
+			{
+				"op": "render",
+				"width": 60,
+				"selectedItem": "cmd0",
+				"render": [
+					"→ command-0                       description number 0",
+					"  command-1                       description number 1",
+					"  command-2                       description number 2",
+					"  (1/8)"
+				]
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"selectedItem": "cmd1",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"selectedItem": "cmd1",
+				"render": [
+					"  command-0                       description number 0",
+					"→ command-1                       description number 1",
+					"  command-2                       description number 2",
+					"  (2/8)"
+				]
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"selectedItem": "cmd2",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"selectedItem": "cmd3",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"selectedItem": "cmd4",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"selectedItem": "cmd4",
+				"render": [
+					"  command-3                       description number 3",
+					"→ command-4                       description number 4",
+					"  command-5                       description number 5",
+					"  (5/8)"
+				]
+			}
+		],
+		"selections": [
+			"cmd1",
+			"cmd2",
+			"cmd3",
+			"cmd4"
+		],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "narrow width without description column",
+		"items": [
+			{
+				"value": "alpha",
+				"label": "alpha",
+				"description": "should be dropped at narrow width"
+			},
+			{
+				"value": "beta",
+				"label": "beta",
+				"description": "also dropped"
+			}
+		],
+		"maxVisible": 5,
+		"layout": null,
+		"steps": [
+			{
+				"op": "render",
+				"width": 30,
+				"selectedItem": "alpha",
+				"render": [
+					"→ alpha",
+					"  beta"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "items without descriptions",
+		"items": [
+			{
+				"value": "one",
+				"label": "one"
+			},
+			{
+				"value": "two",
+				"label": "two"
+			},
+			{
+				"value": "three",
+				"label": ""
+			}
+		],
+		"maxVisible": 5,
+		"layout": null,
+		"steps": [
+			{
+				"op": "render",
+				"width": 40,
+				"selectedItem": "one",
+				"render": [
+					"→ one",
+					"  two",
+					"  three"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "CJK labels and descriptions",
+		"items": [
+			{
+				"value": "jp",
+				"label": "日本語コマンド",
+				"description": "これは説明文です"
+			},
+			{
+				"value": "cn",
+				"label": "中文命令",
+				"description": "这是描述"
+			}
+		],
+		"maxVisible": 5,
+		"layout": null,
+		"steps": [
+			{
+				"op": "render",
+				"width": 60,
+				"selectedItem": "jp",
+				"render": [
+					"→ 日本語コマンド                  これは説明文です",
+					"  中文命令                        这是描述"
+				]
+			},
+			{
+				"op": "render",
+				"width": 40,
+				"selectedItem": "jp",
+				"render": [
+					"→ 日本語コマンド",
+					"  中文命令"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	},
+	{
+		"name": "navigation wraps and confirms",
+		"items": [
+			{
+				"value": "cmd0",
+				"label": "command-0",
+				"description": "description number 0"
+			},
+			{
+				"value": "cmd1",
+				"label": "command-1",
+				"description": "description number 1"
+			},
+			{
+				"value": "cmd2",
+				"label": "command-2",
+				"description": "description number 2"
+			},
+			{
+				"value": "cmd3",
+				"label": "command-3",
+				"description": "description number 3"
+			}
+		],
+		"maxVisible": 5,
+		"layout": null,
+		"steps": [
+			{
+				"op": "input",
+				"data": "\u001b[A",
+				"selectedItem": "cmd3",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"selectedItem": "cmd0",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"selectedItem": "cmd1",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\r",
+				"selectedItem": "cmd1",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b",
+				"selectedItem": "cmd1",
+				"render": null
+			}
+		],
+		"selections": [
+			"cmd3",
+			"cmd0",
+			"cmd1"
+		],
+		"selected": [
+			"cmd1"
+		],
+		"cancelled": 1
+	},
+	{
+		"name": "setFilter narrows and resets selection",
+		"items": [
+			{
+				"value": "apple",
+				"label": "apple"
+			},
+			{
+				"value": "apricot",
+				"label": "apricot"
+			},
+			{
+				"value": "banana",
+				"label": "banana"
+			}
+		],
+		"maxVisible": 5,
+		"layout": null,
+		"steps": [
+			{
+				"op": "setSelectedIndex",
+				"index": 2,
+				"selectedItem": "banana",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 40,
+				"selectedItem": "banana",
+				"render": [
+					"  apple",
+					"  apricot",
+					"→ banana"
+				]
+			},
+			{
+				"op": "setFilter",
+				"filter": "ap",
+				"selectedItem": "apple",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 40,
+				"selectedItem": "apple",
+				"render": [
+					"→ apple",
+					"  apricot"
+				]
+			}
+		],
+		"selections": [],
+		"selected": [],
+		"cancelled": 0
+	}
+]

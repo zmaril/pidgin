@@ -1,0 +1,912 @@
+[
+	{
+		"name": "empty list no settings",
+		"items": [],
+		"maxVisible": 5,
+		"options": {},
+		"steps": [
+			{
+				"op": "render",
+				"width": 40,
+				"render": [
+					"  No settings available"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "basic render with description",
+		"items": [
+			{
+				"id": "theme",
+				"label": "Theme",
+				"currentValue": "dark",
+				"values": [
+					"dark",
+					"light",
+					"system"
+				]
+			},
+			{
+				"id": "font",
+				"label": "Font Size",
+				"currentValue": "14",
+				"values": [
+					"12",
+					"14",
+					"16"
+				],
+				"description": "The editor font size in points."
+			},
+			{
+				"id": "wrap",
+				"label": "Word Wrap",
+				"currentValue": "off",
+				"values": [
+					"on",
+					"off"
+				]
+			},
+			{
+				"id": "path",
+				"label": "Config Path",
+				"currentValue": "/home/user/.config/app/settings.json"
+			}
+		],
+		"maxVisible": 5,
+		"options": {},
+		"steps": [
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"→ Theme        dark",
+					"  Font Size    14",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "basic render narrow",
+		"items": [
+			{
+				"id": "theme",
+				"label": "Theme",
+				"currentValue": "dark",
+				"values": [
+					"dark",
+					"light",
+					"system"
+				]
+			},
+			{
+				"id": "font",
+				"label": "Font Size",
+				"currentValue": "14",
+				"values": [
+					"12",
+					"14",
+					"16"
+				],
+				"description": "The editor font size in points."
+			},
+			{
+				"id": "wrap",
+				"label": "Word Wrap",
+				"currentValue": "off",
+				"values": [
+					"on",
+					"off"
+				]
+			},
+			{
+				"id": "path",
+				"label": "Config Path",
+				"currentValue": "/home/user/.config/app/settings.json"
+			}
+		],
+		"maxVisible": 5,
+		"options": {},
+		"steps": [
+			{
+				"op": "render",
+				"width": 30,
+				"render": [
+					"→ Theme        dark",
+					"  Font Size    14",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.c\u001b[0m",
+					"",
+					"  Enter/Space to change · E\u001b[0m...\u001b[0m"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "navigate and cycle values",
+		"items": [
+			{
+				"id": "theme",
+				"label": "Theme",
+				"currentValue": "dark",
+				"values": [
+					"dark",
+					"light",
+					"system"
+				]
+			},
+			{
+				"id": "font",
+				"label": "Font Size",
+				"currentValue": "14",
+				"values": [
+					"12",
+					"14",
+					"16"
+				],
+				"description": "The editor font size in points."
+			},
+			{
+				"id": "wrap",
+				"label": "Word Wrap",
+				"currentValue": "off",
+				"values": [
+					"on",
+					"off"
+				]
+			},
+			{
+				"id": "path",
+				"label": "Config Path",
+				"currentValue": "/home/user/.config/app/settings.json"
+			}
+		],
+		"maxVisible": 5,
+		"options": {},
+		"steps": [
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"→ Theme        dark",
+					"  Font Size    14",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"  Theme        dark",
+					"→ Font Size    14",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  The editor font size in points.",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			},
+			{
+				"op": "input",
+				"data": "\r",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"  Theme        dark",
+					"→ Font Size    16",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  The editor font size in points.",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"  Theme        dark",
+					"→ Font Size    12",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  The editor font size in points.",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\r",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"  Theme        dark",
+					"  Font Size    12",
+					"→ Word Wrap    on",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [
+			[
+				"font",
+				"16"
+			],
+			[
+				"font",
+				"12"
+			],
+			[
+				"wrap",
+				"on"
+			]
+		],
+		"cancelled": 0
+	},
+	{
+		"name": "up wraps and cancel",
+		"items": [
+			{
+				"id": "theme",
+				"label": "Theme",
+				"currentValue": "dark",
+				"values": [
+					"dark",
+					"light",
+					"system"
+				]
+			},
+			{
+				"id": "font",
+				"label": "Font Size",
+				"currentValue": "14",
+				"values": [
+					"12",
+					"14",
+					"16"
+				],
+				"description": "The editor font size in points."
+			},
+			{
+				"id": "wrap",
+				"label": "Word Wrap",
+				"currentValue": "off",
+				"values": [
+					"on",
+					"off"
+				]
+			},
+			{
+				"id": "path",
+				"label": "Config Path",
+				"currentValue": "/home/user/.config/app/settings.json"
+			}
+		],
+		"maxVisible": 5,
+		"options": {},
+		"steps": [
+			{
+				"op": "input",
+				"data": "\u001b[A",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"  Theme        dark",
+					"  Font Size    14",
+					"  Word Wrap    off",
+					"→ Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			},
+			{
+				"op": "input",
+				"data": "\u001b",
+				"render": null
+			}
+		],
+		"changes": [],
+		"cancelled": 1
+	},
+	{
+		"name": "scroll indicator when overflowing",
+		"items": [
+			{
+				"id": "s0",
+				"label": "Setting 0",
+				"currentValue": "v0"
+			},
+			{
+				"id": "s1",
+				"label": "Setting 1",
+				"currentValue": "v1"
+			},
+			{
+				"id": "s2",
+				"label": "Setting 2",
+				"currentValue": "v2"
+			},
+			{
+				"id": "s3",
+				"label": "Setting 3",
+				"currentValue": "v3"
+			},
+			{
+				"id": "s4",
+				"label": "Setting 4",
+				"currentValue": "v4"
+			},
+			{
+				"id": "s5",
+				"label": "Setting 5",
+				"currentValue": "v5"
+			},
+			{
+				"id": "s6",
+				"label": "Setting 6",
+				"currentValue": "v6"
+			},
+			{
+				"id": "s7",
+				"label": "Setting 7",
+				"currentValue": "v7"
+			}
+		],
+		"maxVisible": 3,
+		"options": {},
+		"steps": [
+			{
+				"op": "render",
+				"width": 50,
+				"render": [
+					"→ Setting 0  v0",
+					"  Setting 1  v1",
+					"  Setting 2  v2",
+					"  (1/8)",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[B",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 50,
+				"render": [
+					"  Setting 2  v2",
+					"→ Setting 3  v3",
+					"  Setting 4  v4",
+					"  (4/8)",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "long value truncation",
+		"items": [
+			{
+				"id": "url",
+				"label": "Server URL",
+				"currentValue": "https://very-long-example-domain.example.com/api/v1/endpoint"
+			}
+		],
+		"maxVisible": 5,
+		"options": {},
+		"steps": [
+			{
+				"op": "render",
+				"width": 40,
+				"render": [
+					"→ Server URL  https://very-long-exampl\u001b[0m",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "updateValue reflects in render",
+		"items": [
+			{
+				"id": "theme",
+				"label": "Theme",
+				"currentValue": "dark",
+				"values": [
+					"dark",
+					"light",
+					"system"
+				]
+			},
+			{
+				"id": "font",
+				"label": "Font Size",
+				"currentValue": "14",
+				"values": [
+					"12",
+					"14",
+					"16"
+				],
+				"description": "The editor font size in points."
+			},
+			{
+				"id": "wrap",
+				"label": "Word Wrap",
+				"currentValue": "off",
+				"values": [
+					"on",
+					"off"
+				]
+			},
+			{
+				"id": "path",
+				"label": "Config Path",
+				"currentValue": "/home/user/.config/app/settings.json"
+			}
+		],
+		"maxVisible": 5,
+		"options": {},
+		"steps": [
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"→ Theme        dark",
+					"  Font Size    14",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			},
+			{
+				"op": "updateValue",
+				"id": "theme",
+				"value": "light",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"→ Theme        light",
+					"  Font Size    14",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "search enabled initial render",
+		"items": [
+			{
+				"id": "theme",
+				"label": "Theme",
+				"currentValue": "dark",
+				"values": [
+					"dark",
+					"light",
+					"system"
+				]
+			},
+			{
+				"id": "font",
+				"label": "Font Size",
+				"currentValue": "14",
+				"values": [
+					"12",
+					"14",
+					"16"
+				],
+				"description": "The editor font size in points."
+			},
+			{
+				"id": "wrap",
+				"label": "Word Wrap",
+				"currentValue": "off",
+				"values": [
+					"on",
+					"off"
+				]
+			},
+			{
+				"id": "path",
+				"label": "Config Path",
+				"currentValue": "/home/user/.config/app/settings.json"
+			}
+		],
+		"maxVisible": 5,
+		"options": {
+			"enableSearch": true
+		},
+		"steps": [
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"> \u001b[7m \u001b[27m                                                         ",
+					"",
+					"→ Theme        dark",
+					"  Font Size    14",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  Type to search · Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "search filters via typed input",
+		"items": [
+			{
+				"id": "theme",
+				"label": "Theme",
+				"currentValue": "dark",
+				"values": [
+					"dark",
+					"light",
+					"system"
+				]
+			},
+			{
+				"id": "font",
+				"label": "Font Size",
+				"currentValue": "14",
+				"values": [
+					"12",
+					"14",
+					"16"
+				],
+				"description": "The editor font size in points."
+			},
+			{
+				"id": "wrap",
+				"label": "Word Wrap",
+				"currentValue": "off",
+				"values": [
+					"on",
+					"off"
+				]
+			},
+			{
+				"id": "path",
+				"label": "Config Path",
+				"currentValue": "/home/user/.config/app/settings.json"
+			}
+		],
+		"maxVisible": 5,
+		"options": {
+			"enableSearch": true
+		},
+		"steps": [
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"> \u001b[7m \u001b[27m                                                         ",
+					"",
+					"→ Theme        dark",
+					"  Font Size    14",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  Type to search · Enter/Space to change · Esc to cancel"
+				]
+			},
+			{
+				"op": "input",
+				"data": "f",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"> f\u001b[7m \u001b[27m                                                        ",
+					"",
+					"→ Font Size    14",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  The editor font size in points.",
+					"",
+					"  Type to search · Enter/Space to change · Esc to cancel"
+				]
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"> fo\u001b[7m \u001b[27m                                                       ",
+					"",
+					"→ Font Size    14",
+					"",
+					"  The editor font size in points.",
+					"",
+					"  Type to search · Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "search no matching settings",
+		"items": [
+			{
+				"id": "theme",
+				"label": "Theme",
+				"currentValue": "dark",
+				"values": [
+					"dark",
+					"light",
+					"system"
+				]
+			},
+			{
+				"id": "font",
+				"label": "Font Size",
+				"currentValue": "14",
+				"values": [
+					"12",
+					"14",
+					"16"
+				],
+				"description": "The editor font size in points."
+			},
+			{
+				"id": "wrap",
+				"label": "Word Wrap",
+				"currentValue": "off",
+				"values": [
+					"on",
+					"off"
+				]
+			},
+			{
+				"id": "path",
+				"label": "Config Path",
+				"currentValue": "/home/user/.config/app/settings.json"
+			}
+		],
+		"maxVisible": 5,
+		"options": {
+			"enableSearch": true
+		},
+		"steps": [
+			{
+				"op": "input",
+				"data": "z",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "z",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "z",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"> zzz\u001b[7m \u001b[27m                                                      ",
+					"",
+					"  No matching settings",
+					"",
+					"  Type to search · Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "search space is ignored",
+		"items": [
+			{
+				"id": "theme",
+				"label": "Theme",
+				"currentValue": "dark",
+				"values": [
+					"dark",
+					"light",
+					"system"
+				]
+			},
+			{
+				"id": "font",
+				"label": "Font Size",
+				"currentValue": "14",
+				"values": [
+					"12",
+					"14",
+					"16"
+				],
+				"description": "The editor font size in points."
+			},
+			{
+				"id": "wrap",
+				"label": "Word Wrap",
+				"currentValue": "off",
+				"values": [
+					"on",
+					"off"
+				]
+			},
+			{
+				"id": "path",
+				"label": "Config Path",
+				"currentValue": "/home/user/.config/app/settings.json"
+			}
+		],
+		"maxVisible": 5,
+		"options": {
+			"enableSearch": true
+		},
+		"steps": [
+			{
+				"op": "input",
+				"data": " ",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"> \u001b[7m \u001b[27m                                                         ",
+					"",
+					"→ Theme        light",
+					"  Font Size    14",
+					"  Word Wrap    off",
+					"  Config Path  /home/user/.config/app/settings.json",
+					"",
+					"  Type to search · Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [
+			[
+				"theme",
+				"light"
+			]
+		],
+		"cancelled": 0
+	},
+	{
+		"name": "search enabled empty items",
+		"items": [],
+		"maxVisible": 5,
+		"options": {
+			"enableSearch": true
+		},
+		"steps": [
+			{
+				"op": "render",
+				"width": 60,
+				"render": [
+					"> \u001b[7m \u001b[27m                                                         ",
+					"",
+					"  No settings available",
+					"",
+					"  Type to search · Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	},
+	{
+		"name": "CJK settings labels",
+		"items": [
+			{
+				"id": "lang",
+				"label": "言語設定",
+				"currentValue": "日本語",
+				"values": [
+					"日本語",
+					"English"
+				],
+				"description": "アプリケーションの表示言語を選択します。"
+			},
+			{
+				"id": "mode",
+				"label": "モード",
+				"currentValue": "標準"
+			}
+		],
+		"maxVisible": 5,
+		"options": {},
+		"steps": [
+			{
+				"op": "render",
+				"width": 50,
+				"render": [
+					"→ 言語設定  日本語",
+					"  モード    標準",
+					"",
+					"  アプリケーションの表示言語を選択します。",
+					"",
+					"  Enter/Space to change · Esc to cancel"
+				]
+			}
+		],
+		"changes": [],
+		"cancelled": 0
+	}
+]

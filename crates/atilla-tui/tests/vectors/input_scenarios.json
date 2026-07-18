@@ -1,0 +1,2936 @@
+[
+	{
+		"name": "submits value including backslash on Enter",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "he",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hel",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\\",
+				"valueAfter": "hello\\",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\r",
+				"valueAfter": "hello\\",
+				"render": null
+			}
+		],
+		"submitted": "hello\\",
+		"escaped": 0
+	},
+	{
+		"name": "inserts backslash as regular character",
+		"steps": [
+			{
+				"op": "input",
+				"data": "\\",
+				"valueAfter": "\\",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "x",
+				"valueAfter": "\\x",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 0 at start",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": [
+					"> \u001b_pi:c\u0007\u001b[7m가\u001b[27m나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것 "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 0 at middle",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": [
+					"> 가나다라마바사아자차\u001b_pi:c\u0007\u001b[7m카\u001b[27m타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것 "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 0 at end",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "가나다라마바사아자차카타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다",
+				"render": [
+					"> 타파하 한글 텍스트가 터미널 너비를 초과하면 크래시가 발생합니다 이것은 재현용 테스트입니다\u001b_pi:c\u0007\u001b[7m \u001b[27m"
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 1 at start",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": [
+					"> \u001b_pi:c\u0007\u001b[7mこ\u001b[27mれはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテ "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 1 at middle",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": [
+					"> これはテスト文章です\u001b_pi:c\u0007\u001b[7m。\u001b[27m日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテ "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 1 at end",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "これはテスト文章です。日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお",
+				"render": [
+					"> 日本語のテキストが正しく表示されるかどうかを確認するためのサンプルテキストです。あいうえお\u001b_pi:c\u0007\u001b[7m \u001b[27m"
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 2 at start",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": [
+					"> \u001b_pi:c\u0007\u001b[7m这\u001b[27m是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户 "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 2 at middle",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": [
+					"> 这是一段测试文本，用\u001b_pi:c\u0007\u001b[7m于\u001b[27m验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户 "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 2 at end",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "这是一段测试文本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题",
+				"render": [
+					"> 本，用于验证中文字符在终端中的显示宽度是否被正确计算，如果不正确就会导致用户界面崩溃的问题\u001b_pi:c\u0007\u001b[7m \u001b[27m"
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 3 at start",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": [
+					"> \u001b_pi:c\u0007\u001b[7mＡ\u001b[27mＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉ "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 3 at middle",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": [
+					"> ＡＢＣＤＥＦＧＨＩＪ\u001b_pi:c\u0007\u001b[7mＫ\u001b[27mＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉ "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render CJK case 3 at end",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 93,
+				"valueAfter": "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ",
+				"render": [
+					"> ＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ０１２３４５６７８９ａｂｃｄｅｆｇｈｉｊｋｌｍ\u001b_pi:c\u0007\u001b[7m \u001b[27m"
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "keeps cursor visible when scrolling wide text",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "가나다라마바사아자차카타파하",
+				"valueAfter": "가나다라마바사아자차카타파하",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "가나다라마바사아자차카타파하",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "가나다라마바사아자차카타파하",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "가나다라마바사아자차카타파하",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 20,
+				"valueAfter": "가나다라마바사아자차카타파하",
+				"render": [
+					"> 나다라마\u001b_pi:c\u0007\u001b[7m바\u001b[27m사아자  "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render short focused",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "hello",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 20,
+				"valueAfter": "hello",
+				"render": [
+					"> \u001b_pi:c\u0007\u001b[7mh\u001b[27mello             "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render short unfocused",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "hello",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": false,
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 20,
+				"valueAfter": "hello",
+				"render": [
+					"> \u001b[7mh\u001b[27mello             "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render empty focused",
+		"steps": [
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 10,
+				"valueAfter": "",
+				"render": [
+					"> \u001b_pi:c\u0007\u001b[7m \u001b[27m       "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render narrow width",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "hello world",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 3,
+				"valueAfter": "hello world",
+				"render": [
+					"> \u001b_pi:c\u0007\u001b[7mh\u001b[27m"
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render width equals prompt",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "x",
+				"valueAfter": "x",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "x",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 2,
+				"valueAfter": "x",
+				"render": [
+					"> "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "render cursor mid emoji",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "ab🙂cd",
+				"valueAfter": "ab🙂cd",
+				"render": null
+			},
+			{
+				"op": "focus",
+				"focused": true,
+				"valueAfter": "ab🙂cd",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "ab🙂cd",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ab🙂cd",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ab🙂cd",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "ab🙂cd",
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 20,
+				"valueAfter": "ab🙂cd",
+				"render": [
+					"> ab🙂\u001b_pi:c\u0007\u001b[7mc\u001b[27md            "
+				]
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Ctrl+W saves and Ctrl+Y yanks",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "foo bar baz",
+				"valueAfter": "foo bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "foo bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "foo bar ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "foo bar ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "bazfoo bar ",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Ctrl+W preserves ASCII punctuation boundaries",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "foo.bar",
+				"valueAfter": "foo.bar",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "foo.bar",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "foo.",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "foo:bar",
+				"valueAfter": "foo:bar",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "foo:bar",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "foo:",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Ctrl+W handles Unicode word boundaries",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "你好世界。你好，世界",
+				"valueAfter": "你好世界。你好，世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "你好世界。你好，世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "你好世界。你好，",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "你好世界。你好",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "你好世界。",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "你好世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "你好",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Ctrl+U saves deleted text",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "hello world",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0015",
+				"valueAfter": "world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "hello world",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Ctrl+K saves deleted text",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "hello world",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u000b",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "hello world",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Ctrl+Y does nothing when kill ring empty",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "test",
+				"valueAfter": "test",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "test",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "test",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Alt+Y cycles through kill ring after Ctrl+Y",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "first",
+				"valueAfter": "first",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "first",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "second",
+				"valueAfter": "second",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "second",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "third",
+				"valueAfter": "third",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "third",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "third",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001by",
+				"valueAfter": "second",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001by",
+				"valueAfter": "first",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001by",
+				"valueAfter": "third",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Alt+Y does nothing if not preceded by yank",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "test",
+				"valueAfter": "test",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "test",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "other",
+				"valueAfter": "other",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "other",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "x",
+				"valueAfter": "otherx",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001by",
+				"valueAfter": "otherx",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Alt+Y does nothing if kill ring has one entry",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "only",
+				"valueAfter": "only",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "only",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "only",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001by",
+				"valueAfter": "only",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "consecutive Ctrl+W accumulates",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "one two three",
+				"valueAfter": "one two three",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "one two three",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "one two ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "one ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "one two three",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "non-delete actions break kill accumulation",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "foo bar baz",
+				"valueAfter": "foo bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "foo bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "foo bar ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "x",
+				"valueAfter": "foo bar x",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "foo bar ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "foo bar x",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001by",
+				"valueAfter": "foo bar baz",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "non-yank actions break Alt+Y chain",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "first",
+				"valueAfter": "first",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "first",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "second",
+				"valueAfter": "second",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "second",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "second",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "x",
+				"valueAfter": "secondx",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001by",
+				"valueAfter": "secondx",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "kill ring rotation persists after cycling",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "first",
+				"valueAfter": "first",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "first",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "second",
+				"valueAfter": "second",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "second",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "third",
+				"valueAfter": "third",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "third",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "third",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001by",
+				"valueAfter": "second",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "x",
+				"valueAfter": "secondx",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "second",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "backward prepend, forward append during accumulation",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "prefix|suffix",
+				"valueAfter": "prefix|suffix",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "prefix|suffix",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "prefix|suffix",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "prefix|suffix",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "prefix|suffix",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "prefix|suffix",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "prefix|suffix",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "prefix|suffix",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u000b",
+				"valueAfter": "prefix",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "prefix|suffix",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Alt+D deletes word forward and saves",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "hello world test",
+				"valueAfter": "hello world test",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello world test",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": " world test",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": " test",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "hello world test",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Alt+D preserves ASCII punctuation boundaries",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "foo.bar baz",
+				"valueAfter": "foo.bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "foo.bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": ".bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": "bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": " baz",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "Alt+D handles Unicode word boundaries",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "你好世界。你好，世界",
+				"valueAfter": "你好世界。你好，世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "你好世界。你好，世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": "世界。你好，世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": "。你好，世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": "你好，世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": "，世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": "世界",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": "",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "handles yank in middle of text",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "word",
+				"valueAfter": "word",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "word",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "hello world",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "hello wordworld",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "handles yank-pop in middle of text",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "FIRST",
+				"valueAfter": "FIRST",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "FIRST",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "SECOND",
+				"valueAfter": "SECOND",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "SECOND",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "setValue",
+				"setValue": "hello world",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "hello SECONDworld",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001by",
+				"valueAfter": "hello FIRSTworld",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo does nothing when stack empty",
+		"steps": [
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo coalesces consecutive word characters",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "he",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hel",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "w",
+				"valueAfter": "hello w",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello wo",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"valueAfter": "hello wor",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hello worl",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "d",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo undoes spaces one at a time",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "he",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hel",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"valueAfter": "hello  ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo undoes backspace",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "he",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hel",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo undoes forward delete",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "he",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hel",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[3~",
+				"valueAfter": "hllo",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo undoes Ctrl+W",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "he",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hel",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "w",
+				"valueAfter": "hello w",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello wo",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"valueAfter": "hello wor",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hello worl",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "d",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello world",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo undoes Ctrl+K",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "he",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hel",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "w",
+				"valueAfter": "hello w",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello wo",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"valueAfter": "hello wor",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hello worl",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "d",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u000b",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello world",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo undoes Ctrl+U",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "he",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hel",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "w",
+				"valueAfter": "hello w",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello wo",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"valueAfter": "hello wor",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hello worl",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "d",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0015",
+				"valueAfter": "world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello world",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo undoes yank",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "he",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hel",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"valueAfter": "hell",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"valueAfter": "hello",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0017",
+				"valueAfter": "",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0019",
+				"valueAfter": "hello ",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo undoes paste atomically",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "hello world",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[200~beep boop\u001b[201~",
+				"valueAfter": "hellobeep boop world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello world",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo undoes Alt+D",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "hello world",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "hello world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bd",
+				"valueAfter": " world",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "hello world",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "undo cursor movement starts new undo unit",
+		"steps": [
+			{
+				"op": "input",
+				"data": "a",
+				"valueAfter": "a",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "b",
+				"valueAfter": "ab",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "c",
+				"valueAfter": "abc",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "abc",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0005",
+				"valueAfter": "abc",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "d",
+				"valueAfter": "abcd",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"valueAfter": "abcde",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "abc",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"valueAfter": "",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "cursor left/right grapheme by grapheme",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "a🙂b",
+				"valueAfter": "a🙂b",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "a🙂b",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[C",
+				"valueAfter": "a🙂b",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[D",
+				"valueAfter": "a🙂b",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[D",
+				"valueAfter": "a🙂b",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "word left/right navigation",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "foo bar baz",
+				"valueAfter": "foo bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u0001",
+				"valueAfter": "foo bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bf",
+				"valueAfter": "foo bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bf",
+				"valueAfter": "foo bar baz",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001bb",
+				"valueAfter": "foo bar baz",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "paste strips newlines and tabs",
+		"steps": [
+			{
+				"op": "input",
+				"data": "\u001b[200~line1\nline2\r\ntab\there\u001b[201~",
+				"valueAfter": "line1line2tab    here",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "paste with trailing input after marker",
+		"steps": [
+			{
+				"op": "input",
+				"data": "\u001b[200~abc\u001b[201~xyz",
+				"valueAfter": "abcxyz",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 0
+	},
+	{
+		"name": "escape triggers onEscape",
+		"steps": [
+			{
+				"op": "setValue",
+				"setValue": "hi",
+				"valueAfter": "hi",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b",
+				"valueAfter": "hi",
+				"render": null
+			}
+		],
+		"submitted": null,
+		"escaped": 1
+	},
+	{
+		"name": "submit via newline",
+		"steps": [
+			{
+				"op": "input",
+				"data": "h",
+				"valueAfter": "h",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "i",
+				"valueAfter": "hi",
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\n",
+				"valueAfter": "hi",
+				"render": null
+			}
+		],
+		"submitted": "hi",
+		"escaped": 0
+	}
+]
