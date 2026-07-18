@@ -159,6 +159,17 @@ pub fn run_flow(
     interaction: &dyn AuthInteraction,
     signal: Option<&AbortSignal>,
 ) -> Result<OAuthCredential, AuthFlowError> {
+    // Perform a request and feed its response back into the machine — the shared
+    // tail of the `Request` and `Wait` arms.
+    let send_and_advance = |machine: &mut dyn OAuthFlowMachine,
+                            request: &HttpRequest|
+     -> Result<Step, AuthFlowError> {
+        let response = http
+            .send(request)
+            .map_err(|error| AuthFlowError::new(error.to_string()))?;
+        Ok(machine.advance(StepInput::Response(response), clock.now_ms()))
+    };
+
     let mut step = machine.start(clock.now_ms());
     loop {
         // Abort each iteration, but never override a terminal step.
@@ -169,18 +180,10 @@ pub fn run_flow(
         }
 
         step = match step {
-            Step::Request { request } => {
-                let response = http
-                    .send(&request)
-                    .map_err(|error| AuthFlowError::new(error.to_string()))?;
-                machine.advance(StepInput::Response(response), clock.now_ms())
-            }
+            Step::Request { request } => send_and_advance(machine, &request)?,
             Step::Wait { delay_ms, request } => {
                 abortable_sleep(timers, delay_ms, signal)?;
-                let response = http
-                    .send(&request)
-                    .map_err(|error| AuthFlowError::new(error.to_string()))?;
-                machine.advance(StepInput::Response(response), clock.now_ms())
+                send_and_advance(machine, &request)?
             }
             Step::Prompt { prompt } => {
                 let value = interaction.prompt(prompt)?;
