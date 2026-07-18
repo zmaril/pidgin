@@ -161,7 +161,7 @@ pub fn run(argv: &[String]) -> i32 {
     // the natural outcome of the black-box tests that pass `--model missing-model`).
     match app_mode {
         AppMode::Rpc => match atilla_core::coding::modes::rpc::run_rpc_mode() {
-            Ok(_never) => 0,
+            Ok(()) => 0,
             Err(e) => {
                 err_line(&format!("Error: {e}"));
                 1

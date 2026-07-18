@@ -46,6 +46,7 @@ name = "atilla-coding"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "atilla-agent",
  "base64",
  "globset",
  "grep-matcher",
