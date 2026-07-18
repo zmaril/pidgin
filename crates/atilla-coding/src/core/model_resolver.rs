@@ -95,17 +95,14 @@ fn default_model_for_provider(provider: &str) -> Option<&'static str> {
 }
 
 /// Parse a thinking-level string, mirroring pi's `isValidThinkingLevel`.
+///
+/// Delegates to `ModelThinkingLevel`'s `serde(rename_all = "lowercase")`
+/// deserialization so the accepted spellings (`off | minimal | low | medium |
+/// high | xhigh | max`) stay in lockstep with the enum, rather than
+/// transcribing the same table that `atilla-ai`'s provider `builtins.rs`
+/// already owns in a sibling crate.
 fn parse_thinking_level(level: &str) -> Option<ModelThinkingLevel> {
-    match level {
-        "off" => Some(ModelThinkingLevel::Off),
-        "minimal" => Some(ModelThinkingLevel::Minimal),
-        "low" => Some(ModelThinkingLevel::Low),
-        "medium" => Some(ModelThinkingLevel::Medium),
-        "high" => Some(ModelThinkingLevel::High),
-        "xhigh" => Some(ModelThinkingLevel::Xhigh),
-        "max" => Some(ModelThinkingLevel::Max),
-        _ => None,
-    }
+    serde_json::from_value(serde_json::Value::String(level.to_owned())).ok()
 }
 
 /// Whether two models refer to the same catalog entry (`models.ts:699`).
