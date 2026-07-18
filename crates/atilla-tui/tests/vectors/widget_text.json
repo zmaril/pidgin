@@ -1,0 +1,706 @@
+[
+	{
+		"text": "",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 10,
+		"expected": []
+	},
+	{
+		"text": "",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 20,
+		"expected": []
+	},
+	{
+		"text": "",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 40,
+		"expected": []
+	},
+	{
+		"text": "   ",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 10,
+		"expected": []
+	},
+	{
+		"text": "   ",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 20,
+		"expected": []
+	},
+	{
+		"text": "   ",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 40,
+		"expected": []
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			"          ",
+			" Hello    ",
+			" world    ",
+			"          "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			"                    ",
+			" Hello world        ",
+			"                    "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			"                                        ",
+			" Hello world                            ",
+			"                                        "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			" Hello    ",
+			" world    "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			" Hello world        "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			" Hello world                            "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 0,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			"Hello     ",
+			"world     "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 0,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			"Hello world         "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 0,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			"Hello world                             "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 2,
+		"paddingY": 2,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			"          ",
+			"          ",
+			"  Hello   ",
+			"  world   ",
+			"          ",
+			"          "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 2,
+		"paddingY": 2,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			"                    ",
+			"                    ",
+			"  Hello world       ",
+			"                    ",
+			"                    "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 2,
+		"paddingY": 2,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			"                                        ",
+			"                                        ",
+			"  Hello world                           ",
+			"                                        ",
+			"                                        "
+		]
+	},
+	{
+		"text": "This is a longer piece of text that should wrap across several lines",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			" This is  ",
+			" a longer ",
+			" piece of ",
+			" text     ",
+			" that     ",
+			" should   ",
+			" wrap     ",
+			" across   ",
+			" several  ",
+			" lines    "
+		]
+	},
+	{
+		"text": "This is a longer piece of text that should wrap across several lines",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			" This is a longer   ",
+			" piece of text that ",
+			" should wrap across ",
+			" several lines      "
+		]
+	},
+	{
+		"text": "This is a longer piece of text that should wrap across several lines",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			" This is a longer piece of text that    ",
+			" should wrap across several lines       "
+		]
+	},
+	{
+		"text": "This is a longer piece of text that should wrap across several lines",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"width": 10,
+		"expected": [
+			"\u001b[41m          \u001b[0m",
+			"\u001b[41m This is  \u001b[0m",
+			"\u001b[41m a longer \u001b[0m",
+			"\u001b[41m piece of \u001b[0m",
+			"\u001b[41m text     \u001b[0m",
+			"\u001b[41m that     \u001b[0m",
+			"\u001b[41m should   \u001b[0m",
+			"\u001b[41m wrap     \u001b[0m",
+			"\u001b[41m across   \u001b[0m",
+			"\u001b[41m several  \u001b[0m",
+			"\u001b[41m lines    \u001b[0m",
+			"\u001b[41m          \u001b[0m"
+		]
+	},
+	{
+		"text": "This is a longer piece of text that should wrap across several lines",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"width": 20,
+		"expected": [
+			"\u001b[41m                    \u001b[0m",
+			"\u001b[41m This is a longer   \u001b[0m",
+			"\u001b[41m piece of text that \u001b[0m",
+			"\u001b[41m should wrap across \u001b[0m",
+			"\u001b[41m several lines      \u001b[0m",
+			"\u001b[41m                    \u001b[0m"
+		]
+	},
+	{
+		"text": "This is a longer piece of text that should wrap across several lines",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"width": 40,
+		"expected": [
+			"\u001b[41m                                        \u001b[0m",
+			"\u001b[41m This is a longer piece of text that    \u001b[0m",
+			"\u001b[41m should wrap across several lines       \u001b[0m",
+			"\u001b[41m                                        \u001b[0m"
+		]
+	},
+	{
+		"text": "Line with\ttab",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			" Line     ",
+			" with     ",
+			" tab      "
+		]
+	},
+	{
+		"text": "Line with\ttab",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			" Line with   tab    "
+		]
+	},
+	{
+		"text": "Line with\ttab",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			" Line with   tab                        "
+		]
+	},
+	{
+		"text": "First\nSecond\nThird",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			"          ",
+			" First    ",
+			" Second   ",
+			" Third    ",
+			"          "
+		]
+	},
+	{
+		"text": "First\nSecond\nThird",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			"                    ",
+			" First              ",
+			" Second             ",
+			" Third              ",
+			"                    "
+		]
+	},
+	{
+		"text": "First\nSecond\nThird",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			"                                        ",
+			" First                                  ",
+			" Second                                 ",
+			" Third                                  ",
+			"                                        "
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"width": 10,
+		"expected": [
+			"\u001b[41m          \u001b[0m",
+			"\u001b[41m Hello    \u001b[0m",
+			"\u001b[41m world    \u001b[0m",
+			"\u001b[41m          \u001b[0m"
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"width": 20,
+		"expected": [
+			"\u001b[41m                    \u001b[0m",
+			"\u001b[41m Hello world        \u001b[0m",
+			"\u001b[41m                    \u001b[0m"
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"width": 40,
+		"expected": [
+			"\u001b[41m                                        \u001b[0m",
+			"\u001b[41m Hello world                            \u001b[0m",
+			"\u001b[41m                                        \u001b[0m"
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "cyan",
+		"width": 10,
+		"expected": [
+			"\u001b[36m          \u001b[0m",
+			"\u001b[36m Hello    \u001b[0m",
+			"\u001b[36m world    \u001b[0m",
+			"\u001b[36m          \u001b[0m"
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "cyan",
+		"width": 20,
+		"expected": [
+			"\u001b[36m                    \u001b[0m",
+			"\u001b[36m Hello world        \u001b[0m",
+			"\u001b[36m                    \u001b[0m"
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "cyan",
+		"width": 40,
+		"expected": [
+			"\u001b[36m                                        \u001b[0m",
+			"\u001b[36m Hello world                            \u001b[0m",
+			"\u001b[36m                                        \u001b[0m"
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "bold",
+		"width": 10,
+		"expected": [
+			"\u001b[1m Hello    \u001b[0m",
+			"\u001b[1m world    \u001b[0m"
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "bold",
+		"width": 20,
+		"expected": [
+			"\u001b[1m Hello world        \u001b[0m"
+		]
+	},
+	{
+		"text": "Hello world",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "bold",
+		"width": 40,
+		"expected": [
+			"\u001b[1m Hello world                            \u001b[0m"
+		]
+	},
+	{
+		"text": "\u001b[31mHello\u001b[39m \u001b[34mworld\u001b[39m",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			" \u001b[31mHello\u001b[39m    ",
+			" \u001b[34mworld\u001b[39m    "
+		]
+	},
+	{
+		"text": "\u001b[31mHello\u001b[39m \u001b[34mworld\u001b[39m",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			" \u001b[31mHello\u001b[39m \u001b[34mworld\u001b[39m        "
+		]
+	},
+	{
+		"text": "\u001b[31mHello\u001b[39m \u001b[34mworld\u001b[39m",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			" \u001b[31mHello\u001b[39m \u001b[34mworld\u001b[39m                            "
+		]
+	},
+	{
+		"text": "\u001b[32mstyled\u001b[39m text on background",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"width": 10,
+		"expected": [
+			"\u001b[41m          \u001b[0m",
+			"\u001b[41m \u001b[32mstyled\u001b[39m   \u001b[0m",
+			"\u001b[41m text on  \u001b[0m",
+			"\u001b[41m backgrou \u001b[0m",
+			"\u001b[41m nd       \u001b[0m",
+			"\u001b[41m          \u001b[0m"
+		]
+	},
+	{
+		"text": "\u001b[32mstyled\u001b[39m text on background",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"width": 20,
+		"expected": [
+			"\u001b[41m                    \u001b[0m",
+			"\u001b[41m \u001b[32mstyled\u001b[39m text on     \u001b[0m",
+			"\u001b[41m background         \u001b[0m",
+			"\u001b[41m                    \u001b[0m"
+		]
+	},
+	{
+		"text": "\u001b[32mstyled\u001b[39m text on background",
+		"paddingX": 1,
+		"paddingY": 1,
+		"bgTag": "redbg",
+		"width": 40,
+		"expected": [
+			"\u001b[41m                                        \u001b[0m",
+			"\u001b[41m \u001b[32mstyled\u001b[39m text on background              \u001b[0m",
+			"\u001b[41m                                        \u001b[0m"
+		]
+	},
+	{
+		"text": "日本語のテキスト",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			" 日本語の ",
+			" テキスト "
+		]
+	},
+	{
+		"text": "日本語のテキスト",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			" 日本語のテキスト   "
+		]
+	},
+	{
+		"text": "日本語のテキスト",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			" 日本語のテキスト                       "
+		]
+	},
+	{
+		"text": "emoji 🙂 test",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			" emoji 🙂 ",
+			" test     "
+		]
+	},
+	{
+		"text": "emoji 🙂 test",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			" emoji 🙂 test      "
+		]
+	},
+	{
+		"text": "emoji 🙂 test",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			" emoji 🙂 test                          "
+		]
+	},
+	{
+		"text": "narrow",
+		"paddingX": 5,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			"     n     ",
+			"     a     ",
+			"     r     ",
+			"     r     ",
+			"     o     ",
+			"     w     "
+		]
+	},
+	{
+		"text": "narrow",
+		"paddingX": 5,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			"     narrow         "
+		]
+	},
+	{
+		"text": "narrow",
+		"paddingX": 5,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			"     narrow                             "
+		]
+	},
+	{
+		"text": "fits exactly here",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 10,
+		"expected": [
+			" fits     ",
+			" exactly  ",
+			" here     "
+		]
+	},
+	{
+		"text": "fits exactly here",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 20,
+		"expected": [
+			" fits exactly here  "
+		]
+	},
+	{
+		"text": "fits exactly here",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "none",
+		"width": 40,
+		"expected": [
+			" fits exactly here                      "
+		]
+	},
+	{
+		"text": "wide CJK 世界 wrap test with more words to force wrapping now",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "redbg",
+		"width": 10,
+		"expected": [
+			"\u001b[41m wide CJK \u001b[0m",
+			"\u001b[41m 世界     \u001b[0m",
+			"\u001b[41m wrap     \u001b[0m",
+			"\u001b[41m test     \u001b[0m",
+			"\u001b[41m with     \u001b[0m",
+			"\u001b[41m more     \u001b[0m",
+			"\u001b[41m words to \u001b[0m",
+			"\u001b[41m force    \u001b[0m",
+			"\u001b[41m wrapping \u001b[0m",
+			"\u001b[41m now      \u001b[0m"
+		]
+	},
+	{
+		"text": "wide CJK 世界 wrap test with more words to force wrapping now",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "redbg",
+		"width": 20,
+		"expected": [
+			"\u001b[41m wide CJK 世界 wrap \u001b[0m",
+			"\u001b[41m test with more     \u001b[0m",
+			"\u001b[41m words to force     \u001b[0m",
+			"\u001b[41m wrapping now       \u001b[0m"
+		]
+	},
+	{
+		"text": "wide CJK 世界 wrap test with more words to force wrapping now",
+		"paddingX": 1,
+		"paddingY": 0,
+		"bgTag": "redbg",
+		"width": 40,
+		"expected": [
+			"\u001b[41m wide CJK 世界 wrap test with more      \u001b[0m",
+			"\u001b[41m words to force wrapping now            \u001b[0m"
+		]
+	}
+]

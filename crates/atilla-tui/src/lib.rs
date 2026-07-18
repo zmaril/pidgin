@@ -15,9 +15,11 @@ pub mod kill_ring;
 pub mod overlay;
 pub mod renderer;
 pub mod terminal;
+pub mod terminal_image;
 pub mod text_util;
 pub mod undo_stack;
 mod unicode_tables;
+pub mod widgets;
 pub mod width;
 pub mod word_navigation;
 
@@ -44,10 +46,21 @@ pub use terminal::{
     ModifierKey, NegotiationSequence, ProcessTerminal, StdinBuffer, StdinBufferOptions, StdinEvent,
     Terminal, TerminalInput,
 };
+pub use terminal_image::{
+    allocate_image_id, calculate_image_cell_size, calculate_image_rows, delete_all_kitty_images,
+    detect_capabilities, encode_iterm2, encode_kitty, get_capabilities, get_cell_dimensions,
+    get_image_dimensions, hyperlink, image_fallback, render_image, reset_capabilities_cache,
+    set_capabilities, set_cell_dimensions, CellDimensions, ImageDimensions, ImageProtocol,
+    TerminalCapabilities,
+};
 pub use text_util::{
     apply_background_to_line, is_punctuation_char, is_whitespace_char, word_segment, WordSegment,
 };
 pub use undo_stack::UndoStack;
+pub use widgets::{
+    BgFn, BoxWidget, Image, ImageOptions, ImageTheme, Loader, LoaderIndicatorOptions, Spacer, Text,
+    TruncatedText,
+};
 pub use width::{
     extract_ansi_code, extract_segments, normalize_terminal_output, slice_by_column,
     slice_with_width, truncate_to_width, visible_width, wrap_text_with_ansi, ExtractSegments,

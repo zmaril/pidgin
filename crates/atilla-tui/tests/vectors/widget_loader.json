@@ -1,0 +1,274 @@
+[
+	{
+		"message": "Loading...",
+		"indicator": null,
+		"ticks": 0,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 20,
+		"expected": [
+			"",
+			" \u001b[36m⠋\u001b[0m Loading...       "
+		]
+	},
+	{
+		"message": "Loading...",
+		"indicator": null,
+		"ticks": 0,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 40,
+		"expected": [
+			"",
+			" \u001b[36m⠋\u001b[0m Loading...                           "
+		]
+	},
+	{
+		"message": "Working",
+		"indicator": null,
+		"ticks": 0,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "bold",
+		"width": 20,
+		"expected": [
+			"",
+			" \u001b[36m⠋\u001b[0m \u001b[1mWorking\u001b[0m          "
+		]
+	},
+	{
+		"message": "Working",
+		"indicator": null,
+		"ticks": 0,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "bold",
+		"width": 40,
+		"expected": [
+			"",
+			" \u001b[36m⠋\u001b[0m \u001b[1mWorking\u001b[0m                              "
+		]
+	},
+	{
+		"message": "Loading...",
+		"indicator": null,
+		"ticks": 3,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 20,
+		"expected": [
+			"",
+			" \u001b[36m⠸\u001b[0m Loading...       "
+		]
+	},
+	{
+		"message": "Loading...",
+		"indicator": null,
+		"ticks": 3,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 40,
+		"expected": [
+			"",
+			" \u001b[36m⠸\u001b[0m Loading...                           "
+		]
+	},
+	{
+		"message": "Loading...",
+		"indicator": null,
+		"ticks": 12,
+		"setMessageTo": null,
+		"spinnerTag": "yellow",
+		"messageTag": "plain",
+		"width": 20,
+		"expected": [
+			"",
+			" \u001b[33m⠹\u001b[0m Loading...       "
+		]
+	},
+	{
+		"message": "Loading...",
+		"indicator": null,
+		"ticks": 12,
+		"setMessageTo": null,
+		"spinnerTag": "yellow",
+		"messageTag": "plain",
+		"width": 40,
+		"expected": [
+			"",
+			" \u001b[33m⠹\u001b[0m Loading...                           "
+		]
+	},
+	{
+		"message": "Custom",
+		"indicator": {
+			"frames": [
+				"-",
+				"\\",
+				"|",
+				"/"
+			],
+			"intervalMs": 100
+		},
+		"ticks": 2,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 20,
+		"expected": [
+			"",
+			" | Custom           "
+		]
+	},
+	{
+		"message": "Custom",
+		"indicator": {
+			"frames": [
+				"-",
+				"\\",
+				"|",
+				"/"
+			],
+			"intervalMs": 100
+		},
+		"ticks": 2,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 40,
+		"expected": [
+			"",
+			" | Custom                               "
+		]
+	},
+	{
+		"message": "Verbatim frame",
+		"indicator": {
+			"frames": [
+				"A",
+				"B"
+			]
+		},
+		"ticks": 1,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "bold",
+		"width": 20,
+		"expected": [
+			"",
+			" B \u001b[1mVerbatim frame\u001b[0m   "
+		]
+	},
+	{
+		"message": "Verbatim frame",
+		"indicator": {
+			"frames": [
+				"A",
+				"B"
+			]
+		},
+		"ticks": 1,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "bold",
+		"width": 40,
+		"expected": [
+			"",
+			" B \u001b[1mVerbatim frame\u001b[0m                       "
+		]
+	},
+	{
+		"message": "No spinner",
+		"indicator": {
+			"frames": []
+		},
+		"ticks": 0,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 20,
+		"expected": [
+			"",
+			" No spinner         "
+		]
+	},
+	{
+		"message": "No spinner",
+		"indicator": {
+			"frames": []
+		},
+		"ticks": 0,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 40,
+		"expected": [
+			"",
+			" No spinner                             "
+		]
+	},
+	{
+		"message": "Single frame",
+		"indicator": {
+			"frames": [
+				"*"
+			]
+		},
+		"ticks": 0,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 20,
+		"expected": [
+			"",
+			" * Single frame     "
+		]
+	},
+	{
+		"message": "Single frame",
+		"indicator": {
+			"frames": [
+				"*"
+			]
+		},
+		"ticks": 0,
+		"setMessageTo": null,
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 40,
+		"expected": [
+			"",
+			" * Single frame                         "
+		]
+	},
+	{
+		"message": "Start",
+		"indicator": null,
+		"ticks": 1,
+		"setMessageTo": "Updated message",
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 20,
+		"expected": [
+			"",
+			" \u001b[36m⠙\u001b[0m Updated message  "
+		]
+	},
+	{
+		"message": "Start",
+		"indicator": null,
+		"ticks": 1,
+		"setMessageTo": "Updated message",
+		"spinnerTag": "cyan",
+		"messageTag": "plain",
+		"width": 40,
+		"expected": [
+			"",
+			" \u001b[36m⠙\u001b[0m Updated message                      "
+		]
+	}
+]

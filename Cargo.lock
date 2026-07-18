@@ -111,6 +111,7 @@ dependencies = [
 name = "atilla-tui"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "core-graphics",
  "crossterm",
  "icu_segmenter",
