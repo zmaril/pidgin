@@ -205,16 +205,18 @@ fn extract_text(messages: &[AgentMessage]) -> String {
 }
 
 fn content_text(message: &Value) -> String {
-    match message.get("content") {
-        Some(Value::String(s)) => s.clone(),
-        Some(Value::Array(blocks)) => blocks
-            .iter()
-            .filter(|b| b.get("type").and_then(Value::as_str) == Some("text"))
-            .filter_map(|b| b.get("text").and_then(Value::as_str))
-            .collect::<Vec<_>>()
-            .join(" "),
-        _ => String::new(),
+    let content = message.get("content");
+    if let Some(s) = content.and_then(Value::as_str) {
+        return s.to_string();
     }
+    let mut texts: Vec<&str> = Vec::new();
+    for block in content.and_then(Value::as_array).into_iter().flatten() {
+        let is_text = block.get("type").and_then(Value::as_str) == Some("text");
+        if let (true, Some(t)) = (is_text, block.get("text").and_then(Value::as_str)) {
+            texts.push(t);
+        }
+    }
+    texts.join(" ")
 }
 
 // ---------------------------------------------------------------------------
