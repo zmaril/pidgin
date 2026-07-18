@@ -103,7 +103,7 @@ crates/atilla-napi      (#[napi] surface) ─┘
         @earendil-works/pi-tui
 ```
 
-Each shim package must reproduce pi's **exact export names and TypeScript types** — the tests type-check against them. napi-rs emits `.d.ts` from `#[napi]` signatures, but pi's hand-written types are richer than napi's generated ones; expect a hand-maintained `.d.ts` layer on top that must stay in sync with pi's `src/types.ts` (83 tests import it).
+Each shim package must reproduce pi's **exact export names and TypeScript types** — the tests type-check against them. A napi spike ([PR #13](https://github.com/zmaril/atilla/pull/13)) resolved *how*: napi-rs's generated `.d.ts` **cannot** express pi's types — discriminated unions and string-literal tags collapse to `type: string`, and generics/overloads aren't emitted at all — so the generated types must stay **internal**. Because TypeScript types are erased at runtime, the fix is to **reuse pi's own type declarations as the public surface**: each shim `src` module is thin hand-written TS that re-exports pi's original `.d.ts`/type files in front of the Rust runtime exports. napi's default camelCase renaming is pinned per-symbol with `#[napi(js_name = …)]` to match pi's export names. The `vitest resolve.alias` drop-in (package name → built `.node`, named exports/classes passing `tsc --strict`) is proven end-to-end by the same spike.
 
 Example binding + the faux-provider callback (the trickiest seam — a JS test must drive the Rust streaming loop):
 
@@ -166,7 +166,7 @@ Alternative considered: a custom vitest resolver plugin that rewrites `../src/*`
 2. **`vi.stubGlobal("fetch")` (~68 usages; OAuth/token-refresh ~6 files).** Rust making its own HTTP won't see a JS fetch stub. The bridge's HTTP layer must accept an **injectable transport** (a JS-provided fetch the Rust side calls) so these tests keep working; otherwise port them. Most `ai` protocol tests avoid this (they feed a hand-built `Response` to a parser directly — fine), so the exposure is concentrated in OAuth.
 3. **Fake timers (`vi.useFakeTimers`) and `Date.now()`.** Retry/backoff/timeout/abort tests and any timestamped output won't respond to JS fake timers if Rust owns the clock. The Rust core needs an **injectable clock** to stay controllable; timestamp assertions need the bridge to let JS supply `now`.
 4. **Streaming event order/timing across the FFI boundary.** The faux provider is a designed seam, but the exact async ordering of emitted events (`["start", …, "done"]`) must be reproduced deterministically through the threadsafe-function callback.
-5. **Type-level expectations.** Tests type-check against pi's rich `.d.ts`; the shim's generated types must match pi's `src/types.ts` exactly or `tsc`/vitest type errors fail files wholesale.
+5. **Type-level expectations — resolved (§3).** Tests type-check against pi's rich `.d.ts`. Rather than match them with napi's generated types (which can't express pi's unions/generics), we front the Rust runtime exports with pi's *own* type declarations, so type parity is exact by construction. The remaining risk is only where a runtime export's actual shape diverges from pi's declared type.
 6. **`node:test` / tui (27 files).** Different runner, no Vite resolution — needs the file-swap mechanism (not resolve.alias) and Rust equivalents for ANSI width/wrapping/editor. Lower priority.
 7. **Irreducibly Node-bound:** worker_threads (image resize), clipboard, real subprocess/signal handling. Port or document an explicit skip with reason.
 
@@ -240,7 +240,7 @@ So the suite is a strong gate for the well-covered core but must be supplemented
 
 - **Collaborator-mock inventory:** how many of the ~58 `vi.mock` tests mock an internal *collaborator* (unpassable without a Rust seam) vs the *whole module under test* (fine)? This number sets the true 100% cost. (Step 6.)
 - **Injectable transport/clock:** are we willing to make the Rust core's HTTP and time fully injectable from JS for test control, as production-grade seams? (Recommended yes.)
-- **Type parity:** how much hand-maintained `.d.ts` is needed on top of napi-generated types to satisfy pi's type-level assertions, and how do we keep it synced to `src/types.ts` on upstream drift?
+- **Type parity — resolved ([PR #13](https://github.com/zmaril/atilla/pull/13)):** reuse pi's own `.d.ts` as the public surface (types are erased at runtime), keep napi's generated types internal, and pin export names with `#[napi(js_name)]`. Open remainder: keeping the reused type files synced when pi's `src/types.ts` drifts (covered by the pinned-submodule bump in §7).
 - **Submodule vs vendored subtree** for pinning pi (leaning submodule for clean drift tracking).
 - **node:test/tui mechanism:** confirm the file-swap works without Vite resolution for the 27 tui files, or scope tui later.
 - **License:** confirm pi's license permits vendoring its test files into our conformance harness (study `pi_agent_rust` only; never vendor it).
