@@ -909,3 +909,204 @@ pub fn migrate_keybindings_config(raw_json: String) -> napi::Result<String> {
         "{{\"config\":{config_str},\"migrated\":{migrated}}}"
     ))
 }
+
+// --- tui fuzzy layer (packages/tui/src/fuzzy.ts) ---------------------------
+//
+// Thin wrappers over `atilla_tui::fuzzy`, backing the hand-written native
+// `fuzzy.ts` shim. `fuzzyMatch` crosses as a plain `{ matches, score }`
+// object; the shim re-implements `fuzzyFilter` in JS on top of this (pi's
+// `fuzzyFilter` takes a `getText` callback, which cannot cross the boundary).
+
+/// Result of [`fuzzy_match`]; serialized to pi's `{ matches, score }`.
+#[napi(object)]
+pub struct FuzzyMatchResult {
+    pub matches: bool,
+    pub score: f64,
+}
+
+/// `fuzzyMatch` (fuzzy.ts): fuzzy-match `query` against `text`, returning pi's
+/// `{ matches, score }` (lower score = better).
+#[napi(js_name = "fuzzyMatch")]
+pub fn fuzzy_match(query: String, text: String) -> FuzzyMatchResult {
+    let m = atilla_tui::fuzzy_match(&query, &text);
+    FuzzyMatchResult {
+        matches: m.matches,
+        score: m.score,
+    }
+}
+
+// --- tui word-navigation layer (packages/tui/src/word-navigation.ts) --------
+//
+// Thin wrappers over `atilla_tui::word_navigation`, backing the native
+// `word-navigation.ts` shim. Cursors are UTF-16 string indices (as in pi). The
+// napi surface covers only the default-segmenter path; the shim delegates to
+// pi's original when `options.segment`/`options.isAtomicSegment` are supplied
+// (JS callbacks that cannot cross the boundary).
+
+/// `findWordBackward` (word-navigation.ts), default segmentation: cursor after
+/// moving one word backward from `cursor` (UTF-16 index).
+#[napi(js_name = "findWordBackward")]
+pub fn find_word_backward(text: String, cursor: u32) -> u32 {
+    atilla_tui::find_word_backward(
+        &text,
+        cursor as usize,
+        &atilla_tui::WordNavOptions::default(),
+    ) as u32
+}
+
+/// `findWordForward` (word-navigation.ts), default segmentation: cursor after
+/// moving one word forward from `cursor` (UTF-16 index).
+#[napi(js_name = "findWordForward")]
+pub fn find_word_forward(text: String, cursor: u32) -> u32 {
+    atilla_tui::find_word_forward(
+        &text,
+        cursor as usize,
+        &atilla_tui::WordNavOptions::default(),
+    ) as u32
+}
+
+// --- tui truncated-text layer (packages/tui/src/components/truncated-text.ts)
+//
+// Thin wrapper over `atilla_tui::truncated_text_render`, backing the native
+// `truncated-text.ts` shim. The shim re-implements pi's `TruncatedText` class
+// (constructor + `invalidate`) and delegates `render(width)` here.
+
+/// `TruncatedText.render` (truncated-text.ts): render `text` truncated to
+/// `width` columns with horizontal/vertical padding, ANSI-aware.
+#[napi(js_name = "truncatedTextRender")]
+pub fn truncated_text_render(
+    text: String,
+    padding_x: u32,
+    padding_y: u32,
+    width: u32,
+) -> Vec<String> {
+    atilla_tui::truncated_text_render(
+        &text,
+        padding_x as usize,
+        padding_y as usize,
+        width as usize,
+    )
+}
+
+// --- tui markdown layer (packages/tui/src/components/markdown.ts) -----------
+//
+// Thin wrapper over `atilla_tui::markdown_render`, backing the native
+// `markdown.ts` shim. `markdown_render` bakes in pi's default markdown theme at
+// chalk level 3 with zero padding and no options, so the shim delegates
+// `render(width)` here only when the constructed `Markdown` matches that shape
+// (default theme, no padding, no default text style, no options) and otherwise
+// falls back to pi's original class.
+
+/// `Markdown.render` (markdown.ts) on the default-theme path: render `source`
+/// wrapped to `width` columns with pi's `defaultMarkdownTheme` (chalk level 3).
+#[napi(js_name = "markdownRender")]
+pub fn markdown_render(source: String, width: u32) -> Vec<String> {
+    atilla_tui::markdown_render(&source, width as usize)
+}
+
+// --- tui keybindings layer (packages/tui/src/keybindings.ts) ----------------
+//
+// A stateful `#[napi]` class wrapping `atilla_tui::KeybindingsManager`. The
+// hand-written `keybindings.ts` shim re-implements pi's `KeybindingsManager`
+// class (keeping `definitions`/`userBindings`/`getDefinition`/`getUserBindings`
+// as JS, identical to pi) and routes the resolution logic — `matches`,
+// `getKeys`, `getConflicts`, `getResolvedBindings` — through this core. The core
+// is immutable per construction; the shim's `setUserBindings` builds a fresh
+// core. Definitions and user bindings cross as JSON arrays (not objects) so
+// JS insertion order is preserved without relying on serde_json's
+// `preserve_order` feature.
+
+#[derive(serde::Deserialize)]
+struct KeybindingDefinitionIn {
+    id: String,
+    #[serde(rename = "defaultKeys")]
+    default_keys: Vec<String>,
+    description: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct UserBindingIn {
+    id: String,
+    // `null` = pi's explicit `undefined` (falls back to the default keys).
+    keys: Option<Vec<String>>,
+}
+
+/// The Rust-backed keybindings core, exposed to JavaScript as
+/// `KeybindingsManagerCore`.
+#[napi(js_name = "KeybindingsManagerCore")]
+pub struct KeybindingsManagerCore {
+    inner: atilla_tui::KeybindingsManager,
+}
+
+#[napi]
+impl KeybindingsManagerCore {
+    /// Build a core from pi's `definitions`/`userBindings`, each JSON-encoded as
+    /// an ordered array (`[{ id, defaultKeys, description? }]` and
+    /// `[{ id, keys }]`, `keys: null` for an explicit `undefined`).
+    #[napi(constructor)]
+    pub fn new(definitions_json: String, user_bindings_json: String) -> napi::Result<Self> {
+        let defs_in: Vec<KeybindingDefinitionIn> = serde_json::from_str(&definitions_json)
+            .map_err(|e| napi::Error::from_reason(format!("invalid definitions: {e}")))?;
+        let user_in: Vec<UserBindingIn> = serde_json::from_str(&user_bindings_json)
+            .map_err(|e| napi::Error::from_reason(format!("invalid userBindings: {e}")))?;
+
+        let defs_owned: Vec<(String, atilla_tui::KeybindingDefinition)> = defs_in
+            .into_iter()
+            .map(|d| {
+                (
+                    d.id,
+                    atilla_tui::KeybindingDefinition {
+                        default_keys: d.default_keys,
+                        description: d.description,
+                    },
+                )
+            })
+            .collect();
+        let definitions: Vec<(&str, atilla_tui::KeybindingDefinition)> = defs_owned
+            .iter()
+            .map(|(id, def)| (id.as_str(), def.clone()))
+            .collect();
+        let user_bindings: Vec<(&str, Option<Vec<String>>)> = user_in
+            .iter()
+            .map(|u| (u.id.as_str(), u.keys.clone()))
+            .collect();
+
+        Ok(Self {
+            inner: atilla_tui::KeybindingsManager::new(definitions, user_bindings),
+        })
+    }
+
+    /// pi's `matches(data, keybinding)`: does `data` match any bound key?
+    #[napi(js_name = "matches")]
+    pub fn matches(&self, data: String, keybinding: String) -> bool {
+        self.inner.matches(&data, &keybinding)
+    }
+
+    /// pi's `getKeys(keybinding)`: the keys bound to `keybinding` (empty if
+    /// unknown).
+    #[napi(js_name = "getKeys")]
+    pub fn get_keys(&self, keybinding: String) -> Vec<String> {
+        self.inner.get_keys(&keybinding)
+    }
+
+    /// pi's `getConflicts()` as JSON: an ordered array of
+    /// `{ key, keybindings }`.
+    #[napi(js_name = "getConflictsJson")]
+    pub fn get_conflicts_json(&self) -> napi::Result<String> {
+        let conflicts: Vec<serde_json::Value> = self
+            .inner
+            .get_conflicts()
+            .into_iter()
+            .map(|c| serde_json::json!({ "key": c.key, "keybindings": c.keybindings }))
+            .collect();
+        serde_json::to_string(&conflicts).map_err(|e| napi::Error::from_reason(e.to_string()))
+    }
+
+    /// pi's `getResolvedBindings()` as JSON: an ordered array of `[id, keys]`
+    /// pairs, in definition order. The shim rebuilds pi's `key | key[]` shape.
+    #[napi(js_name = "getResolvedBindingsJson")]
+    pub fn get_resolved_bindings_json(&self) -> napi::Result<String> {
+        let resolved: Vec<(String, Vec<String>)> = self.inner.get_resolved_bindings();
+        serde_json::to_string(&resolved).map_err(|e| napi::Error::from_reason(e.to_string()))
+    }
+}

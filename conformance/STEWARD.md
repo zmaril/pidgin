@@ -34,10 +34,11 @@ and less stable, so it is a follow-up rather than part of this change.
 
 ## Merge queue
 
-Current native count on main: **13** (ai anthropic-messages + ai faux, tui keys
+Current native count on main: **16** (ai anthropic-messages + ai faux, tui keys
 + tui utils, coding-agent utils {ansi, mime, changelog, version-check, git} +
-export-html ansi-to-html + tools {truncate, edit-diff, path-utils}). Batch 3
-(this PR) takes it to **16**.
+export-html ansi-to-html + tools {truncate, edit-diff, path-utils} + core
+{resolve-config-value, trust-manager, keybindings}). The tui-pure batch (this PR)
+takes it to **21**.
 
 The human merges in this order (rebasing each onto the prior as needed):
 
@@ -46,9 +47,12 @@ The human merges in this order (rebasing each onto the prior as needed):
    **MERGED**
 3. **batch 2** — coding-agent tools truncate + edit-diff + path-utils — native
    10 -> 13 — **MERGED**
-4. **THIS PR (batch 3)** — coding-agent core config + keybindings
-   (resolve-config-value + trust-manager + keybindings) — native 13 -> 16
-5. **#50** — retry (ai) — queued behind this PR
+4. **#102 (batch 3)** — coding-agent core config + keybindings
+   (resolve-config-value + trust-manager + keybindings) — native 13 -> 16 —
+   **MERGED**
+5. **THIS PR (tui-pure batch)** — tui fuzzy + word-navigation + truncated-text +
+   markdown + keybindings — native 16 -> 21
+6. **#50** — retry (ai) — queued behind this PR
 
 ## Flip table
 
@@ -68,6 +72,11 @@ The human merges in this order (rebasing each onto the prior as needed):
 | core/resolve-config-value | coding-agent | flipped | test/resolve-config-value.test.ts (10) | yes | all ported symbols; `env?` override crosses as JSON, process env read by Rust (`std::env::var`); `!command` cache + subprocess (default `sh -c`) in Rust; `None`→`undefined`; Windows configured-shell/stdin path not ported (that pi test passes via `sh -c` anyway) |
 | core/trust-manager | coding-agent | flipped | test/trust-manager.test.ts (2) | yes | `getProjectTrustParentPath`, `getProjectTrustOptions`, `hasTrustRequiringProjectResources` (explicit `$HOME` injected by shim); `ProjectTrustStore` stays a JS class over the agent dir delegating to stateless native get-entry/set-many; `proper-lockfile` advisory lock not ported |
 | core/keybindings | coding-agent | flipped | test/keybindings-migration.test.ts (3) | yes | native `KEYBINDINGS` default table (`keybindingsFor`, IndexMap-ordered) + `migrateKeybindingsConfig` (`{config, migrated}`); class keeps extending pi-tui's still-original base so `matches()`/conflict/`instanceof` stay pi-tui; `toKeybindingsConfig`/`loadRawConfig` glue rebuilt in shim |
+| fuzzy | tui | flipped | test/fuzzy.test.ts (14) | yes | `fuzzyMatch` native; `fuzzyFilter` re-implemented in JS over native `fuzzyMatch` (its `getText` callback can't cross the boundary) |
+| word-navigation | tui | flipped | test/word-navigation.test.ts (19) | yes | `findWordBackward`/`findWordForward` on the default-segmenter path; shim delegates to original when `options.segment`/`isAtomicSegment` callbacks are supplied |
+| components/truncated-text | tui | flipped | test/truncated-text.test.ts (9) | yes | `TruncatedText` class re-implemented; `render(width)` → native `truncatedTextRender` |
+| components/markdown | tui | flipped | test/markdown.test.ts (66) | yes (gated) | `markdownRender` on the default-theme / no-padding / no-defaultTextStyle / no-options path (theme probed against exact chalk-l3 output); delegates to pi's original class for custom theme/padding/style/options and when `getCapabilities().hyperlinks` (OSC 8 seam) is on |
+| keybindings | tui | flipped | test/keybindings.test.ts (4) | yes | `KeybindingsManagerCore` (napi class) backs resolution — `matches`/`getKeys`/`getConflicts`/`getResolvedBindings`; shim keeps `definitions`/`userBindings`/`getDefinition`/`getUserBindings` as JS; defs + user bindings cross as ordered JSON arrays (preserve insertion order); `setKeybindings`/`getKeybindings`/`TUI_KEYBINDINGS` stay original |
 | core/tools/read | coding-agent | pending | — | no | hybrid port (later batch) |
 | core/tools/edit | coding-agent | pending | — | no | hybrid port (later batch) |
 | agent session modules | coding-agent | pending | — | no | later batch |
