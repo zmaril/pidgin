@@ -1,3 +1,8 @@
+// straitjacket-allow-file:duplication — this sibling of generate-manifest.mjs
+// necessarily repeats the node:fs/path import block, the here/repoRoot/piRoot
+// path-constant setup, and the tiny directory walk() helper; each script stands
+// alone as its own entry point and the overlap is unavoidable boilerplate.
+//
 // Conformance shim codegen.
 //
 // Reads conformance/manifest.json, which classifies every pi source module as

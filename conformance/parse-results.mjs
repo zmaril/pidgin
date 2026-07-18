@@ -60,7 +60,7 @@ function parseVitest(path) {
       else if (a.status === "failed") {
         f += 1;
         envFailureTitles.push(a.fullName || a.title || "");
-      } else s += 1; // skipped / pending / todo
+      } else s += 1; // anything not passed or failed (skipped, pending, etc.)
     }
     const file = (suite.name || "").split("/vendor/pi/").pop() || suite.name;
     byFile.push({ file, passing: p, failing: f, skipped: s });
