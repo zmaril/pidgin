@@ -32,6 +32,7 @@
 use std::collections::BTreeMap;
 
 use atilla_ai::types::{Modality, ModelCost, ModelCostTier, ThinkingLevelMap};
+use indexmap::IndexMap;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -136,9 +137,13 @@ pub struct ModelsJsonProvider {
 }
 
 /// The top-level `models.json` shape (`model-config.ts:196`).
+///
+/// `providers` is an [`IndexMap`] so it preserves the file's provider order, as
+/// pi does: its `ModelsJson` iterates `Object.entries(config.providers)` into a
+/// JS `Map`, both of which keep insertion order.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 struct ModelsJson {
-    providers: BTreeMap<String, ModelsJsonProvider>,
+    providers: IndexMap<String, ModelsJsonProvider>,
 }
 
 /// Strip `//` line comments and trailing commas from JSON, leaving string
@@ -170,7 +175,7 @@ fn strip_json_comments(input: &str) -> String {
 /// shared reference, so there is no Rust analogue to pi's `deepFreeze`.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ModelConfig {
-    providers: BTreeMap<String, ModelsJsonProvider>,
+    providers: IndexMap<String, ModelsJsonProvider>,
     error: Option<String>,
 }
 
@@ -178,14 +183,14 @@ impl ModelConfig {
     /// An empty config with no error (the ENOENT / no-path outcome).
     fn empty() -> Self {
         ModelConfig {
-            providers: BTreeMap::new(),
+            providers: IndexMap::new(),
             error: None,
         }
     }
 
     fn errored(error: String) -> Self {
         ModelConfig {
-            providers: BTreeMap::new(),
+            providers: IndexMap::new(),
             error: Some(error),
         }
     }
@@ -221,16 +226,21 @@ impl ModelConfig {
     pub fn parse(content: &str, source_label: &str) -> ModelConfig {
         let stripped = strip_json_comments(content);
 
-        let value: Value = match serde_json::from_str(&stripped) {
-            Ok(value) => value,
-            Err(err) => {
-                return ModelConfig::errored(format!(
-                    "Failed to parse models.json: {err}\n\nFile: {source_label}"
-                ));
-            }
-        };
+        // Syntax check first (pi's `JSON.parse`): a malformed document is a
+        // "Failed to parse" error, distinct from a schema violation below.
+        if let Err(err) = serde_json::from_str::<Value>(&stripped) {
+            return ModelConfig::errored(format!(
+                "Failed to parse models.json: {err}\n\nFile: {source_label}"
+            ));
+        }
 
-        let parsed: ModelsJson = match serde_json::from_value(value) {
+        // Deserialize straight from the JSON token stream rather than from a
+        // `serde_json::Value`: without the `preserve_order` feature a `Value`
+        // object is a `BTreeMap` that would alphabetize provider keys before the
+        // `IndexMap` ever sees them. `from_str` feeds `IndexMap` keys in document
+        // order, preserving pi's insertion-order semantics. The syntax check
+        // above guarantees any error here is a shape/schema violation.
+        let parsed: ModelsJson = match serde_json::from_str(&stripped) {
             Ok(parsed) => parsed,
             Err(err) => {
                 return ModelConfig::errored(format!(
@@ -250,11 +260,14 @@ impl ModelConfig {
         self.providers.get(provider_id)
     }
 
-    /// All provider ids present in the config (`model-config.ts:280`).
+    /// All provider ids present in the config, in the file's insertion order
+    /// (`model-config.ts:280`).
     //
-    // NOTE: pi preserves the file's provider order; this returns them sorted
-    // (BTreeMap key order) because the workspace's serde_json has no
-    // `preserve_order`. Downstream composition must not depend on ordering.
+    // Order is pi-faithful: pi returns `[...this.providers.keys()]` from a JS
+    // `Map` built by iterating `Object.entries(config.providers)`, so provider
+    // ids come back in the order they appear in `models.json`. The backing
+    // `IndexMap` preserves that same insertion order here. Downstream selection
+    // ("first available" model, first-provider-by-position) depends on it.
     pub fn get_provider_ids(&self) -> Vec<&str> {
         self.providers.keys().map(String::as_str).collect()
     }
@@ -339,6 +352,29 @@ mod tests {
             serde_json::from_str::<Value>(&stripped).unwrap()["list"],
             serde_json::json!([1])
         );
+    }
+
+    #[test]
+    fn provider_ids_preserve_file_insertion_order() {
+        // pi keeps providers in the order they appear in models.json (JS `Map`
+        // built from `Object.entries`). These ids are deliberately NOT
+        // alphabetical: under alphabetical (BTreeMap) ordering the result would
+        // be [anthropic, openai, zai], which diverges from pi. IndexMap keeps the
+        // file order below.
+        let content = r#"{
+            "providers": {
+                "openai": { "name": "OpenAI" },
+                "zai": { "name": "Z.ai" },
+                "anthropic": { "name": "Anthropic" }
+            }
+        }"#;
+        let config = ModelConfig::parse(content, "test");
+        assert!(
+            config.get_error().is_none(),
+            "got: {:?}",
+            config.get_error()
+        );
+        assert_eq!(config.get_provider_ids(), ["openai", "zai", "anthropic"]);
     }
 
     #[test]
