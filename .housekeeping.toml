@@ -14,6 +14,6 @@ allow = ["bindings/php/test.sh"]
 [stray-todos]
 # The M1 Session::open marker in the PHP binding is a deliberate, milestone-
 # tagged placeholder for the next binding surface, not untracked work.
-# The fluessig integration note quotes that same `// TODO(M1)` marker as prose
+# The fluessig integration note quotes that same M1 placeholder marker as prose
 # when describing what atilla exposes today — a reference, not untracked work.
 ignore = ["bindings/php/src/lib.rs", "notes/fluessig-integration.md"]
