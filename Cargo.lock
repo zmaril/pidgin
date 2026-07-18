@@ -116,9 +116,11 @@ dependencies = [
 name = "atilla-orchestrator"
 version = "0.1.0"
 dependencies = [
+ "atilla-agent",
  "serde",
  "serde_json",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]
