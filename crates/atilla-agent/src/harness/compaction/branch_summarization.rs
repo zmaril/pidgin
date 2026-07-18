@@ -290,9 +290,56 @@ Use this EXACT format:
 
 Keep each section concise. Preserve exact file paths, function names, and error messages.";
 
+/// The fixed `maxTokens` cap a branch summary request uses. Mirrors the literal
+/// pi's `generateBranchSummary` passes to `completeSimple`. Exposed so the napi
+/// side can reproduce the exact request options.
+pub const BRANCH_SUMMARY_MAX_TOKENS: i64 = 2048;
+
 // ---------------------------------------------------------------------------
 // Branch summary generation.
 // ---------------------------------------------------------------------------
+
+/// Build the user-message prompt text for a branch summary call. Mirrors the
+/// prompt assembly inside pi's `generateBranchSummary`. Exposed so the napi side
+/// can reproduce the exact prompt without duplicating the instruction logic.
+pub fn build_branch_summary_prompt(
+    messages: &[AgentMessage],
+    custom_instructions: Option<&str>,
+    replace_instructions: bool,
+) -> String {
+    let llm_messages = convert_to_llm(messages);
+    let conversation_text = serialize_conversation(&llm_messages);
+    let instructions = match (replace_instructions, custom_instructions) {
+        (true, Some(custom)) => custom.to_string(),
+        (_, Some(custom)) => format!("{BRANCH_SUMMARY_PROMPT}\n\nAdditional focus: {custom}"),
+        (_, None) => BRANCH_SUMMARY_PROMPT.to_string(),
+    };
+    format!("<conversation>\n{conversation_text}\n</conversation>\n\n{instructions}")
+}
+
+/// Assemble a [`BranchSummaryResult`] from the model's summary text and the
+/// prepared file operations. Extracted from [`generate_branch_summary`]'s
+/// post-model block so the napi side can drive summarization itself and then
+/// reproduce the exact result assembly (preamble prepend, file-op footer). Byte
+/// identical to the native path.
+pub fn assemble_branch_summary_result(
+    file_ops: &FileOperations,
+    summary_text: &str,
+) -> BranchSummaryResult {
+    let mut summary = format!("{BRANCH_SUMMARY_PREAMBLE}{summary_text}");
+    let (read_files, modified_files) = compute_file_lists(file_ops);
+    summary.push_str(&format_file_operations(&read_files, &modified_files));
+
+    BranchSummaryResult {
+        summary: if summary.is_empty() {
+            "No summary generated".to_string()
+        } else {
+            summary
+        },
+        read_files,
+        modified_files,
+    }
+}
 
 /// Generate a summary for abandoned branch entries. Mirrors pi's
 /// `generateBranchSummary`.
@@ -321,19 +368,15 @@ pub fn generate_branch_summary(
         });
     }
 
-    let llm_messages = convert_to_llm(&messages);
-    let conversation_text = serialize_conversation(&llm_messages);
-    let instructions = match (options.replace_instructions, &options.custom_instructions) {
-        (true, Some(custom)) => custom.clone(),
-        (_, Some(custom)) => format!("{BRANCH_SUMMARY_PROMPT}\n\nAdditional focus: {custom}"),
-        (_, None) => BRANCH_SUMMARY_PROMPT.to_string(),
-    };
-    let prompt_text =
-        format!("<conversation>\n{conversation_text}\n</conversation>\n\n{instructions}");
+    let prompt_text = build_branch_summary_prompt(
+        &messages,
+        options.custom_instructions.as_deref(),
+        options.replace_instructions,
+    );
 
     let context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt_text);
     let completion_options = CompletionOptions {
-        max_tokens: 2048,
+        max_tokens: BRANCH_SUMMARY_MAX_TOKENS,
         signal: Some(options.signal.clone()),
         reasoning: None,
     };
@@ -360,17 +403,8 @@ pub fn generate_branch_summary(
         _ => {}
     }
 
-    let mut summary = format!("{BRANCH_SUMMARY_PREAMBLE}{}", response_text(&response));
-    let (read_files, modified_files) = compute_file_lists(&file_ops);
-    summary.push_str(&format_file_operations(&read_files, &modified_files));
-
-    Ok(BranchSummaryResult {
-        summary: if summary.is_empty() {
-            "No summary generated".to_string()
-        } else {
-            summary
-        },
-        read_files,
-        modified_files,
-    })
+    Ok(assemble_branch_summary_result(
+        &file_ops,
+        &response_text(&response),
+    ))
 }

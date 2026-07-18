@@ -17,16 +17,19 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use serde_json::{json, Value};
 
 use atilla_ai::providers::faux::{
-    faux_assistant_message, faux_text, FauxAssistantOptions, FauxModelDefinition, FauxProvider,
-    RegisterFauxProviderOptions,
+    faux_assistant_message, faux_text, faux_thinking, FauxAssistantOptions, FauxModelDefinition,
+    FauxProvider, RegisterFauxProviderOptions,
 };
 use atilla_ai::{AssistantMessage, Context, Model, StopReason, Usage};
 
 use atilla_agent::harness::compaction::{
+    assemble_compaction_result, build_summarization_context, build_summary_options,
+    build_summary_prompt, build_turn_prefix_options, build_turn_prefix_prompt,
     calculate_context_tokens, compact, estimate_context_tokens, estimate_tokens, find_cut_point,
     find_turn_start_index, generate_summary, get_last_assistant_usage, prepare_compaction,
-    should_compact, CompactionErrorCode, CompactionPreparation, CompactionSettings,
-    CompletionOptions, CutPointResult, FileOperations, Models, DEFAULT_COMPACTION_SETTINGS,
+    response_text, should_compact, CompactionErrorCode, CompactionPreparation, CompactionSettings,
+    CompletionOptions, CutPointResult, FileOperations, Models, SummarizationRequestOptions,
+    DEFAULT_COMPACTION_SETTINGS, SUMMARIZATION_SYSTEM_PROMPT,
 };
 use atilla_agent::harness::session::{build_session_context, SessionContextBuildOptions};
 use atilla_agent::harness::types::{
@@ -149,6 +152,24 @@ fn custom_message_entry(parent_id: Option<&str>) -> SessionTreeEntry {
         display: true,
         details: None,
     })
+}
+
+/// A non-split-turn `CompactionPreparation` with a single read file operation,
+/// shared by the file-details compaction tests.
+fn file_details_preparation() -> CompactionPreparation {
+    let u1 = message_entry(create_user_message("read a file"), None);
+    let mut assistant_message =
+        create_assistant_message("calling tool", create_mock_usage(1000, 200, 0, 0));
+    assistant_message["content"] = json!([{ "type": "toolCall", "id": "tool-1", "name": "read", "arguments": { "path": "src/index.ts" } }]);
+    let a1 = message_entry(assistant_message, Some(&entry_id(&u1)));
+    let u2 = message_entry(create_user_message("continue"), Some(&entry_id(&a1)));
+    let a2 = message_entry(
+        create_assistant_message("done", create_mock_usage(4000, 500, 0, 0)),
+        Some(&entry_id(&u2)),
+    );
+    prepare_compaction(&[u1, a1, u2, a2], &DEFAULT_COMPACTION_SETTINGS)
+        .unwrap()
+        .expect("preparation")
 }
 
 /// A split-turn `CompactionPreparation` carrying only `turn_prefix_messages`,
@@ -921,19 +942,7 @@ fn returns_turn_prefix_compaction_errors_without_throwing() {
 /// pi: "returns a compaction result with file details"
 #[test]
 fn returns_a_compaction_result_with_file_details() {
-    let u1 = message_entry(create_user_message("read a file"), None);
-    let mut assistant_message =
-        create_assistant_message("calling tool", create_mock_usage(1000, 200, 0, 0));
-    assistant_message["content"] = json!([{ "type": "toolCall", "id": "tool-1", "name": "read", "arguments": { "path": "src/index.ts" } }]);
-    let a1 = message_entry(assistant_message, Some(&entry_id(&u1)));
-    let u2 = message_entry(create_user_message("continue"), Some(&entry_id(&a1)));
-    let a2 = message_entry(
-        create_assistant_message("done", create_mock_usage(4000, 500, 0, 0)),
-        Some(&entry_id(&u2)),
-    );
-    let preparation = prepare_compaction(&[u1, a1, u2, a2], &DEFAULT_COMPACTION_SETTINGS)
-        .unwrap()
-        .expect("preparation");
+    let preparation = file_details_preparation();
 
     let models = FauxModels::new();
     models.set_responses(vec![FauxModels::text_response("## Goal\nTest summary")]);
@@ -945,6 +954,196 @@ fn returns_a_compaction_result_with_file_details() {
 }
 
 // ---------------------------------------------------------------------------
+// Seam-extraction tests.
+//
+// These do not map to pi assertions; they lock the JS-drivable seam (the pub
+// builders/assemblers the napi side calls) to the native path so the two share
+// a single source of truth and stay byte-identical.
+// ---------------------------------------------------------------------------
+
+/// The normal (len-1) `assemble_compaction_result` path reproduces the exact
+/// `CompactionResult` a `compact` run produces on the same preparation.
+#[test]
+fn assemble_compaction_result_len1_matches_normal_compact_path() {
+    let preparation = file_details_preparation();
+    assert!(!preparation.is_split_turn);
+
+    let text = "## Goal\nTest summary";
+
+    let via_compact = {
+        let models = FauxModels::new();
+        models.set_responses(vec![FauxModels::text_response(text)]);
+        let model = create_faux_model(false, 8192);
+        compact(&preparation, &models, &model, None, None, None).unwrap()
+    };
+
+    // Reproduce the seam: generate the summary string, then assemble.
+    let summary = {
+        let models = FauxModels::new();
+        models.set_responses(vec![FauxModels::text_response(text)]);
+        let model = create_faux_model(false, 8192);
+        generate_summary(
+            &preparation.messages_to_summarize,
+            &models,
+            &model,
+            preparation.settings.reserve_tokens,
+            None,
+            None,
+            preparation.previous_summary.as_deref(),
+            None,
+        )
+        .unwrap()
+    };
+    let via_assemble = assemble_compaction_result(&preparation, vec![summary]);
+
+    assert_eq!(via_compact, via_assemble);
+}
+
+/// The split-turn (len-2) `assemble_compaction_result` path reproduces the
+/// `compact` split-turn concatenation byte-for-byte.
+#[test]
+fn assemble_compaction_result_len2_reproduces_split_turn_concat() {
+    let preparation = CompactionPreparation {
+        first_kept_entry_id: "entry-keep".to_string(),
+        messages_to_summarize: vec![create_user_message("history msg")],
+        turn_prefix_messages: vec![create_user_message("prefix msg")],
+        is_split_turn: true,
+        tokens_before: 100,
+        previous_summary: None,
+        file_ops: FileOperations::default(),
+        settings: CompactionSettings {
+            enabled: true,
+            reserve_tokens: 2000,
+            keep_recent_tokens: 20,
+        },
+    };
+
+    let via_compact = {
+        let models = FauxModels::new();
+        models.set_responses(vec![
+            FauxModels::text_response("HISTORY"),
+            FauxModels::text_response("PREFIX"),
+        ]);
+        let model = create_faux_model(false, 8192);
+        compact(&preparation, &models, &model, None, None, None).unwrap()
+    };
+
+    let via_assemble = assemble_compaction_result(
+        &preparation,
+        vec!["HISTORY".to_string(), "PREFIX".to_string()],
+    );
+
+    // Byte-exact split-turn concatenation (empty file_ops => no footer).
+    assert_eq!(
+        via_assemble.summary,
+        "HISTORY\n\n---\n\n**Turn Context (split turn):**\n\nPREFIX"
+    );
+    assert_eq!(via_compact, via_assemble);
+}
+
+/// The summarization prompt/options builders are the single source of truth: the
+/// `Context` + `max_tokens` + `reasoning` they produce equal exactly what the
+/// internal `generate_summary` path passes to the model.
+#[test]
+fn summary_builders_match_internal_generate_summary_call() {
+    let messages = vec![create_user_message("Summarize this.")];
+    let models = FauxModels::new();
+    models.set_responses(vec![FauxModels::text_response("## Goal\nTest summary")]);
+    let model = create_faux_model(true, 8192);
+
+    generate_summary(
+        &messages,
+        &models,
+        &model,
+        2000,
+        None,
+        Some("focus"),
+        Some("old summary"),
+        Some("medium"),
+    )
+    .unwrap();
+
+    let seen_context = models.seen_contexts.borrow()[0].clone();
+    let seen_options = models.seen_options.borrow()[0].clone();
+
+    let prompt = build_summary_prompt(&messages, Some("focus"), Some("old summary"));
+    let built_context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt);
+    let built_options = build_summary_options(2000, &model, Some("medium"));
+
+    assert_eq!(built_context, seen_context);
+    assert_eq!(built_options.max_tokens, seen_options.max_tokens);
+    assert_eq!(built_options.reasoning, seen_options.reasoning);
+    assert_eq!(
+        built_options,
+        SummarizationRequestOptions {
+            max_tokens: seen_options.max_tokens,
+            reasoning: seen_options.reasoning.clone(),
+        }
+    );
+}
+
+/// As above, for the turn-prefix summarization variant (the `0.5 *
+/// reserveTokens` max-tokens factor and turn-prefix prompt).
+#[test]
+fn turn_prefix_builders_match_internal_turn_prefix_call() {
+    let prefix_messages = vec![create_user_message("prefix msg")];
+    let preparation = split_turn_prefix_preparation(prefix_messages.clone());
+
+    let models = FauxModels::new();
+    models.set_responses(vec![FauxModels::text_response(
+        "## Original Request\nTest summary",
+    )]);
+    let model = create_faux_model(true, 8192);
+
+    compact(&preparation, &models, &model, None, None, Some("high")).unwrap();
+
+    // The turn-prefix call is the only model call (empty messages_to_summarize
+    // takes the "No prior history." branch without a model call).
+    let seen_context = models.seen_contexts.borrow()[0].clone();
+    let seen_options = models.seen_options.borrow()[0].clone();
+
+    let prompt = build_turn_prefix_prompt(&prefix_messages);
+    let built_context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt);
+    let built_options =
+        build_turn_prefix_options(preparation.settings.reserve_tokens, &model, Some("high"));
+
+    assert_eq!(built_context, seen_context);
+    assert_eq!(built_options.max_tokens, seen_options.max_tokens);
+    assert_eq!(built_options.reasoning, seen_options.reasoning);
+}
+
+/// `response_text` is a callable pub fn joining Text blocks by `\n`, with empty
+/// / no-Text edge cases returning an empty string.
+#[test]
+fn response_text_joins_text_blocks_and_handles_edge_cases() {
+    let multi = faux_assistant_message(
+        vec![faux_text("first"), faux_text("second")],
+        FauxAssistantOptions::default(),
+        0,
+    );
+    assert_eq!(response_text(&multi), "first\nsecond");
+
+    let empty = faux_assistant_message(vec![], FauxAssistantOptions::default(), 0);
+    assert_eq!(response_text(&empty), "");
+
+    // Content present but no Text blocks => empty string.
+    let no_text = faux_assistant_message(
+        vec![faux_thinking("just thinking")],
+        FauxAssistantOptions::default(),
+        0,
+    );
+    assert_eq!(response_text(&no_text), "");
+
+    // Mixed content: only the Text blocks contribute.
+    let mixed = faux_assistant_message(
+        vec![faux_thinking("thinking"), faux_text("visible")],
+        FauxAssistantOptions::default(),
+        0,
+    );
+    assert_eq!(response_text(&mixed), "visible");
+}
+
+// ---------------------------------------------------------------------------
 // Branch summarization.
 //
 // pi ships no branch-summarization test file, so these are atilla-authored
@@ -953,8 +1152,10 @@ fn returns_a_compaction_result_with_file_details() {
 // ---------------------------------------------------------------------------
 
 use atilla_agent::harness::compaction::{
+    assemble_branch_summary_result, build_branch_summary_prompt,
     collect_entries_for_branch_summary, generate_branch_summary, prepare_branch_entries,
-    BranchSummaryErrorCode, GenerateBranchSummaryOptions, BRANCH_SUMMARY_PREAMBLE,
+    BranchSummaryErrorCode, GenerateBranchSummaryOptions, BRANCH_SUMMARY_MAX_TOKENS,
+    BRANCH_SUMMARY_PREAMBLE,
 };
 use atilla_agent::harness::session::{InMemorySessionStorage, Session};
 use atilla_ai::seams::AbortSignal;
@@ -1080,6 +1281,62 @@ fn collect_entries_for_branch_summary_walks_to_common_ancestor() {
     let empty = collect_entries_for_branch_summary(&session, None, &y_id).unwrap();
     assert!(empty.entries.is_empty());
     assert_eq!(empty.common_ancestor_id, None);
+}
+
+/// Seam-extraction test: `assemble_branch_summary_result` reproduces
+/// `generate_branch_summary`'s output given the same summary text, and the
+/// branch prompt/options builders match the internal call (single source of
+/// truth). Not a pi assertion.
+#[test]
+fn assemble_branch_summary_result_matches_generate_branch_summary() {
+    let u1 = message_entry(create_user_message("explore"), None);
+    let a1 = message_entry(assistant_with_read("src/x.ts"), Some(&entry_id(&u1)));
+    let entries = [u1, a1];
+
+    let text = "## Goal\nExplored";
+    let models = FauxModels::new();
+    models.set_responses(vec![FauxModels::text_response(text)]);
+    let model = create_faux_model(false, 8192);
+    let via_generate = generate_branch_summary(
+        &entries,
+        &GenerateBranchSummaryOptions {
+            models: &models,
+            model: &model,
+            signal: AbortSignal::new(),
+            custom_instructions: None,
+            replace_instructions: false,
+            reserve_tokens: None,
+        },
+    )
+    .unwrap();
+
+    // Reproduce the seam: prepare entries (for file ops + messages), then
+    // assemble with the raw model text. Mirror generate_branch_summary's budget:
+    // context_window (200000, from the faux model) - default reserve (16384).
+    let prep = prepare_branch_entries(&entries, 200000 - 16384);
+    let via_assemble = assemble_branch_summary_result(&prep.file_ops, text);
+
+    assert_eq!(via_generate, via_assemble);
+    // Preamble prepend + file-op footer are applied byte-identically.
+    assert!(via_assemble
+        .summary
+        .starts_with(&format!("{BRANCH_SUMMARY_PREAMBLE}{text}")));
+    assert!(via_assemble
+        .summary
+        .contains("<read-files>\nsrc/x.ts\n</read-files>"));
+    assert_eq!(via_assemble.read_files, vec!["src/x.ts".to_string()]);
+    assert!(via_assemble.modified_files.is_empty());
+
+    // Prompt/options single-source-of-truth: the builder output equals what the
+    // internal branch path passed to the model.
+    let seen_context = models.seen_contexts.borrow()[0].clone();
+    let prompt = build_branch_summary_prompt(&prep.messages, None, false);
+    let built_context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt);
+    assert_eq!(built_context, seen_context);
+    assert_eq!(
+        models.seen_options.borrow()[0].max_tokens,
+        BRANCH_SUMMARY_MAX_TOKENS
+    );
 }
 
 /// Extract the single user text block from a summarization context.

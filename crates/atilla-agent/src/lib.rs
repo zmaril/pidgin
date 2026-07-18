@@ -20,14 +20,18 @@ pub mod types;
 // Compaction subsystem public surface, mirroring the re-exports in
 // `packages/agent/src/index.ts` (lines ~6-27).
 pub use harness::compaction::{
-    calculate_context_tokens, collect_entries_for_branch_summary, compact, estimate_context_tokens,
-    estimate_tokens, find_cut_point, find_turn_start_index, generate_branch_summary,
-    generate_summary, get_last_assistant_usage, prepare_branch_entries, prepare_compaction,
+    assemble_branch_summary_result, assemble_compaction_result, build_branch_summary_prompt,
+    build_summarization_context, build_summary_options, build_summary_prompt,
+    build_turn_prefix_options, build_turn_prefix_prompt, calculate_context_tokens,
+    collect_entries_for_branch_summary, compact, estimate_context_tokens, estimate_tokens,
+    find_cut_point, find_turn_start_index, generate_branch_summary, generate_summary,
+    get_last_assistant_usage, prepare_branch_entries, prepare_compaction, response_text,
     serialize_conversation, should_compact, BranchPreparation, BranchSummaryDetails,
     BranchSummaryError, BranchSummaryErrorCode, BranchSummaryResult, CollectEntriesResult,
     CompactionDetails, CompactionError, CompactionErrorCode, CompactionPreparation,
     CompactionResult, CompactionSettings, CompletionOptions, ContextUsageEstimate, CutPointResult,
-    FileOperations, GenerateBranchSummaryOptions, Models, DEFAULT_COMPACTION_SETTINGS,
+    FileOperations, GenerateBranchSummaryOptions, Models, SummarizationRequestOptions,
+    BRANCH_SUMMARY_MAX_TOKENS, DEFAULT_COMPACTION_SETTINGS,
 };
 
 /// Name of the pi package this crate mirrors.

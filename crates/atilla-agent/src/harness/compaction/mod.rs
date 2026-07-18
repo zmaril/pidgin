@@ -24,24 +24,28 @@ pub mod utils;
 // Public compaction surface, mirroring the re-exports in
 // `packages/agent/src/index.ts`.
 pub use compaction::{
+    assemble_compaction_result, build_summarization_context, build_summary_options,
+    build_summary_prompt, build_turn_prefix_options, build_turn_prefix_prompt,
     calculate_context_tokens, compact, estimate_context_tokens, estimate_tokens, find_cut_point,
     find_turn_start_index, generate_summary, get_last_assistant_usage, prepare_compaction,
     should_compact, CompactionDetails, CompactionError, CompactionErrorCode, CompactionPreparation,
     CompactionResult, CompactionSettings, CompletionOptions, ContextUsageEstimate, CutPointResult,
-    Models, DEFAULT_COMPACTION_SETTINGS, ESTIMATED_IMAGE_CHARS, SUMMARIZATION_SYSTEM_PROMPT,
+    Models, SummarizationRequestOptions, DEFAULT_COMPACTION_SETTINGS, ESTIMATED_IMAGE_CHARS,
+    SUMMARIZATION_SYSTEM_PROMPT,
 };
 
 // Branch-summarization surface, mirroring `agent/src/index.ts`.
 pub use branch_summarization::{
+    assemble_branch_summary_result, build_branch_summary_prompt,
     collect_entries_for_branch_summary, generate_branch_summary, prepare_branch_entries,
     BranchPreparation, BranchSummaryDetails, BranchSummaryError, BranchSummaryErrorCode,
     BranchSummaryResult, CollectEntriesResult, GenerateBranchSummaryOptions,
-    BRANCH_SUMMARY_PREAMBLE,
+    BRANCH_SUMMARY_MAX_TOKENS, BRANCH_SUMMARY_PREAMBLE,
 };
 
 // Shared utilities (`serializeConversation` is part of the public compaction
 // surface; the file-op helpers back both submodules).
 pub use utils::{
     compute_file_lists, create_file_ops, extract_file_ops_from_message, format_file_operations,
-    serialize_conversation, FileOperations,
+    response_text, serialize_conversation, FileOperations,
 };

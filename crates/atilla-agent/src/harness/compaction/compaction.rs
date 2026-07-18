@@ -658,7 +658,11 @@ Be concise. Focus on what's needed to understand the kept suffix.";
 // ---------------------------------------------------------------------------
 
 /// Build the single-user-message context summarization sends to the model.
-pub(crate) fn build_summarization_context(system_prompt: &str, prompt_text: String) -> Context {
+///
+/// Exposed so the napi side can reproduce the exact [`Context`] each
+/// summarization call uses (system prompt + user message) rather than
+/// reconstructing the message shape itself.
+pub fn build_summarization_context(system_prompt: &str, prompt_text: String) -> Context {
     let message = json!({
         "role": "user",
         "content": [{ "type": "text", "text": prompt_text }],
@@ -675,6 +679,19 @@ pub(crate) fn build_summarization_context(system_prompt: &str, prompt_text: Stri
     }
 }
 
+/// The numeric completion controls a summarization call applies, mirroring the
+/// subset of [`CompletionOptions`] that depends only on the model, reserve
+/// budget, and thinking level (i.e. everything except the orchestration-only
+/// `signal`). Exposed so the napi side can reproduce the exact `max_tokens` and
+/// `reasoning` each summarization request uses.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SummarizationRequestOptions {
+    /// The `maxTokens` cap for the request.
+    pub max_tokens: i64,
+    /// The `reasoning` (thinking) level, or `None` when reasoning is off.
+    pub reasoning: Option<String>,
+}
+
 /// The model's max-tokens cap for a summarization request: `min(factor *
 /// reserveTokens, model.maxTokens)` when the model reports a positive cap.
 fn summarization_max_tokens(factor: f64, reserve_tokens: i64, model: &Model) -> i64 {
@@ -686,42 +703,98 @@ fn summarization_max_tokens(factor: f64, reserve_tokens: i64, model: &Model) -> 
     }
 }
 
-/// The completion options for a summarization request, attaching `reasoning`
-/// only for reasoning models with a non-`off` thinking level.
-fn summarization_options(
-    max_tokens: i64,
-    model: &Model,
-    signal: Option<&AbortSignal>,
-    thinking_level: Option<&str>,
-) -> CompletionOptions {
-    let reasoning = match thinking_level {
+/// The `reasoning` level for a summarization request, present only for reasoning
+/// models with a non-`off` thinking level.
+fn summarization_reasoning(model: &Model, thinking_level: Option<&str>) -> Option<String> {
+    match thinking_level {
         Some(level) if model.reasoning && level != "off" => Some(level.to_string()),
         _ => None,
-    };
-    CompletionOptions {
-        max_tokens,
-        signal: signal.cloned(),
-        reasoning,
     }
+}
+
+/// The request options for a history summarization call (`generateSummary`'s
+/// `0.8 * reserveTokens` max-tokens factor). Exposed as the single source of
+/// truth for the numeric controls so the napi side does not reproduce the logic.
+pub fn build_summary_options(
+    reserve_tokens: i64,
+    model: &Model,
+    thinking_level: Option<&str>,
+) -> SummarizationRequestOptions {
+    SummarizationRequestOptions {
+        max_tokens: summarization_max_tokens(0.8, reserve_tokens, model),
+        reasoning: summarization_reasoning(model, thinking_level),
+    }
+}
+
+/// The request options for a turn-prefix summarization call
+/// (`generateTurnPrefixSummary`'s `0.5 * reserveTokens` max-tokens factor).
+pub fn build_turn_prefix_options(
+    reserve_tokens: i64,
+    model: &Model,
+    thinking_level: Option<&str>,
+) -> SummarizationRequestOptions {
+    SummarizationRequestOptions {
+        max_tokens: summarization_max_tokens(0.5, reserve_tokens, model),
+        reasoning: summarization_reasoning(model, thinking_level),
+    }
+}
+
+/// Build the user-message prompt text for a history summarization call. Mirrors
+/// the prompt assembly inside pi's `generateSummary`. Exposed so the napi side
+/// can reproduce the exact prompt without duplicating the logic.
+pub fn build_summary_prompt(
+    current_messages: &[AgentMessage],
+    custom_instructions: Option<&str>,
+    previous_summary: Option<&str>,
+) -> String {
+    let mut base_prompt = if previous_summary.is_some() {
+        UPDATE_SUMMARIZATION_PROMPT.to_string()
+    } else {
+        SUMMARIZATION_PROMPT.to_string()
+    };
+    if let Some(instructions) = custom_instructions {
+        base_prompt = format!("{base_prompt}\n\nAdditional focus: {instructions}");
+    }
+    let llm_messages = convert_to_llm(current_messages);
+    let conversation_text = serialize_conversation(&llm_messages);
+    let mut prompt_text = format!("<conversation>\n{conversation_text}\n</conversation>\n\n");
+    if let Some(previous) = previous_summary {
+        prompt_text.push_str(&format!(
+            "<previous-summary>\n{previous}\n</previous-summary>\n\n"
+        ));
+    }
+    prompt_text.push_str(&base_prompt);
+    prompt_text
+}
+
+/// Build the user-message prompt text for a turn-prefix summarization call.
+/// Mirrors the prompt assembly inside pi's `generateTurnPrefixSummary`.
+pub fn build_turn_prefix_prompt(messages: &[AgentMessage]) -> String {
+    let llm_messages = convert_to_llm(messages);
+    let conversation_text = serialize_conversation(&llm_messages);
+    format!(
+        "<conversation>\n{conversation_text}\n</conversation>\n\n{TURN_PREFIX_SUMMARIZATION_PROMPT}"
+    )
 }
 
 /// Run a summarization completion and map its stop reason to a
 /// [`CompactionError`], returning the joined response text on success. Shared by
 /// [`generate_summary`] and [`generate_turn_prefix_summary`], which build
 /// different prompts but drive the model call and error mapping identically.
-#[allow(clippy::too_many_arguments)]
 fn run_summarization(
     models: &dyn Models,
     model: &Model,
-    prompt_text: String,
-    max_tokens: i64,
+    context: Context,
+    request_options: &SummarizationRequestOptions,
     signal: Option<&AbortSignal>,
-    thinking_level: Option<&str>,
     aborted_message: &str,
     failed_label: &str,
 ) -> Result<String, CompactionError> {
-    let context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt_text);
-    let options = summarization_options(max_tokens, model, signal, thinking_level);
+    let options = CompletionOptions {
+        max_tokens: request_options.max_tokens,
+        signal: signal.cloned(),
+        reasoning: request_options.reasoning.clone(),
+    };
 
     let response = models.complete_simple(model, &context, &options);
     match response.stop_reason {
@@ -759,32 +832,16 @@ pub fn generate_summary(
     previous_summary: Option<&str>,
     thinking_level: Option<&str>,
 ) -> Result<String, CompactionError> {
-    let max_tokens = summarization_max_tokens(0.8, reserve_tokens, model);
-    let mut base_prompt = if previous_summary.is_some() {
-        UPDATE_SUMMARIZATION_PROMPT.to_string()
-    } else {
-        SUMMARIZATION_PROMPT.to_string()
-    };
-    if let Some(instructions) = custom_instructions {
-        base_prompt = format!("{base_prompt}\n\nAdditional focus: {instructions}");
-    }
-    let llm_messages = convert_to_llm(current_messages);
-    let conversation_text = serialize_conversation(&llm_messages);
-    let mut prompt_text = format!("<conversation>\n{conversation_text}\n</conversation>\n\n");
-    if let Some(previous) = previous_summary {
-        prompt_text.push_str(&format!(
-            "<previous-summary>\n{previous}\n</previous-summary>\n\n"
-        ));
-    }
-    prompt_text.push_str(&base_prompt);
+    let request_options = build_summary_options(reserve_tokens, model, thinking_level);
+    let prompt_text = build_summary_prompt(current_messages, custom_instructions, previous_summary);
+    let context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt_text);
 
     run_summarization(
         models,
         model,
-        prompt_text,
-        max_tokens,
+        context,
+        &request_options,
         signal,
-        thinking_level,
         "Summarization aborted",
         "Summarization failed",
     )
@@ -903,11 +960,33 @@ pub fn compact(
         ));
     }
 
-    let mut summary: String;
-
-    if preparation.is_split_turn && !preparation.turn_prefix_messages.is_empty() {
-        let history = if !preparation.messages_to_summarize.is_empty() {
-            generate_summary(
+    let summaries: Vec<String> =
+        if preparation.is_split_turn && !preparation.turn_prefix_messages.is_empty() {
+            let history = if !preparation.messages_to_summarize.is_empty() {
+                generate_summary(
+                    &preparation.messages_to_summarize,
+                    models,
+                    model,
+                    preparation.settings.reserve_tokens,
+                    signal,
+                    custom_instructions,
+                    preparation.previous_summary.as_deref(),
+                    thinking_level,
+                )?
+            } else {
+                "No prior history.".to_string()
+            };
+            let turn_prefix = generate_turn_prefix_summary(
+                &preparation.turn_prefix_messages,
+                models,
+                model,
+                preparation.settings.reserve_tokens,
+                signal,
+                thinking_level,
+            )?;
+            vec![history, turn_prefix]
+        } else {
+            vec![generate_summary(
                 &preparation.messages_to_summarize,
                 models,
                 model,
@@ -916,36 +995,39 @@ pub fn compact(
                 custom_instructions,
                 preparation.previous_summary.as_deref(),
                 thinking_level,
-            )?
-        } else {
-            "No prior history.".to_string()
+            )?]
         };
-        let turn_prefix = generate_turn_prefix_summary(
-            &preparation.turn_prefix_messages,
-            models,
-            model,
-            preparation.settings.reserve_tokens,
-            signal,
-            thinking_level,
-        )?;
-        summary = format!("{history}\n\n---\n\n**Turn Context (split turn):**\n\n{turn_prefix}");
+
+    Ok(assemble_compaction_result(preparation, summaries))
+}
+
+/// Assemble a [`CompactionResult`] from the generated summary text and the
+/// prepared file operations. Extracted from [`compact`]'s post-model block so
+/// the napi side can drive summarization itself and then reproduce the exact
+/// result assembly.
+///
+/// `summaries` carries the model output: a single element is the normal path
+/// (that element is the summary); two elements are a split turn
+/// `[history, turn_prefix]`, concatenated here byte-for-byte the same way
+/// [`compact`] does. The concatenation, file-list computation, and file-op
+/// footer are all performed internally so both the native and napi paths share
+/// one implementation.
+pub fn assemble_compaction_result(
+    preparation: &CompactionPreparation,
+    summaries: Vec<String>,
+) -> CompactionResult {
+    let mut summary = if summaries.len() >= 2 {
+        let history = &summaries[0];
+        let turn_prefix = &summaries[1];
+        format!("{history}\n\n---\n\n**Turn Context (split turn):**\n\n{turn_prefix}")
     } else {
-        summary = generate_summary(
-            &preparation.messages_to_summarize,
-            models,
-            model,
-            preparation.settings.reserve_tokens,
-            signal,
-            custom_instructions,
-            preparation.previous_summary.as_deref(),
-            thinking_level,
-        )?;
-    }
+        summaries.into_iter().next().unwrap_or_default()
+    };
 
     let (read_files, modified_files) = compute_file_lists(&preparation.file_ops);
     summary.push_str(&format_file_operations(&read_files, &modified_files));
 
-    Ok(CompactionResult {
+    CompactionResult {
         summary,
         first_kept_entry_id: preparation.first_kept_entry_id.clone(),
         tokens_before: preparation.tokens_before,
@@ -953,7 +1035,7 @@ pub fn compact(
             read_files,
             modified_files,
         }),
-    })
+    }
 }
 
 fn generate_turn_prefix_summary(
@@ -964,20 +1046,16 @@ fn generate_turn_prefix_summary(
     signal: Option<&AbortSignal>,
     thinking_level: Option<&str>,
 ) -> Result<String, CompactionError> {
-    let max_tokens = summarization_max_tokens(0.5, reserve_tokens, model);
-    let llm_messages = convert_to_llm(messages);
-    let conversation_text = serialize_conversation(&llm_messages);
-    let prompt_text = format!(
-        "<conversation>\n{conversation_text}\n</conversation>\n\n{TURN_PREFIX_SUMMARIZATION_PROMPT}"
-    );
+    let request_options = build_turn_prefix_options(reserve_tokens, model, thinking_level);
+    let prompt_text = build_turn_prefix_prompt(messages);
+    let context = build_summarization_context(SUMMARIZATION_SYSTEM_PROMPT, prompt_text);
 
     run_summarization(
         models,
         model,
-        prompt_text,
-        max_tokens,
+        context,
+        &request_options,
         signal,
-        thinking_level,
         "Turn prefix summarization aborted",
         "Turn prefix summarization failed",
     )

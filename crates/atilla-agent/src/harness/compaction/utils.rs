@@ -122,8 +122,9 @@ pub(crate) fn message_from_structural_entry(entry: &SessionTreeEntry) -> Option<
 }
 
 /// Join the text blocks of an assistant response with newlines. Shared by the
-/// compaction and branch-summarization summary generators.
-pub(crate) fn response_text(response: &AssistantMessage) -> String {
+/// compaction and branch-summarization summary generators, and exposed so the
+/// napi side can perform the identical text extraction.
+pub fn response_text(response: &AssistantMessage) -> String {
     response
         .content
         .iter()
