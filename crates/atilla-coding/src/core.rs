@@ -7,6 +7,7 @@ pub mod command_flow;
 pub mod defaults;
 pub mod experimental;
 pub mod export_html;
+pub mod footer_data_provider;
 pub mod http_dispatcher;
 pub mod keybindings;
 pub mod model_config;
