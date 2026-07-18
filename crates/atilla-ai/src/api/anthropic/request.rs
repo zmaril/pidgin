@@ -71,6 +71,16 @@ pub struct AnthropicOptions {
     pub thinking_display: Option<AnthropicThinkingDisplay>,
     /// Anthropic tool-choice behavior.
     pub tool_choice: Option<ToolChoice>,
+    /// `StreamOptions.apiKey` — the provider credential. `buildParams` ignores
+    /// it; the `stream` driver reads it to pick the auth mode / assemble headers.
+    pub api_key: Option<String>,
+    /// `StreamOptions.headers` — caller-supplied header overrides merged last by
+    /// the `stream` driver's `createClient` port. `buildParams` ignores it.
+    pub headers: Option<BTreeMap<String, String>>,
+    /// `AnthropicOptions.interleavedThinking` (default `true`). Read by the
+    /// `stream` driver to decide the interleaved-thinking beta header;
+    /// `buildParams` ignores it.
+    pub interleaved_thinking: Option<bool>,
 }
 
 /// Read a tool's `name` field from its opaque `Value`.
