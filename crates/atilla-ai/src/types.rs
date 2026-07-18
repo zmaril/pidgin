@@ -262,6 +262,45 @@ pub struct AssistantMessage {
 }
 
 // ---------------------------------------------------------------------------
+// Request context & stream options (`types.ts:450`, `types.ts:113`)
+// ---------------------------------------------------------------------------
+
+/// The conversation a provider is asked to continue (`types.ts:450`).
+///
+/// `tools` is kept as opaque JSON (pi's `Tool[]`, a TypeBox-schema-carrying
+/// shape not yet ported) so it round-trips verbatim and serializes exactly as
+/// pi's `JSON.stringify(context.tools)` for the faux provider's prompt
+/// accounting.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Context {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub system_prompt: Option<String>,
+    pub messages: Vec<Message>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<Value>>,
+}
+
+/// Per-request stream controls (`types.ts:113`).
+///
+/// This is the subset of pi's `StreamOptions` the ported seams read today: the
+/// session/cache fields the faux provider uses for its prompt-cache accounting.
+/// The remaining pi fields (temperature, maxTokens, transport, callbacks,
+/// headers, retry/timeout tuning, metadata, env) are additive future work; every
+/// field here is optional and skips serialization when absent so the wire shape
+/// stays a strict subset of pi's.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct StreamOptions {
+    /// Session identifier enabling session-scoped prompt caching (`types.ts:132`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    /// Prompt-cache retention preference; `none` disables caching (`types.ts:127`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_retention: Option<CacheRetention>,
+}
+
+// ---------------------------------------------------------------------------
 // Streaming event union (`types.ts:464-476`)
 // ---------------------------------------------------------------------------
 
