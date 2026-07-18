@@ -14,6 +14,7 @@
 //! [`flow::run_flow`] driver and the [`flow::run_login`] / [`flow::run_refresh`]
 //! convenience wrappers.
 
+pub mod bridge;
 pub mod device_code;
 pub mod flow;
 pub mod load;
@@ -26,4 +27,5 @@ pub mod openai_codex;
 pub mod radius;
 pub mod xai;
 
+pub use bridge::{oauth_flow_for, OAuthFlowMode};
 pub use flow::{run_flow, run_login, run_refresh, OAuthFlowMachine, Step, StepInput};

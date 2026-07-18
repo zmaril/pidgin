@@ -32,6 +32,7 @@ pub use credential_store::{
 };
 pub use error::{AuthFlowError, ModelsError, ModelsErrorCode};
 pub use helpers::{env_api_key_auth, EnvApiKeyAuth, LazyOAuth};
+pub use oauth::{oauth_flow_for, OAuthFlowMode};
 pub use resolve::{resolve_provider_auth, resolve_stored_oauth};
 pub use types::{
     ApiKeyAuth, ApiKeyCredential, AuthCheck, AuthContext, AuthEvent, AuthInfoLink, AuthInteraction,
