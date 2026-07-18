@@ -350,7 +350,7 @@ mod tests {
 
     #[test]
     fn counts_utf8_bytes() {
-        let content = "aé🙂\nb";
+        let content = "aé\u{1F642}\nb";
         let result = truncate_head(content, opts(100, 10));
         assert!(!result.truncated);
         assert_eq!(result.total_bytes, content.len());
@@ -380,8 +380,8 @@ mod tests {
 
     #[test]
     fn truncates_tail_on_utf8_boundaries_when_only_partial_last_line_fits() {
-        let result = truncate_tail("aé🙂b", opts(5, 10));
-        assert_eq!(result.content, "🙂b");
+        let result = truncate_tail("aé\u{1F642}b", opts(5, 10));
+        assert_eq!(result.content, "\u{1F642}b");
         assert!(result.truncated);
         assert_eq!(result.truncated_by, Some(TruncatedBy::Bytes));
         assert!(result.last_line_partial);
@@ -401,7 +401,7 @@ mod tests {
 
     #[test]
     fn drops_oversized_trailing_character_when_it_cannot_fit_in_tail_byte_limit() {
-        let result = truncate_tail("abc🙂", opts(3, 10));
+        let result = truncate_tail("abc\u{1F642}", opts(3, 10));
         assert_eq!(result.content, "");
         assert!(result.truncated);
         assert_eq!(result.truncated_by, Some(TruncatedBy::Bytes));
@@ -414,7 +414,14 @@ mod tests {
         // pi's surrogate-specific inputs (lone `\ud83d` etc.) cannot exist in a
         // Rust `str`; these well-formed multi-byte inputs exercise the same
         // UTF-8 boundary-alignment path.
-        let inputs = ["a🙂", "🙂b", "a🙂b", "🙂🙂🙂", "👩‍💻", "中中中"];
+        let inputs = [
+            "a\u{1F642}",
+            "\u{1F642}b",
+            "a\u{1F642}b",
+            "\u{1F642}\u{1F642}\u{1F642}",
+            "\u{1F469}\u{200D}\u{1F4BB}",
+            "中中中",
+        ];
         for input in inputs {
             let total = input.len();
             let values: Vec<usize> = (0..=total + 5).collect();
@@ -427,7 +434,16 @@ mod tests {
         // Well-formed subset of pi's alphabet (lone surrogates excluded — they
         // are unrepresentable in Rust `str`).
         let alphabet = [
-            "a", "\u{7f}", "\u{80}", "é", "\u{7ff}", "\u{800}", "中", "\u{d7ff}", "🙂", "\u{e000}",
+            "a",
+            "\u{7f}",
+            "\u{80}",
+            "é",
+            "\u{7ff}",
+            "\u{800}",
+            "中",
+            "\u{d7ff}",
+            "\u{1F642}",
+            "\u{e000}",
             "\u{ffff}",
         ];
 

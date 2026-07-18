@@ -12,6 +12,12 @@
 //! the re-entrancy driven from a subscriber (which runs *inside* the synchronous
 //! run). Each adaptation is called out inline with `ADAPTED:`.
 
+// straitjacket-allow-file:duplication — each `#[test]` builds near-identical
+// mock streams, contexts, and config from the shared helpers and asserts on the
+// same event/message shapes by design; the clone detector reads these parallel
+// ported cases as duplicates. Collapsing them would obscure which pi test each
+// case mirrors.
+
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
