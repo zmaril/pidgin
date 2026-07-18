@@ -2,6 +2,11 @@
 //! (`getLocalGitUpdateTarget`), remote-head lookup (`getRemoteGitHead`), and
 //! the available-update check (`gitHasAvailableUpdate`).
 
+// straitjacket-allow-file:duplication — each update-resolution machine is a
+// faithful parallel `CommandFlowMachine` impl (the `start`/`advance` skeleton
+// mirroring pi's git-update phases); the clone detector reads these mirrored
+// machine bodies as duplicates, but the 1:1 map to pi's flow is the point.
+
 use atilla_ai::seams::subprocess::CommandOutput;
 use serde::Serialize;
 use serde_json::{json, Value};

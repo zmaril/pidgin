@@ -29,6 +29,12 @@
 //! reconcile, the npm version-probe-then-maybe-install flow, the
 //! upstream→ls-remote resolution) thread output back through `advance`.
 
+// straitjacket-allow-file:duplication — every operation is a faithful parallel
+// `CommandFlowMachine` impl (the `start`/`advance` skeleton, one per pi runner);
+// the clone detector reads these mirrored machine bodies here and across the
+// `package_manager` submodules as duplicates, but the 1:1 map to pi's runners is
+// the point — factoring them would obscure it.
+
 use atilla_ai::seams::subprocess::{CommandOutput, CommandRequest};
 use serde_json::Value;
 
