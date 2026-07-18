@@ -1,0 +1,26 @@
+# Standalone workspace so cargo never tries to attach this spike to the repo-root
+# workspace. Keeps everything self-contained under throwaway/.
+[workspace]
+
+[package]
+name = "node-hello"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# napi-rs v2 line (matches @napi-rs/cli ^2). napi4 => Promise/async support,
+# tokio_rt => an embedded tokio runtime for `#[napi] async fn`.
+napi = { version = "2", default-features = false, features = ["napi4", "tokio_rt"] }
+napi-derive = "2"
+tokio = { version = "1", features = ["time", "rt", "rt-multi-thread"] }
+
+[build-dependencies]
+napi-build = "2"
+
+[profile.release]
+lto = true
+strip = "symbols"
