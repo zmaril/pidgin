@@ -102,6 +102,7 @@ dependencies = [
  "atilla-ai",
  "atilla-coding",
  "atilla-tui",
+ "indexmap",
  "napi",
  "napi-build",
  "napi-derive",

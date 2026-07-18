@@ -13,6 +13,7 @@ crate-type = ["cdylib"]
 atilla-ai = { path = "../atilla-ai" }
 atilla-coding = { path = "../atilla-coding" }
 atilla-tui = { path = "../atilla-tui" }
+indexmap = { version = "2", features = ["serde"] }
 napi = { version = "2", default-features = false, features = ["napi9"] }
 napi-derive = "2"
 serde = { workspace = true }
