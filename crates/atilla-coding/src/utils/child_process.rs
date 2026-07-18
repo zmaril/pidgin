@@ -159,11 +159,7 @@ async fn read_opt<R: AsyncReadExt + Unpin>(
 /// configure it (stdio, cwd, env, process group, …) via `configure`, and
 /// spawns it. Windows `cross-spawn` argument-quoting parity is deferred; on
 /// Windows this uses std/tokio's default argument handling.
-pub fn spawn_process<F>(
-    command: &str,
-    args: &[String],
-    configure: F,
-) -> std::io::Result<Child>
+pub fn spawn_process<F>(command: &str, args: &[String], configure: F) -> std::io::Result<Child>
 where
     F: FnOnce(&mut Command),
 {
@@ -214,43 +210,45 @@ mod tests {
         )
     }
 
-    #[tokio::test]
-    async fn captures_stdout_and_exit_code() {
+    /// Drive `child` to completion, funnelling stdout/stderr into buffers.
+    /// Returns `(exit_code, stdout_bytes, stderr_bytes)`.
+    async fn wait_and_collect(child: &mut Child) -> (Option<i32>, Vec<u8>, Vec<u8>) {
         let (out, err) = collect();
         let (o, e) = (out.clone(), err.clone());
-        let mut child = spawn_process("sh", &["-c".into(), "printf hello".into()], |c| {
-            pipe_stdout_stderr(c);
-        })
-        .unwrap();
-        let code = wait_for_child_process(&mut child, move |src, data| match src {
+        let code = wait_for_child_process(child, move |src, data| match src {
             ChunkSource::Stdout => o.lock().unwrap().extend_from_slice(data),
             ChunkSource::Stderr => e.lock().unwrap().extend_from_slice(data),
         })
         .await
         .unwrap();
+        let out = out.lock().unwrap().clone();
+        let err = err.lock().unwrap().clone();
+        (code, out, err)
+    }
+
+    #[tokio::test]
+    async fn captures_stdout_and_exit_code() {
+        let mut child = spawn_process("sh", &["-c".into(), "printf hello".into()], |c| {
+            pipe_stdout_stderr(c);
+        })
+        .unwrap();
+        let (code, out, err) = wait_and_collect(&mut child).await;
         assert_eq!(code, Some(0));
-        assert_eq!(&*out.lock().unwrap(), b"hello");
-        assert!(err.lock().unwrap().is_empty());
+        assert_eq!(out, b"hello");
+        assert!(err.is_empty());
     }
 
     #[tokio::test]
     async fn captures_stderr_and_nonzero_exit() {
-        let (out, err) = collect();
-        let (o, e) = (out.clone(), err.clone());
         let mut child = spawn_process(
             "sh",
             &["-c".into(), "printf oops 1>&2; exit 3".into()],
             pipe_stdout_stderr,
         )
         .unwrap();
-        let code = wait_for_child_process(&mut child, move |src, data| match src {
-            ChunkSource::Stdout => o.lock().unwrap().extend_from_slice(data),
-            ChunkSource::Stderr => e.lock().unwrap().extend_from_slice(data),
-        })
-        .await
-        .unwrap();
+        let (code, _out, err) = wait_and_collect(&mut child).await;
         assert_eq!(code, Some(3));
-        assert_eq!(&*err.lock().unwrap(), b"oops");
+        assert_eq!(err, b"oops");
     }
 
     #[tokio::test]
@@ -259,8 +257,6 @@ mod tests {
         // inherits the stdout pipe and writes shortly after. Without the
         // grace-timer fix (pi#5303) this tail would be truncated. The 20ms
         // descendant delay sits comfortably inside the 100ms grace window.
-        let (out, _err) = collect();
-        let o = out.clone();
         let mut child = spawn_process(
             "sh",
             &[
@@ -270,15 +266,9 @@ mod tests {
             pipe_stdout_stderr,
         )
         .unwrap();
-        let code = wait_for_child_process(&mut child, move |src, data| {
-            if src == ChunkSource::Stdout {
-                o.lock().unwrap().extend_from_slice(data);
-            }
-        })
-        .await
-        .unwrap();
+        let (code, out, _err) = wait_and_collect(&mut child).await;
         assert_eq!(code, Some(0));
-        assert_eq!(&*out.lock().unwrap(), b"headtail");
+        assert_eq!(out, b"headtail");
     }
 
     #[test]

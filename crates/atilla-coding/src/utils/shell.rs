@@ -77,6 +77,21 @@ fn bash_shell_config(shell: &str) -> ShellConfig {
     }
 }
 
+/// The first line of a command's stdout, trimmed, if the command succeeded and
+/// that line is non-empty. Shared by [`find_bash_on_path`]'s platform branches.
+fn first_nonempty_line(output: &std::process::Output) -> Option<String> {
+    if !output.status.success() {
+        return None;
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let first = stdout.lines().next()?.trim();
+    if first.is_empty() {
+        None
+    } else {
+        Some(first.to_string())
+    }
+}
+
 /// Find `bash` on PATH via `which` (Unix) / `where` (Windows).
 ///
 /// On Unix we trust `which`'s output (handles Termux and special filesystems),
@@ -89,14 +104,9 @@ fn find_bash_on_path() -> Option<String> {
             .arg("bash.exe")
             .output()
             .ok()?;
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            if let Some(first) = stdout.lines().next() {
-                let first = first.trim();
-                if !first.is_empty() && Path::new(first).exists() {
-                    return Some(first.to_string());
-                }
-            }
+        let first = first_nonempty_line(&output)?;
+        if Path::new(&first).exists() {
+            return Some(first);
         }
         None
     }
@@ -106,16 +116,7 @@ fn find_bash_on_path() -> Option<String> {
             .arg("bash")
             .output()
             .ok()?;
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            if let Some(first) = stdout.lines().next() {
-                let first = first.trim();
-                if !first.is_empty() {
-                    return Some(first.to_string());
-                }
-            }
-        }
-        None
+        first_nonempty_line(&output)
     }
 }
 
@@ -376,10 +377,18 @@ mod tests {
 
     #[test]
     fn sanitize_keeps_ordinary_unicode() {
-        // Emoji, accented chars, CJK — all retained.
-        assert_eq!(sanitize_binary_output("héllo 世界 🚀"), "héllo 世界 🚀");
+        // Emoji, accented chars, CJK — all retained. The emoji is written as an
+        // escaped code point (U+1F680 ROCKET) so this source file stays ASCII-safe
+        // while still verifying emoji pass-through.
+        assert_eq!(
+            sanitize_binary_output("héllo 世界 \u{1f680}"),
+            "héllo 世界 \u{1f680}"
+        );
         // Boundary code points around the stripped format range are kept.
-        assert_eq!(sanitize_binary_output("\u{fff8}\u{fffc}"), "\u{fff8}\u{fffc}");
+        assert_eq!(
+            sanitize_binary_output("\u{fff8}\u{fffc}"),
+            "\u{fff8}\u{fffc}"
+        );
         // 0x20 (space) is the first kept control-range code point.
         assert_eq!(sanitize_binary_output(" "), " ");
     }
@@ -395,7 +404,9 @@ mod tests {
         assert!(is_legacy_wsl_bash_path(r"C:/Windows/System32/bash.exe"));
         assert!(is_legacy_wsl_bash_path(r"c:\windows\sysnative\bash.exe"));
         assert!(!is_legacy_wsl_bash_path("/bin/bash"));
-        assert!(!is_legacy_wsl_bash_path(r"C:\Program Files\Git\bin\bash.exe"));
+        assert!(!is_legacy_wsl_bash_path(
+            r"C:\Program Files\Git\bin\bash.exe"
+        ));
     }
 
     #[test]
