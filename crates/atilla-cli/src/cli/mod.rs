@@ -11,16 +11,17 @@ pub mod args;
 pub mod config;
 pub mod output_guard;
 pub mod packages;
-pub mod session;
 
 use std::io::IsTerminal;
 use std::path::Path;
 use std::process::exit;
 
 use args::{Args, DiagnosticKind, Mode};
+use atilla_coding::core::session_manager::{
+    assert_valid_session_id, find_local_session_by_exact_id, SessionManager,
+};
 use config::{ENV_SESSION_DIR, VERSION};
 use output_guard::{err_line, out_line, take_over_stdout};
-use session::SessionManager;
 
 /// Application run mode after resolving flags + tty state. Mirrors `AppMode`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -133,7 +134,7 @@ pub fn run(argv: &[String]) -> i32 {
             err_line("Error: --name requires a non-empty value");
             return 1;
         }
-        session_manager.append_session_info(trimmed);
+        let _ = session_manager.append_session_info(trimmed);
     }
 
     // Trusted-project startup package install (chatter routed to stderr).
@@ -254,7 +255,7 @@ fn validate_session_id_flags(parsed: &Args) -> Option<i32> {
     ) {
         return Some(code);
     }
-    if let Err(message) = session::assert_valid_session_id(session_id) {
+    if let Err(message) = assert_valid_session_id(session_id) {
         err_line(&format!("Error: {message}"));
         return Some(1);
     }
@@ -280,7 +281,7 @@ fn resolve_session_path(arg: &str, cwd: &str, session_dir: Option<&str>) -> Reso
         return ResolvedSession::Path(resolved);
     }
     // Otherwise try to match as an exact local session id.
-    if let Some(path) = session::find_local_session_by_exact_id(arg, cwd, session_dir) {
+    if let Some(path) = find_local_session_by_exact_id(arg, cwd, session_dir) {
         return ResolvedSession::Local(path);
     }
     ResolvedSession::NotFound(arg.to_string())
@@ -299,7 +300,7 @@ fn create_session_manager(
 
     if let Some(fork_arg) = &parsed.fork {
         if let Some(sid) = &parsed.session_id {
-            if session::find_local_session_by_exact_id(sid, cwd, session_dir).is_some() {
+            if find_local_session_by_exact_id(sid, cwd, session_dir).is_some() {
                 err_line(&format!("Session already exists with id '{sid}'"));
                 return Err(1);
             }
@@ -341,7 +342,7 @@ fn create_session_manager(
     }
 
     if let Some(sid) = &parsed.session_id {
-        if let Some(path) = session::find_local_session_by_exact_id(sid, cwd, session_dir) {
+        if let Some(path) = find_local_session_by_exact_id(sid, cwd, session_dir) {
             return open_session_or_exit(&path);
         }
         err_line(&format!(

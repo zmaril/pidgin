@@ -46,6 +46,7 @@ dependencies = [
 name = "atilla-cli"
 version = "0.1.0"
 dependencies = [
+ "atilla-coding",
  "atilla-core",
  "serde_json",
 ]
