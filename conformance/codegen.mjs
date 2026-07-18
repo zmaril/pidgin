@@ -118,10 +118,49 @@ function writeNativeShim(row) {
   return genPath;
 }
 
+/**
+ * Overlay a hand-written repointed CLI test file onto the vendored pi tree.
+ * The repoint swaps pi's `spawn(process.execPath, [cliPath, ...])` for
+ * `spawn(ATILLA_BIN, [...])` so the file exercises the compiled atilla binary
+ * instead of pi's own cli.ts. Same overlay contract as native shims: pi's
+ * original test file is preserved beside it as `<name>.__pi_original__.ts`, and
+ * scripts/conformance.sh restores the tree after the run. Unlike native shims
+ * these targets live under `test/`, not `src/`, so they never touch the module
+ * drift check. A repoint whose hand-written copy is missing is a hard error —
+ * there is no generic fallback for a CLI test.
+ */
+function writeCliRepoint(row) {
+  const handWritten = join(shimsRoot, row.src);
+  if (!existsSync(handWritten)) {
+    throw new Error(`cli_repoint ${row.src}: no hand-written copy at ${handWritten}`);
+  }
+  const body = readFileSync(handWritten, "utf8");
+
+  // Keep an inspectable copy under conformance/generated/ (gitignored).
+  const genPath = join(genRoot, row.src);
+  mkdirSync(dirname(genPath), { recursive: true });
+  writeFileSync(genPath, body);
+
+  // Overlay into the vendored pi tree, preserving pi's original beside it.
+  const targetPath = join(piRoot, row.src);
+  if (existsSync(targetPath)) {
+    const originalPath = join(
+      dirname(targetPath),
+      basename(targetPath).replace(/\.ts$/, ORIGINAL_SUFFIX),
+    );
+    if (!existsSync(originalPath)) {
+      copyFileSync(targetPath, originalPath);
+    }
+    writeFileSync(targetPath, body);
+  }
+  return genPath;
+}
+
 function main() {
   const manifestPath = join(here, "manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   const rows = manifest.modules ?? [];
+  const cliRepoint = manifest.cli_repoint ?? [];
 
   const inManifest = new Set(rows.map((r) => r.src));
   const onDisk = modulesOnDisk();
@@ -142,7 +181,17 @@ function main() {
     }
   }
 
-  const summary = { total: rows.length, native, original, missing: missing.length };
+  // Overlay the repointed CLI test files (black-box conformance against the
+  // compiled atilla binary). Tracked separately from the module counts above.
+  for (const row of cliRepoint) writeCliRepoint(row);
+
+  const summary = {
+    total: rows.length,
+    native,
+    original,
+    missing: missing.length,
+    cli_repoint: cliRepoint.length,
+  };
   console.log(JSON.stringify(summary, null, 2));
 
   if (missing.length) {

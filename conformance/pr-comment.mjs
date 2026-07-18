@@ -41,6 +41,55 @@ function pkgStats(doc, pkg) {
   };
 }
 
+/**
+ * Append the black-box CLI conformance section. This is a distinct signal from
+ * the module smoke table above: it reports the four repointed coding-agent CLI
+ * test files run against the compiled atilla binary, and is never folded into
+ * the per-package Native count. Renders nothing when the run produced no
+ * cli_conformance block (older results or a run that skipped it).
+ */
+function cliSection(lines, current, baseline) {
+  const cli = current?.cli_conformance;
+  if (!cli) return;
+  lines.push("");
+  lines.push("### CLI conformance (black-box, against the atilla binary)");
+  lines.push("");
+  // Show the repo-relative binary path (target/release/atilla) when possible.
+  const binTail = cli.bin && cli.bin.includes("/target/")
+    ? "target/" + cli.bin.split("/target/").pop()
+    : cli.bin;
+  const bin = binTail ? `\`${binTail}\`` : "the atilla binary";
+  if (cli.status !== "ok") {
+    lines.push(`- CLI conformance: env-blocked — ${cli.note || "binary unavailable"}.`);
+    lines.push("");
+    lines.push(
+      "Tracked separately from the module smoke above; it is not part of any " +
+        "per-package Native count.",
+    );
+    return;
+  }
+  const baseCli = baseline?.cli_conformance;
+  const passDelta = baseCli ? signed(cli.passing - baseCli.passing) : "n/a";
+  const failDelta = baseCli ? signed(cli.failing - baseCli.failing) : "n/a";
+  lines.push(
+    `- **CLI conformance: ${cli.passing}/${cli.total} pass** against ${bin} ` +
+      `(pass delta ${passDelta}, fail delta ${failDelta}).`,
+  );
+  lines.push("");
+  lines.push("| File | Passing | Failing | Skipped |");
+  lines.push("| --- | --- | --- | --- |");
+  for (const f of cli.files ?? []) {
+    lines.push(`| ${f.file} | ${f.passing} | ${f.failing} | ${f.skipped} |`);
+  }
+  lines.push("");
+  lines.push(
+    "The four repointed coding-agent CLI test files spawn the compiled atilla " +
+      "binary via `$ATILLA_BIN` instead of pi's own `cli.ts`. This is a separate " +
+      "signal from the module smoke table and is never folded into the per-package " +
+      "Native count.",
+  );
+}
+
 function main() {
   const current = readMaybe(currentPath);
   const baseline = readMaybe(baselinePath);
@@ -121,6 +170,8 @@ function main() {
       `manifest). This is the ${packages.join("+")} smoke subset; the full five-package ` +
       "baseline lives in committed `conformance.json`.",
   );
+
+  cliSection(lines, current, baseline);
 
   process.stdout.write(lines.join("\n") + "\n");
 }
