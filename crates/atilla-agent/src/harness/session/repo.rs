@@ -210,16 +210,13 @@ impl JsonlSessionRepo {
             .join(format!("{stamp}_{session_id}.jsonl"))
     }
 
-    fn storage_error(message: impl Into<String>) -> SessionError {
-        SessionError::new(SessionErrorCode::Storage, message.into())
-    }
-
     pub fn create(&self, options: JsonlCreate) -> Result<Session, SessionError> {
         let id = options.id.unwrap_or_else(create_session_id);
         let created_at = super::storage::now_iso();
         let session_dir = self.session_dir(&options.cwd);
-        fs::create_dir_all(&session_dir)
-            .map_err(|e| Self::storage_error(format!("Failed to create session directory: {e}")))?;
+        fs::create_dir_all(&session_dir).map_err(|e| {
+            SessionError::storage(format!("Failed to create session directory: {e}"))
+        })?;
         let file_path = self.session_file_path(&options.cwd, &id, &created_at);
         let storage = JsonlSessionStorage::create(
             &path_str(&file_path),
@@ -256,10 +253,10 @@ impl JsonlSessionRepo {
                 continue;
             }
             let read_dir = fs::read_dir(&dir)
-                .map_err(|e| Self::storage_error(format!("Failed to list sessions: {e}")))?;
+                .map_err(|e| SessionError::storage(format!("Failed to list sessions: {e}")))?;
             for entry in read_dir {
                 let entry = entry
-                    .map_err(|e| Self::storage_error(format!("Failed to list sessions: {e}")))?;
+                    .map_err(|e| SessionError::storage(format!("Failed to list sessions: {e}")))?;
                 let path = entry.path();
                 if path.is_dir() || path.extension().and_then(|e| e.to_str()) != Some("jsonl") {
                     continue;
@@ -280,7 +277,7 @@ impl JsonlSessionRepo {
         match fs::remove_file(path) {
             Ok(()) => Ok(()),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
-            Err(e) => Err(Self::storage_error(format!(
+            Err(e) => Err(SessionError::storage(format!(
                 "Failed to delete session {path}: {e}"
             ))),
         }
@@ -301,8 +298,9 @@ impl JsonlSessionRepo {
         let id = create.id.unwrap_or_else(create_session_id);
         let created_at = super::storage::now_iso();
         let session_dir = self.session_dir(&create.cwd);
-        fs::create_dir_all(&session_dir)
-            .map_err(|e| Self::storage_error(format!("Failed to create session directory: {e}")))?;
+        fs::create_dir_all(&session_dir).map_err(|e| {
+            SessionError::storage(format!("Failed to create session directory: {e}"))
+        })?;
         let file_path = self.session_file_path(&create.cwd, &id, &created_at);
         let storage = JsonlSessionStorage::create(
             &path_str(&file_path),
@@ -326,11 +324,11 @@ impl JsonlSessionRepo {
             return Ok(Vec::new());
         }
         let read_dir = fs::read_dir(&self.sessions_root)
-            .map_err(|e| Self::storage_error(format!("Failed to list sessions root: {e}")))?;
+            .map_err(|e| SessionError::storage(format!("Failed to list sessions root: {e}")))?;
         let mut dirs = Vec::new();
         for entry in read_dir {
             let entry = entry
-                .map_err(|e| Self::storage_error(format!("Failed to list sessions root: {e}")))?;
+                .map_err(|e| SessionError::storage(format!("Failed to list sessions root: {e}")))?;
             if entry.path().is_dir() {
                 dirs.push(entry.path());
             }

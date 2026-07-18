@@ -61,42 +61,28 @@ pub fn parse_iso_millis(timestamp: &str) -> i64 {
         s.parse().ok()
     }
 
-    let bytes = timestamp.as_bytes();
-    if bytes.len() < 19 || bytes[4] != b'-' || bytes[7] != b'-' || bytes[10] != b'T' {
-        return 0;
-    }
-    let year = match digits(&timestamp[0..4]) {
-        Some(v) => v,
-        None => return 0,
-    };
-    let month = match digits(&timestamp[5..7]) {
-        Some(v) => v,
-        None => return 0,
-    };
-    let day = match digits(&timestamp[8..10]) {
-        Some(v) => v,
-        None => return 0,
-    };
-    let hour = match digits(&timestamp[11..13]) {
-        Some(v) => v,
-        None => return 0,
-    };
-    let minute = match digits(&timestamp[14..16]) {
-        Some(v) => v,
-        None => return 0,
-    };
-    let second = match digits(&timestamp[17..19]) {
-        Some(v) => v,
-        None => return 0,
-    };
-    let millis = if bytes.len() >= 23 && bytes[19] == b'.' {
-        digits(&timestamp[20..23]).unwrap_or(0)
-    } else {
-        0
-    };
+    fn parse(timestamp: &str) -> Option<i64> {
+        let bytes = timestamp.as_bytes();
+        if bytes.len() < 19 || bytes[4] != b'-' || bytes[7] != b'-' || bytes[10] != b'T' {
+            return None;
+        }
+        let year = digits(&timestamp[0..4])?;
+        let month = digits(&timestamp[5..7])?;
+        let day = digits(&timestamp[8..10])?;
+        let hour = digits(&timestamp[11..13])?;
+        let minute = digits(&timestamp[14..16])?;
+        let second = digits(&timestamp[17..19])?;
+        let millis = if bytes.len() >= 23 && bytes[19] == b'.' {
+            digits(&timestamp[20..23]).unwrap_or(0)
+        } else {
+            0
+        };
 
-    let days = days_from_civil(year, month, day);
-    (((days * 24 + hour) * 60 + minute) * 60 + second) * 1000 + millis
+        let days = days_from_civil(year, month, day);
+        Some((((days * 24 + hour) * 60 + minute) * 60 + second) * 1000 + millis)
+    }
+
+    parse(timestamp).unwrap_or(0)
 }
 
 /// Days since the Unix epoch for a civil date (Howard Hinnant's algorithm).

@@ -13,7 +13,7 @@ use super::storage::{now_iso, SessionStorage};
 use crate::harness::types::{
     ActiveToolsChangeEntry, AgentMessage, BranchSummaryEntry, CompactionEntry, CustomEntry,
     CustomMessageEntry, LabelEntry, MessageEntry, ModelChangeEntry, ModelRef, SessionContext,
-    SessionError, SessionErrorCode, SessionInfoEntry, SessionTreeEntry, ThinkingLevelChangeEntry,
+    SessionError, SessionInfoEntry, SessionTreeEntry, ThinkingLevelChangeEntry,
 };
 
 /// A transform applied to the context entry list after default compaction
@@ -86,21 +86,17 @@ fn derive_session_context_state(
 /// Select context entries honoring the latest compaction. Mirrors
 /// `defaultContextEntryTransform`.
 pub fn default_context_entry_transform(path_entries: &[SessionTreeEntry]) -> Vec<SessionTreeEntry> {
-    let mut compaction: Option<&CompactionEntry> = None;
-    for entry in path_entries {
+    let mut found: Option<(usize, &CompactionEntry)> = None;
+    for (index, entry) in path_entries.iter().enumerate() {
         if let SessionTreeEntry::Compaction(e) = entry {
-            compaction = Some(e);
+            found = Some((index, e));
         }
     }
-    let Some(compaction) = compaction else {
+    let Some((compaction_idx, compaction)) = found else {
         return path_entries.to_vec();
     };
 
     let mut entries = vec![SessionTreeEntry::Compaction(compaction.clone())];
-    let compaction_idx = path_entries
-        .iter()
-        .position(|entry| matches!(entry, SessionTreeEntry::Compaction(e) if e.id == compaction.id))
-        .expect("compaction entry present");
     let mut found_first_kept = false;
     for entry in &path_entries[..compaction_idx] {
         if entry.id() == compaction.first_kept_entry_id {
@@ -394,10 +390,7 @@ impl Session {
         label: Option<&str>,
     ) -> Result<String, SessionError> {
         if self.storage.get_entry(target_id).is_none() {
-            return Err(SessionError::new(
-                SessionErrorCode::NotFound,
-                format!("Entry {target_id} not found"),
-            ));
+            return Err(SessionError::entry_not_found(target_id));
         }
         self.append_typed_entry(SessionTreeEntry::Label(LabelEntry {
             id: self.storage.create_entry_id(),
@@ -427,10 +420,7 @@ impl Session {
     ) -> Result<Option<String>, SessionError> {
         if let Some(id) = entry_id {
             if self.storage.get_entry(id).is_none() {
-                return Err(SessionError::new(
-                    SessionErrorCode::NotFound,
-                    format!("Entry {id} not found"),
-                ));
+                return Err(SessionError::entry_not_found(id));
             }
         }
         self.storage.set_leaf_id(entry_id)?;

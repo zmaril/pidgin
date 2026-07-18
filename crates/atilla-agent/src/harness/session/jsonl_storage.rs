@@ -18,12 +18,10 @@ use serde::Serialize;
 use serde_json::{Map, Value};
 
 use super::storage::{
-    build_labels_by_id, generate_entry_id, now_iso, path_to_root, update_label_cache,
-    SessionStorage,
+    build_labels_by_id, generate_entry_id, make_leaf_entry, now_iso, path_to_root,
+    update_label_cache, SessionStorage,
 };
-use crate::harness::types::{
-    LeafEntry, SessionError, SessionErrorCode, SessionMetadata, SessionTreeEntry,
-};
+use crate::harness::types::{SessionError, SessionErrorCode, SessionMetadata, SessionTreeEntry};
 
 /// Options for [`JsonlSessionStorage::create`].
 pub struct JsonlCreateOptions {
@@ -46,10 +44,6 @@ struct HeaderWire<'a> {
     parent_session: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     metadata: Option<&'a Map<String, Value>>,
-}
-
-fn storage_error(message: impl Into<String>) -> SessionError {
-    SessionError::new(SessionErrorCode::Storage, message.into())
 }
 
 fn invalid_session(file_path: &str, message: &str) -> SessionError {
@@ -253,8 +247,9 @@ impl JsonlSessionStorage {
                 format!("Failed to read session {file_path}: file not found"),
             ));
         }
-        let content = std::fs::read_to_string(file_path)
-            .map_err(|e| storage_error(format!("Failed to read session {file_path}: {e}")))?;
+        let content = std::fs::read_to_string(file_path).map_err(|e| {
+            SessionError::storage(format!("Failed to read session {file_path}: {e}"))
+        })?;
         let lines: Vec<&str> = content
             .split('\n')
             .filter(|line| !line.trim().is_empty())
@@ -280,30 +275,17 @@ impl JsonlSessionStorage {
 
     /// Create a new session file, writing the header line.
     pub fn create(file_path: &str, options: JsonlCreateOptions) -> Result<Self, SessionError> {
-        let timestamp = now_iso();
-        let header = HeaderWire {
-            typ: "session",
-            version: 3,
-            id: &options.session_id,
-            timestamp: &timestamp,
-            cwd: &options.cwd,
-            parent_session: options.parent_session_path.as_deref(),
-            metadata: options.metadata.as_ref(),
-        };
-        let line = format!(
-            "{}\n",
-            serde_json::to_string(&header).expect("session header serializes")
-        );
-        std::fs::write(file_path, line)
-            .map_err(|e| storage_error(format!("Failed to create session {file_path}: {e}")))?;
         let metadata = SessionMetadata {
             id: options.session_id,
-            created_at: timestamp,
+            created_at: now_iso(),
             cwd: Some(options.cwd),
             path: Some(file_path.to_string()),
             parent_session_path: options.parent_session_path,
             metadata: options.metadata,
         };
+        std::fs::write(file_path, serialize_header_line(&metadata)).map_err(|e| {
+            SessionError::storage(format!("Failed to create session {file_path}: {e}"))
+        })?;
         Ok(Self::from_parts(
             file_path.to_string(),
             metadata,
@@ -340,9 +322,9 @@ impl JsonlSessionStorage {
             .create(true)
             .append(true)
             .open(&self.file_path)
-            .map_err(|e| storage_error(format!("Failed to append session {what}: {e}")))?;
+            .map_err(|e| SessionError::storage(format!("Failed to append session {what}: {e}")))?;
         file.write_all(serialize_entry_line(entry).as_bytes())
-            .map_err(|e| storage_error(format!("Failed to append session {what}: {e}")))?;
+            .map_err(|e| SessionError::storage(format!("Failed to append session {what}: {e}")))?;
         Ok(())
     }
 }
@@ -370,18 +352,10 @@ impl SessionStorage for JsonlSessionStorage {
             let inner = self.inner.borrow();
             if let Some(id) = leaf_id {
                 if !inner.by_id.contains_key(id) {
-                    return Err(SessionError::new(
-                        SessionErrorCode::NotFound,
-                        format!("Entry {id} not found"),
-                    ));
+                    return Err(SessionError::entry_not_found(id));
                 }
             }
-            SessionTreeEntry::Leaf(LeafEntry {
-                id: generate_entry_id(&inner.by_id),
-                parent_id: inner.current_leaf_id.clone(),
-                timestamp: now_iso(),
-                target_id: leaf_id.map(str::to_string),
-            })
+            make_leaf_entry(&inner.by_id, inner.current_leaf_id.clone(), leaf_id)
         };
         self.append_line(&entry, entry.id())?;
         let mut inner = self.inner.borrow_mut();
@@ -445,12 +419,15 @@ pub fn load_jsonl_session_metadata(file_path: &str) -> Result<SessionMetadata, S
             format!("Failed to read session header {file_path}: file not found"),
         ));
     }
-    let file = std::fs::File::open(file_path)
-        .map_err(|e| storage_error(format!("Failed to read session header {file_path}: {e}")))?;
+    let file = std::fs::File::open(file_path).map_err(|e| {
+        SessionError::storage(format!("Failed to read session header {file_path}: {e}"))
+    })?;
     let mut first_line = String::new();
     BufReader::new(file)
         .read_line(&mut first_line)
-        .map_err(|e| storage_error(format!("Failed to read session header {file_path}: {e}")))?;
+        .map_err(|e| {
+            SessionError::storage(format!("Failed to read session header {file_path}: {e}"))
+        })?;
     if first_line.trim().is_empty() {
         return Err(invalid_session(file_path, "missing session header"));
     }

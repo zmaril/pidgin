@@ -57,6 +57,16 @@ impl SessionError {
             message: message.into(),
         }
     }
+
+    /// A `storage`-coded error (I/O and filesystem failures).
+    pub fn storage(message: impl Into<String>) -> Self {
+        Self::new(SessionErrorCode::Storage, message)
+    }
+
+    /// A `not_found`-coded error for a missing tree entry.
+    pub fn entry_not_found(id: &str) -> Self {
+        Self::new(SessionErrorCode::NotFound, format!("Entry {id} not found"))
+    }
 }
 
 impl fmt::Display for SessionError {

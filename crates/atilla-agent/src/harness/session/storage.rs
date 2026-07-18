@@ -9,7 +9,6 @@
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use super::uuid::uuidv7;
 use crate::harness::types::{
@@ -32,42 +31,6 @@ pub trait SessionStorage {
         leaf_id: Option<&str>,
     ) -> Result<Vec<SessionTreeEntry>, SessionError>;
     fn get_entries(&self) -> Vec<SessionTreeEntry>;
-}
-
-impl<T: SessionStorage + ?Sized> SessionStorage for Rc<T> {
-    fn get_metadata(&self) -> SessionMetadata {
-        (**self).get_metadata()
-    }
-    fn get_leaf_id(&self) -> Result<Option<String>, SessionError> {
-        (**self).get_leaf_id()
-    }
-    fn set_leaf_id(&self, leaf_id: Option<&str>) -> Result<(), SessionError> {
-        (**self).set_leaf_id(leaf_id)
-    }
-    fn create_entry_id(&self) -> String {
-        (**self).create_entry_id()
-    }
-    fn append_entry(&self, entry: SessionTreeEntry) -> Result<(), SessionError> {
-        (**self).append_entry(entry)
-    }
-    fn get_entry(&self, id: &str) -> Option<SessionTreeEntry> {
-        (**self).get_entry(id)
-    }
-    fn find_entries(&self, entry_type: &str) -> Vec<SessionTreeEntry> {
-        (**self).find_entries(entry_type)
-    }
-    fn get_label(&self, id: &str) -> Option<String> {
-        (**self).get_label(id)
-    }
-    fn get_path_to_root(
-        &self,
-        leaf_id: Option<&str>,
-    ) -> Result<Vec<SessionTreeEntry>, SessionError> {
-        (**self).get_path_to_root(leaf_id)
-    }
-    fn get_entries(&self) -> Vec<SessionTreeEntry> {
-        (**self).get_entries()
-    }
 }
 
 /// Update the label cache for one entry. A label with non-empty trimmed text
@@ -108,6 +71,21 @@ pub(crate) fn generate_entry_id(by_id: &HashMap<String, SessionTreeEntry>) -> St
     uuidv7()
 }
 
+/// Build the `leaf` entry appended by `set_leaf_id`: a fresh id, the current
+/// leaf as parent, and `target_id` as the new active leaf (or `None` to clear).
+pub(crate) fn make_leaf_entry(
+    by_id: &HashMap<String, SessionTreeEntry>,
+    parent_id: Option<String>,
+    target_id: Option<&str>,
+) -> SessionTreeEntry {
+    SessionTreeEntry::Leaf(LeafEntry {
+        id: generate_entry_id(by_id),
+        parent_id,
+        timestamp: now_iso(),
+        target_id: target_id.map(str::to_string),
+    })
+}
+
 /// Walk `parentId` links from a leaf to the root, root-first. Mirrors the
 /// `getPathToRoot` shared by both storages.
 pub(crate) fn path_to_root(
@@ -118,12 +96,10 @@ pub(crate) fn path_to_root(
         return Ok(Vec::new());
     };
     let mut path: Vec<SessionTreeEntry> = Vec::new();
-    let mut current = by_id.get(leaf_id).cloned().ok_or_else(|| {
-        SessionError::new(
-            SessionErrorCode::NotFound,
-            format!("Entry {leaf_id} not found"),
-        )
-    })?;
+    let mut current = by_id
+        .get(leaf_id)
+        .cloned()
+        .ok_or_else(|| SessionError::entry_not_found(leaf_id))?;
     loop {
         let parent_id = current.parent_id().map(str::to_string);
         path.insert(0, current);
@@ -222,18 +198,10 @@ impl SessionStorage for InMemorySessionStorage {
         let mut inner = self.inner.borrow_mut();
         if let Some(id) = leaf_id {
             if !inner.by_id.contains_key(id) {
-                return Err(SessionError::new(
-                    SessionErrorCode::NotFound,
-                    format!("Entry {id} not found"),
-                ));
+                return Err(SessionError::entry_not_found(id));
             }
         }
-        let entry = SessionTreeEntry::Leaf(LeafEntry {
-            id: generate_entry_id(&inner.by_id),
-            parent_id: inner.leaf_id.clone(),
-            timestamp: now_iso(),
-            target_id: leaf_id.map(str::to_string),
-        });
+        let entry = make_leaf_entry(&inner.by_id, inner.leaf_id.clone(), leaf_id);
         inner.by_id.insert(entry.id().to_string(), entry.clone());
         inner.entries.push(entry);
         inner.leaf_id = leaf_id.map(str::to_string);
