@@ -60,7 +60,7 @@ Not ink/blessed — a bespoke renderer. `@xterm/headless` is a test-only harness
 |---|---|---|---|---|
 | `src/core/tools/*` | 4,072 | Filesystem/exec tools: bash, edit, edit-diff, read, write, ls, grep, find, path-utils, file-mutation-queue, output-accumulator, truncate, render-utils | High (fs/exec) | Early within coding-agent — mechanical but voluminous |
 | `src/core/` (root) | ~17,000 | Core agent wiring, config, session, message handling | High | Mid |
-| `src/core/extensions/*` | 3,846 | **jiti runtime-TS extension engine** (`loader.ts` uses `jiti/static`) | **Very High** | **LAST — needs architecture decision** |
+| `src/core/extensions/*` | 3,846 | **jiti runtime-TS extension engine** (`loader.ts` uses `jiti/static`) | **Extreme** | **LAST — needs architecture decision** |
 | `src/core/compaction/*` | 1,420 | Context compaction | Med | Mid |
 | `src/core/export-html` | 746 | HTML transcript export | Low | Anytime |
 | `src/modes/interactive/*` | 16,663 | The interactive TUI app (depends on `tui`) | High | **After tui** |
@@ -93,30 +93,30 @@ Secondary: the `ai` package is largely provider-SDK glue (`@anthropic-ai/sdk`, `
 
 ## Porting ledger
 
-Status legend: `⬜ not started` · `🔵 in progress` · `🟢 ported` · `✅ passing upstream tests`. Future sessions update the Status column and link the atilla PR/crate as work lands.
+Status legend: `[ ] not started` · `[~] in progress` · `[x] ported` · `[T] passing upstream tests`. Future sessions update the Status column and link the atilla PR/crate as work lands.
 
 | # | Module | Package | Src LOC | Upstream tests | Coupling | Status | atilla crate / PR |
 |---|---|---|---|---|---|---|---|
-| 1 | ai/utils | ai | 1,428 | packages/ai/test/** | Low | ⬜ not started | — |
-| 2 | ai/api (anthropic-messages) — **first slice** | ai | ~part of 9,800 | packages/ai/test/** | Med | ⬜ not started | — |
-| 3 | ai/api (openai, google, bedrock, mistral, pi) | ai | ~rest of 9,800 | packages/ai/test/** | Med | ⬜ not started | — |
-| 4 | ai/providers | ai | 6,314 | packages/ai/test/** | Low | ⬜ not started | — |
-| 5 | ai/auth | ai | 2,714 | packages/ai/test/** | Med | ⬜ not started | — |
-| 6 | ai/model-catalog codegen | ai | — | — | Low | ⬜ not started | — |
-| 7 | agent (`.` entrypoint) | agent | ~part of 8,498 | packages/agent/test/** | Low | ⬜ not started | — |
-| 8 | agent (`./node` entrypoint) | agent | ~rest of 8,498 | packages/agent/test/** | Med | ⬜ not started | — |
-| 9 | coding-agent/utils | coding-agent | 3,236 | packages/coding-agent/test/** | Low–Med | ⬜ not started | — |
-| 10 | coding-agent/core/tools | coding-agent | 4,072 | packages/coding-agent/test/** | High | ⬜ not started | — |
-| 11 | coding-agent/core (root) | coding-agent | ~17,000 | packages/coding-agent/test/** | High | ⬜ not started | — |
-| 12 | coding-agent/core/compaction | coding-agent | 1,420 | packages/coding-agent/test/** | Med | ⬜ not started | — |
-| 13 | coding-agent/core/export-html | coding-agent | 746 | packages/coding-agent/test/** | Low | ⬜ not started | — |
-| 14 | coding-agent/modes/rpc | coding-agent | 1,726 | packages/coding-agent/test/** | Med | ⬜ not started | — |
-| 15 | coding-agent/cli | coding-agent | 1,043 | packages/coding-agent/test/** | Med | ⬜ not started | — |
-| 16 | tui (renderer + widgets) | tui | 12,843 | packages/tui/test/** (node:test) | High | ⬜ not started | — |
-| 17 | tui native (darwin/win32 modifiers) | tui | (C addons) | — | Native C | ⬜ not started | — |
-| 18 | coding-agent/modes/interactive | coding-agent | 16,663 | packages/coding-agent/test/** | High | ⬜ not started | — |
-| 19 | coding-agent/core/extensions (jiti) | coding-agent | 3,846 | packages/coding-agent/test/** | Very High | ⬜ not started | — |
-| 20 | orchestrator | orchestrator | 1,982 | none | Med | ⬜ not started | — |
+| 1 | ai/utils | ai | 1,428 | packages/ai/test/** | Low | [ ] not started | — |
+| 2 | ai/api (anthropic-messages) — **first slice** | ai | ~part of 9,800 | packages/ai/test/** | Med | [ ] not started | — |
+| 3 | ai/api (openai, google, bedrock, mistral, pi) | ai | ~rest of 9,800 | packages/ai/test/** | Med | [ ] not started | — |
+| 4 | ai/providers | ai | 6,314 | packages/ai/test/** | Low | [ ] not started | — |
+| 5 | ai/auth | ai | 2,714 | packages/ai/test/** | Med | [ ] not started | — |
+| 6 | ai/model-catalog codegen | ai | — | — | Low | [ ] not started | — |
+| 7 | agent (`.` entrypoint) | agent | ~part of 8,498 | packages/agent/test/** | Low | [ ] not started | — |
+| 8 | agent (`./node` entrypoint) | agent | ~rest of 8,498 | packages/agent/test/** | Med | [ ] not started | — |
+| 9 | coding-agent/utils | coding-agent | 3,236 | packages/coding-agent/test/** | Low–Med | [ ] not started | — |
+| 10 | coding-agent/core/tools | coding-agent | 4,072 | packages/coding-agent/test/** | High | [ ] not started | — |
+| 11 | coding-agent/core (root) | coding-agent | ~17,000 | packages/coding-agent/test/** | High | [ ] not started | — |
+| 12 | coding-agent/core/compaction | coding-agent | 1,420 | packages/coding-agent/test/** | Med | [ ] not started | — |
+| 13 | coding-agent/core/export-html | coding-agent | 746 | packages/coding-agent/test/** | Low | [ ] not started | — |
+| 14 | coding-agent/modes/rpc | coding-agent | 1,726 | packages/coding-agent/test/** | Med | [ ] not started | — |
+| 15 | coding-agent/cli | coding-agent | 1,043 | packages/coding-agent/test/** | Med | [ ] not started | — |
+| 16 | tui (renderer + widgets) | tui | 12,843 | packages/tui/test/** (node:test) | High | [ ] not started | — |
+| 17 | tui native (darwin/win32 modifiers) | tui | (C addons) | — | Native C | [ ] not started | — |
+| 18 | coding-agent/modes/interactive | coding-agent | 16,663 | packages/coding-agent/test/** | High | [ ] not started | — |
+| 19 | coding-agent/core/extensions (jiti) | coding-agent | 3,846 | packages/coding-agent/test/** | Extreme | [ ] not started | — |
+| 20 | orchestrator | orchestrator | 1,982 | none | Med | [ ] not started | — |
 
 ## Re-sync checklist (for future upstream bumps)
 - [ ] `git -C <pi-clone> fetch && git rev-parse origin/main` → compare to pinned hash above.
