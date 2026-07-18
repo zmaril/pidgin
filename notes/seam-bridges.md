@@ -99,6 +99,46 @@ const creds = JSON.parse(core.consumeTokenResponse(res.status, headersToJson(res
 
 `anthropic-oauth.test.ts` passes unchanged: its `fetchMock` asserts the URL, method, and body that `buildTokenRequest` produced, and returns the token body that `consumeTokenResponse` reads.
 
+### Multi-step flows: the OAuth state machine
+
+Device-code polling, refresh-then-retry, and chained logins (a Copilot login is device-poll, then token exchange, then list models, then enable each) need more than one build/consume pair, and a later request depends on an earlier response. Model the whole flow as one resumable machine whose phase lives in the Rust core object, the way `FauxCore` holds its call count. The core reuses the seam `HttpRequest`/`HttpResponse` types verbatim — they serialize to the shim's `fetch` shape (camelCase, text body, headers as a JSON object) as of PR #63.
+
+```rust
+/// One action yielded by an OAuth flow, serialized across the one-way boundary.
+#[derive(Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum Step {
+    Request { request: HttpRequest },
+    Wait    { delay_ms: u64, request: HttpRequest },
+    Prompt  { prompt: AuthPrompt },
+    Notify  { event: AuthEvent },
+    Done    { credential: OAuthCredential },
+    Error   { message: String },
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum StepInput {
+    Response(HttpResponse),
+    Input { value: String },
+    Ack,
+}
+
+pub trait OAuthFlowMachine {
+    fn start(&mut self, now_ms: i64) -> Step;
+    fn advance(&mut self, input: StepInput, now_ms: i64) -> Step;
+}
+```
+
+The shim drives the loop until `Done` or `Error`:
+
+- `Request` — `fetch`, then `advance(Response)`.
+- `Wait` — `setTimeout(delayMs)` (vitest-faked), then `fetch(request)`, then `advance(Response)`. The delay is a pure function of the retry-after header and `now` (RFC 8628 backoff for device-code), so it lives in the step and the shim never computes timing.
+- `Prompt` — call the caller's `prompt()`, then `advance(Input)`. `Notify` — call `notify()`, then `advance(Ack)`. These carry pi's `AuthInteraction` callbacks, which the test supplies on the JS side.
+- `Done` — return the credential. `Error` — throw.
+
+`now_ms` is passed to both `start` and `advance` (expiry math and the device-code deadline). Abort stays shim-side: the shim stops driving. The loopback-server and browser login paths are not `fetch` and are not stubbed by pi's `*-oauth.test.ts`, so they stay a native path outside this bridge.
+
 ---
 
 ## Bridge 3 — Command runner
@@ -128,6 +168,30 @@ core.planInstall(specJson) -> { program, args, cwd }
 const plan = JSON.parse(core.planInstall(spec));
 await runCommand(plan.program, plan.args, plan.cwd);   // vi.spyOn(pkgMgr, "runCommand") lands here
 ```
+
+### Re-entrant command flows
+
+`npm install` is a single `plan`/`consumeOutput`. Several package-manager flows are not: a git upstream probe reads `rev-parse --abbrev-ref @{upstream}`, parses the branch, then runs `ls-remote origin refs/heads/<branch>` — the second argv comes from the first command's stdout. A version check runs `npm view … version` and installs only when the versions differ (the test asserts `runCommand` is not called when they match). These use the same resumable machine as Bridge 2:
+
+```rust
+#[derive(Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum CommandStep {
+    Run  { request: CommandRequest },
+    Done { result: CommandResult },   // CommandResult is the flow's own result type
+}
+
+pub trait CommandFlowMachine {
+    fn start(&mut self) -> CommandStep;
+    fn advance(&mut self, output: CommandOutput) -> CommandStep;
+}
+```
+
+The shim runs each `Run.request`, feeds the `CommandOutput` back through `advance`, and loops until `Done`. A flow that decides no command is needed returns `Done` from `start` with no `Run` — which is how the version-check test sees `runCommand` never called. `CommandRequest` carries `env` and `timeout_ms` (`GIT_TERMINAL_PROMPT`, npm-view timeouts) as of PR #63.
+
+### Injected-collaborator variant
+
+Some tool tests do not spy the spawn; they inject a fake operations object (`createBashTool({ operations })`) and assert against it. That is a collaborator mock. Under the one-way boundary the mapping is the same build/consume split — Rust decides the operation, the shim's operations object performs it — not a Rust tool holding a JS-backed trait object, which would need a callback into JS mid-call. A Rust tool that keeps its operations as a pluggable trait backs either shape: the scripted double for pure-Rust tests, the shim-driven split for conformance.
 
 ---
 
