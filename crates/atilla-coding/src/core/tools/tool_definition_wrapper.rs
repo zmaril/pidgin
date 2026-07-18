@@ -30,9 +30,7 @@ use std::sync::Arc;
 
 use serde_json::Value;
 
-use atilla_agent::types::{
-    AgentTool, AgentToolExecute, PrepareArguments as AgentPrepareArguments,
-};
+use atilla_agent::types::{AgentTool, AgentToolExecute, PrepareArguments as AgentPrepareArguments};
 
 use crate::core::extensions::types::{
     ExtensionContext, PrepareArguments, ToolDefinition, ToolDefinitionExecute,
@@ -53,7 +51,10 @@ impl ExtensionContext for DefaultExtensionContext {}
 
 /// Wrap a [`ToolDefinition`] into an [`AgentTool`] for the core runtime (pi's
 /// `wrapToolDefinition`).
-pub fn wrap_tool_definition(definition: ToolDefinition, ctx_factory: Option<CtxFactory>) -> AgentTool {
+pub fn wrap_tool_definition(
+    definition: ToolDefinition,
+    ctx_factory: Option<CtxFactory>,
+) -> AgentTool {
     let ToolDefinition {
         name,
         label,
@@ -71,16 +72,18 @@ pub fn wrap_tool_definition(definition: ToolDefinition, ctx_factory: Option<CtxF
 
     let definition_execute: ToolDefinitionExecute = execute;
     let execute: AgentToolExecute =
-        Arc::new(move |tool_call_id, params, signal, on_update| match &ctx_factory {
-            Some(factory) => {
-                let ctx = factory();
-                definition_execute(tool_call_id, params, signal, on_update, ctx.as_ref())
-            }
-            None => {
-                let ctx = DefaultExtensionContext;
-                definition_execute(tool_call_id, params, signal, on_update, &ctx)
-            }
-        });
+        Arc::new(
+            move |tool_call_id, params, signal, on_update| match &ctx_factory {
+                Some(factory) => {
+                    let ctx = factory();
+                    definition_execute(tool_call_id, params, signal, on_update, ctx.as_ref())
+                }
+                None => {
+                    let ctx = DefaultExtensionContext;
+                    definition_execute(tool_call_id, params, signal, on_update, &ctx)
+                }
+            },
+        );
 
     AgentTool {
         name,

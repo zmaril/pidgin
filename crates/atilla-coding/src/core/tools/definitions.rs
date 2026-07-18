@@ -57,8 +57,8 @@ use crate::core::extensions::types::{RenderShell, ToolDefinition, ToolDefinition
 
 use super::bash::{create_bash_tool, BashToolOptions, BashUpdate, OnUpdate};
 use super::edit::{compute_edit_result, prepare_edit_arguments, validate_edit_input};
-use super::find::run_find;
 use super::file_mutation_queue::with_file_mutation_queue;
+use super::find::run_find;
 use super::grep::{run_grep, GrepParams};
 use super::ls::{create_local_ls_operations, run_ls, LsParams};
 use super::path_utils::{resolve_read_path, resolve_to_cwd};
@@ -169,9 +169,11 @@ fn arg_bool(params: &Value, key: &str) -> Option<bool> {
 }
 
 fn arg_usize(params: &Value, key: &str) -> Option<usize> {
-    params
-        .get(key)
-        .and_then(|v| v.as_u64().map(|n| n as usize).or_else(|| v.as_f64().map(|f| f as usize)))
+    params.get(key).and_then(|v| {
+        v.as_u64()
+            .map(|n| n as usize)
+            .or_else(|| v.as_f64().map(|f| f as usize))
+    })
 }
 
 fn is_aborted(signal: Option<&AbortSignal>) -> bool {
@@ -244,7 +246,9 @@ pub fn create_read_tool_definition(
         }
         let path = match arg_str(params, "path") {
             Some(p) => p,
-            None => return error_result("read tool input is invalid. path is required.".to_string()),
+            None => {
+                return error_result("read tool input is invalid. path is required.".to_string())
+            }
         };
         let offset = arg_usize(params, "offset");
         let limit = arg_usize(params, "limit");
@@ -717,7 +721,10 @@ mod tests {
             None,
             None,
         );
-        assert_eq!(result_text(&result), "Successfully wrote 5 bytes to out.txt");
+        assert_eq!(
+            result_text(&result),
+            "Successfully wrote 5 bytes to out.txt"
+        );
         let written = std::fs::read_to_string(dir.path.join("out.txt")).unwrap();
         assert_eq!(written, "hello");
     }
@@ -766,7 +773,12 @@ mod tests {
         let dir = TempDir::new("def-bash-abort");
         let tool = wrap_tool_definition(create_bash_tool_definition(dir.cwd(), None), None);
         let signal = AbortSignal::aborted();
-        let result = (tool.execute)("c", &json!({ "command": "sleep 5; echo done" }), Some(&signal), None);
+        let result = (tool.execute)(
+            "c",
+            &json!({ "command": "sleep 5; echo done" }),
+            Some(&signal),
+            None,
+        );
         let text = result_text(&result);
         assert!(text.contains("aborted"), "expected abort, got: {text}");
     }
