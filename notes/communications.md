@@ -147,6 +147,8 @@ Async `Stream`/`Future` **do not cross FFI**, however — Rust async is poll-bas
 
 Design implication: **a blocking `next()` over an opaque handle is a first-class access mode of the core**, not an afterthought — it's the shape every non-async host (PHP first, likely others) will use. This is another reason to own the event type rather than expose a dependency's types across FFI.
 
+**Node bindings are a special case.** For the Node/napi build, the exported surface must match pi's TypeScript API *exactly*, because pi's own unit tests run against our napi-built packages — the plan is to compile our own exports of pi as Node packages and feed those to pi's existing test suite. So while the blocking `next_event()` handle model is the cross-language core, the Node binding layer additionally re-presents pi's exact async-iterable `AssistantMessageEventStream` shape on top of that core.
+
 ---
 
 ## 5. Recommended Rust stack, per surface
@@ -161,8 +163,8 @@ Research date 2026-07-18; versions/dates from crates.io.
 | Google Gemini | **Hand-roll.** `gemini-rust` (v2.0) exists but is a solo `0.x`/`2.0`; `generateContent`/`streamGenerateContent` is a small surface. |
 | Mistral | **Hand-roll**, riding the OpenAI-compat client (Mistral's cloud API is OpenAI-compatible). `mistralai-client` is ~2 years stale. |
 | Bedrock | Use the AWS SDK (`aws-sdk-bedrockruntime`) if we need Bedrock — SigV4 + `ConverseStream` is not worth hand-rolling. Lower priority than the direct providers. |
-| Multi-provider abstraction | **Do not adopt as the core.** `genai` (jeremychone, natively covers OpenAI/Anthropic/Gemini/Mistral/Bedrock, streaming + typed tools) and `rig` (typed tool-calling, but a full agent framework) are worth **studying** — their per-provider adapter pattern is close to what we'll build — but adopting either couples our FFI surface to their evolving types. |
-| MCP | **Use `rmcp`** (official Rust SDK, v2.2, conformance-tested, client + server, stdio/SSE/streamable-HTTP) — *only if/when* we add MCP. pi itself has none. |
+| Multi-provider abstraction | **Decided: do not adopt — hand-roll the thin per-dialect clients (accepted).** `rust-genai` was evaluated and ruled out. `genai` and `rig` remain useful only as *architectural study* (their per-provider adapter pattern), never as dependencies. |
+| MCP | **Decided: no MCP — mirror pi exactly** (pi has none). If MCP is ever added later, the official `rmcp` SDK is the choice — see footnote.[^rmcp] |
 | Boundary types / serde | **Use `serde` + `serde_json`** with internally-tagged enums (`#[serde(tag="type")]`) and a `#[serde(other)] Unknown` catch-all at every provider boundary, so a new provider block type doesn't hard-fail a live stream. Keep tool `arguments` as `serde_json::Value`. |
 
 **Why hand-roll the providers:** LLM HTTP APIs are individually simple (one POST, one SSE stream) but change monthly and differ in fiddly ways (Anthropic's event-typed SSE vs OpenAI's `[DONE]` chunks, tool-call streaming deltas, cache-control, thinking blocks). A thin owned client is ~300-600 lines per provider and never blocks us on a maintainer's release cadence — and it keeps our own event type on the FFI boundary. The genuinely hard, *standardized* things (MCP transport negotiation, JSON) are where a dependency earns its keep.
@@ -174,7 +176,7 @@ Research date 2026-07-18; versions/dates from crates.io.
 ## 6. Non-LLM boundaries
 
 ### 6.1 MCP — intentionally absent
-pi is neither an MCP client nor server; there is zero MCP code. This is deliberate ("**No MCP.**", `packages/coding-agent/README.md:495`). External tools are ordinary CLI programs the model invokes via the bash tool; "tool servers" are user-installed extensions. A Rust rewrite gets MCP only if we choose to add it (via `rmcp`).
+pi is neither an MCP client nor server; there is zero MCP code. This is deliberate ("**No MCP.**", `packages/coding-agent/README.md:495`). External tools are ordinary CLI programs the model invokes via the bash tool; "tool servers" are user-installed extensions. A Rust rewrite gets MCP only if we choose to add it (via `rmcp`). **Decision: the Rust mirror reproduces this exactly — no MCP.**
 
 ### 6.2 Subprocess spawning — pi's primary external surface
 All spawns use `node:child_process` with **pipes, never PTYs**. The bash tool (`packages/coding-agent/src/core/tools/bash.ts`) spawns the shell `detached` (own process group so `kill(-pid)` reaps the tree), `stdio:[ignore|pipe, pipe, pipe]`, ANSI-stripped rolling-buffer output that spills to a tmp log past a threshold. `BashOperations` is an **interface** — extensions can swap in SSH/container backends. `fd`/`rg`/`gh`/`npm`/`git`/editors are spawned directly.
@@ -189,7 +191,7 @@ Base `pi` is single-process (interactive TUI, or `--mode rpc` reading NDJSON on 
 Unix socket at `~/.pi/orchestrator/orchestrator.sock`; framing is newline-delimited JSON (`encodeMessage = JSON.stringify(m)+"\n"`); request types `spawn|list|stop|status|rpc|rpc_stream` (`rpc_stream` upgrades to a persistent bidirectional bridge). No TCP, no named pipes. Rust equivalent if we port this: `tokio::net::UnixListener` + a line-delimited JSON codec (`tokio-util` `LinesCodec`), `tokio::process` children. Lower priority — the orchestrator is experimental.
 
 ### 6.4 Session persistence — tree-structured JSONL v3
-Append-only JSONL at `~/.pi/agent/sessions/<encoded-cwd>/<ts>_<id>.jsonl`. Line 1 is a `{type:"session", version:3, …}` header; every mutation appends an entry line or a `{type:"leaf", …}` pointer. The conversation is a **tree** (supports fork/edit/regenerate); the active conversation is the path from a leaf to root. Auth stored separately as `~/.pi/agent/auth.json` (mode `0o600`). Rust equivalent: serde structs + append-only file writes; the tree/leaf model is the non-obvious part to preserve. Lower priority for the comms core, but the on-disk format is a compatibility surface if the Rust mirror must read pi's sessions.
+Append-only JSONL at `~/.pi/agent/sessions/<encoded-cwd>/<ts>_<id>.jsonl`. Line 1 is a `{type:"session", version:3, …}` header; every mutation appends an entry line or a `{type:"leaf", …}` pointer. The conversation is a **tree** (supports fork/edit/regenerate); the active conversation is the path from a leaf to root. Auth stored separately as `~/.pi/agent/auth.json` (mode `0o600`). Rust equivalent: serde structs + append-only file writes; the tree/leaf model is the non-obvious part to preserve. **Decision: the Rust mirror must read and write pi's exact JSONL v3 session-tree format** — the header line plus append-only entry/leaf nodes, with the active conversation being the path from a leaf to the root. The tree/leaf model is preserved verbatim; this is a hard compatibility surface, not optional.
 
 ### 6.5 Telemetry / network pings — all opt-outable
 All to `pi.dev`, version + UA only, no conversation content:
@@ -205,11 +207,17 @@ Loopback OAuth callback servers (the only HTTP servers pi starts: `127.0.0.1:145
 
 ---
 
-## 7. Open questions
+## 7. Decisions
 
-1. **Scope of the first Rust milestone.** The comms core = provider clients + the `AssistantMessageEvent` stream + FFI. Do we port the orchestrator/RPC topology and JSONL session format now, or defer until the single-process core + PHP bindings work end-to-end? (Recommend: defer; ship the streaming core first.)
-2. **Provider priority.** Anthropic + OpenAI-compat cover most of pi's ~40 providers via two clients. Confirm Google (native Gemini dialect) and Bedrock (AWS SDK) are in the first cut, or fast-follows.
-3. **`async-openai` vs hand-rolled OpenAI client.** Hand-rolling gives one client across all OpenAI-compat providers with our own event type; `async-openai` is more mature but models only OpenAI's dialect. Leaning hand-roll — worth a spike to confirm the compat-provider quirks (tool-call deltas, `reasoning` fields) are manageable.
-4. **Session-format compatibility.** Must the Rust mirror read/write pi's exact JSONL v3 tree files, or is a fresh format acceptable for the rewrite? Affects whether we port the leaf/tree model verbatim.
-5. **FFI event serialization.** Struct-across-boundary vs JSON-string-per-event for `next_event()`. JSON is simplest to start and language-agnostic for hosts beyond PHP; revisit if per-token overhead matters.
-6. **MCP.** pi has none by design. Is MCP client support a goal for the Rust core (then adopt `rmcp`), or do we mirror pi's "tools are CLI programs" stance?
+The open questions from earlier drafts are now resolved:
+
+1. **Provider clients — hand-roll (accepted).** Thin per-dialect `reqwest` + `eventsource-stream` clients; no multi-provider crate. `rust-genai` was evaluated and ruled out.
+2. **First-cut provider scope.** Anthropic first, then the OpenAI-compatible client (the porting map's vertical slice); further providers follow the porting map.
+3. **`async-openai` vs hand-rolled.** Hand-roll the OpenAI-compatible client so one client serves every OpenAI-dialect provider with our own event type.
+4. **Session format — exact mirror.** The Rust core reads and writes pi's exact JSONL v3 session-tree format (§6.4); the tree/leaf model is preserved verbatim.
+5. **FFI streaming.** The blocking `next_event()` over an opaque handle is the cross-language core surface. The Node/napi binding additionally mirrors pi's exact TypeScript `AssistantMessageEventStream` API, since pi's own unit tests run against our napi-built packages (§4).
+6. **MCP — none.** The mirror reproduces pi's no-MCP stance exactly; `rmcp` stays a documented contingency only (footnote).
+
+One detail stays open for implementation time: whether `next_event()` hands each event across the FFI boundary as a native struct or a JSON string. JSON is simplest and host-agnostic to start; revisit if per-token overhead shows up.
+
+[^rmcp]: Contingency only, out of scope for the mirror: if MCP is ever added, use the official Rust SDK `rmcp` (v2.2, conformance-tested, client + server, stdio / SSE / streamable-HTTP).
