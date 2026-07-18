@@ -1,0 +1,21 @@
+{
+  "name": "node-hello",
+  "version": "0.0.0",
+  "description": "napi-rs native Node addon spike for the pi -> Rust mirror",
+  "private": true,
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "node-hello"
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "test": "node test.js",
+    "test:vitest": "vitest run"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.4",
+    "vitest": "^2.1.9"
+  }
+}
