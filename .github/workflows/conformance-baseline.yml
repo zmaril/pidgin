@@ -2,70 +2,74 @@
 # necessarily mirrors conformance.yml (and ci.yml); Actions YAML has no include
 # mechanism for it. Keep this setup block in lockstep with conformance.yml.
 #
-# Auto-refresh of the committed conformance baseline (conformance.json).
+# Auto-refresh of the committed conformance baseline (conformance.json) — option (c).
 #
 # WHY THIS EXISTS
 #   The repo commits conformance.json as the baseline that per-PR conformance
 #   runs diff against. Left to hand-maintenance that file drifts stale, and a
 #   stale baseline makes every PR delta noisy — a PR appears to move numbers it
-#   never touched. This job keeps the committed baseline current automatically by
-#   regenerating it the same way CI does and committing it back.
+#   never touched. This job keeps the baseline current by regenerating it the
+#   same way CI does and committing the fresh result back to the PR's own branch.
 #
-# WHERE THE BASELINE MOVES — MAIN ONLY, NEVER PER-PR
-#   The baseline is regenerated and committed ONLY on push/merge to main. It is
-#   NEVER regenerated per-PR. That is deliberate: if PRs could rewrite the
-#   baseline, the per-PR delta would compare against a moving target and could be
-#   gamed or silently masked. Anchoring the baseline to main means a PR's delta
-#   always reflects that PR's real changes against the last merged state. The
-#   per-PR conformance.yml job stays read-only and only ever posts a comment.
+# WHERE THE BASELINE MOVES — PER-PR, ON THE PR'S OWN HEAD BRANCH
+#   This job runs on every PR (opened/synchronize/reopened) and commits the
+#   regenerated conformance.json to the PR's HEAD branch — never to main. Each PR
+#   therefore carries a baseline that already reflects that PR's changes, so the
+#   sticky per-PR delta reads against an up-to-date file. Because the write lands
+#   on the PR branch (not protected main), the default GITHUB_TOKEN's normal
+#   contents:write is sufficient and NO branch-protection bypass is needed.
 #
-# LOOP PREVENTION
-#   This job commits back to main, which is itself a push to main. Two guards
-#   stop that from re-triggering the job (or any other workflow):
-#     1. The commit-back is a no-op in the steady state: if conformance.json did
-#        not change, the job exits without committing. Genuine drift is the only
-#        thing that produces a commit.
-#     2. When it does commit, the message carries [skip ci], so the commit-back
-#        push does not start a fresh workflow run.
+# LOOP TERMINATION — BOUNDED BY DETERMINISM (#85)
+#   Committing to the PR branch pushes a new HEAD, which DOES re-trigger the PR
+#   workflows — and that is intentional: the required checks must re-run on the
+#   new HEAD so the PR stays mergeable. The loop is bounded to exactly one extra
+#   run because the baseline is byte-deterministic (creds-strip is baked into
+#   scripts/conformance.sh, #85): the re-triggered run regenerates an identical
+#   conformance.json, `git diff` is empty, no second commit is made, and the loop
+#   stops. We deliberately do NOT use [skip ci] on the commit — skipping CI would
+#   leave the required checks un-run on the new HEAD and block merge.
 #
-# OFFLINE-DETERMINISTIC RUN — CREDS MUST BE UNSET
-#   scripts/conformance.sh must run with the offline provider profile so the
-#   baseline is deterministic regardless of any ambient credentials on the
-#   runner. If AWS/Anthropic creds are present, packages/ai's model codegen and
-#   suite flip to live provider calls (ai becomes 562 pass / 24 fail / 708 skip,
-#   the live-failing profile) instead of the offline CI profile (556 pass / 0
-#   fail / 738 skip) that the committed baseline is built from — see the team's
-#   conformance memory. We therefore run the regen with those vars explicitly
-#   unset via `env -u ...` so the result matches the CI profile every time.
+# FORKS ARE SKIPPED
+#   A PR from a fork gets a read-only GITHUB_TOKEN and cannot push to its head
+#   repo, so the same-repo guard below skips fork PRs entirely rather than fail.
 
 name: conformance-baseline
 
 on:
-  push:
-    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 # Least privilege plus the one extra the job needs: write access to commit the
-# refreshed baseline back to main.
+# refreshed baseline back to the PR's own head branch (not main — so no
+# protected-branch bypass is required).
 permissions:
   contents: write
 
-# Serialize refreshes so overlapping main pushes never race on the commit-back.
-# Do NOT cancel in progress: a half-finished regen would leave no commit and the
-# next push would just redo it, but cancelling mid-push could interrupt a git
-# push. Queue instead.
+# One in-flight refresh per PR; cancel superseded runs so only the newest HEAD's
+# regen survives.
 concurrency:
-  group: conformance-baseline
-  cancel-in-progress: false
+  group: conformance-baseline-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   refresh-baseline:
-    name: refresh committed conformance baseline
+    name: refresh conformance baseline for this PR
+    # Same-repo PRs only. Fork PRs get a read-only token and cannot push to their
+    # head branch, so skip them rather than fail on the push.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      # Check out the PR HEAD branch with write-capable credentials so the
+      # commit-back push targets the branch this PR is built from. persist-
+      # credentials keeps the token wired to the local git config for that push.
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           submodules: recursive  # vendor/pi must be present for codegen + tests
+          persist-credentials: true
+          fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -95,24 +99,26 @@ jobs:
         continue-on-error: true
 
       # Regenerate the full five-package baseline exactly as CI does (--setup does
-      # the pi npm install + ai model codegen). Creds are stripped from the env so
-      # packages/ai stays on the offline profile and the baseline is deterministic
-      # — see the OFFLINE-DETERMINISTIC RUN note at the top of this file.
-      - name: Regenerate conformance baseline (offline profile)
-        run: env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN -u ANTHROPIC_BASE_URL scripts/conformance.sh --setup
+      # the pi npm install + ai model codegen). scripts/conformance.sh strips
+      # AWS/Anthropic creds itself (#85) so packages/ai stays on the offline
+      # profile and the baseline is byte-deterministic — no manual `env -u` here.
+      - name: Regenerate conformance baseline
+        run: scripts/conformance.sh --setup
 
-      # Commit the refreshed baseline back to main — but only on genuine drift,
-      # and with [skip ci] so the commit-back does not re-trigger this (or any)
-      # workflow. See LOOP PREVENTION at the top of this file.
-      - name: Commit refreshed baseline if it drifted
+      # Commit the refreshed baseline back to the PR's HEAD branch — but only on
+      # genuine drift. NO [skip ci]: the push must re-trigger the required checks
+      # on the new HEAD so the PR stays mergeable. Determinism (#85) bounds this
+      # to one extra run — the re-triggered regen produces an identical file, the
+      # diff is empty, no further commit is made, and the loop terminates.
+      - name: Commit refreshed baseline to PR branch if it drifted
         run: |
           if git diff --quiet -- conformance.json; then
-            echo "conformance.json unchanged — baseline already current, nothing to commit."
-            exit 0
+            echo "conformance.json unchanged — baseline already current for this PR, nothing to commit."
+          else
+            echo "conformance.json drifted — committing refreshed baseline to the PR branch."
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add conformance.json
+            git commit -m "ci(conformance): refresh baseline for this PR"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
-          echo "conformance.json drifted — committing refreshed baseline back to main."
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add conformance.json
-          git commit -m "ci(conformance): auto-refresh committed baseline [skip ci]"
-          git push
