@@ -1,0 +1,2129 @@
+[
+	{
+		"name": "undo: undoes autocomplete",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "d",
+				"textAfter": "d",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "i",
+				"textAfter": "di",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\t",
+				"textAfter": "di",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "dist/",
+				"line": 0,
+				"col": 5,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"textAfter": "di",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "di",
+				"line": 0,
+				"col": 2,
+				"force": true,
+				"result": {
+					"items": [
+						{
+							"value": "dist/",
+							"label": "dist/"
+						}
+					],
+					"prefix": "di"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "di",
+				"line": 0,
+				"col": 2,
+				"itemValue": "dist/",
+				"prefix": "di",
+				"result": {
+					"text": "dist/",
+					"line": 0,
+					"col": 5
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: auto-applies single force-file suggestion without showing menu",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "W",
+				"textAfter": "W",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"textAfter": "Wo",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"textAfter": "Wor",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "k",
+				"textAfter": "Work",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\t",
+				"textAfter": "Work",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "Workspace/",
+				"line": 0,
+				"col": 10,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\u001b[45;5u",
+				"textAfter": "Work",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "Work",
+				"line": 0,
+				"col": 4,
+				"force": true,
+				"result": {
+					"items": [
+						{
+							"value": "Workspace/",
+							"label": "Workspace/"
+						}
+					],
+					"prefix": "Work"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "Work",
+				"line": 0,
+				"col": 4,
+				"itemValue": "Workspace/",
+				"prefix": "Work",
+				"result": {
+					"text": "Workspace/",
+					"line": 0,
+					"col": 10
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: shows menu when force-file has multiple suggestions",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "s",
+				"textAfter": "s",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"textAfter": "sr",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "c",
+				"textAfter": "src",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\t",
+				"textAfter": "src",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "src",
+				"line": 0,
+				"col": 3,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\t",
+				"textAfter": "src/",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "src",
+				"line": 0,
+				"col": 3,
+				"force": true,
+				"result": {
+					"items": [
+						{
+							"value": "src/",
+							"label": "src/"
+						},
+						{
+							"value": "src.txt",
+							"label": "src.txt"
+						}
+					],
+					"prefix": "src"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "src",
+				"line": 0,
+				"col": 3,
+				"itemValue": "src/",
+				"prefix": "src",
+				"result": {
+					"text": "src/",
+					"line": 0,
+					"col": 4
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: keeps suggestions open when typing in force mode (Tab-triggered)",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "\t",
+				"textAfter": "",
+				"line": 0,
+				"col": 0,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "",
+				"line": 0,
+				"col": 0,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"textAfter": "r",
+				"line": 0,
+				"col": 1,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "r",
+				"line": 0,
+				"col": 1,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"textAfter": "re",
+				"line": 0,
+				"col": 2,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "re",
+				"line": 0,
+				"col": 2,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\t",
+				"textAfter": "readme.md",
+				"line": 0,
+				"col": 9,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "",
+				"line": 0,
+				"col": 0,
+				"force": true,
+				"result": {
+					"items": [
+						{
+							"value": "readme.md",
+							"label": "readme.md"
+						},
+						{
+							"value": "package.json",
+							"label": "package.json"
+						},
+						{
+							"value": "src/",
+							"label": "src/"
+						},
+						{
+							"value": "dist/",
+							"label": "dist/"
+						}
+					],
+					"prefix": ""
+				}
+			},
+			{
+				"text": "r",
+				"line": 0,
+				"col": 1,
+				"force": true,
+				"result": {
+					"items": [
+						{
+							"value": "readme.md",
+							"label": "readme.md"
+						}
+					],
+					"prefix": "r"
+				}
+			},
+			{
+				"text": "re",
+				"line": 0,
+				"col": 2,
+				"force": true,
+				"result": {
+					"items": [
+						{
+							"value": "readme.md",
+							"label": "readme.md"
+						}
+					],
+					"prefix": "re"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "re",
+				"line": 0,
+				"col": 2,
+				"itemValue": "readme.md",
+				"prefix": "re",
+				"result": {
+					"text": "readme.md",
+					"line": 0,
+					"col": 9
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 3
+	},
+	{
+		"name": "auto: debounces @ autocomplete while typing",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "@",
+				"textAfter": "@",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "m",
+				"textAfter": "@m",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "a",
+				"textAfter": "@ma",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "i",
+				"textAfter": "@mai",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 50,
+				"textAfter": "@mai",
+				"line": 0,
+				"col": 4,
+				"showing": true,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "@mai",
+				"line": 0,
+				"col": 4,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "@main.ts",
+							"label": "main.ts"
+						}
+					],
+					"prefix": "@mai"
+				}
+			}
+		],
+		"applies": [],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: re-queries the picker when cursor moves back into the command name",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "/",
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "c",
+				"textAfter": "/c",
+				"line": 0,
+				"col": 2,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/c",
+				"line": 0,
+				"col": 2,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "m",
+				"textAfter": "/cm",
+				"line": 0,
+				"col": 3,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/cm",
+				"line": 0,
+				"col": 3,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "d",
+				"textAfter": "/cmd",
+				"line": 0,
+				"col": 4,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/cmd",
+				"line": 0,
+				"col": 4,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"textAfter": "/cmd ",
+				"line": 0,
+				"col": 5,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/cmd ",
+				"line": 0,
+				"col": 5,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 80,
+				"textAfter": "/cmd ",
+				"line": 0,
+				"col": 5,
+				"showing": true,
+				"render": [
+					"\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+					"/cmd \u001b[7m \u001b[0m                                                                          ",
+					"\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+					"→ repo                                                                          ",
+					"  message                                                                       ",
+					"  help                                                                          "
+				]
+			},
+			{
+				"op": "input",
+				"data": "\u001b[D",
+				"textAfter": "/cmd ",
+				"line": 0,
+				"col": 4,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/cmd ",
+				"line": 0,
+				"col": 4,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "render",
+				"width": 80,
+				"textAfter": "/cmd ",
+				"line": 0,
+				"col": 4,
+				"showing": true,
+				"render": [
+					"\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+					"/cmd\u001b[7m \u001b[0m                                                                           ",
+					"\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m\u001b[2m─\u001b[22m",
+					"→ cmd                                                                           "
+				]
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/",
+				"line": 0,
+				"col": 1,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "cmd",
+							"label": "cmd"
+						}
+					],
+					"prefix": "/"
+				}
+			},
+			{
+				"text": "/c",
+				"line": 0,
+				"col": 2,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "cmd",
+							"label": "cmd"
+						}
+					],
+					"prefix": "/c"
+				}
+			},
+			{
+				"text": "/cm",
+				"line": 0,
+				"col": 3,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "cmd",
+							"label": "cmd"
+						}
+					],
+					"prefix": "/cm"
+				}
+			},
+			{
+				"text": "/cmd",
+				"line": 0,
+				"col": 4,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "cmd",
+							"label": "cmd"
+						}
+					],
+					"prefix": "/cmd"
+				}
+			},
+			{
+				"text": "/cmd ",
+				"line": 0,
+				"col": 5,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "repo",
+							"label": "repo"
+						},
+						{
+							"value": "message",
+							"label": "message"
+						},
+						{
+							"value": "help",
+							"label": "help"
+						}
+					],
+					"prefix": ""
+				}
+			},
+			{
+				"text": "/cmd ",
+				"line": 0,
+				"col": 4,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "cmd",
+							"label": "cmd"
+						}
+					],
+					"prefix": "/cmd"
+				}
+			}
+		],
+		"applies": [],
+		"shouldTrigger": [],
+		"suggestionCallCount": 6
+	},
+	{
+		"name": "auto: debounces # autocomplete while typing",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "#",
+				"textAfter": "#",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "2",
+				"textAfter": "#2",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "9",
+				"textAfter": "#29",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "8",
+				"textAfter": "#298",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 50,
+				"textAfter": "#298",
+				"line": 0,
+				"col": 4,
+				"showing": true,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "#298",
+				"line": 0,
+				"col": 4,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "#2983",
+							"label": "#2983"
+						}
+					],
+					"prefix": "#298"
+				}
+			}
+		],
+		"applies": [],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: debounces custom triggerCharacters autocomplete while typing",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [
+			"$"
+		],
+		"steps": [
+			{
+				"op": "input",
+				"data": "$",
+				"textAfter": "$",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "s",
+				"textAfter": "$s",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "k",
+				"textAfter": "$sk",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 50,
+				"textAfter": "$sk",
+				"line": 0,
+				"col": 3,
+				"showing": true,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "$sk",
+				"line": 0,
+				"col": 3,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "$skill-name",
+							"label": "skill-name"
+						}
+					],
+					"prefix": "$sk"
+				}
+			}
+		],
+		"applies": [],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: resets custom triggerCharacters when provider changes",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "$",
+				"textAfter": "$",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "s",
+				"textAfter": "$s",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 50,
+				"textAfter": "$s",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [],
+		"applies": [],
+		"shouldTrigger": [],
+		"suggestionCallCount": 0
+	},
+	{
+		"name": "auto: hides autocomplete when backspacing slash command to empty",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "/",
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "",
+				"textAfter": "",
+				"line": 0,
+				"col": 0,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "",
+				"line": 0,
+				"col": 0,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/",
+				"line": 0,
+				"col": 1,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "/model",
+							"label": "model",
+							"description": "Change model"
+						},
+						{
+							"value": "/help",
+							"label": "help",
+							"description": "Show help"
+						}
+					],
+					"prefix": "/"
+				}
+			},
+			{
+				"text": "",
+				"line": 0,
+				"col": 0,
+				"force": false,
+				"result": null
+			}
+		],
+		"applies": [],
+		"shouldTrigger": [],
+		"suggestionCallCount": 2
+	},
+	{
+		"name": "auto: applies exact typed slash-argument value on Enter",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "/",
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "a",
+				"textAfter": "/a",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"textAfter": "/ar",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "g",
+				"textAfter": "/arg",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argt",
+				"line": 0,
+				"col": 5,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"textAfter": "/argte",
+				"line": 0,
+				"col": 6,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "s",
+				"textAfter": "/argtes",
+				"line": 0,
+				"col": 7,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argtest",
+				"line": 0,
+				"col": 8,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"textAfter": "/argtest ",
+				"line": 0,
+				"col": 9,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "w",
+				"textAfter": "/argtest tw",
+				"line": 0,
+				"col": 11,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"textAfter": "/argtest two",
+				"line": 0,
+				"col": 12,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/argtest two",
+				"line": 0,
+				"col": 12,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\r",
+				"textAfter": "/argtest two",
+				"line": 0,
+				"col": 12,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/argtest two",
+				"line": 0,
+				"col": 12,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "two",
+							"label": "two"
+						}
+					],
+					"prefix": "two"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "/argtest two",
+				"line": 0,
+				"col": 12,
+				"itemValue": "two",
+				"prefix": "two",
+				"result": {
+					"text": "/argtest two",
+					"line": 0,
+					"col": 12
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: selects first prefix match on Enter when typed arg is not exact",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "/",
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "a",
+				"textAfter": "/a",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"textAfter": "/ar",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "g",
+				"textAfter": "/arg",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argt",
+				"line": 0,
+				"col": 5,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"textAfter": "/argte",
+				"line": 0,
+				"col": 6,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "s",
+				"textAfter": "/argtes",
+				"line": 0,
+				"col": 7,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argtest",
+				"line": 0,
+				"col": 8,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"textAfter": "/argtest ",
+				"line": 0,
+				"col": 9,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\r",
+				"textAfter": "/argtest two",
+				"line": 0,
+				"col": 12,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "two",
+							"label": "two"
+						},
+						{
+							"value": "three",
+							"label": "three"
+						},
+						{
+							"value": "twelve",
+							"label": "twelve"
+						}
+					],
+					"prefix": "t"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"itemValue": "two",
+				"prefix": "t",
+				"result": {
+					"text": "/argtest two",
+					"line": 0,
+					"col": 12
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: highlights unique prefix match as user types",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "/",
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "a",
+				"textAfter": "/a",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"textAfter": "/ar",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "g",
+				"textAfter": "/arg",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argt",
+				"line": 0,
+				"col": 5,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"textAfter": "/argte",
+				"line": 0,
+				"col": 6,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "s",
+				"textAfter": "/argtes",
+				"line": 0,
+				"col": 7,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argtest",
+				"line": 0,
+				"col": 8,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"textAfter": "/argtest ",
+				"line": 0,
+				"col": 9,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "w",
+				"textAfter": "/argtest tw",
+				"line": 0,
+				"col": 11,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/argtest tw",
+				"line": 0,
+				"col": 11,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\r",
+				"textAfter": "/argtest two",
+				"line": 0,
+				"col": 12,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/argtest tw",
+				"line": 0,
+				"col": 11,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "one",
+							"label": "one"
+						},
+						{
+							"value": "two",
+							"label": "two"
+						},
+						{
+							"value": "three",
+							"label": "three"
+						}
+					],
+					"prefix": "tw"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "/argtest tw",
+				"line": 0,
+				"col": 11,
+				"itemValue": "two",
+				"prefix": "tw",
+				"result": {
+					"text": "/argtest two",
+					"line": 0,
+					"col": 12
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: selects first prefix match when multiple items match",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "/",
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "a",
+				"textAfter": "/a",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "r",
+				"textAfter": "/ar",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "g",
+				"textAfter": "/arg",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argt",
+				"line": 0,
+				"col": 5,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"textAfter": "/argte",
+				"line": 0,
+				"col": 6,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "s",
+				"textAfter": "/argtes",
+				"line": 0,
+				"col": 7,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argtest",
+				"line": 0,
+				"col": 8,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"textAfter": "/argtest ",
+				"line": 0,
+				"col": 9,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\r",
+				"textAfter": "/argtest two",
+				"line": 0,
+				"col": 12,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "one",
+							"label": "one"
+						},
+						{
+							"value": "two",
+							"label": "two"
+						},
+						{
+							"value": "three",
+							"label": "three"
+						}
+					],
+					"prefix": "t"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "/argtest t",
+				"line": 0,
+				"col": 10,
+				"itemValue": "two",
+				"prefix": "t",
+				"result": {
+					"text": "/argtest two",
+					"line": 0,
+					"col": 12
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: built-in-style command argument completion path (model-like)",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "/",
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "m",
+				"textAfter": "/m",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"textAfter": "/mo",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "d",
+				"textAfter": "/mod",
+				"line": 0,
+				"col": 4,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"textAfter": "/mode",
+				"line": 0,
+				"col": 5,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "l",
+				"textAfter": "/model",
+				"line": 0,
+				"col": 6,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": " ",
+				"textAfter": "/model ",
+				"line": 0,
+				"col": 7,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "g",
+				"textAfter": "/model g",
+				"line": 0,
+				"col": 8,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "p",
+				"textAfter": "/model gp",
+				"line": 0,
+				"col": 9,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "t",
+				"textAfter": "/model gpt",
+				"line": 0,
+				"col": 10,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "-",
+				"textAfter": "/model gpt-",
+				"line": 0,
+				"col": 11,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "4",
+				"textAfter": "/model gpt-4",
+				"line": 0,
+				"col": 12,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "o",
+				"textAfter": "/model gpt-4o",
+				"line": 0,
+				"col": 13,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "-",
+				"textAfter": "/model gpt-4o-",
+				"line": 0,
+				"col": 14,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "m",
+				"textAfter": "/model gpt-4o-m",
+				"line": 0,
+				"col": 15,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "i",
+				"textAfter": "/model gpt-4o-mi",
+				"line": 0,
+				"col": 16,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "n",
+				"textAfter": "/model gpt-4o-min",
+				"line": 0,
+				"col": 17,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "i",
+				"textAfter": "/model gpt-4o-mini",
+				"line": 0,
+				"col": 18,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/model gpt-4o-mini",
+				"line": 0,
+				"col": 18,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\r",
+				"textAfter": "/model gpt-4o-mini",
+				"line": 0,
+				"col": 18,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/model gpt-4o-mini",
+				"line": 0,
+				"col": 18,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "gpt-4o-mini",
+							"label": "gpt-4o-mini"
+						}
+					],
+					"prefix": "gpt-4o-mini"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "/model gpt-4o-mini",
+				"line": 0,
+				"col": 18,
+				"itemValue": "gpt-4o-mini",
+				"prefix": "gpt-4o-mini",
+				"result": {
+					"text": "/model gpt-4o-mini",
+					"line": 0,
+					"col": 18
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: awaits async slash command argument completions",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "setText",
+				"text": "/load-skills ",
+				"textAfter": "/load-skills ",
+				"line": 0,
+				"col": 13,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "s",
+				"textAfter": "/load-skills s",
+				"line": 0,
+				"col": 14,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/load-skills s",
+				"line": 0,
+				"col": 14,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\t",
+				"textAfter": "/load-skills skill-a",
+				"line": 0,
+				"col": 20,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/load-skills s",
+				"line": 0,
+				"col": 14,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "skill-a",
+							"label": "skill-a"
+						}
+					],
+					"prefix": "s"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "/load-skills s",
+				"line": 0,
+				"col": 14,
+				"itemValue": "skill-a",
+				"prefix": "s",
+				"result": {
+					"text": "/load-skills skill-a",
+					"line": 0,
+					"col": 20
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: ignores invalid slash command argument completion results",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "setText",
+				"text": "/load-skills ",
+				"textAfter": "/load-skills ",
+				"line": 0,
+				"col": 13,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "s",
+				"textAfter": "/load-skills s",
+				"line": 0,
+				"col": 14,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/load-skills s",
+				"line": 0,
+				"col": 14,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/load-skills s",
+				"line": 0,
+				"col": 14,
+				"force": false,
+				"result": null
+			}
+		],
+		"applies": [],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	},
+	{
+		"name": "auto: does not show argument completions when command has no argument completer",
+		"rows": 24,
+		"options": {},
+		"disableSubmit": false,
+		"triggerCharacters": [],
+		"steps": [
+			{
+				"op": "input",
+				"data": "/",
+				"textAfter": "/",
+				"line": 0,
+				"col": 1,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "h",
+				"textAfter": "/h",
+				"line": 0,
+				"col": 2,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "e",
+				"textAfter": "/he",
+				"line": 0,
+				"col": 3,
+				"showing": false,
+				"render": null
+			},
+			{
+				"op": "flush",
+				"waitMs": 0,
+				"textAfter": "/he",
+				"line": 0,
+				"col": 3,
+				"showing": true,
+				"render": null
+			},
+			{
+				"op": "input",
+				"data": "\t",
+				"textAfter": "/help ",
+				"line": 0,
+				"col": 6,
+				"showing": false,
+				"render": null
+			}
+		],
+		"submits": [],
+		"suggestions": [
+			{
+				"text": "/he",
+				"line": 0,
+				"col": 3,
+				"force": false,
+				"result": {
+					"items": [
+						{
+							"value": "help",
+							"label": "help",
+							"description": "Show help"
+						}
+					],
+					"prefix": "/he"
+				}
+			}
+		],
+		"applies": [
+			{
+				"text": "/he",
+				"line": 0,
+				"col": 3,
+				"itemValue": "help",
+				"prefix": "/he",
+				"result": {
+					"text": "/help ",
+					"line": 0,
+					"col": 6
+				}
+			}
+		],
+		"shouldTrigger": [],
+		"suggestionCallCount": 1
+	}
+]

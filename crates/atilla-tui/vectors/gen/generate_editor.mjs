@@ -5,20 +5,23 @@
 // UTF-8 width/segmentation test data fed to pi's own Editor, not decorative
 // prose (mirrors generate_input_lists.mjs's emoji allow-file).
 //
-// Vector generator for the byte-exact Rust port of pi's TUI Editor CORE (PR
-// C6a: buffer/render/word-wrap/vertical-move/paste-marker/history/kill-ring/
-// undo/jump). Runs pi's OWN Editor + exported wordWrapLine from
+// Vector generator for the byte-exact Rust port of pi's TUI Editor. Runs pi's
+// OWN Editor + exported wordWrapLine from
 // vendor/pi/packages/tui/src/components/editor.ts (Node 22 strips TS types
 // natively) and dumps input scripts -> {getText, getCursor, render, expanded,
 // lines, isShowingAutocomplete, onSubmit} that the Rust test suite asserts
 // byte-identical.
 //
-// The editor scenarios replay the exact cases from pi's test/editor.test.ts for
-// every describe block EXCEPT the async Autocomplete block (deferred to C6b),
-// and the single "undoes autocomplete" case in the Undo block (also C6b, it
-// needs a provider + flushAutocomplete seam). The abort-count case lives inside
-// the Autocomplete block and is deferred with it (a Rust behavioral unit test
-// in C6b). The ~14 wordWrapLine cases call pi's exported wordWrapLine directly.
+// Coverage of pi's test/editor.test.ts:
+//   * editor_scenarios.json / editor_wordwrap.json (C6a) — every describe block
+//     except the async Autocomplete block; the ~14 wordWrapLine cases call pi's
+//     exported wordWrapLine directly.
+//   * editor_autocomplete.json (C6b) — the Autocomplete block + the Undo block's
+//     "undoes autocomplete" case, driven through the two-phase flush-seam machine
+//     with providers recorded as (text, cursor, force) -> suggestions tables and
+//     pi's own flushAutocomplete() called at every assert point. The one
+//     wall-clock "aborts active @ autocomplete" case is a Rust behavioral unit
+//     test (see tests/editor_vectors.rs) rather than a byte vector.
 //
 // Run from this directory:  node generate_editor.mjs
 // Output is written to ../../tests/vectors/*.json
@@ -26,6 +29,7 @@
 // pi upstream pin: vendor/pi submodule @ 3da591a.
 
 import { Editor, wordWrapLine } from "../../../../vendor/pi/packages/tui/src/components/editor.ts";
+import { CombinedAutocompleteProvider } from "../../../../vendor/pi/packages/tui/src/autocomplete.ts";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -693,5 +697,458 @@ addWrap("force-break wide char after word boundary wrap", ` ${"a".repeat(186)}�
 }
 
 dump("editor_wordwrap", wrapVectors);
+
+// ===========================================================================
+// Autocomplete (async): the two-phase flush-seam machine.
+//
+// Drives pi's OWN Editor through the Autocomplete describe block (and the
+// Undo block's "undoes autocomplete" case), recording each provider's
+// (text, cursor, force) -> suggestions and (text, cursor, item, prefix) ->
+// applied responses AND calling pi's own flushAutocomplete() at every assert
+// point. The Rust replay injects the recorded provider table and calls
+// flush_autocomplete() at the same points, asserting byte-identical output.
+//
+// The abort-count case (a genuinely wall-clock test of superseding an
+// in-flight request) is a Rust behavioral unit test, not a byte vector.
+// ===========================================================================
+
+// pi's test helper: drain the microtask + task queue so a settled autocomplete
+// state is observable (mirrors test/editor.test.ts).
+async function flushAutocomplete() {
+	await Promise.resolve();
+	await new Promise((resolve) => setImmediate(resolve));
+}
+
+// The standard applyCompletion used by every mock provider in the test file:
+// replace the prefix before the cursor with item.value.
+function applyCompletion(lines, cursorLine, cursorCol, item, prefix) {
+	const line = lines[cursorLine] || "";
+	const before = line.slice(0, cursorCol - prefix.length);
+	const after = line.slice(cursorCol);
+	const newLines = [...lines];
+	newLines[cursorLine] = before + item.value + after;
+	return { lines: newLines, cursorLine, cursorCol: cursorCol - prefix.length + item.value.length };
+}
+
+function normItem(it) {
+	const o = { value: it.value, label: it.label };
+	if (it.description !== undefined) o.description = it.description;
+	return o;
+}
+
+// Wrap a provider so every getSuggestions / applyCompletion /
+// shouldTriggerFileCompletion call is recorded as a lookup-table row.
+function recordingProvider(base, rec) {
+	const wrapped = {
+		triggerCharacters: base.triggerCharacters,
+		getSuggestions: async (lines, cl, cc, options) => {
+			rec.calls += 1;
+			const res = await base.getSuggestions(lines, cl, cc, options);
+			rec.suggestions.push({
+				text: lines.join("\n"),
+				line: cl,
+				col: cc,
+				force: !!(options && options.force),
+				result: res ? { items: res.items.map(normItem), prefix: res.prefix } : null,
+			});
+			return res;
+		},
+		applyCompletion: (lines, cl, cc, item, prefix) => {
+			const res = base.applyCompletion(lines, cl, cc, item, prefix);
+			rec.applies.push({
+				text: lines.join("\n"),
+				line: cl,
+				col: cc,
+				itemValue: item.value,
+				prefix,
+				result: { text: res.lines.join("\n"), line: res.cursorLine, col: res.cursorCol },
+			});
+			return res;
+		},
+	};
+	if (base.shouldTriggerFileCompletion) {
+		wrapped.shouldTriggerFileCompletion = (lines, cl, cc) => {
+			const res = base.shouldTriggerFileCompletion(lines, cl, cc);
+			rec.shouldTrigger.push({ text: lines.join("\n"), line: cl, col: cc, result: res });
+			return res;
+		};
+	}
+	return wrapped;
+}
+
+const autoFlush = (waitMs = 0) => ({ op: "flush", waitMs });
+
+async function runAutoEditor(spec) {
+	const editor = new Editor(makeTui(spec.rows ?? 24), editorTheme, spec.options ?? {});
+	editor.disableSubmit = spec.disableSubmit ?? false;
+	const submits = [];
+	editor.onSubmit = (t) => submits.push(t);
+
+	const rec = { suggestions: [], applies: [], shouldTrigger: [], calls: 0 };
+	editor.setAutocompleteProvider(recordingProvider(spec.provider, rec));
+
+	const trace = [];
+	for (const step of spec.steps) {
+		let renderLines = null;
+		switch (step.op) {
+			case "input":
+				editor.handleInput(step.data);
+				break;
+			case "setText":
+				editor.setText(step.text);
+				break;
+			case "flush":
+				if (step.waitMs) await new Promise((resolve) => setTimeout(resolve, step.waitMs));
+				await flushAutocomplete();
+				break;
+			case "render":
+				renderLines = editor.render(step.width);
+				break;
+			default:
+				throw new Error(`unknown auto op: ${step.op}`);
+		}
+		const cur = editor.getCursor();
+		trace.push({
+			...step,
+			textAfter: editor.getText(),
+			line: cur.line,
+			col: cur.col,
+			showing: editor.isShowingAutocomplete(),
+			render: renderLines,
+		});
+	}
+
+	return {
+		name: spec.name,
+		rows: spec.rows ?? 24,
+		options: spec.options ?? {},
+		disableSubmit: spec.disableSubmit ?? false,
+		triggerCharacters: spec.provider.triggerCharacters ?? [],
+		steps: trace,
+		submits,
+		suggestions: rec.suggestions,
+		applies: rec.applies,
+		shouldTrigger: rec.shouldTrigger,
+		suggestionCallCount: rec.calls,
+	};
+}
+
+const autoScenarios = [];
+async function addAuto(name, provider, steps, extra = {}) {
+	autoScenarios.push(await runAutoEditor({ name, provider, steps, ...extra }));
+}
+
+const typeChars = (s) => [...s].map(inp);
+const cwd = process.cwd();
+
+// --- Undo block: "undoes autocomplete" ---
+await addAuto(
+	"undo: undoes autocomplete",
+	{
+		getSuggestions: async (lines, _cl, cc) => {
+			const prefix = (lines[0] || "").slice(0, cc);
+			if (prefix === "di") return { items: [{ value: "dist/", label: "dist/" }], prefix: "di" };
+			return null;
+		},
+		applyCompletion,
+	},
+	[inp("d"), inp("i"), inp("\t"), autoFlush(), inp(UNDO)],
+);
+
+// --- Autocomplete block ---
+await addAuto(
+	"auto: auto-applies single force-file suggestion without showing menu",
+	{
+		getSuggestions: async (lines, _cl, cc, options) => {
+			if (!options.force) return null;
+			const prefix = (lines[0] || "").slice(0, cc);
+			if (prefix === "Work") return { items: [{ value: "Workspace/", label: "Workspace/" }], prefix: "Work" };
+			return null;
+		},
+		applyCompletion,
+	},
+	[...typeChars("Work"), inp("\t"), autoFlush(), inp(UNDO)],
+);
+
+await addAuto(
+	"auto: shows menu when force-file has multiple suggestions",
+	{
+		getSuggestions: async (lines, _cl, cc, options) => {
+			if (!options.force) return null;
+			const prefix = (lines[0] || "").slice(0, cc);
+			if (prefix === "src")
+				return {
+					items: [
+						{ value: "src/", label: "src/" },
+						{ value: "src.txt", label: "src.txt" },
+					],
+					prefix: "src",
+				};
+			return null;
+		},
+		applyCompletion,
+	},
+	[...typeChars("src"), inp("\t"), autoFlush(), inp("\t")],
+);
+
+await addAuto(
+	"auto: keeps suggestions open when typing in force mode (Tab-triggered)",
+	(() => {
+		const allFiles = [
+			{ value: "readme.md", label: "readme.md" },
+			{ value: "package.json", label: "package.json" },
+			{ value: "src/", label: "src/" },
+			{ value: "dist/", label: "dist/" },
+		];
+		return {
+			getSuggestions: async (lines, _cl, cc, options) => {
+				const prefix = (lines[0] || "").slice(0, cc);
+				const shouldMatch = options.force || prefix.includes("/") || prefix.startsWith(".");
+				if (!shouldMatch) return null;
+				const filtered = allFiles.filter((f) => f.value.toLowerCase().startsWith(prefix.toLowerCase()));
+				return filtered.length > 0 ? { items: filtered, prefix } : null;
+			},
+			applyCompletion,
+		};
+	})(),
+	[inp("\t"), autoFlush(), inp("r"), autoFlush(), inp("e"), autoFlush(), inp("\t")],
+);
+
+await addAuto(
+	"auto: debounces @ autocomplete while typing",
+	{
+		getSuggestions: async (lines, _cl, cc) => {
+			const text = (lines[0] || "").slice(0, cc);
+			return { items: [{ value: "@main.ts", label: "main.ts" }], prefix: text };
+		},
+		applyCompletion,
+	},
+	[inp("@"), inp("m"), inp("a"), inp("i"), autoFlush(50)],
+);
+
+await addAuto(
+	"auto: re-queries the picker when cursor moves back into the command name",
+	{
+		getSuggestions: async (lines, _cl, cc) => {
+			const before = (lines[0] || "").slice(0, cc);
+			if (!before.startsWith("/")) return null;
+			if (before.includes(" "))
+				return {
+					items: [
+						{ value: "repo", label: "repo" },
+						{ value: "message", label: "message" },
+						{ value: "help", label: "help" },
+					],
+					prefix: before.slice(before.indexOf(" ") + 1),
+				};
+			return { items: [{ value: "cmd", label: "cmd" }], prefix: before };
+		},
+		applyCompletion,
+	},
+	[
+		...[..."/cmd "].flatMap((ch) => [inp(ch), autoFlush()]),
+		render(80),
+		inp(LEFT),
+		autoFlush(),
+		render(80),
+	],
+);
+
+await addAuto(
+	"auto: debounces # autocomplete while typing",
+	{
+		getSuggestions: async (lines, _cl, cc) => {
+			const text = (lines[0] || "").slice(0, cc);
+			return { items: [{ value: "#2983", label: "#2983" }], prefix: text };
+		},
+		applyCompletion,
+	},
+	[inp("#"), inp("2"), inp("9"), inp("8"), autoFlush(50)],
+);
+
+await addAuto(
+	"auto: debounces custom triggerCharacters autocomplete while typing",
+	{
+		triggerCharacters: ["$"],
+		getSuggestions: async (lines, _cl, cc) => {
+			const prefix = (lines[0] || "").slice(0, cc);
+			return { items: [{ value: "$skill-name", label: "skill-name" }], prefix };
+		},
+		applyCompletion,
+	},
+	[inp("$"), inp("s"), inp("k"), autoFlush(50)],
+);
+
+// "resets custom triggerCharacters when provider changes": the first ($-trigger)
+// provider is replaced before any query, so its only effect — installing $ as a
+// trigger — is immediately overwritten by the default-trigger provider. With no
+// query in between, the observable collapses to driving the default-trigger
+// provider alone (typing "$s" triggers nothing → 0 calls, menu hidden).
+await addAuto(
+	"auto: resets custom triggerCharacters when provider changes",
+	{
+		getSuggestions: async () => ({ items: [{ value: "$skill-name", label: "skill-name" }], prefix: "$" }),
+		applyCompletion,
+	},
+	[inp("$"), inp("s"), autoFlush(50)],
+);
+
+await addAuto(
+	"auto: hides autocomplete when backspacing slash command to empty",
+	{
+		getSuggestions: async (lines, _cl, cc) => {
+			const prefix = (lines[0] || "").slice(0, cc);
+			if (prefix.startsWith("/")) {
+				const commands = [
+					{ value: "/model", label: "model", description: "Change model" },
+					{ value: "/help", label: "help", description: "Show help" },
+				];
+				const query = prefix.slice(1);
+				const filtered = commands.filter((c) => c.value.startsWith(query));
+				if (filtered.length > 0) return { items: filtered, prefix };
+			}
+			return null;
+		},
+		applyCompletion,
+	},
+	[inp("/"), autoFlush(), inp(BS), autoFlush()],
+);
+
+// The four /argtest argument-selection cases share the structure "type, flush,
+// Enter" and differ only in the provider's item list / filtering.
+const argtestProvider = (allArguments, filterByPrefix) => ({
+	getSuggestions: async (lines, _cl, cc) => {
+		const beforeCursor = (lines[0] || "").slice(0, cc);
+		const m = beforeCursor.match(/^\/argtest\s+(\S+)$/);
+		if (m) {
+			const argumentText = m[1];
+			const items = filterByPrefix
+				? allArguments.filter((arg) => arg.value.startsWith(argumentText))
+				: allArguments;
+			if (items.length > 0) return { items, prefix: argumentText };
+		}
+		return null;
+	},
+	applyCompletion,
+});
+
+await addAuto(
+	"auto: applies exact typed slash-argument value on Enter",
+	argtestProvider(
+		[
+			{ value: "one", label: "one" },
+			{ value: "two", label: "two" },
+			{ value: "three", label: "three" },
+		],
+		true,
+	),
+	[...typeChars("/argtest two"), autoFlush(), inp("\r")],
+);
+
+await addAuto(
+	"auto: selects first prefix match on Enter when typed arg is not exact",
+	argtestProvider(
+		[
+			{ value: "two", label: "two" },
+			{ value: "three", label: "three" },
+			{ value: "twelve", label: "twelve" },
+		],
+		true,
+	),
+	[...typeChars("/argtest t"), autoFlush(), inp("\r")],
+);
+
+await addAuto(
+	"auto: highlights unique prefix match as user types",
+	argtestProvider(
+		[
+			{ value: "one", label: "one" },
+			{ value: "two", label: "two" },
+			{ value: "three", label: "three" },
+		],
+		false,
+	),
+	[...typeChars("/argtest tw"), autoFlush(), inp("\r")],
+);
+
+await addAuto(
+	"auto: selects first prefix match when multiple items match",
+	argtestProvider(
+		[
+			{ value: "one", label: "one" },
+			{ value: "two", label: "two" },
+			{ value: "three", label: "three" },
+		],
+		false,
+	),
+	[...typeChars("/argtest t"), autoFlush(), inp("\r")],
+);
+
+await addAuto(
+	"auto: built-in-style command argument completion path (model-like)",
+	{
+		getSuggestions: async (lines, _cl, cc) => {
+			const beforeCursor = (lines[0] || "").slice(0, cc);
+			const m = beforeCursor.match(/^\/model\s+(\S+)$/);
+			if (m) {
+				const modelText = m[1];
+				const allModels = [
+					{ value: "gpt-4o", label: "gpt-4o" },
+					{ value: "gpt-4o-mini", label: "gpt-4o-mini" },
+					{ value: "claude-sonnet", label: "claude-sonnet" },
+				];
+				const filtered = allModels.filter((mm) => mm.value.startsWith(modelText));
+				if (filtered.length > 0) return { items: filtered, prefix: modelText };
+			}
+			return null;
+		},
+		applyCompletion,
+	},
+	[...typeChars("/model gpt-4o-mini"), autoFlush(), inp("\r")],
+);
+
+await addAuto(
+	"auto: awaits async slash command argument completions",
+	new CombinedAutocompleteProvider(
+		[
+			{
+				name: "load-skills",
+				description: "Load skills",
+				getArgumentCompletions: async (prefix) => (prefix.startsWith("s") ? [{ value: "skill-a", label: "skill-a" }] : null),
+			},
+		],
+		cwd,
+	),
+	[setText("/load-skills "), inp("s"), autoFlush(), inp("\t")],
+);
+
+await addAuto(
+	"auto: ignores invalid slash command argument completion results",
+	new CombinedAutocompleteProvider(
+		[
+			{
+				name: "load-skills",
+				description: "Load skills",
+				getArgumentCompletions: () => "not-an-array",
+			},
+		],
+		cwd,
+	),
+	[setText("/load-skills "), inp("s"), autoFlush()],
+);
+
+await addAuto(
+	"auto: does not show argument completions when command has no argument completer",
+	new CombinedAutocompleteProvider(
+		[
+			{ name: "help", description: "Show help" },
+			{ name: "model", description: "Switch model", getArgumentCompletions: () => [{ value: "claude-opus", label: "claude-opus" }] },
+		],
+		cwd,
+	),
+	[inp("/"), inp("h"), inp("e"), autoFlush(), inp("\t")],
+);
+
+dump("editor_autocomplete", autoScenarios);
 
 console.log(`\ntotal editor vectors: ${total}`);
