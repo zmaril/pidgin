@@ -1,0 +1,118 @@
+# straitjacket-allow-file[:duplication] — the checkout/toolchain/canvas setup
+# necessarily mirrors conformance.yml (and ci.yml); Actions YAML has no include
+# mechanism for it. Keep this setup block in lockstep with conformance.yml.
+#
+# Auto-refresh of the committed conformance baseline (conformance.json).
+#
+# WHY THIS EXISTS
+#   The repo commits conformance.json as the baseline that per-PR conformance
+#   runs diff against. Left to hand-maintenance that file drifts stale, and a
+#   stale baseline makes every PR delta noisy — a PR appears to move numbers it
+#   never touched. This job keeps the committed baseline current automatically by
+#   regenerating it the same way CI does and committing it back.
+#
+# WHERE THE BASELINE MOVES — MAIN ONLY, NEVER PER-PR
+#   The baseline is regenerated and committed ONLY on push/merge to main. It is
+#   NEVER regenerated per-PR. That is deliberate: if PRs could rewrite the
+#   baseline, the per-PR delta would compare against a moving target and could be
+#   gamed or silently masked. Anchoring the baseline to main means a PR's delta
+#   always reflects that PR's real changes against the last merged state. The
+#   per-PR conformance.yml job stays read-only and only ever posts a comment.
+#
+# LOOP PREVENTION
+#   This job commits back to main, which is itself a push to main. Two guards
+#   stop that from re-triggering the job (or any other workflow):
+#     1. The commit-back is a no-op in the steady state: if conformance.json did
+#        not change, the job exits without committing. Genuine drift is the only
+#        thing that produces a commit.
+#     2. When it does commit, the message carries [skip ci], so the commit-back
+#        push does not start a fresh workflow run.
+#
+# OFFLINE-DETERMINISTIC RUN — CREDS MUST BE UNSET
+#   scripts/conformance.sh must run with the offline provider profile so the
+#   baseline is deterministic regardless of any ambient credentials on the
+#   runner. If AWS/Anthropic creds are present, packages/ai's model codegen and
+#   suite flip to live provider calls (ai becomes 562 pass / 24 fail / 708 skip,
+#   the live-failing profile) instead of the offline CI profile (556 pass / 0
+#   fail / 738 skip) that the committed baseline is built from — see the team's
+#   conformance memory. We therefore run the regen with those vars explicitly
+#   unset via `env -u ...` so the result matches the CI profile every time.
+
+name: conformance-baseline
+
+on:
+  push:
+    branches: [main]
+
+# Least privilege plus the one extra the job needs: write access to commit the
+# refreshed baseline back to main.
+permissions:
+  contents: write
+
+# Serialize refreshes so overlapping main pushes never race on the commit-back.
+# Do NOT cancel in progress: a half-finished regen would leave no commit and the
+# next push would just redo it, but cancelling mid-push could interrupt a git
+# push. Queue instead.
+concurrency:
+  group: conformance-baseline
+  cancel-in-progress: false
+
+jobs:
+  refresh-baseline:
+    name: refresh committed conformance baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive  # vendor/pi must be present for codegen + tests
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"  # matches pi engines (>=22.19)
+
+      # --- napi addon ----------------------------------------------------
+      # The native shims delegate to this addon, so it must be current before
+      # the conformance run materializes the module tree. Mirrors conformance.yml.
+      - name: Build atilla-napi crate
+        run: cargo build -p atilla-napi
+
+      - name: Build + load napi addon
+        working-directory: crates/atilla-napi
+        run: |
+          npm install
+          npx napi build --platform
+          node -e "const { atillaNativeVersion } = require('./index.js'); const v = atillaNativeVersion(); if (typeof v !== 'string' || v.length === 0) { throw new Error('atillaNativeVersion() returned ' + JSON.stringify(v)); } console.log('atillaNativeVersion() =>', v);"
+
+      # System libs for canvas (a packages/ai devDependency pulled in by the
+      # workspace install). Present before the setup step's npm install. Mirrors
+      # conformance.yml.
+      - name: Install canvas system libs
+        run: sudo apt-get update && sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+        continue-on-error: true
+
+      # Regenerate the full five-package baseline exactly as CI does (--setup does
+      # the pi npm install + ai model codegen). Creds are stripped from the env so
+      # packages/ai stays on the offline profile and the baseline is deterministic
+      # — see the OFFLINE-DETERMINISTIC RUN note at the top of this file.
+      - name: Regenerate conformance baseline (offline profile)
+        run: env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN -u ANTHROPIC_BASE_URL scripts/conformance.sh --setup
+
+      # Commit the refreshed baseline back to main — but only on genuine drift,
+      # and with [skip ci] so the commit-back does not re-trigger this (or any)
+      # workflow. See LOOP PREVENTION at the top of this file.
+      - name: Commit refreshed baseline if it drifted
+        run: |
+          if git diff --quiet -- conformance.json; then
+            echo "conformance.json unchanged — baseline already current, nothing to commit."
+            exit 0
+          fi
+          echo "conformance.json drifted — committing refreshed baseline back to main."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add conformance.json
+          git commit -m "ci(conformance): auto-refresh committed baseline [skip ci]"
+          git push
