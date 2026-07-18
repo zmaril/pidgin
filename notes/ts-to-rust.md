@@ -12,7 +12,7 @@
 
 ## Decision (2026-07-18)
 
-The project owner has chosen: **idiomatic-first, big-bang, no strangler-fig.** A rewrite that fails a ported test fails honestly; a test that passes passes because the behavior genuinely works in Rust, not because a Node shim made it pass. This supersedes the napi-rs strangler-fig fallback below — that fallback is recorded for completeness but is not the chosen path.
+The project owner has chosen: **idiomatic-first, big-bang, no strangler-fig.** A rewrite that fails a ported test fails honestly; a test that passes does so because the behavior genuinely works in Rust, not because a Node shim made it pass. This supersedes the napi-rs strangler-fig fallback below — that fallback is recorded for completeness but is not the chosen path.
 
 Two consequences that follow from pi's actual code and tests:
 
