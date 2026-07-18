@@ -21,4 +21,7 @@ repository = "https://github.com/zmaril/atilla"
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# float_roundtrip: serde_json's default float parser can be off by 1 ULP; this
+# feature selects the correctly-rounded parser so decimals round-trip to the
+# exact same f64 pi (and JS) produce — required for bit-exact cost conformance.
+serde_json = { version = "1", features = ["float_roundtrip"] }

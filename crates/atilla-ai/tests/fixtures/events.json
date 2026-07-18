@@ -1,0 +1,433 @@
+[
+  {
+    "type": "start",
+    "partial": {
+      "role": "assistant",
+      "content": [],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "thinking_start",
+    "contentIndex": 0,
+    "partial": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "thinking_delta",
+    "contentIndex": 0,
+    "delta": "reasoning",
+    "partial": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "thinking_end",
+    "contentIndex": 0,
+    "content": "reasoning",
+    "partial": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "toolcall_start",
+    "contentIndex": 1,
+    "partial": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        },
+        {
+          "type": "toolCall",
+          "id": "tool-fixed-4",
+          "name": "lookup",
+          "arguments": {
+            "id": 7
+          }
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "toolcall_delta",
+    "contentIndex": 1,
+    "delta": "{\"id\":7}",
+    "partial": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        },
+        {
+          "type": "toolCall",
+          "id": "tool-fixed-4",
+          "name": "lookup",
+          "arguments": {
+            "id": 7
+          }
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "toolcall_end",
+    "contentIndex": 1,
+    "toolCall": {
+      "type": "toolCall",
+      "id": "tool-fixed-4",
+      "name": "lookup",
+      "arguments": {
+        "id": 7
+      }
+    },
+    "partial": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        },
+        {
+          "type": "toolCall",
+          "id": "tool-fixed-4",
+          "name": "lookup",
+          "arguments": {
+            "id": 7
+          }
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "text_start",
+    "contentIndex": 2,
+    "partial": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        },
+        {
+          "type": "toolCall",
+          "id": "tool-fixed-4",
+          "name": "lookup",
+          "arguments": {
+            "id": 7
+          }
+        },
+        {
+          "type": "text",
+          "text": "answer"
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "text_delta",
+    "contentIndex": 2,
+    "delta": "answer",
+    "partial": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        },
+        {
+          "type": "toolCall",
+          "id": "tool-fixed-4",
+          "name": "lookup",
+          "arguments": {
+            "id": 7
+          }
+        },
+        {
+          "type": "text",
+          "text": "answer"
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "text_end",
+    "contentIndex": 2,
+    "content": "answer",
+    "partial": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        },
+        {
+          "type": "toolCall",
+          "id": "tool-fixed-4",
+          "name": "lookup",
+          "arguments": {
+            "id": 7
+          }
+        },
+        {
+          "type": "text",
+          "text": "answer"
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  },
+  {
+    "type": "done",
+    "reason": "toolUse",
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "reasoning"
+        },
+        {
+          "type": "toolCall",
+          "id": "tool-fixed-4",
+          "name": "lookup",
+          "arguments": {
+            "id": 7
+          }
+        },
+        {
+          "type": "text",
+          "text": "answer"
+        }
+      ],
+      "api": "faux",
+      "provider": "faux",
+      "model": "faux-1",
+      "usage": {
+        "input": 2,
+        "output": 8,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 10,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1700000000004
+    }
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "role": "toolResult",
+  "toolCallId": "tool-fixed-3",
+  "toolName": "run",
+  "content": [
+    {
+      "type": "text",
+      "text": "file-a\nfile-b"
+    }
+  ],
+  "isError": false,
+  "timestamp": 1700000000003
+}

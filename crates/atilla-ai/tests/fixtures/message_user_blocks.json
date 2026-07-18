@@ -1,0 +1,15 @@
+{
+  "role": "user",
+  "content": [
+    {
+      "type": "text",
+      "text": "describe this"
+    },
+    {
+      "type": "image",
+      "data": "aW1n",
+      "mimeType": "image/jpeg"
+    }
+  ],
+  "timestamp": 1700000000001
+}

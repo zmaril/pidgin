@@ -1,15 +1,21 @@
 //! Rust mirror of `@earendil-works/pi-ai` (`packages/ai`).
 //!
-//! This crate scaffolds the provider and model surface of pi's AI package.
+//! This crate mirrors the provider and model surface of pi's AI package.
 //! Modules mirror pi's `src/` top-level layout; port order runs roughly
 //! `types` and `utils` first, then `auth`, `providers`, `api`, and finally
-//! `compat`. Every module here is an empty stub — no logic is ported yet.
+//! `compat`. Stage 1 ports the boundary types (`types.ts`) and cost math
+//! (`models.ts`'s `calculateCost`); the remaining modules are still stubs.
 
 pub mod api;
 pub mod auth;
 pub mod compat;
+pub mod cost;
 pub mod providers;
+pub mod types;
 pub mod utils;
+
+pub use cost::calculate_cost;
+pub use types::*;
 
 /// Name of the pi package this crate mirrors.
 pub const PI_PACKAGE: &str = "@earendil-works/pi-ai";

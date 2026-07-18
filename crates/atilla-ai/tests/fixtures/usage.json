@@ -1,0 +1,16 @@
+{
+  "input": 1000,
+  "output": 500,
+  "cacheRead": 200,
+  "cacheWrite": 100,
+  "cacheWrite1h": 40,
+  "reasoning": 120,
+  "totalTokens": 1800,
+  "cost": {
+    "input": 0.003,
+    "output": 0.0075,
+    "cacheRead": 0.00006,
+    "cacheWrite": 0.000465,
+    "total": 0.011025
+  }
+}
