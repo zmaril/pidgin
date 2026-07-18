@@ -1,0 +1,14 @@
+[package]
+name = "atilla-orchestrator"
+description = "Rust mirror of @earendil-works/pi-orchestrator — the multi-instance orchestrator (scaffold)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
