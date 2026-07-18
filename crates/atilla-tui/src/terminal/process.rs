@@ -184,22 +184,22 @@ impl<W: Write> ProcessTerminal<W> {
     /// `stdin -> StdinBuffer -> negotiation filter -> inputHandler` in pi.
     pub fn feed(&mut self, data: &str) -> Vec<TerminalInput> {
         let events = self.stdin_buffer.process(data);
-        let mut out = Vec::new();
-        for event in events {
-            match event {
-                StdinEvent::Data(sequence) => self.route_data_sequence(&sequence, &mut out),
-                // pi re-wraps paste bodies for the editor; we carry the body and
-                // expose the wrapped form via `TerminalInput::as_delivered`.
-                StdinEvent::Paste(content) => out.push(TerminalInput::Paste(content)),
-            }
-        }
-        out
+        self.route_stdin_events(events)
     }
 
     /// Flush a stalled [`StdinBuffer`] remainder as input (pi's 10 ms completion
     /// timer). Route the flushed sequences through the same negotiation filter.
     pub fn flush_input_timeout(&mut self) -> Vec<TerminalInput> {
         let events = self.stdin_buffer.flush();
+        self.route_stdin_events(events)
+    }
+
+    /// Route a batch of [`StdinBuffer`] events into forwarded input, mirroring
+    /// pi's `stdinBuffer.on("data")` / `on("paste")` handlers: data sequences go
+    /// through the negotiation filter, paste bodies are forwarded directly. pi
+    /// re-wraps paste bodies for the editor; we carry the body and expose the
+    /// wrapped form via [`TerminalInput::as_delivered`].
+    fn route_stdin_events(&mut self, events: Vec<StdinEvent>) -> Vec<TerminalInput> {
         let mut out = Vec::new();
         for event in events {
             match event {
@@ -400,6 +400,13 @@ impl<W: Write> ProcessTerminal<W> {
     /// teardown in pi's `drainInput`. The timed stdin byte-drain itself is an
     /// I/O concern left to the run loop.
     pub fn drain_input(&mut self) {
+        self.disable_keyboard_protocol();
+    }
+
+    /// Pop the Kitty keyboard protocol (if pushed/active) and `modifyOtherKeys`,
+    /// clearing the negotiation buffer. Shared teardown for `drain_input` and
+    /// `stop`, matching the identical sequence in pi's `drainInput` / `stop`.
+    fn disable_keyboard_protocol(&mut self) {
         let should_disable = self.keyboard_protocol_pushed || self.kitty_protocol_active;
         self.negotiation_buffer.clear();
         if should_disable {
@@ -465,15 +472,8 @@ impl<W: Write> Terminal for ProcessTerminal<W> {
         // Disable bracketed paste.
         self.emit(BRACKETED_PASTE_DISABLE);
 
-        let should_disable = self.keyboard_protocol_pushed || self.kitty_protocol_active;
-        self.negotiation_buffer.clear();
-        if should_disable {
-            self.emit(KITTY_PROTOCOL_DISABLE);
-            self.keyboard_protocol_pushed = false;
-            self.kitty_protocol_active = false;
-            keys::set_kitty_protocol_active(false);
-        }
-        self.disable_modify_other_keys();
+        // Pop the Kitty protocol / modifyOtherKeys (unless drain_input already did).
+        self.disable_keyboard_protocol();
 
         self.stdin_buffer.clear();
 
