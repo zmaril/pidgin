@@ -5,5 +5,6 @@
 //! and `src/harness/session/*` (uuidv7, storage, session, repo), reproducing
 //! pi's agent-core version-3 JSONL session-tree format byte-for-byte.
 
+pub mod compaction;
 pub mod session;
 pub mod types;
