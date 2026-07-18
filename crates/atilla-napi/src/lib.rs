@@ -153,3 +153,116 @@ pub fn decode_printable_key(data: String) -> Option<String> {
 pub fn set_kitty_protocol_active(active: bool) {
     atilla_tui::set_kitty_protocol_active(active);
 }
+
+// --- coding-agent utils layer -----------------------------------------------
+//
+// Thin wrappers over `atilla_coding::utils::*`, backing the hand-written native
+// shims under conformance/shims/packages/coding-agent/src/utils/. Each mirrors
+// the pi export it replaces; the shims re-export the un-ported surface from the
+// preserved pi original and override only these symbols.
+
+/// `stripAnsi` (utils/ansi.ts): remove ANSI escape sequences (OSC + CSI). The
+/// shim keeps pi's non-string `TypeError` guard, so only strings reach here.
+#[napi(js_name = "stripAnsi")]
+pub fn strip_ansi(value: String) -> String {
+    atilla_coding::utils::ansi::strip_ansi(&value)
+}
+
+/// `detectSupportedImageMimeType` (utils/mime.ts): sniff a supported image MIME
+/// type from magic bytes, or `null`.
+#[napi(js_name = "detectSupportedImageMimeType")]
+pub fn detect_supported_image_mime_type(buffer: napi::bindgen_prelude::Uint8Array) -> Option<String> {
+    atilla_coding::utils::mime::detect_supported_image_mime_type(&buffer).map(|s| s.to_string())
+}
+
+/// `normalizeChangelogLinks` (utils/changelog.ts): rewrite inline markdown links
+/// for a release. `version_json` is the JSON-serialized `string | ChangelogEntry`
+/// the shim passes; a bare JSON string is a raw version, a JSON object is a
+/// `ChangelogEntry`.
+#[napi(js_name = "normalizeChangelogLinks")]
+pub fn normalize_changelog_links(markdown: String, version_json: String) -> napi::Result<String> {
+    use atilla_coding::utils::changelog::{normalize_changelog_links, ChangelogEntry};
+    let value: serde_json::Value =
+        serde_json::from_str(&version_json).map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    match value {
+        serde_json::Value::String(s) => Ok(normalize_changelog_links(&markdown, s.as_str())),
+        serde_json::Value::Object(map) => {
+            let entry = ChangelogEntry {
+                major: map.get("major").and_then(|v| v.as_u64()).unwrap_or(0),
+                minor: map.get("minor").and_then(|v| v.as_u64()).unwrap_or(0),
+                patch: map.get("patch").and_then(|v| v.as_u64()).unwrap_or(0),
+                content: map
+                    .get("content")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+            };
+            Ok(normalize_changelog_links(&markdown, &entry))
+        }
+        _ => Err(napi::Error::from_reason(
+            "version must be a string or ChangelogEntry object",
+        )),
+    }
+}
+
+/// `comparePackageVersions` (utils/version-check.ts): compare two semver
+/// strings, mapping `Ordering` to `-1`/`0`/`1`. `None` (incomparable) crosses as
+/// JS `null`; the shim converts it to `undefined` to match pi's `number |
+/// undefined`.
+#[napi(js_name = "comparePackageVersions")]
+pub fn compare_package_versions(left_version: String, right_version: String) -> Option<i32> {
+    atilla_coding::utils::version_check::compare_package_versions(&left_version, &right_version).map(
+        |ordering| match ordering {
+            std::cmp::Ordering::Less => -1,
+            std::cmp::Ordering::Equal => 0,
+            std::cmp::Ordering::Greater => 1,
+        },
+    )
+}
+
+/// `isNewerPackageVersion` (utils/version-check.ts): is `candidate` strictly
+/// newer than `current`?
+#[napi(js_name = "isNewerPackageVersion")]
+pub fn is_newer_package_version(candidate_version: String, current_version: String) -> bool {
+    atilla_coding::utils::version_check::is_newer_package_version(
+        &candidate_version,
+        &current_version,
+    )
+}
+
+/// `parseGitUrl` (utils/git.ts): parse a git source string into pi's `GitSource`
+/// JSON shape (`{ type, repo, host, path, ref?, pinned }`), or `null`. The shim
+/// `JSON.parse`s the result.
+#[napi(js_name = "parseGitUrl")]
+pub fn parse_git_url(source: String) -> Option<String> {
+    let parsed = atilla_coding::utils::git_url::parse_git_url(&source)?;
+    let mut obj = serde_json::Map::new();
+    obj.insert("type".to_string(), serde_json::json!(parsed.kind));
+    obj.insert("repo".to_string(), serde_json::json!(parsed.repo));
+    obj.insert("host".to_string(), serde_json::json!(parsed.host));
+    obj.insert("path".to_string(), serde_json::json!(parsed.path));
+    if let Some(git_ref) = parsed.git_ref {
+        obj.insert("ref".to_string(), serde_json::json!(git_ref));
+    }
+    obj.insert("pinned".to_string(), serde_json::json!(parsed.pinned));
+    Some(serde_json::Value::Object(obj).to_string())
+}
+
+// --- coding-agent export-html layer -----------------------------------------
+//
+// Thin wrappers over `atilla_coding::core::export_html::ansi_to_html`, backing
+// the native `core/export-html/ansi-to-html.ts` shim.
+
+/// `ansiToHtml` (core/export-html/ansi-to-html.ts): convert ANSI-escaped text to
+/// HTML with inline styles.
+#[napi(js_name = "ansiToHtml")]
+pub fn ansi_to_html(text: String) -> String {
+    atilla_coding::core::export_html::ansi_to_html::ansi_to_html(&text)
+}
+
+/// `ansiLinesToHtml` (core/export-html/ansi-to-html.ts): convert an array of
+/// ANSI-escaped lines to HTML, wrapping each in an `ansi-line` div.
+#[napi(js_name = "ansiLinesToHtml")]
+pub fn ansi_lines_to_html(lines: Vec<String>) -> String {
+    atilla_coding::core::export_html::ansi_to_html::ansi_lines_to_html(&lines)
+}
