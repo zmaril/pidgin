@@ -487,9 +487,8 @@ inventions.
    but distribution is not: a per-platform, per-PHP-version, NTS-or-ZTS
    `.so` matrix is heavy. Is a bundled static php-cli a better delivery
    vehicle than a PECL extension?
-3. **Ruby placement.** Is Ruby worth the flavor-2 machinery, or should the
-   first Ruby binding expose only the coarse out-of-process surface until
-   demand is proven?
+3. **Ruby placement.** Is Ruby worth the flavor-2 machinery in the first
+   release, or is a native Ruby binding deferred until demand is proven?
 4. **Async host closures.** Node promises and Python coroutines await
    cleanly. PHP has no in-language async a hook can await; a PHP closure is
    synchronous by nature. Is that a limitation to document or a constraint
@@ -498,7 +497,3 @@ inventions.
    `Promise` through a `ThreadsafeFunction` per hook adds a loop round-trip
    on the hot path. Is the latency acceptable for high-frequency hooks like
    `context`, or do those hooks need a fast synchronous subset?
-6. **Deep hooks over IPC.** `extensibility.md` reserves block/modify/replace
-   to in-process extensions. If an out-of-process host ever needs a real
-   permission gate, does the rendezvous protocol extend over a socket with
-   a strict timeout, or is that a line we hold?
