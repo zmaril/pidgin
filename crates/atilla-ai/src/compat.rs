@@ -34,6 +34,50 @@ use crate::providers::faux::{
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
 use crate::types::{AssistantMessage, Context, Model, StreamOptions};
 
+/// A dispatch error raised by the compat entrypoint — the value analog of pi's
+/// synchronous `throw new Error(...)` on the two `stream` guard paths.
+///
+/// pi's `stream`/`complete` *throw* (a catchable JS `Error`) when the api is
+/// mismatched (`wrapStream`, `compat.ts:108`) or no provider is registered
+/// (`resolveApiProvider`, `compat.ts:245`). Modelling those as a returned `Err`
+/// keeps that behavior a value: at the napi boundary it maps to a catchable JS
+/// throw, whereas a Rust `panic!` would cross as an uncatchable abort and crash
+/// the test runner. Its [`Display`](std::fmt::Display) text is byte-for-byte
+/// pi's `Error` message, so a caller (or the binding shim) reproduces pi's
+/// thrown message exactly.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CompatError {
+    /// pi's `wrapStream` mismatch throw (`compat.ts:108`): the dispatched
+    /// model's api does not match the provider it was routed to.
+    MismatchedApi {
+        /// The api the provider serves (pi's `expected`).
+        expected: String,
+        /// The dispatched model's api (pi's `model.api`).
+        actual: String,
+    },
+    /// pi's `resolveApiProvider` throw (`compat.ts:245`): no provider is
+    /// registered for the dispatched model's api.
+    NoApiProvider {
+        /// The dispatched model's api with no registered provider.
+        api: String,
+    },
+}
+
+impl std::fmt::Display for CompatError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CompatError::MismatchedApi { expected, actual } => {
+                write!(f, "Mismatched api: {actual} expected {expected}")
+            }
+            CompatError::NoApiProvider { api } => {
+                write!(f, "No API provider registered for api: {api}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for CompatError {}
+
 // Re-export the faux content helpers so `atilla_ai::compat` mirrors pi's compat
 // entrypoint, whose faux-driven tests import `fauxText`/`fauxThinking`/
 // `fauxToolCall`/`fauxAssistantMessage` from it. Consumed from the foundations
@@ -68,21 +112,25 @@ impl ApiProvider {
         &self.api
     }
 
-    /// Stream a request through the wrapped provider. Panics on an api mismatch,
-    /// mirroring pi's `wrapStream` throw (`compat.ts:101`); the normal
-    /// [`get_api_provider`] dispatch path never mismatches, so this only fires on
-    /// a caller contract violation.
+    /// Stream a request through the wrapped provider. Returns
+    /// [`CompatError::MismatchedApi`] on an api mismatch, mirroring pi's
+    /// `wrapStream` throw (`compat.ts:108`) as a catchable value; the normal
+    /// [`get_api_provider`] dispatch path never mismatches, so the `Err` only
+    /// fires on a caller contract violation.
     pub fn stream(
         &self,
         model: &Model,
         context: &Context,
         options: Option<&StreamOptions>,
         signal: Option<&AbortSignal>,
-    ) -> StreamResult {
+    ) -> Result<StreamResult, CompatError> {
         if model.api != self.api {
-            panic!("Mismatched api: {} expected {}", model.api, self.api);
+            return Err(CompatError::MismatchedApi {
+                expected: self.api.clone(),
+                actual: model.api.clone(),
+            });
         }
-        self.provider.stream(model, context, options, signal)
+        Ok(self.provider.stream(model, context, options, signal))
     }
 }
 
@@ -258,30 +306,34 @@ pub fn register_faux_provider(options: RegisterFauxProviderOptions) -> FauxProvi
 }
 
 /// Stream a request for `model` through its registered api provider. The
-/// registry-dispatch fallback of pi's `stream` (`compat.ts:340-347`); see the
-/// module doc for the deferred builtin-catalog and env-api-key branches. Panics
-/// when no provider is registered for `model.api`, mirroring pi's
-/// `resolveApiProvider` throw (`compat.ts:334`).
+/// registry-dispatch fallback of pi's `stream` (`compat.ts:250-263`); see the
+/// module doc for the deferred builtin-catalog and env-api-key branches.
+/// Returns [`CompatError::NoApiProvider`] when no provider is registered for
+/// `model.api`, mirroring pi's `resolveApiProvider` throw (`compat.ts:245`) as
+/// a catchable value.
 pub fn stream(
     model: &Model,
     context: &Context,
     options: Option<&StreamOptions>,
     signal: Option<&AbortSignal>,
-) -> StreamResult {
+) -> Result<StreamResult, CompatError> {
     match get_api_provider(&model.api) {
         Some(provider) => provider.stream(model, context, options, signal),
-        None => panic!("No API provider registered for api: {}", model.api),
+        None => Err(CompatError::NoApiProvider {
+            api: model.api.clone(),
+        }),
     }
 }
 
 /// Stream to completion, returning the final message. pi's `complete`
-/// (`compat.ts:349-357`), i.e. `stream(...).result()`.
+/// (`compat.ts:266-273`), i.e. `stream(...).result()`; the dispatch error is
+/// propagated as an `Err`, mirroring pi's rejected promise.
 pub fn complete(
     model: &Model,
     context: &Context,
     options: Option<&StreamOptions>,
-) -> AssistantMessage {
-    stream(model, context, options, None).message
+) -> Result<AssistantMessage, CompatError> {
+    Ok(stream(model, context, options, None)?.message)
 }
 
 #[cfg(test)]
@@ -294,8 +346,8 @@ mod tests {
 
     // The api registry is process-global (pi's module-level `Map`), so registry
     // tests must not run concurrently. Each takes this lock and starts from a
-    // cleared registry; the lock is poison-tolerant so a `#[should_panic]` test
-    // does not wedge the others.
+    // cleared registry; the lock is poison-tolerant so a panicking test (e.g. an
+    // `unwrap` on an unexpected value) does not wedge the others.
     fn serialized() -> MutexGuard<'static, ()> {
         static TEST_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
         let guard = TEST_LOCK
@@ -325,7 +377,7 @@ mod tests {
     // Dispatch `model` through the registry and assert its single text block, the
     // shape most of these ported cases assert on.
     fn assert_completes_to_text(model: &Model, expected: &str) {
-        let response = complete(model, &user_context("hi"), None);
+        let response = complete(model, &user_context("hi"), None).unwrap();
         assert_eq!(response.content, vec![faux_text(expected)]);
     }
 
@@ -354,7 +406,7 @@ mod tests {
         assert!(get_api_provider(registration.api()).is_some());
 
         let model = registration.get_model(None).unwrap();
-        let response = complete(&model, &user_context("hi there"), None);
+        let response = complete(&model, &user_context("hi there"), None).unwrap();
 
         assert_eq!(response.content, vec![faux_text("hello world")]);
         assert!(response.usage.input > 0);
@@ -389,7 +441,7 @@ mod tests {
         .into()]);
 
         let model = registration.get_model(None).unwrap();
-        let response = complete(&model, &user_context("hi"), None);
+        let response = complete(&model, &user_context("hi"), None).unwrap();
 
         assert_eq!(
             text_blocks(&response),
@@ -453,7 +505,7 @@ mod tests {
         registration.set_responses([text_message("hello")]);
 
         let model = registration.get_model(None).unwrap();
-        let response = complete(&model, &user_context("hi"), None);
+        let response = complete(&model, &user_context("hi"), None).unwrap();
 
         assert_eq!(response.api, "faux:test");
         assert_eq!(response.provider, "faux-provider");
@@ -472,7 +524,7 @@ mod tests {
         let model = registration.get_model(None).unwrap();
         assert_completes_to_text(&model, "first");
         assert_completes_to_text(&model, "second");
-        let exhausted = complete(&model, &user_context("hi"), None);
+        let exhausted = complete(&model, &user_context("hi"), None).unwrap();
 
         assert_eq!(exhausted.stop_reason, StopReason::Error);
         assert_eq!(
@@ -539,20 +591,30 @@ mod tests {
         b.unregister();
     }
 
-    // pi's `resolveApiProvider` throw (`compat.ts:334`): dispatching an api with
-    // no registered provider is a hard error.
+    // pi's `resolveApiProvider` throw (`compat.ts:245`), asserted by
+    // faux-provider.test.ts:587-594 as `.rejects.toThrow("No API provider
+    // registered for api: ...")`: dispatching an api with no registered provider
+    // is a catchable error. Here it is returned as a `CompatError` value (so the
+    // napi boundary maps it to a JS throw, not an uncatchable abort).
     #[test]
-    #[should_panic(expected = "No API provider registered for api: nope")]
-    fn stream_panics_when_no_provider_registered() {
+    fn stream_errors_when_no_provider_registered() {
         let _guard = serialized();
         let model = lone_model("nope");
-        let _ = stream(&model, &user_context("hi"), None, None);
+        let err = stream(&model, &user_context("hi"), None, None).unwrap_err();
+        assert_eq!(
+            err,
+            CompatError::NoApiProvider {
+                api: "nope".to_string(),
+            }
+        );
+        assert_eq!(err.to_string(), "No API provider registered for api: nope");
     }
 
-    // pi's `wrapStream` mismatch guard (`compat.ts:101`).
+    // pi's `wrapStream` mismatch guard (`compat.ts:108`), a catchable
+    // `throw new Error("Mismatched api: ...")`. Here it is returned as a
+    // `CompatError` value rather than a panic, for the same napi-boundary reason.
     #[test]
-    #[should_panic(expected = "Mismatched api: other expected faux:guard")]
-    fn stream_panics_on_api_mismatch() {
+    fn stream_errors_on_api_mismatch() {
         let _guard = serialized();
         let registration = register_faux_provider(RegisterFauxProviderOptions {
             api: Some("faux:guard".to_string()),
@@ -560,7 +622,17 @@ mod tests {
         });
         let provider = get_api_provider("faux:guard").unwrap();
         let mismatched = lone_model("other");
-        let _ = provider.stream(&mismatched, &user_context("hi"), None, None);
+        let err = provider
+            .stream(&mismatched, &user_context("hi"), None, None)
+            .unwrap_err();
+        assert_eq!(
+            err,
+            CompatError::MismatchedApi {
+                expected: "faux:guard".to_string(),
+                actual: "other".to_string(),
+            }
+        );
+        assert_eq!(err.to_string(), "Mismatched api: other expected faux:guard");
         registration.unregister();
     }
 

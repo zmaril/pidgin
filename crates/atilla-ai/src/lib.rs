@@ -23,7 +23,7 @@ pub mod utils;
 pub use compat::{
     get_api_provider, get_api_providers, register_api_provider, register_builtin_api_providers,
     register_faux_provider, reset_api_providers, unregister_api_providers, ApiProvider,
-    FauxProviderRegistration,
+    CompatError, FauxProviderRegistration,
 };
 pub use cost::{calculate_cost, calculate_cost_with};
 pub use types::*;
