@@ -7,6 +7,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+anyhow = { workspace = true }
 base64 = "0.22"
 globset = "0.4"
 grep-matcher = "0.1"
