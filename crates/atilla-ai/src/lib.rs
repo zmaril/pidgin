@@ -22,6 +22,10 @@ pub mod utils;
 
 pub use cost::{calculate_cost, calculate_cost_with};
 pub use types::*;
+pub use utils::event_stream::{
+    create_assistant_message_event_stream, AssistantMessageEventStream, EventStream,
+};
+pub use utils::retry::is_retryable_assistant_error;
 
 /// Name of the pi package this crate mirrors.
 pub const PI_PACKAGE: &str = "@earendil-works/pi-ai";
