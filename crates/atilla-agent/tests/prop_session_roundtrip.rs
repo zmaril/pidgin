@@ -47,6 +47,33 @@ fn json_value() -> impl Strategy<Value = Value> {
     })
 }
 
+/// A JSON payload as pi actually stores in its optional `details` / `data`
+/// fields — always a JSON object, never a bare top-level `null`.
+///
+/// Ground-truthed against pi (`vendor/pi/packages/agent/src/harness`): these
+/// fields are declared `details?: T` / `data?: T` on `CompactionEntry`,
+/// `BranchSummaryEntry`, `CustomEntry`, and `CustomMessageEntry`
+/// (`types.ts`), i.e. present-object-or-omitted. Every append site
+/// (`session/session.ts`, `compaction/compaction.ts`) assigns either a
+/// concrete object (e.g. `{ readFiles, modifiedFiles }`) or `undefined` (from
+/// optional chaining like `hookResult?.summary?.details`) — never a literal
+/// `null`. Entries are written with `JSON.stringify(entry)`, which drops
+/// `undefined` keys, so pi never emits an explicit top-level `"details": null`
+/// / `"data": null` for these fields.
+///
+/// This matters because the Rust structs tag those fields with
+/// `#[serde(skip_serializing_if = "Option::is_none")]`: `Some(Value::Null)`
+/// serializes to `"details": null`, which parses back to `None`, so
+/// `Some(Value::Null)` is not round-trippable. Since it is not a shape pi can
+/// produce, the generator must not emit it — otherwise the proptest
+/// intermittently fails on an input that corresponds to no real session line.
+/// Nested `null`s *inside* the object are fine: the object key is present, so
+/// they round-trip exactly.
+fn payload_value() -> impl Strategy<Value = Value> {
+    prop::collection::vec((short_str(), json_value()), 0..4)
+        .prop_map(|kvs| Value::Object(kvs.into_iter().collect()))
+}
+
 fn message_entry() -> impl Strategy<Value = SessionTreeEntry> {
     (short_str(), opt_str(), short_str(), json_value()).prop_map(
         |(id, parent_id, timestamp, message)| {
@@ -117,7 +144,7 @@ fn compaction_entry() -> impl Strategy<Value = SessionTreeEntry> {
         short_str(),
         short_str(),
         any::<i64>(),
-        prop::option::of(json_value()),
+        prop::option::of(payload_value()),
         prop::option::of(any::<bool>()),
     )
         .prop_map(
@@ -152,7 +179,7 @@ fn branch_summary_entry() -> impl Strategy<Value = SessionTreeEntry> {
         short_str(),
         short_str(),
         short_str(),
-        prop::option::of(json_value()),
+        prop::option::of(payload_value()),
         prop::option::of(any::<bool>()),
     )
         .prop_map(
@@ -176,7 +203,7 @@ fn custom_entry() -> impl Strategy<Value = SessionTreeEntry> {
         opt_str(),
         short_str(),
         short_str(),
-        prop::option::of(json_value()),
+        prop::option::of(payload_value()),
     )
         .prop_map(|(id, parent_id, timestamp, custom_type, data)| {
             SessionTreeEntry::Custom(CustomEntry {
@@ -197,7 +224,7 @@ fn custom_message_entry() -> impl Strategy<Value = SessionTreeEntry> {
         short_str(),
         json_value(),
         any::<bool>(),
-        prop::option::of(json_value()),
+        prop::option::of(payload_value()),
     )
         .prop_map(
             |(id, parent_id, timestamp, custom_type, content, display, details)| {
