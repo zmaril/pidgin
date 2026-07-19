@@ -291,6 +291,7 @@ pub struct Context {
 /// stays a strict subset of pi's.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct StreamOptions {
     /// Session identifier enabling session-scoped prompt caching (`types.ts:132`).
     #[serde(skip_serializing_if = "Option::is_none")]

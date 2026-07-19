@@ -7,24 +7,31 @@
 //! `model.api`, with the "no API implementation" stream error and dynamic
 //! in-flight refresh), and the [`Models`] collection (pi's
 //! `Models`/`MutableModels`: `createModels`, `setProvider` upsert-by-id,
-//! `deleteProvider`, `clearProviders`, `getProviders`, `getModels`, `getModel`).
+//! `deleteProvider`, `clearProviders`, `getProviders`, `getModels`, `getModel`),
+//! plus the streaming convenience surface (`stream`/`complete`/`stream_simple`/
+//! `complete_simple`, pi's `ModelsImpl`): resolve the owning provider, apply
+//! auth, and delegate to the provider's [`stream`](RegistryProvider::stream).
 //!
 //! # Scope of this slice
 //!
-//! pi's `Models` also resolves auth and applies it before dispatch
-//! (`getAuth`/`applyAuth`) and refreshes OAuth credentials. That auth subsystem
-//! (`auth/resolve.ts`, credential stores, provider-owned login flows) is not
-//! ported here — [`ProviderAuth`] carries only the env-var metadata needed to
-//! describe a provider. Streaming through [`Models`] therefore dispatches
-//! directly to the provider without an auth-application step; the auth-resolving
-//! `getAuth`/`getAvailable` read paths are deferred (see the crate's port notes).
+//! [`Models::stream`] applies the observable half of pi's `applyAuth`
+//! (`models.ts:463`): the provider-resolution and configured/unconfigured gate,
+//! reached through the injected [`AuthContext`]. pi additionally threads the
+//! resolved api key, merged headers, and per-credential `baseUrl` into the
+//! provider request options; the Rust provider seam's [`StreamOptions`] is a
+//! documented strict subset that does not yet carry those request fields (a real
+//! dialect resolves and applies them inside its own driver — see
+//! [`crate::api::anthropic`]), and the OAuth-refreshing `getAuth`/`getAvailable`
+//! read paths remain deferred (see the crate's port notes).
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
+use crate::auth::{env_api_key_auth, ApiKeyAuth, AuthContext, DefaultAuthContext};
 use crate::seams::provider::{AbortSignal, Provider as StreamBackend, StreamResult};
+use crate::seams::storage::SystemEnv;
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
     StopReason, StreamOptions, Usage, UsageCost,
@@ -342,9 +349,29 @@ fn zero_usage() -> Usage {
 
 /// A runtime collection of providers, pi's `Models`/`MutableModels`
 /// (`models.ts:127`). Providers are keyed by unique id; `set_provider` upserts.
-#[derive(Default)]
+///
+/// Beyond the provider-registry read/mutate half, this owns the streaming
+/// convenience surface (`stream`/`complete`/`stream_simple`/`complete_simple`,
+/// pi's `ModelsImpl`, `models.ts:492-525`): it resolves the provider that owns a
+/// model, applies auth, and delegates to the provider's
+/// [`stream`](RegistryProvider::stream). The auth-application step is gated
+/// through the injected [`AuthContext`], the same seam pi's `ModelsImpl` reaches
+/// through `getAuth`/`applyAuth`.
 pub struct Models {
     providers: Vec<Arc<RegistryProvider>>,
+    /// Environment access for provider auth resolution, pi's `ModelsImpl`
+    /// `authContext` (`models.ts:222`). Defaults to the process environment; a
+    /// test injects an in-memory context.
+    auth_context: Arc<dyn AuthContext + Send + Sync>,
+}
+
+impl Default for Models {
+    fn default() -> Self {
+        Self {
+            providers: Vec::new(),
+            auth_context: Arc::new(DefaultAuthContext::new(SystemEnv::new())),
+        }
+    }
 }
 
 /// The mutating half of pi's `MutableModels` (`models.ts:189`): upsert/replace,
@@ -433,6 +460,123 @@ impl Models {
             .into_iter()
             .find(|m| m.id == id)
     }
+
+    /// Build a collection with an injected auth context, pi's
+    /// `createModels({ authContext })` (`models.ts:527`). Providers are added
+    /// afterwards via [`set_provider`](MutableModels::set_provider).
+    pub fn with_auth_context(auth_context: Arc<dyn AuthContext + Send + Sync>) -> Self {
+        Self {
+            providers: Vec::new(),
+            auth_context,
+        }
+    }
+
+    /// Resolve the provider that owns `model`, pi's `requireProvider`
+    /// (`models.ts:455`). `Err` carries pi's `Unknown provider: {id}` message.
+    fn require_provider(&self, model: &Model) -> Result<&Arc<RegistryProvider>, String> {
+        self.get_provider(&model.provider)
+            .ok_or_else(|| format!("Unknown provider: {}", model.provider))
+    }
+
+    /// Apply provider auth ahead of dispatch, pi's `applyAuth`
+    /// (`models.ts:463`): confirm the provider is configured, else fail with
+    /// pi's `Provider is not configured: {id}`.
+    ///
+    /// # Port deviation
+    ///
+    /// pi's `applyAuth` also threads the resolved api key, merged headers, and
+    /// per-credential `baseUrl` into the provider request options. The Rust
+    /// provider seam's [`StreamOptions`] is a documented strict subset that does
+    /// not yet carry those request fields (a real dialect resolves and applies
+    /// them inside its own driver, e.g. [`crate::api::anthropic`]), so this port
+    /// applies the observable gating half: an unconfigured provider produces the
+    /// same error stream pi's `completeSimple` yields. A provider that declares
+    /// no api-key env vars is ambient/keyless (pi's `ambientAuth`, always
+    /// configured) and passes; one that declares env vars must have one set (or a
+    /// stored credential) in the injected [`AuthContext`].
+    fn apply_auth(&self, provider: &RegistryProvider, model: &Model) -> Result<(), String> {
+        let auth = provider.auth();
+        if auth.api_key_env_vars.is_empty() {
+            // Ambient/keyless provider: configured with no auth values.
+            return Ok(());
+        }
+        let vars: Vec<&str> = auth.api_key_env_vars.iter().map(String::as_str).collect();
+        let handler = env_api_key_auth(auth.name.clone(), &vars);
+        match handler.resolve(self.auth_context.as_ref(), None) {
+            Ok(Some(_)) => Ok(()),
+            Ok(None) => Err(format!("Provider is not configured: {}", model.provider)),
+            Err(error) => Err(format!(
+                "Auth resolution failed for {}: {error}",
+                model.provider
+            )),
+        }
+    }
+
+    /// Stream a response for `model`, pi's `Models.stream` (`models.ts:492`):
+    /// resolve the owning provider, apply auth, and delegate to the provider's
+    /// [`stream`](RegistryProvider::stream). A pre-dispatch failure (unknown
+    /// provider, unconfigured auth) becomes a single-`error` [`StreamResult`]
+    /// rather than an `Err`, matching pi's `lazyStream` catch handler and the
+    /// [`crate::api::anthropic`] driver's pre-start error path.
+    pub fn stream(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        let provider = match self.require_provider(model) {
+            Ok(provider) => provider,
+            Err(message) => return error_result(model, message),
+        };
+        if let Err(message) = self.apply_auth(provider, model) {
+            return error_result(model, message);
+        }
+        provider.stream(model, context, options, signal)
+    }
+
+    /// Stream and resolve the final message, pi's `Models.complete`
+    /// (`models.ts:504`): `this.stream(...).result()`.
+    pub fn complete(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> AssistantMessage {
+        self.stream(model, context, options, signal).message
+    }
+
+    /// Stream a response from the simple, level-based options, pi's
+    /// `Models.streamSimple` (`models.ts:512`).
+    ///
+    /// pi's provider exposes distinct `stream`/`streamSimple` entry points; the
+    /// Rust provider seam ([`crate::seams::provider::Provider`]) unifies them
+    /// into one eager [`stream`](RegistryProvider::stream) (the faux and real
+    /// drivers each implement a single method), so this shares
+    /// [`stream`](Models::stream)'s body. The simple/raw split is preserved at
+    /// the `Models` surface for call-site parity with pi.
+    pub fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        self.stream(model, context, options, signal)
+    }
+
+    /// Stream and resolve the final message, pi's `Models.completeSimple`
+    /// (`models.ts:520`): `this.streamSimple(...).result()`.
+    pub fn complete_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> AssistantMessage {
+        self.stream_simple(model, context, options, signal).message
+    }
 }
 
 /// An empty [`Models`] collection, pi's `createModels` (`models.ts:529`).
@@ -520,6 +664,7 @@ pub fn models_are_equal<C>(a: Option<&Model<C>>, b: Option<&Model<C>>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::seams::storage::MemoryEnv;
     use crate::types::{Modality, ModelCost};
 
     /// A backend that records the model ids it is asked to stream and returns a
@@ -813,5 +958,195 @@ mod tests {
 
         models.delete_provider("p");
         assert!(models.get_provider("p").is_none());
+    }
+
+    // -----------------------------------------------------------------------
+    // Models streaming surface (pi's `models-runtime.test.ts` completeSimple /
+    // streamSimple assertions, translated onto the eager Rust seam).
+    // -----------------------------------------------------------------------
+
+    /// A backend that emits pi's `start` + `done` pair, mirroring the test
+    /// provider's `respond()` (models-runtime.test.ts:64).
+    struct StartDoneBackend;
+
+    impl StreamBackend for StartDoneBackend {
+        fn api(&self) -> &str {
+            "test-api"
+        }
+
+        fn stream(
+            &self,
+            model: &Model,
+            _context: &Context,
+            _options: Option<&StreamOptions>,
+            _signal: Option<&AbortSignal>,
+        ) -> StreamResult {
+            let message = AssistantMessage {
+                role: AssistantRole::Assistant,
+                content: Vec::new(),
+                api: model.api.clone(),
+                provider: model.provider.clone(),
+                model: model.id.clone(),
+                response_model: None,
+                response_id: None,
+                diagnostics: None,
+                usage: zero_usage(),
+                stop_reason: StopReason::Stop,
+                error_message: None,
+                timestamp: 0,
+            };
+            StreamResult {
+                events: vec![
+                    AssistantMessageEvent::Start {
+                        partial: message.clone(),
+                    },
+                    AssistantMessageEvent::Done {
+                        reason: StopReason::Stop,
+                        message: message.clone(),
+                    },
+                ],
+                message,
+            }
+        }
+    }
+
+    /// [`test_model`] with `provider` set so it resolves against a registered
+    /// provider id (the base helper hardcodes `"mixed"`).
+    fn model_for(provider: &str, api: &str, id: &str) -> Model {
+        let mut model = test_model(api, id);
+        model.provider = provider.to_string();
+        model
+    }
+
+    // models-runtime.test.ts:675 — "streams through the provider": streamSimple
+    // emits `start`+`done` and result() resolves a `stop` message. Adapted to the
+    // eager seam: the events live on the returned StreamResult.
+    #[test]
+    fn stream_simple_emits_start_and_done() {
+        let mut models = create_models();
+        models.set_provider(create_provider(CreateProviderOptions {
+            api: ApiRouting::Single(Arc::new(StartDoneBackend)),
+            ..default_opts("p1")
+        }));
+
+        let result = models.stream_simple(
+            &model_for("p1", "test-api", "model-a"),
+            &context(),
+            None,
+            None,
+        );
+        assert_eq!(result.events.len(), 2);
+        assert!(matches!(
+            result.events[0],
+            AssistantMessageEvent::Start { .. }
+        ));
+        assert!(matches!(
+            result.events[1],
+            AssistantMessageEvent::Done { .. }
+        ));
+        assert_eq!(result.message.stop_reason, StopReason::Stop);
+    }
+
+    // completeSimple resolves the streamed result to the final message and
+    // reaches the provider that owns `model.provider`.
+    #[test]
+    fn complete_simple_returns_final_message() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let mut models = create_models();
+        models.set_provider(create_provider(CreateProviderOptions {
+            api: ApiRouting::Single(recording("p1", calls.clone())),
+            ..default_opts("p1")
+        }));
+
+        let message = models.complete_simple(
+            &model_for("p1", "test-api", "model-a"),
+            &context(),
+            None,
+            None,
+        );
+        assert_eq!(message.stop_reason, StopReason::Stop);
+        assert_eq!(*calls.lock().unwrap(), vec!["p1:model-a".to_string()]);
+    }
+
+    // models-runtime.test.ts:668 — "produces an error stream for unknown
+    // providers instead of throwing".
+    #[test]
+    fn complete_simple_unknown_provider_streams_error() {
+        let models = create_models();
+        let result = models.complete_simple(
+            &model_for("ghost", "test-api", "model-a"),
+            &context(),
+            None,
+            None,
+        );
+        assert_eq!(result.stop_reason, StopReason::Error);
+        assert!(result
+            .error_message
+            .as_deref()
+            .unwrap()
+            .contains("Unknown provider: ghost"));
+    }
+
+    // Auth is applied ahead of dispatch (pi's applyAuth gate, models.ts:463): a
+    // provider that declares api-key env vars with none set is unconfigured and
+    // never reaches the backend; setting the var lets the stream through.
+    #[test]
+    fn complete_simple_applies_auth_gate() {
+        let model = model_for("p1", "test-api", "model-a");
+
+        // Unconfigured: the declared env var is unset in the injected context.
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let mut unconfigured =
+            Models::with_auth_context(Arc::new(DefaultAuthContext::new(MemoryEnv::new())));
+        unconfigured.set_provider(create_provider(CreateProviderOptions {
+            auth: ProviderAuth::env_api_key("Test key", &["ATILLA_TEST_KEY"]),
+            api: ApiRouting::Single(recording("p1", calls.clone())),
+            ..default_opts("p1")
+        }));
+        let error = unconfigured.complete_simple(&model, &context(), None, None);
+        assert_eq!(error.stop_reason, StopReason::Error);
+        assert!(error
+            .error_message
+            .as_deref()
+            .unwrap()
+            .contains("Provider is not configured: p1"));
+        assert!(calls.lock().unwrap().is_empty());
+
+        // Configured: the env var resolves through the auth context.
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let mut configured = Models::with_auth_context(Arc::new(DefaultAuthContext::new(
+            MemoryEnv::new().with_env("ATILLA_TEST_KEY", "secret"),
+        )));
+        configured.set_provider(create_provider(CreateProviderOptions {
+            auth: ProviderAuth::env_api_key("Test key", &["ATILLA_TEST_KEY"]),
+            api: ApiRouting::Single(recording("p1", calls.clone())),
+            ..default_opts("p1")
+        }));
+        let ok = configured.complete_simple(&model, &context(), None, None);
+        assert_eq!(ok.stop_reason, StopReason::Stop);
+        assert_eq!(*calls.lock().unwrap(), vec!["p1:model-a".to_string()]);
+    }
+
+    // Provider resolution routes each request to the provider named by
+    // `model.provider` (pi's requireProvider keys on `model.provider`).
+    #[test]
+    fn stream_resolves_provider_by_model_provider() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let mut models = create_models();
+        models.set_provider(create_provider(CreateProviderOptions {
+            api: ApiRouting::Single(recording("p1", calls.clone())),
+            ..default_opts("p1")
+        }));
+        models.set_provider(create_provider(CreateProviderOptions {
+            api: ApiRouting::Single(recording("p2", calls.clone())),
+            ..default_opts("p2")
+        }));
+
+        models.complete_simple(&model_for("p2", "test-api", "m"), &context(), None, None);
+        models.complete_simple(&model_for("p1", "test-api", "m"), &context(), None, None);
+        assert_eq!(
+            *calls.lock().unwrap(),
+            vec!["p2:m".to_string(), "p1:m".to_string()]
+        );
     }
 }
