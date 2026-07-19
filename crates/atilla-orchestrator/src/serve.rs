@@ -18,8 +18,9 @@
 //!   [`start_ipc_server`] (which also runs the stale-socket
 //!   [`UnixSocketProbe`](crate::ipc::transport::UnixSocketProbe));
 //! * the supervisor spawns real children through [`RealRpcProcessSpawner`];
-//! * radius presence is a real [`RadiusPresence`] over the file-backed
-//!   [`FileCredentialStore`] and the [`SystemRadiusClock`];
+//! * radius presence is a real [`RadiusPresence`] over the [`SystemRadiusClock`],
+//!   reading stored credentials on demand from the coding-agent's `auth.json`
+//!   via [`atilla_coding::core::auth::read_stored_credential`];
 //! * `SIGINT`/`SIGTERM` are handled with tokio's `signal` feature.
 //!
 //! # Deferred radius-HTTP caveat
@@ -46,7 +47,6 @@ use std::sync::Arc;
 use atilla_ai::seams::http::{HostTransport, HttpRequest, HttpResponse, HttpTransport};
 
 use crate::config::get_socket_path;
-use crate::credential_store::FileCredentialStore;
 use crate::handler::OrchestratorHandler;
 use crate::ipc::server::{start_ipc_server, IpcServer};
 use crate::radius::{get_radius_orchestrator_base_url, RadiusPresence, SystemRadiusClock};
@@ -94,15 +94,15 @@ pub async fn serve() -> io::Result<()> {
     Ok(())
 }
 
-/// Build the production supervisor: a real radius presence (file credentials +
-/// system clock), the real RPC-child spawner, and the system ISO clock.
+/// Build the production supervisor: a real radius presence (system clock, with
+/// credentials read from the coding-agent's `auth.json`), the real RPC-child
+/// spawner, and the system ISO clock.
 ///
 /// Mirrors how pi's module graph wires the `supervisor` and `radiusPresence`
 /// singletons, but with the injected production seams this port uses.
 fn build_production_supervisor() -> OrchestratorSupervisor {
     let radius = RadiusPresence::new(
         Box::new(production_radius_transport()),
-        Box::new(FileCredentialStore::default_agent()),
         Box::new(SystemRadiusClock),
     );
     OrchestratorSupervisor::new(
@@ -244,6 +244,7 @@ mod tests {
         _dir: tempfile::TempDir,
         saved_dir: Option<String>,
         saved_api_key: Option<String>,
+        saved_agent_dir: Option<String>,
     }
 
     impl TestEnv {
@@ -251,14 +252,20 @@ mod tests {
             let lock = crate::ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
             let saved_dir = std::env::var("PI_ORCHESTRATOR_DIR").ok();
             let saved_api_key = std::env::var("RADIUS_API_KEY").ok();
+            let saved_agent_dir = std::env::var("PI_CODING_AGENT_DIR").ok();
             let dir = tempfile::tempdir().unwrap();
             std::env::set_var("PI_ORCHESTRATOR_DIR", dir.path());
             std::env::remove_var("RADIUS_API_KEY");
+            // Point the coding-agent dir at the empty tempdir so radius credential
+            // reads (pi's `readStoredCredential`) find no `auth.json` and radius
+            // stays deterministically disabled, independent of the real `~/.pi`.
+            std::env::set_var("PI_CODING_AGENT_DIR", dir.path());
             TestEnv {
                 _lock: lock,
                 _dir: dir,
                 saved_dir,
                 saved_api_key,
+                saved_agent_dir,
             }
         }
     }
@@ -273,17 +280,17 @@ mod tests {
                 Some(value) => std::env::set_var("RADIUS_API_KEY", value),
                 None => std::env::remove_var("RADIUS_API_KEY"),
             }
+            match &self.saved_agent_dir {
+                Some(value) => std::env::set_var("PI_CODING_AGENT_DIR", value),
+                None => std::env::remove_var("PI_CODING_AGENT_DIR"),
+            }
         }
     }
 
     /// A supervisor over the given radius transport, the real RPC spawner (never
     /// invoked in these tests — no instance is spawned), and the system clock.
     fn supervisor_with(transport: ScriptedTransport) -> OrchestratorSupervisor {
-        let radius = RadiusPresence::new(
-            Box::new(transport),
-            Box::new(FileCredentialStore::default_agent()),
-            Box::new(SystemRadiusClock),
-        );
+        let radius = RadiusPresence::new(Box::new(transport), Box::new(SystemRadiusClock));
         OrchestratorSupervisor::new(
             radius,
             Arc::new(RealRpcProcessSpawner),

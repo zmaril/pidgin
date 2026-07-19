@@ -8,9 +8,9 @@
 //! version (`env!("CARGO_PKG_VERSION")` is the Rust-native analog of pi walking
 //! up to read its own `package.json`, falling back to `"0.0.0"`).
 
-// straitjacket-allow-file[:duplication] — the `home_dir()` resolver and the
-// `EnvGuard` test scaffold here are faithfully mirrored by the parallel ports in
-// `credential_store.rs` and `radius.rs`; the shared shape is deliberate.
+// straitjacket-allow-file[:duplication] — the `EnvGuard` test scaffold here is
+// faithfully mirrored by the parallel `RadiusEnvGuard` in `radius.rs`; the shared
+// shape is deliberate.
 
 use std::path::PathBuf;
 

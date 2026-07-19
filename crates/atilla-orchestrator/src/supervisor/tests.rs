@@ -1,6 +1,5 @@
 use super::*;
 use crate::radius::SystemRadiusClock;
-use atilla_ai::auth::InMemoryCredentialStore;
 use atilla_ai::seams::http::ScriptedTransport;
 use serde_json::{json, Value};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -13,6 +12,7 @@ struct TestEnv {
     _dir: tempfile::TempDir,
     saved_dir: Option<String>,
     saved_api_key: Option<String>,
+    saved_agent_dir: Option<String>,
 }
 
 impl TestEnv {
@@ -20,14 +20,20 @@ impl TestEnv {
         let lock = crate::ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let saved_dir = std::env::var("PI_ORCHESTRATOR_DIR").ok();
         let saved_api_key = std::env::var("RADIUS_API_KEY").ok();
+        let saved_agent_dir = std::env::var("PI_CODING_AGENT_DIR").ok();
         let dir = tempfile::tempdir().unwrap();
         std::env::set_var("PI_ORCHESTRATOR_DIR", dir.path());
         std::env::remove_var("RADIUS_API_KEY");
+        // Point the coding-agent dir at the empty tempdir so radius credential
+        // reads (pi's `readStoredCredential`) find no `auth.json` and radius stays
+        // deterministically disabled, independent of the real `~/.pi`.
+        std::env::set_var("PI_CODING_AGENT_DIR", dir.path());
         TestEnv {
             _lock: lock,
             _dir: dir,
             saved_dir,
             saved_api_key,
+            saved_agent_dir,
         }
     }
 }
@@ -41,6 +47,10 @@ impl Drop for TestEnv {
         match &self.saved_api_key {
             Some(value) => std::env::set_var("RADIUS_API_KEY", value),
             None => std::env::remove_var("RADIUS_API_KEY"),
+        }
+        match &self.saved_agent_dir {
+            Some(value) => std::env::set_var("PI_CODING_AGENT_DIR", value),
+            None => std::env::remove_var("PI_CODING_AGENT_DIR"),
         }
     }
 }
@@ -202,7 +212,6 @@ impl RpcProcessSpawner for FailingSpawner {
 fn disabled_radius() -> RadiusPresence {
     RadiusPresence::new(
         Box::new(ScriptedTransport::new()),
-        Box::new(InMemoryCredentialStore::new()),
         Box::new(SystemRadiusClock),
     )
 }
