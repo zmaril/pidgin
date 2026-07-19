@@ -159,10 +159,17 @@ pub struct AgentSession {
 
     /// Pending steering messages for UI display (pi `_steeringMessages`). Shared
     /// with the agent-event handler, which splices a mirrored entry out on the
-    /// matching user `message_start`.
-    steering_messages: Arc<Mutex<Vec<String>>>,
+    /// matching user `message_start`. `pub(super)` so the queue mutators in
+    /// [`super::queue`] can push to it.
+    pub(super) steering_messages: Arc<Mutex<Vec<String>>>,
     /// Pending follow-up messages for UI display (pi `_followUpMessages`).
-    follow_up_messages: Arc<Mutex<Vec<String>>>,
+    pub(super) follow_up_messages: Arc<Mutex<Vec<String>>>,
+
+    /// Custom messages queued for the next prompt turn (pi
+    /// `_pendingNextTurnMessages`). Drained into the user message batch by
+    /// [`AgentSession::prompt`]; pushed by `send_custom_message(deliverAs:
+    /// nextTurn)`.
+    pub(super) pending_next_turn_messages: Arc<Mutex<Vec<AgentMessage>>>,
 
     /// The last assistant message, set by the agent-event handler and consumed by
     /// the post-run loop (pi `_lastAssistantMessage`).
@@ -216,6 +223,7 @@ impl AgentSession {
             Arc::new(Mutex::new(Vec::new()));
         let steering_messages = Arc::new(Mutex::new(Vec::new()));
         let follow_up_messages = Arc::new(Mutex::new(Vec::new()));
+        let pending_next_turn_messages = Arc::new(Mutex::new(Vec::new()));
         let last_assistant_message = Arc::new(Mutex::new(None));
         // The extension-facing turn index (pi `_turnIndex`) is owned solely by the
         // agent-event handler, so it is created here and moved into the handler.
@@ -260,6 +268,7 @@ impl AgentSession {
             agent_subscription: Mutex::new(Some(agent_subscription)),
             steering_messages,
             follow_up_messages,
+            pending_next_turn_messages,
             last_assistant_message,
             is_agent_run_active: AtomicBool::new(false),
             is_aborting: AtomicBool::new(false),

@@ -10,13 +10,21 @@
 //! a core `atilla_agent::AgentEvent` into the session union. [`session`] carries
 //! the [`AgentSession`] struct scaffold: the [`AgentSessionConfig`] options bag,
 //! the struct and its fields, the constructor, and the `subscribe`/`emit` event
-//! machinery. The turn-runner methods (`prompt`/`steer`/`follow_up`/`compact`/
-//! tree-nav/stats/export) and the runtime/tool-registry wiring land in later PRs.
+//! machinery. [`turn`] carries the turn-runner spine (`prompt`/`_runAgentPrompt`/
+//! `_handleAgentEvent`); [`queue`] carries the steering / follow-up queue surface
+//! (`steer`/`follow_up`/`send_user_message`/`send_custom_message`/`clear_queue`/
+//! `pending_message_count`). The compaction / auto-retry / tree-nav / stats
+//! wiring lands in later PRs.
 
 pub mod events;
+pub mod queue;
 pub mod session;
 pub mod turn;
 
+#[cfg(test)]
+pub(crate) mod test_support;
+
 pub use events::*;
+pub use queue::*;
 pub use session::*;
 pub use turn::*;

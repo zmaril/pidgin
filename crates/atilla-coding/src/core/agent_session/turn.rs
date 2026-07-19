@@ -15,11 +15,12 @@
 //!   — the drive loop (pi `_runAgentPrompt` L1049 / `_handlePostAgentRun` L1063).
 //! * the `emit_*` helpers (pi `_emit`/`_emitQueueUpdate`/`_emitAgentSettled`).
 //!
+//! The streaming-guard queue routing and pending-next-turn draining land here
+//! (the steering / follow-up queue methods themselves live in [`super::queue`]).
 //! Branches that belong to later PRs of the AgentSession port are stubbed to
 //! their minimal safe default with a plain `// unit5:` note pointing at the PR
 //! that lands them: the `/`-command shortcut and skill/prompt-template expansion
-//! (PR7), the streaming-guard queue routing and pending-next-turn draining (PR4),
-//! the pre-send compaction check (PR6), and auto-retry (PR5).
+//! (PR7), the pre-send compaction check (PR6), and auto-retry (PR5).
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/agent-session.ts`.
 
@@ -39,7 +40,10 @@ use crate::core::auth::auth_guidance::{
     format_no_api_key_found_message, format_no_model_selected_message,
 };
 use crate::core::extensions::events::agent::{AgentEndEvent, AgentSettledEvent, AgentStartEvent};
-use crate::core::extensions::events::selection::{InputEventResult, InputSource};
+use crate::core::extensions::events::common::ImageContent;
+use crate::core::extensions::events::selection::{
+    InputEventResult, InputSource, StreamingBehavior,
+};
 use crate::core::extensions::events::tool::{
     ToolExecutionEndEvent, ToolExecutionStartEvent, ToolExecutionUpdateEvent,
 };
@@ -86,8 +90,41 @@ impl std::fmt::Display for PromptError {
 
 impl std::error::Error for PromptError {}
 
+/// Options for [`AgentSession::prompt_with`] (pi's `PromptOptions`,
+/// `agent-session.ts:219`).
+///
+/// The `preflightResult` RPC hook (pi's internal preflight-acceptance callback)
+/// is not modeled here; it lands with the RPC turn-command wiring.
+#[derive(Default)]
+pub struct PromptOptions {
+    /// Whether to expand file-based prompt templates and dispatch `/`-commands
+    /// (pi default `true`).
+    pub expand_prompt_templates: bool,
+    /// Image attachments (pi `images`).
+    pub images: Option<Vec<ImageContent>>,
+    /// When streaming, how to queue the message — [`StreamingBehavior::Steer`]
+    /// (interrupt) or [`StreamingBehavior::FollowUp`] (wait). Required if
+    /// streaming (pi `streamingBehavior`).
+    pub streaming_behavior: Option<StreamingBehavior>,
+    /// Source of input for extension input-event handlers; defaults to
+    /// [`InputSource::Interactive`] (pi `source`).
+    pub source: Option<InputSource>,
+}
+
+impl PromptOptions {
+    /// The pi default: `expandPromptTemplates: true`, everything else unset.
+    pub fn defaults() -> Self {
+        Self {
+            expand_prompt_templates: true,
+            images: None,
+            streaming_behavior: None,
+            source: None,
+        }
+    }
+}
+
 /// A millisecond wall-clock timestamp (pi's `Date.now()`).
-fn now_ms() -> i64 {
+pub(super) fn now_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)
@@ -426,10 +463,8 @@ impl AgentSession {
     // =========================================================================
 
     /// Emit the current queue state to listeners (pi's `_emitQueueUpdate`, L533).
-    // unit5: called by the steering/follow-up queue mutators in PR4; the handler
-    // uses its own queue-update path, so this session-level helper is unused until
-    // then.
-    #[allow(dead_code)]
+    /// Called by the steering / follow-up queue mutators in [`super::queue`]; the
+    /// agent-event handler uses its own queue-update path on splice.
     pub(super) fn emit_queue_update(&self) {
         self.emit(&AgentSessionEvent::QueueUpdate {
             steering: self.get_steering_messages(),
@@ -452,34 +487,58 @@ impl AgentSession {
     // Prompting (pi `prompt`/`_runAgentPrompt`/`_handlePostAgentRun`)
     // =========================================================================
 
-    /// Send a prompt to the agent and run the turn to completion (pi's `prompt`,
-    /// L1102).
+    /// Send a prompt to the agent and run the turn to completion (a convenience
+    /// wrapper over [`AgentSession::prompt_with`] with pi's default options).
     ///
-    /// Preflight validates the model and configured auth (when not streaming),
-    /// builds the user message (with any images), fires `before_agent_start`, and
-    /// drives the run. `source` defaults to [`InputSource::Interactive`].
+    /// `source` defaults to [`InputSource::Interactive`]. Template/command
+    /// expansion is enabled (pi `expandPromptTemplates: true`).
     pub fn prompt(
         &self,
         text: &str,
         images: Option<Vec<AgentMessage>>,
         source: Option<InputSource>,
     ) -> Result<(), PromptError> {
+        self.prompt_with(
+            text,
+            PromptOptions {
+                images,
+                source,
+                ..PromptOptions::defaults()
+            },
+        )
+    }
+
+    /// Send a prompt to the agent and run the turn to completion (pi's `prompt`,
+    /// L1102).
+    ///
+    /// Preflight validates the model and configured auth (when not streaming),
+    /// builds the user message (with any images and any pending next-turn custom
+    /// messages), fires `before_agent_start`, and drives the run. When the session
+    /// is already streaming, the prompt is routed to the steering / follow-up
+    /// queue per `options.streaming_behavior` instead of starting a new turn
+    /// (pi L1147).
+    pub fn prompt_with(&self, text: &str, options: PromptOptions) -> Result<(), PromptError> {
         // unit5: the `/`-command extension shortcut (pi L1110,
-        // `_tryExecuteExtensionCommand`) lands in PR7; non-command text is
-        // unaffected.
+        // `_tryExecuteExtensionCommand`, gated on `expand_prompt_templates`) lands
+        // in PR7; non-command text is unaffected.
 
         // Emit the input event for extension interception (pi L1122). With the
-        // StubExtensionRunner `has_handlers` is false, so this is skipped.
+        // StubExtensionRunner `has_handlers` is false, so this is skipped. When
+        // streaming, the delivery behavior is reported to handlers; when idle it
+        // is `None` (pi `this.isStreaming ? options.streamingBehavior : undefined`).
         let mut current_text = text.to_string();
-        let mut current_images = images;
+        let mut current_images = options.images;
         if self.extension_runner().has_handlers("input") {
+            let reported_behavior = if self.is_streaming() {
+                options.streaming_behavior
+            } else {
+                None
+            };
             let result = self.extension_runner().emit_input(
                 &current_text,
                 current_images.as_deref(),
-                source.unwrap_or(InputSource::Interactive),
-                // unit5: streaming_behavior reporting to input handlers lands with
-                // the queue routing in PR4; a fresh prompt is never streaming.
-                None,
+                options.source.unwrap_or(InputSource::Interactive),
+                reported_behavior,
             );
             match result {
                 InputEventResult::Handled => return Ok(()),
@@ -493,20 +552,26 @@ impl AgentSession {
             }
         }
 
-        // unit5: skill-command and prompt-template expansion (pi L1140) land in
-        // PR7; the text passes through unexpanded.
+        // unit5: skill-command and prompt-template expansion (pi L1140, gated on
+        // `expand_prompt_templates`) land in PR7; the text passes through
+        // unexpanded.
         let expanded_text = current_text;
 
-        // unit5: the streaming-guard queue routing (pi L1147) lands in PR4. A
-        // synchronous run settles before `prompt` returns, so the session is never
-        // streaming when a caller re-enters here; the guard is preserved for the
-        // observable throw.
+        // If streaming, route to the steering / follow-up queue rather than
+        // starting a new turn (pi L1147). A steering behavior must be supplied.
         if self.is_streaming() {
-            return Err(PromptError::Preflight(
-                "Agent is already processing. Specify streamingBehavior ('steer' or 'followUp') \
-                 to queue the message."
-                    .to_string(),
-            ));
+            let Some(behavior) = options.streaming_behavior else {
+                return Err(PromptError::Preflight(
+                    "Agent is already processing. Specify streamingBehavior ('steer' or \
+                     'followUp') to queue the message."
+                        .to_string(),
+                ));
+            };
+            match behavior {
+                StreamingBehavior::FollowUp => self.queue_follow_up(&expanded_text, current_images),
+                StreamingBehavior::Steer => self.queue_steer(&expanded_text, current_images),
+            }
+            return Ok(());
         }
 
         // Flush any pending bash messages before the new prompt (pi L1163).
@@ -541,9 +606,13 @@ impl AgentSession {
             "content": content,
             "timestamp": now_ms(),
         });
-        let messages = vec![user_message];
-        // unit5: draining `_pendingNextTurnMessages` (pi L1207) lands with
-        // sendCustomMessage in PR4; there are no pending next-turn messages yet.
+        let mut messages = vec![user_message];
+        // Inject any pending "nextTurn" custom messages alongside the user message,
+        // then clear them (pi L1207).
+        {
+            let mut pending = self.pending_next_turn_messages.lock().unwrap();
+            messages.extend(pending.drain(..));
+        }
 
         // Emit before_agent_start (pi L1213). With the StubExtensionRunner this
         // returns None.
@@ -562,8 +631,9 @@ impl AgentSession {
     }
 
     /// Drive the agent to completion, looping post-run continuations (pi's
-    /// `_runAgentPrompt`, L1049).
-    fn run_agent_prompt(&self, messages: Vec<AgentMessage>) -> Result<(), PromptError> {
+    /// `_runAgentPrompt`, L1049). `pub(super)` so `send_custom_message(triggerTurn)`
+    /// in [`super::queue`] can start a turn from a single custom message.
+    pub(super) fn run_agent_prompt(&self, messages: Vec<AgentMessage>) -> Result<(), PromptError> {
         self.set_agent_run_active(true);
         let outcome = (|| -> Result<(), AgentError> {
             self.agent.prompt_messages(messages)?;
