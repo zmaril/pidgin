@@ -7,6 +7,7 @@
 //! extracted from pi itself (see `tests/width_vectors.rs` and
 //! `tests/keys_vectors.rs`).
 
+pub mod app;
 pub mod autocomplete;
 pub mod components;
 mod eaw_table;
@@ -27,6 +28,7 @@ pub mod widgets;
 pub mod width;
 pub mod word_navigation;
 
+pub use app::{mount_focused_editor, EditorView, LoopEvent, RunLoop, StdinReader};
 pub use autocomplete::{
     AppliedCompletion, AutocompleteItem, AutocompleteSuggestions, CombinedAutocompleteProvider,
     Command, DirEntry, FdOutput, FileProvider, ProviderError, SlashCommand,
@@ -58,8 +60,8 @@ pub use overlay::{
     ReactionAction, SizeValue,
 };
 pub use renderer::{
-    delete_kitty_image, is_image_line, Component, Container, RenderError, SharedLines, Tui,
-    CURSOR_MARKER,
+    delete_kitty_image, is_image_line, Component, Container, InputListener, InputListenerResult,
+    RenderError, SharedLines, Tui, CURSOR_MARKER,
 };
 pub use terminal::{
     enable_virtual_terminal_input, is_native_modifier_pressed, is_negotiation_sequence_prefix,

@@ -1,4 +1,4 @@
-//! The Rust→JS **blocking callback bridge** for atilla (bridge slices 1–2).
+//! The Rust→JS **blocking callback bridge** for atilla (bridge slices 1–3).
 //!
 //! Every other napi export in this crate is one-way, synchronous, JSON-in /
 //! JSON-out. pi's agent tests are different in kind: the agent loop, driven in
@@ -13,6 +13,15 @@
 //! fire-and-forget [`AgentBridge::emit_tool_update`] push (a JS tool's `onUpdate`
 //! reaches the loop's update callback via a per-`toolCallId` registry, with no
 //! round-trip and no risk of deadlocking the parked loop thread).
+//!
+//! Slice 3 wires the eight loop hooks (`transformContext`, `getApiKey`,
+//! `shouldStopAfterTurn`, `prepareNextTurn`, `getSteeringMessages`,
+//! `getFollowUpMessages`, `beforeToolCall`, `afterToolCall`) as further blocking
+//! round-trips over the same primitive — no new `#[napi]` method, no `lib.rs`
+//! change. `run` replaces the eight hard `None`s in `AgentLoopConfig` with bridge
+//! closures, wiring each only when the JS case declared it (the `hooks` flags on
+//! `RunInput`). A `prepareNextTurn` snapshot's returned context has its tools
+//! rebuilt with `build_bridge_tool`, the same reconstruction `run` uses.
 //!
 //! # The primitive
 //!
@@ -55,6 +64,12 @@
 //! Resolving an unknown or already-resolved id is a no-op (never a panic), so
 //! double-resolve races after an abort or error cannot crash the addon.
 
+// straitjacket-allow-file:duplication — the eight slice-3 hook seams share a
+// deliberate serialize-args → `channel.call(kind, …)` → decode-with-fallback
+// skeleton (the two nullary hooks, `getSteeringMessages` / `getFollowUpMessages`,
+// are near-identical by design). Keeping each hook a self-contained closure reads
+// far better than a macro/generic that erases the per-hook payload and fallback.
+
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{sync_channel, SyncSender};
@@ -71,9 +86,12 @@ use serde_json::{json, Value};
 
 use atilla_agent::agent_loop::{run_agent_loop, AgentEventSink};
 use atilla_agent::types::{
-    AgentContext, AgentEvent, AgentLoopConfig, AgentMessage, AgentTool, AgentToolExecute,
-    AgentToolResult, AgentToolUpdateCallback, ConvertToLlm, PrepareArguments, StreamFn,
-    ThinkingLevel, ToolExecutionMode,
+    AfterToolCall, AfterToolCallContext, AfterToolCallResult, AgentContext, AgentEvent,
+    AgentLoopConfig, AgentLoopTurnUpdate, AgentMessage, AgentTool, AgentToolExecute,
+    AgentToolResult, AgentToolUpdateCallback, BeforeToolCall, BeforeToolCallContext,
+    BeforeToolCallResult, ConvertToLlm, GetApiKey, GetFollowUpMessages, GetSteeringMessages,
+    PrepareArguments, PrepareNextTurn, PrepareNextTurnContext, ShouldStopAfterTurn,
+    ShouldStopAfterTurnContext, StreamFn, ThinkingLevel, ToolExecutionMode, TransformContext,
 };
 use atilla_ai::seams::provider::AbortSignal;
 use atilla_ai::seams::StreamResult;
@@ -423,6 +441,7 @@ impl AgentBridge {
                 reasoning,
                 tools,
                 tool_execution,
+                hooks,
             } = input;
 
             // Rebuild each AgentTool from its metadata, keying bridge closures by
@@ -485,20 +504,166 @@ impl AgentBridge {
                 },
             );
 
+            // Loop-hook seams (slice 3). Each is a BLOCKING Rust→JS→Rust
+            // round-trip via `channel.call`: serialize the hook's args, dispatch
+            // the new envelope kind, decode the result, with the documented safe
+            // fallback on Err/abort (pi's "hooks must not throw" contract). Only
+            // the hooks the JS case actually defined (per the `hooks` flags) are
+            // wired; the rest stay `None` so the loop takes its default path.
+
+            // transformContext: prune/rewrite the transcript before convertToLlm.
+            // Fallback: identity (return the input messages unchanged).
+            let tc_channel = channel.clone();
+            let transform_context: TransformContext = Arc::new(
+                move |messages: &[AgentMessage], signal: Option<&AbortSignal>| {
+                    let aborted = signal.is_some_and(AbortSignal::is_aborted);
+                    match tc_channel.call(
+                        "transformContext",
+                        json!({ "messages": messages, "aborted": aborted }),
+                    ) {
+                        Ok(v) => serde_json::from_value::<Vec<AgentMessage>>(v)
+                            .unwrap_or_else(|_| messages.to_vec()),
+                        Err(_) => messages.to_vec(),
+                    }
+                },
+            );
+
+            // getApiKey: dynamic per-call key resolver. The loop discards the
+            // resolved value (atilla-ai StreamOptions has no apiKey); wired for
+            // parity. Fallback: null.
+            let ak_channel = channel.clone();
+            let get_api_key: GetApiKey = Arc::new(move |provider: &str| {
+                match ak_channel.call("getApiKey", json!({ "provider": provider })) {
+                    Ok(v) => serde_json::from_value::<Option<String>>(v).unwrap_or(None),
+                    Err(_) => None,
+                }
+            });
+
+            // getSteeringMessages: nullary; messages to inject before next turn.
+            // Fallback: [].
+            let sm_channel = channel.clone();
+            let get_steering_messages: GetSteeringMessages =
+                Arc::new(
+                    move || match sm_channel.call("getSteeringMessages", json!({})) {
+                        Ok(v) => serde_json::from_value::<Vec<AgentMessage>>(v).unwrap_or_default(),
+                        Err(_) => Vec::new(),
+                    },
+                );
+
+            // getFollowUpMessages: nullary; messages to re-enter the loop with.
+            // Fallback: [].
+            let fm_channel = channel.clone();
+            let get_follow_up_messages: GetFollowUpMessages =
+                Arc::new(
+                    move || match fm_channel.call("getFollowUpMessages", json!({})) {
+                        Ok(v) => serde_json::from_value::<Vec<AgentMessage>>(v).unwrap_or_default(),
+                        Err(_) => Vec::new(),
+                    },
+                );
+
+            // shouldStopAfterTurn: graceful-stop check after each turn (sees the
+            // post-snapshot context). Fallback: false (don't force-stop).
+            let ss_channel = channel.clone();
+            let should_stop_after_turn: ShouldStopAfterTurn =
+                Arc::new(move |ctx: &ShouldStopAfterTurnContext| {
+                    match ss_channel.call(
+                        "shouldStopAfterTurn",
+                        json!({
+                            "message": ctx.message,
+                            "toolResults": ctx.tool_results,
+                            "context": serialize_ctx(&ctx.context),
+                            "newMessages": ctx.new_messages,
+                        }),
+                    ) {
+                        Ok(v) => serde_json::from_value::<bool>(v).unwrap_or(false),
+                        Err(_) => false,
+                    }
+                });
+
+            // prepareNextTurn: sees pre-snapshot context; returns next-turn state.
+            // A returned context's tools (ToolMeta[] on the wire) are rebuilt via
+            // `build_bridge_tool`, exactly like `run`. Fallback: null (no snapshot).
+            let pn_channel = channel.clone();
+            let prepare_next_turn: PrepareNextTurn =
+                Arc::new(move |ctx: &PrepareNextTurnContext| {
+                    match pn_channel.call(
+                        "prepareNextTurn",
+                        json!({
+                            "message": ctx.message,
+                            "toolResults": ctx.tool_results,
+                            "context": serialize_ctx(&ctx.context),
+                            "newMessages": ctx.new_messages,
+                        }),
+                    ) {
+                        Ok(v) => decode_turn_update(&pn_channel, v),
+                        Err(_) => None,
+                    }
+                });
+
+            // beforeToolCall: pre-execution hook (after arg validation). Fallback:
+            // null (the loop's own post-hook abort re-check covers aborts).
+            let bt_channel = channel.clone();
+            let before_tool_call: BeforeToolCall = Arc::new(
+                move |ctx: &BeforeToolCallContext, signal: Option<&AbortSignal>| {
+                    let aborted = signal.is_some_and(AbortSignal::is_aborted);
+                    match bt_channel.call(
+                        "beforeToolCall",
+                        json!({
+                            "assistantMessage": ctx.assistant_message,
+                            "toolCall": ctx.tool_call,
+                            "args": ctx.args,
+                            "context": serialize_ctx(&ctx.context),
+                            "aborted": aborted,
+                        }),
+                    ) {
+                        Ok(Value::Null) | Err(_) => None,
+                        Ok(v) => serde_json::from_value::<BeforeToolCallResult>(v).ok(),
+                    }
+                },
+            );
+
+            // afterToolCall: post-execution override hook. Fallback: null (keep the
+            // executed result unchanged).
+            let at_channel = channel.clone();
+            let after_tool_call: AfterToolCall = Arc::new(
+                move |ctx: &AfterToolCallContext, signal: Option<&AbortSignal>| {
+                    let aborted = signal.is_some_and(AbortSignal::is_aborted);
+                    match at_channel.call(
+                        "afterToolCall",
+                        json!({
+                            "assistantMessage": ctx.assistant_message,
+                            "toolCall": ctx.tool_call,
+                            "args": ctx.args,
+                            "result": ctx.result,
+                            "isError": ctx.is_error,
+                            "context": serialize_ctx(&ctx.context),
+                            "aborted": aborted,
+                        }),
+                    ) {
+                        Ok(Value::Null) | Err(_) => None,
+                        Ok(v) => serde_json::from_value::<AfterToolCallResult>(v).ok(),
+                    }
+                },
+            );
+
             let config = AgentLoopConfig {
                 stream_options: stream_options.unwrap_or_default(),
                 reasoning,
                 model,
                 convert_to_llm,
-                transform_context: None,
-                get_api_key: None,
-                should_stop_after_turn: None,
-                prepare_next_turn: None,
-                get_steering_messages: None,
-                get_follow_up_messages: None,
+                transform_context: hooks.transform_context.then_some(transform_context),
+                get_api_key: hooks.get_api_key.then_some(get_api_key),
+                should_stop_after_turn: hooks
+                    .should_stop_after_turn
+                    .then_some(should_stop_after_turn),
+                prepare_next_turn: hooks.prepare_next_turn.then_some(prepare_next_turn),
+                get_steering_messages: hooks.get_steering_messages.then_some(get_steering_messages),
+                get_follow_up_messages: hooks
+                    .get_follow_up_messages
+                    .then_some(get_follow_up_messages),
                 tool_execution,
-                before_tool_call: None,
-                after_tool_call: None,
+                before_tool_call: hooks.before_tool_call.then_some(before_tool_call),
+                after_tool_call: hooks.after_tool_call.then_some(after_tool_call),
             };
 
             // Forward every loop event to JS (fire-and-forget; no round-trip).
@@ -562,6 +727,35 @@ struct RunInput {
     /// or absent, but it is threaded through faithfully.
     #[serde(default)]
     tool_execution: Option<ToolExecutionMode>,
+    /// Which loop hooks the JS case defined. Closures cannot cross the wire, so
+    /// JS reports each hook's presence and Rust wires a bridge round-trip only
+    /// for the ones flagged `true` (the rest stay `None`).
+    #[serde(default)]
+    hooks: HookFlags,
+}
+
+/// Presence flags for the eight loop hooks, mirroring the JS `config` keys.
+/// Each `true` means the case defined that hook, so the `run` seam wires a
+/// blocking bridge round-trip for it (see the hook closures in `run`).
+#[derive(serde::Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+struct HookFlags {
+    #[serde(default)]
+    transform_context: bool,
+    #[serde(default)]
+    get_api_key: bool,
+    #[serde(default)]
+    should_stop_after_turn: bool,
+    #[serde(default)]
+    prepare_next_turn: bool,
+    #[serde(default)]
+    get_steering_messages: bool,
+    #[serde(default)]
+    get_follow_up_messages: bool,
+    #[serde(default)]
+    before_tool_call: bool,
+    #[serde(default)]
+    after_tool_call: bool,
 }
 
 /// Serializable tool metadata carried in the `run` payload. `AgentTool` holds
@@ -662,6 +856,93 @@ fn build_bridge_tool(channel: &Arc<BridgeChannel>, meta: ToolMeta) -> AgentTool 
         execute,
         execution_mode,
     }
+}
+
+/// Project an [`AgentContext`] to the wire shape the hook seams send to JS:
+/// `{ systemPrompt, messages, tools: ToolMeta[] }`. `AgentContext` carries
+/// closures and is not serde, so `tools` is reduced to the same `ToolMeta`
+/// metadata `run` sends (JS maps back to the live tool by name, and a returned
+/// context re-serializes to `ToolMeta[]` for `build_bridge_tool` to rebuild).
+fn serialize_ctx(ctx: &AgentContext) -> Value {
+    let tools: Vec<Value> = ctx
+        .tools
+        .as_ref()
+        .map(|ts| ts.iter().map(serialize_tool_meta).collect())
+        .unwrap_or_default();
+    json!({
+        "systemPrompt": ctx.system_prompt,
+        "messages": ctx.messages,
+        "tools": tools,
+    })
+}
+
+/// Project an [`AgentTool`] to its wire `ToolMeta` (the inverse of
+/// [`build_bridge_tool`]'s input): closures collapse to `hasPrepareArguments`.
+fn serialize_tool_meta(tool: &AgentTool) -> Value {
+    json!({
+        "name": tool.name,
+        "label": tool.label,
+        "description": tool.description,
+        "parameters": tool.parameters,
+        "executionMode": tool.execution_mode,
+        "hasPrepareArguments": tool.prepare_arguments.is_some(),
+    })
+}
+
+/// The `prepareNextTurn` resolve value parsed at the boundary: a mirror of pi's
+/// `AgentLoopTurnUpdate`. `context.tools` arrive as `ToolMeta[]` and are rebuilt
+/// into bridge [`AgentTool`]s exactly as in `run`.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TurnUpdateIn {
+    #[serde(default)]
+    context: Option<CtxIn>,
+    #[serde(default)]
+    model: Option<Model>,
+    #[serde(default)]
+    thinking_level: Option<ThinkingLevel>,
+}
+
+/// The context half of a [`TurnUpdateIn`]: system prompt + transcript + tool
+/// metadata to rebuild.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CtxIn {
+    #[serde(default)]
+    system_prompt: Option<String>,
+    #[serde(default)]
+    messages: Vec<AgentMessage>,
+    #[serde(default)]
+    tools: Vec<ToolMeta>,
+}
+
+/// Decode a `prepareNextTurn` resolve value into an [`AgentLoopTurnUpdate`],
+/// rebuilding any returned context's tools as bridge seams. `null` (no snapshot)
+/// and an undecodable value both map to `None` (the loop keeps current state).
+fn decode_turn_update(channel: &Arc<BridgeChannel>, value: Value) -> Option<AgentLoopTurnUpdate> {
+    if value.is_null() {
+        return None;
+    }
+    let parsed: TurnUpdateIn = serde_json::from_value(value).ok()?;
+    let context = parsed.context.map(|c| AgentContext {
+        system_prompt: c.system_prompt.unwrap_or_default(),
+        messages: c.messages,
+        tools: if c.tools.is_empty() {
+            None
+        } else {
+            Some(
+                c.tools
+                    .into_iter()
+                    .map(|meta| build_bridge_tool(channel, meta))
+                    .collect(),
+            )
+        },
+    });
+    Some(AgentLoopTurnUpdate {
+        context,
+        model: parsed.model,
+        thinking_level: parsed.thinking_level,
+    })
 }
 
 /// Build a plain error [`AgentToolResult`] (mirror of the agent loop's

@@ -2,6 +2,11 @@
 //! discovery integration tests. Extracted so the (large) ported test suites can
 //! split across files without duplicating setup.
 
+// straitjacket-allow-file:duplication -- the path/write/symlink helpers here are
+// faithfully mirrored by `crates/atilla-extensions/tests/common/mod.rs` (a
+// crate-boundary test-helper file can't be shared across crates); the small
+// overlap is intentional mirror duplication, not an accident to hoist away.
+
 // Each integration-test binary that includes this module uses a different
 // subset of these helpers, so per-binary `dead_code` is expected and allowed.
 #![allow(dead_code)]

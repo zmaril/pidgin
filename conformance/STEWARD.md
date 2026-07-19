@@ -64,11 +64,12 @@ re-triggering CI.
 
 ## Merge queue
 
-Current native count on main: **16** (ai anthropic-messages + ai faux, tui keys
-+ tui utils, coding-agent utils {ansi, mime, changelog, version-check, git} +
-export-html ansi-to-html + tools {truncate, edit-diff, path-utils} + core
-{resolve-config-value, trust-manager, keybindings}). The tui-pure batch (this PR)
-takes it to **21**.
+Current native count on main: **38** (agent 5, ai 7, coding-agent 15, tui 11).
+
+Wave settled state (this session): native **16 → 38** — the full tui surface is
+now native; the agent-loop flip is an honest-0 hybrid (single-text-turn via
+bridge); the ext-tests flip is parked as a deno-gated follow-up. The earlier
+tui-pure batch that took native 16 → 21 is folded into this total.
 
 The human merges in this order (rebasing each onto the prior as needed):
 

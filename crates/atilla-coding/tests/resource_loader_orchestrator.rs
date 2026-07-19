@@ -11,12 +11,16 @@
 //! project-vs-user precedence, override closures, `AGENTS.md` / `SYSTEM.md` /
 //! `APPEND_SYSTEM.md` discovery, `noSkills`, and trust-gated project resources.
 //!
-//! The ~6 cases that need the REAL extension runtime (loading `.ts` extensions,
+//! The 5 cases that need the REAL extension runtime (loading `.ts` extensions,
 //! trust reuse load-count, tool/command conflicts, CLI-vs-discovered precedence)
-//! stay behind `StubExtensionLoader` and are marked `#[ignore]` — they flip when
-//! the extension-plane's real `ExtensionLoader` lands. Their reachable setup +
-//! extension-set assertions are translated faithfully; the `ExtensionRunner`
-//! assertions (a not-yet-ported collaborator) are noted where omitted.
+//! have MOVED to `crates/atilla-extensions/tests/deno_resource_loader.rs`
+//! (deno-gated), where the real `RealExtensionLoader` is injected via the
+//! `DefaultResourceLoaderOptions.extension_loader` seam. They can't live here:
+//! the real loader is in atilla-extensions (which depends on atilla-coding and
+//! needs V8), so referencing it from an atilla-coding test would be a dependency
+//! cycle, and V8 can't build in-sandbox. The `ExtensionLoader` interface itself
+//! stays covered in this default V8-free suite against `StubExtensionLoader`
+//! (see `custom_extension_loader_is_held`).
 //!
 //! pi mutates `process.env.HOME`; here the loader takes an explicit `home_dir`
 //! so tests avoid mutating the process environment (racy under parallel
@@ -588,154 +592,13 @@ fn apply_system_prompt_override() {
     );
 }
 
-// == cases deferred behind StubExtensionLoader ==============================
-// Each loads real `.ts` extension modules (and some drive `ExtensionRunner`, a
-// not-yet-ported collaborator). They flip on when the extension-plane's real
-// `ExtensionLoader` lands behind the seam. Their reachable setup + extension-set
-// assertions are translated faithfully.
-
-#[test]
-#[ignore = "flipped when extension-plane's real ExtensionLoader lands (stub returns no extensions)"]
-fn load_symlinked_user_and_project_extensions_once() {
-    let e = env();
-    let shared = join(&e.root, &["shared-extensions"]);
-    write(
-        &join(&shared, &["shared.ts"]),
-        "export default function(pi) { pi.registerCommand(\"shared\", { description: \"shared\", handler: async () => {} }); }",
-    );
-    mkdir(&join(&e.cwd, &[".pi"]));
-    common::symlink_dir(&shared, &join(&e.agent, &["extensions"]));
-    common::symlink_dir(&shared, &join(&e.cwd, &[".pi", "extensions"]));
-
-    let mut loader = DefaultResourceLoader::new(base_opts(&e));
-    loader.reload(ReloadOptions::default());
-
-    let result = loader.get_extensions();
-    assert_eq!(result.extensions.len(), 1);
-    assert!(result.errors.is_empty());
-    // mergePaths processes project before user, so the project alias survives.
-    assert_eq!(
-        result.extensions[0].path,
-        join(&e.cwd, &[".pi", "extensions", "shared.ts"])
-    );
-}
-
-#[test]
-#[ignore = "flipped when extension-plane's real ExtensionLoader lands (stub returns no extensions)"]
-fn load_user_extensions_before_trust_and_reuse_after_trust_resolves() {
-    let e = env();
-    let user_ext = join(&e.agent, &["extensions", "user.ts"]);
-    let project_ext = join(&e.cwd, &[".pi", "extensions", "project.ts"]);
-    write(
-        &user_ext,
-        "export default function(pi) { pi.on(\"project_trust\", () => ({ trusted: \"yes\" })); pi.registerCommand(\"user-trust\", { description: \"user\", handler: async () => {} }); }",
-    );
-    write(
-        &project_ext,
-        "export default function(pi) { pi.registerCommand(\"project-trusted\", { description: \"project\", handler: async () => {} }); }",
-    );
-
-    let mut loader = DefaultResourceLoader::new(base_opts(&e));
-    let user_ext_cb = user_ext.clone();
-    loader.reload(ReloadOptions {
-        resolve_project_trust: Some(Box::new(move |pre| {
-            // Pre-trust pass loads ONLY the user extension.
-            let paths: Vec<&str> = pre.extensions.iter().map(|x| x.path.as_str()).collect();
-            assert_eq!(paths, vec![user_ext_cb.as_str()]);
-            true
-        })),
-    });
-
-    let paths: Vec<String> = loader
-        .get_extensions()
-        .extensions
-        .iter()
-        .map(|x| x.path.clone())
-        .collect();
-    assert_eq!(paths, vec![project_ext, user_ext]);
-    // With the real loader the `user.ts` module executes exactly once (its
-    // pre-trust `Extension` + the shared runtime are reused post-trust).
-}
-
-#[test]
-#[ignore = "flipped when extension-plane's real ExtensionLoader lands (ExtensionRunner assertions also pending)"]
-fn keep_both_extensions_loaded_when_command_names_collide() {
-    let e = env();
-    write(
-        &join(&e.cwd, &[".pi", "extensions", "project.ts"]),
-        "export default function(pi) { pi.registerCommand(\"deploy\", { description: \"project deploy\", handler: async () => {} }); pi.registerCommand(\"project-only\", { description: \"project only\", handler: async () => {} }); }",
-    );
-    write(
-        &join(&e.agent, &["extensions", "user.ts"]),
-        "export default function(pi) { pi.registerCommand(\"deploy\", { description: \"user deploy\", handler: async () => {} }); pi.registerCommand(\"user-only\", { description: \"user only\", handler: async () => {} }); }",
-    );
-
-    let mut loader = DefaultResourceLoader::new(base_opts(&e));
-    loader.reload(ReloadOptions::default());
-
-    let result = loader.get_extensions();
-    // Both extensions stay loaded; command collisions are NOT conflict errors
-    // (the runner renames them `:1`/`:2`).
-    assert_eq!(result.extensions.len(), 2);
-    assert!(!result
-        .errors
-        .iter()
-        .any(|x| x.error.contains("/deploy") && x.error.contains("conflicts")));
-    // ExtensionRunner command-rename assertions are pending the runner port.
-}
-
-#[test]
-#[ignore = "flipped when extension-plane's real ExtensionLoader lands (stub returns no extensions)"]
-fn detect_tool_conflicts_between_extensions() {
-    let e = env();
-    let tool_ext = |desc: &str| {
-        format!("import {{ Type }} from \"typebox\"; export default function(pi) {{ pi.registerTool({{ name: \"duplicate-tool\", description: \"{desc}\", parameters: Type.Object({{}}), execute: async () => ({{ result: \"x\" }}) }}); }}")
-    };
-    write(
-        &join(&e.agent, &["extensions", "ext1", "index.ts"]),
-        &tool_ext("First"),
-    );
-    write(
-        &join(&e.agent, &["extensions", "ext2", "index.ts"]),
-        &tool_ext("Second"),
-    );
-
-    let mut loader = DefaultResourceLoader::new(base_opts(&e));
-    loader.reload(ReloadOptions::default());
-
-    let errors = &loader.get_extensions().errors;
-    assert!(errors
-        .iter()
-        .any(|x| x.error.contains("duplicate-tool") && x.error.contains("conflicts")));
-}
-
-#[test]
-#[ignore = "flipped when extension-plane's real ExtensionLoader lands (ExtensionRunner assertions also pending)"]
-fn prefer_explicit_cli_extensions_over_discovered_on_conflict() {
-    let e = env();
-    let explicit = join(&e.root, &["explicit-extension.ts"]);
-    let ext_src = |tool: &str, cmd: &str| {
-        format!("import {{ Type }} from \"typebox\"; export default function(pi) {{ pi.registerTool({{ name: \"duplicate-tool\", description: \"{tool}\", parameters: Type.Object({{}}), execute: async () => ({{ result: \"x\" }}) }}); pi.registerCommand(\"deploy\", {{ description: \"{cmd}\", handler: async () => {{}} }}); }}")
-    };
-    write(
-        &join(&e.agent, &["extensions", "global.ts"]),
-        &ext_src("global tool", "global command"),
-    );
-    write(&explicit, &ext_src("explicit tool", "explicit command"));
-
-    let mut options = base_opts(&e);
-    options.additional_extension_paths = vec![explicit.clone()];
-    let mut loader = DefaultResourceLoader::new(options);
-    loader.reload(ReloadOptions::default());
-
-    // CLI extensions are merged before discovered ones, so the explicit one wins.
-    assert_eq!(
-        loader
-            .get_extensions()
-            .extensions
-            .first()
-            .map(|x| x.path.clone()),
-        Some(explicit)
-    );
-    // ExtensionRunner command/tool precedence assertions are pending the runner.
-}
+// == cases that need the REAL extension runtime ============================
+// The 5 cases that load real `.ts` extension modules (symlinked-extensions-once,
+// trust-reuse-load-count, command-name-collision, tool-conflict-detection,
+// CLI-vs-discovered precedence) MOVED to
+// `crates/atilla-extensions/tests/deno_resource_loader.rs` (deno-gated), where
+// the real `RealExtensionLoader` is injected via the seam. They can't live here:
+// the real loader is in atilla-extensions (depends on atilla-coding + needs V8),
+// so referencing it from an atilla-coding test would be a dependency cycle and
+// V8 cannot build in-sandbox. The `ExtensionLoader` interface stays covered here
+// against `StubExtensionLoader` (see `custom_extension_loader_is_held`).

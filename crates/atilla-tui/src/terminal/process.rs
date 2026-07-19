@@ -224,6 +224,14 @@ impl<W: Write> ProcessTerminal<W> {
         !self.negotiation_buffer.is_empty()
     }
 
+    /// True when the [`StdinBuffer`] holds an incomplete sequence remainder and
+    /// the caller should arm the input-completion flush (pi's 10 ms timer). Lets a
+    /// run loop schedule [`ProcessTerminal::flush_input_timeout`] only when there
+    /// is actually a stalled fragment, matching pi's `StdinBuffer` timeout arming.
+    pub fn has_pending_input(&self) -> bool {
+        self.stdin_buffer.has_pending()
+    }
+
     fn route_data_sequence(&mut self, sequence: &str, out: &mut Vec<TerminalInput>) {
         match self.read_negotiation_sequence(sequence, out) {
             NegRead::Pending => {

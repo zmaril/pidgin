@@ -11,7 +11,10 @@ use std::rc::Rc;
 
 use crate::renderer::{Component, Tui, SEGMENT_RESET};
 use crate::terminal::Terminal;
-use crate::{extract_segments, is_image_line, slice_by_column, slice_with_width, visible_width};
+use crate::{
+    extract_segments, is_image_line, is_key_release, slice_by_column, slice_with_width,
+    visible_width,
+};
 
 /// Stable identifier for a component registered with the renderer for focus or
 /// overlay purposes. pi relies on JavaScript reference equality (`===`) to track
@@ -723,10 +726,39 @@ impl<T: Terminal> Tui<T> {
             .unwrap_or(false)
     }
 
-    /// Handle terminal input. Ported from the focus-routing portion of
-    /// `handleInput` (the OSC/color-scheme/cell-size/debug interceptors and
-    /// input listeners are not part of the overlay port).
+    /// Handle terminal input. Ported from `TUI.handleInput` (`tui.ts`): first the
+    /// registered input listeners get a chance to consume or rewrite the input,
+    /// then the overlay focus-restore reconciliation runs, and finally the input
+    /// is delivered to the focused component. The OSC/color-scheme/cell-size/debug
+    /// interceptors pi runs before the listeners are not part of this port (the
+    /// run loop feeds already-decoded [`crate::TerminalInput`]s, so those terminal
+    /// query replies are handled inside [`crate::ProcessTerminal::feed`]).
     pub fn handle_input(&mut self, data: &str) {
+        // Offer the input to each listener in registration order (pi's
+        // `inputListeners` loop). A listener may consume the input outright or
+        // rewrite it; an empty rewrite drops it. Listeners are taken out during
+        // the call so a listener that mutates the Tui cannot alias the vector.
+        let mut current = data.to_string();
+        if !self.input_listeners.is_empty() {
+            let mut listeners = std::mem::take(&mut self.input_listeners);
+            let mut dropped = false;
+            for listener in listeners.iter_mut() {
+                let result = listener(&current);
+                if result.consume {
+                    dropped = true;
+                    break;
+                }
+                if let Some(next) = result.data {
+                    current = next;
+                }
+            }
+            self.input_listeners = listeners;
+            if dropped || current.is_empty() {
+                return;
+            }
+        }
+        let data = current.as_str();
+
         // If the focused component is an overlay that is no longer visible,
         // redirect to the topmost visible overlay (or its preFocus).
         let focused_overlay = self.focused_component.and_then(|fc| {
@@ -786,9 +818,20 @@ impl<T: Terminal> Tui<T> {
             }
         }
 
-        // Deliver to the focused component and run its scripted reaction.
+        // Deliver to the focused component. This fills the seam pi calls
+        // `this.focusedComponent.handleInput(data)`: the delivery is recorded for
+        // the input-routing vectors, the real registered component's
+        // `handle_input` is invoked (honoring the Kitty key-release opt-in), and
+        // any scripted reaction runs. Key-release events are dropped unless the
+        // component opts in via `wants_key_release`, matching pi's filter.
         if let Some(fc) = self.focused_component {
             self.input_deliveries.push((fc, data.to_string()));
+            if let Some(component) = self.components.get(fc).cloned() {
+                let wants_release = component.borrow().wants_key_release();
+                if !(is_key_release(data) && !wants_release) {
+                    component.borrow_mut().handle_input(data);
+                }
+            }
             if let Some(actions) = self.input_reactions.get(&(fc, data.to_string())).cloned() {
                 self.apply_reactions(&actions);
             }

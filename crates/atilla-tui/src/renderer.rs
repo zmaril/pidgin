@@ -88,6 +88,42 @@ pub trait Component {
     fn invalidate(&mut self) {}
 }
 
+/// The outcome an input listener returns from [`Tui::add_input_listener`],
+/// ported from pi's `InputListener` return union `{ consume?: boolean; data?:
+/// string }` (`tui.ts`). A listener sees each raw input string before it reaches
+/// the focused component and may drop it (`consume`) or rewrite it (`data`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct InputListenerResult {
+    /// When `true`, the input is consumed and never reaches the focused
+    /// component or later listeners (pi's `result.consume`).
+    pub consume: bool,
+    /// When `Some`, replaces the input string passed to the next listener and,
+    /// ultimately, the focused component (pi's `result.data`). An empty string
+    /// drops the input, exactly like pi's `current.length === 0` check.
+    pub data: Option<String>,
+}
+
+impl InputListenerResult {
+    /// A listener result that consumes the input (stops propagation).
+    pub fn consumed() -> Self {
+        Self {
+            consume: true,
+            data: None,
+        }
+    }
+
+    /// A pass-through result: the input is unchanged and continues to the next
+    /// listener / focused component.
+    pub fn pass() -> Self {
+        Self::default()
+    }
+}
+
+/// A registered input listener. Invoked with each raw input string (a
+/// [`crate::TerminalInput`] as delivered) before focus dispatch; mirrors pi's
+/// `addInputListener` callback signature.
+pub type InputListener = Box<dyn FnMut(&str) -> InputListenerResult>;
+
 /// A component backed by a shared, externally-mutable line buffer. This mirrors
 /// the test-suite `TestComponent`: a driver holds a clone of the handle and
 /// swaps the lines between renders. Useful for tests and simple static content.
@@ -287,6 +323,9 @@ pub struct Tui<T: Terminal> {
     /// them as data lets `handle_input` apply them without re-entrant borrows.
     pub(crate) input_reactions:
         std::collections::HashMap<(ComponentId, String), Vec<ReactionAction>>,
+    /// Registered input listeners (pi's `inputListeners` set). Each is offered
+    /// every input string before focus dispatch and may consume or rewrite it.
+    pub(crate) input_listeners: Vec<InputListener>,
 }
 
 impl<T: Terminal> Tui<T> {
@@ -322,7 +361,21 @@ impl<T: Terminal> Tui<T> {
             handle_id_counter: 0,
             input_deliveries: Vec::new(),
             input_reactions: std::collections::HashMap::new(),
+            input_listeners: Vec::new(),
         }
+    }
+
+    /// Register an input listener, ported from pi's `TUI.addInputListener`. The
+    /// listener is offered every input string (in registration order) before it
+    /// reaches the focused component and can drop or rewrite it via
+    /// [`InputListenerResult`]. Unlike pi (which returns an unsubscribe closure),
+    /// listeners live for the lifetime of the `Tui`; this matches the run loop's
+    /// usage, where the shell registers its exit-policy listener once at startup.
+    pub fn add_input_listener<F>(&mut self, listener: F)
+    where
+        F: FnMut(&str) -> InputListenerResult + 'static,
+    {
+        self.input_listeners.push(Box::new(listener));
     }
 
     /// Add a child component (delegates to the embedded container).
@@ -350,6 +403,12 @@ impl<T: Terminal> Tui<T> {
     /// Access the terminal backend (e.g. to resize or inspect a logging sink).
     pub fn terminal_mut(&mut self) -> &mut T {
         &mut self.terminal
+    }
+
+    /// Shared access to the terminal backend (e.g. to query dimensions or pending
+    /// input/negotiation state from the run loop without a mutable borrow).
+    pub fn terminal(&self) -> &T {
+        &self.terminal
     }
 
     /// Number of full redraws performed (pi's `fullRedraws` getter). Pins the

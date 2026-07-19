@@ -1,4 +1,4 @@
-// Bridge slices 1–2 — shared envelope types for the Rust→JS callback bridge.
+// Bridge slices 1–3 — shared envelope types for the Rust→JS callback bridge.
 //
 // Every seam the Rust agent loop calls back into JS multiplexes through a single
 // dispatcher function via a tagged JSON envelope. The Rust side
@@ -7,15 +7,23 @@
 // on. JSON is the boundary — nothing rich crosses.
 
 /** The kinds the Rust loop dispatches. Slice 1 wired `streamFn` / `convertToLlm`;
- * slice 2 adds the tool seams (`toolExecute`, `prepareArguments`). Later slices
- * add the remaining hooks and the agent.ts / harness seams. The interim
- * tool-update push (`emitToolUpdate`) is NOT a dispatched kind — it is a JS→Rust
- * method call, so it never rides the envelope. */
+ * slice 2 adds the tool seams (`toolExecute`, `prepareArguments`); slice 3 adds
+ * the eight loop hooks (each a blocking round-trip). The agent.ts / harness seams
+ * are later slices. The interim tool-update push (`emitToolUpdate`) is NOT a
+ * dispatched kind — it is a JS→Rust method call, so it never rides the envelope. */
 export type BridgeKind =
 	| "streamFn" // drain the async stream → eager StreamResult
 	| "convertToLlm" // AgentMessage[] → Message[]
 	| "toolExecute" // run the registered tool's execute(id, args, signal, onUpdate)
 	| "prepareArguments" // rewrite raw tool args before schema validation
+	| "transformContext" // AgentMessage[] → AgentMessage[] before convertToLlm
+	| "getApiKey" // provider → string | null (resolved value discarded loop-side)
+	| "shouldStopAfterTurn" // per-turn graceful-stop check → boolean
+	| "prepareNextTurn" // per-turn next-turn snapshot → AgentLoopTurnUpdate | null
+	| "getSteeringMessages" // nullary → AgentMessage[] injected before next turn
+	| "getFollowUpMessages" // nullary → AgentMessage[] to re-enter the loop with
+	| "beforeToolCall" // pre-execution hook → { block?, reason? } | null
+	| "afterToolCall" // post-execution override → { content?, details?, isError?, terminate? } | null
 	| "event" // fire-and-forget forward of an AgentEvent (no resolve)
 	| "__complete__"; // terminal: the run's AgentMessage[] (resolve the promise)
 
@@ -79,4 +87,68 @@ export interface AgentToolResultJson {
 	readonly details: unknown;
 	readonly addedToolNames?: string[];
 	readonly terminate?: boolean;
+}
+
+// --- slice 3: loop-hook payloads ------------------------------------------
+
+/** An `AgentContext` projected for the wire: `tools` are `ToolMeta`, not live
+ * closures. The dispatcher maps each back to its live JS tool by name (and a
+ * returned context re-serializes its tools to this shape for Rust to rebuild). */
+export interface CtxJson {
+	readonly systemPrompt?: string;
+	readonly messages: unknown[];
+	readonly tools: unknown[];
+}
+
+/** transformContext request payload. */
+export interface TransformContextPayload {
+	readonly messages: unknown[];
+	readonly aborted: boolean;
+}
+
+/** getApiKey request payload. */
+export interface GetApiKeyPayload {
+	readonly provider: string;
+}
+
+/** shouldStopAfterTurn / prepareNextTurn request payload (pi's
+ * `ShouldStopAfterTurnContext`, aliased by `PrepareNextTurnContext`). */
+export interface TurnHookPayload {
+	readonly message: unknown;
+	readonly toolResults: unknown[];
+	readonly context: CtxJson;
+	readonly newMessages: unknown[];
+}
+
+/** beforeToolCall request payload. */
+export interface BeforeToolCallPayload {
+	readonly assistantMessage: unknown;
+	readonly toolCall: unknown;
+	readonly args: unknown;
+	readonly context: CtxJson;
+	readonly aborted: boolean;
+}
+
+/** afterToolCall request payload. */
+export interface AfterToolCallPayload {
+	readonly assistantMessage: unknown;
+	readonly toolCall: unknown;
+	readonly args: unknown;
+	readonly result: unknown;
+	readonly isError: boolean;
+	readonly context: CtxJson;
+	readonly aborted: boolean;
+}
+
+/** Presence flags carried in the `run` payload so Rust wires a bridge round-trip
+ * only for the hooks the case actually defined (mirrors the JS `config` keys). */
+export interface HookFlags {
+	readonly transformContext: boolean;
+	readonly getApiKey: boolean;
+	readonly shouldStopAfterTurn: boolean;
+	readonly prepareNextTurn: boolean;
+	readonly getSteeringMessages: boolean;
+	readonly getFollowUpMessages: boolean;
+	readonly beforeToolCall: boolean;
+	readonly afterToolCall: boolean;
 }
