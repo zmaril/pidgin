@@ -137,10 +137,13 @@ fn op_register_shortcut(state: &mut OpState, #[string] payload: String) {
     let Ok(input) = serde_json::from_str::<ShortcutInput>(&payload) else {
         return;
     };
-    inventory(state).borrow_mut().shortcuts.push(ShortcutRecord {
-        shortcut: input.shortcut,
-        description: input.description,
-    });
+    inventory(state)
+        .borrow_mut()
+        .shortcuts
+        .push(ShortcutRecord {
+            shortcut: input.shortcut,
+            description: input.description,
+        });
 }
 
 /// `pi.registerFlag(name, options)` — record the flag and initialize its runtime

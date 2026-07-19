@@ -67,15 +67,16 @@ fn make_specifier(id: &str) -> Result<ModuleSpecifier, String> {
         sanitized.as_str()
     };
     let url = format!("{SPECIFIER_PREFIX}{stem}.ts");
-    ModuleSpecifier::parse(&url).map_err(|e| format!("Failed to load extension: bad specifier: {e}"))
+    ModuleSpecifier::parse(&url)
+        .map_err(|e| format!("Failed to load extension: bad specifier: {e}"))
 }
 
 /// Strip TypeScript types, producing runnable JavaScript (the spike's
 /// `transpile_ts`). Parse/transpile failures map to pi's load-error wording.
 pub fn transpile_ts(specifier: &ModuleSpecifier, source: &str) -> Result<String, String> {
     use deno_ast::{
-        parse_module, EmitOptions, MediaType, ParseParams, SourceMapOption,
-        TranspileModuleOptions, TranspileOptions,
+        parse_module, EmitOptions, MediaType, ParseParams, SourceMapOption, TranspileModuleOptions,
+        TranspileOptions,
     };
 
     let parsed = parse_module(ParseParams {
