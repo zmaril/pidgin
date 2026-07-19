@@ -40,6 +40,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use atilla_coding::core::extensions::command::{CommandContext, ResolvedCommand};
+use atilla_coding::core::extensions::discovery::{
+    DiscoveredExtension, DiscoveryOrigin, ExtensionLanguage,
+};
 use atilla_coding::core::extensions::dispatch::{BeforeAgentStartCombinedResult, ExtensionError};
 use atilla_coding::core::extensions::events::common::{
     AgentMessage, BuildSystemPromptOptions, ImageContent,
@@ -56,12 +59,10 @@ use atilla_coding::core::extensions::events::tool::{
 use atilla_coding::core::extensions::events::turn::MessageEndEvent;
 use atilla_coding::core::extensions::loader::{Extension, ExtensionRuntime};
 use atilla_coding::core::extensions::runner::{
-    ExtensionCommandContextHost, ExtensionDispatchEvent, ExtensionEmitOutcome, ExtensionErrorListener,
-    ExtensionMode, ExtensionRunner as ExtensionRunnerTrait, ExtensionUIContext, FlagValue,
-    ProviderRegistrationHost, RegisteredTool, SessionContextHost, SessionControlHost, UnsubscribeFn,
-};
-use atilla_coding::core::extensions::discovery::{
-    DiscoveredExtension, DiscoveryOrigin, ExtensionLanguage,
+    ExtensionCommandContextHost, ExtensionDispatchEvent, ExtensionEmitOutcome,
+    ExtensionErrorListener, ExtensionMode, ExtensionRunner as ExtensionRunnerTrait,
+    ExtensionUIContext, FlagValue, ProviderRegistrationHost, RegisteredTool, SessionContextHost,
+    SessionControlHost, UnsubscribeFn,
 };
 use atilla_coding::core::model_registry::ModelRegistry;
 use atilla_coding::core::session_manager::SessionManager;
@@ -256,8 +257,11 @@ impl ExtensionRunnerTrait for DenoExtensionRunner {
         streaming_behavior: Option<StreamingBehavior>,
     ) -> InputEventResult {
         let images = images.map(<[ImageContent]>::to_vec);
-        block_on_off_ambient(self.inner.emit_input(text, images, source, streaming_behavior))
-            .unwrap_or(InputEventResult::Continue)
+        block_on_off_ambient(
+            self.inner
+                .emit_input(text, images, source, streaming_behavior),
+        )
+        .unwrap_or(InputEventResult::Continue)
     }
 
     fn emit_before_agent_start(

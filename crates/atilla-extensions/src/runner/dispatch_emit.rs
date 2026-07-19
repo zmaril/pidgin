@@ -71,40 +71,46 @@ struct ResourcesDiscoverHandlerResult {
 /// serialized ported event struct tagged with its snake_case `type`.
 fn dispatch_event_json(event: &ExtensionDispatchEvent) -> (&'static str, Value) {
     use ExtensionDispatchEvent::*;
-    fn ser<T: serde::Serialize>(value: &T) -> Value {
+    fn to_json<T: serde::Serialize>(value: &T) -> Value {
         serde_json::to_value(value).unwrap_or(Value::Null)
     }
     match event {
-        AgentStart(e) => ("agent_start", tagged("agent_start", ser(e))),
-        AgentEnd(e) => ("agent_end", tagged("agent_end", ser(e))),
-        AgentSettled(e) => ("agent_settled", tagged("agent_settled", ser(e))),
-        TurnStart(e) => ("turn_start", tagged("turn_start", ser(e))),
-        TurnEnd(e) => ("turn_end", tagged("turn_end", ser(e))),
-        MessageStart(e) => ("message_start", tagged("message_start", ser(e))),
-        MessageUpdate(e) => ("message_update", tagged("message_update", ser(e))),
+        AgentStart(e) => ("agent_start", tagged("agent_start", to_json(e))),
+        AgentEnd(e) => ("agent_end", tagged("agent_end", to_json(e))),
+        AgentSettled(e) => ("agent_settled", tagged("agent_settled", to_json(e))),
+        TurnStart(e) => ("turn_start", tagged("turn_start", to_json(e))),
+        TurnEnd(e) => ("turn_end", tagged("turn_end", to_json(e))),
+        MessageStart(e) => ("message_start", tagged("message_start", to_json(e))),
+        MessageUpdate(e) => ("message_update", tagged("message_update", to_json(e))),
         ToolExecutionStart(e) => (
             "tool_execution_start",
-            tagged("tool_execution_start", ser(e)),
+            tagged("tool_execution_start", to_json(e)),
         ),
         ToolExecutionUpdate(e) => (
             "tool_execution_update",
-            tagged("tool_execution_update", ser(e)),
+            tagged("tool_execution_update", to_json(e)),
         ),
-        ToolExecutionEnd(e) => ("tool_execution_end", tagged("tool_execution_end", ser(e))),
+        ToolExecutionEnd(e) => (
+            "tool_execution_end",
+            tagged("tool_execution_end", to_json(e)),
+        ),
         ModelSelect(v) => ("model_select", tagged("model_select", v.clone())),
         // No `HookEvent` member yet; pi fires "thinking_level_changed".
         ThinkingLevelChanged(v) => (
             "thinking_level_changed",
             tagged("thinking_level_changed", v.clone()),
         ),
-        SessionStart(e) => ("session_start", tagged("session_start", ser(e))),
-        SessionCompact(e) => ("session_compact", tagged("session_compact", ser(e))),
+        SessionStart(e) => ("session_start", tagged("session_start", to_json(e))),
+        SessionCompact(e) => ("session_compact", tagged("session_compact", to_json(e))),
         SessionBeforeCompact(e) => (
             "session_before_compact",
-            tagged("session_before_compact", ser(e)),
+            tagged("session_before_compact", to_json(e)),
         ),
-        SessionTree(e) => ("session_tree", tagged("session_tree", ser(e))),
-        SessionBeforeTree(e) => ("session_before_tree", tagged("session_before_tree", ser(e))),
+        SessionTree(e) => ("session_tree", tagged("session_tree", to_json(e))),
+        SessionBeforeTree(e) => (
+            "session_before_tree",
+            tagged("session_before_tree", to_json(e)),
+        ),
         EntryAppended(v) => ("entry_appended", tagged("entry_appended", v.clone())),
     }
 }
@@ -130,7 +136,11 @@ impl ExtensionRunner {
         let mut outcome = ExtensionEmitOutcome::None;
 
         for (index, extension_path) in sites.into_iter().enumerate() {
-            let invocation = match self.plane().invoke_hook(name, index, &event_json, &ctx).await {
+            let invocation = match self
+                .plane()
+                .invoke_hook(name, index, &event_json, &ctx)
+                .await
+            {
                 Ok(invocation) => invocation,
                 Err(_) => continue,
             };
@@ -139,8 +149,7 @@ impl ExtensionRunner {
                 continue;
             }
             if is_before_compact {
-                if let Some(result) =
-                    parse_result::<SessionBeforeCompactResult>(&invocation.result)
+                if let Some(result) = parse_result::<SessionBeforeCompactResult>(&invocation.result)
                 {
                     let cancel = result.cancel == Some(true);
                     outcome = ExtensionEmitOutcome::BeforeCompact(result);

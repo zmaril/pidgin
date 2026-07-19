@@ -50,12 +50,11 @@ pub use selection::{
 };
 pub use session::{
     CompactionReason, DiscoveredResourcePath, ForkPosition, ProjectTrustEvent,
-    ProjectTrustEventDecision,
-    ProjectTrustEventResult, ResourcesDiscoverEvent, ResourcesDiscoverReason,
-    ResourcesDiscoverResult, SessionBeforeCompactEvent, SessionBeforeCompactResult,
-    SessionBeforeForkEvent, SessionBeforeForkResult, SessionBeforeSwitchEvent,
-    SessionBeforeSwitchReason, SessionBeforeSwitchResult, SessionBeforeTreeEvent,
-    SessionBeforeTreeResult, SessionBeforeTreeSummary, SessionCompactEvent,
+    ProjectTrustEventDecision, ProjectTrustEventResult, ResourcesDiscoverEvent,
+    ResourcesDiscoverReason, ResourcesDiscoverResult, SessionBeforeCompactEvent,
+    SessionBeforeCompactResult, SessionBeforeForkEvent, SessionBeforeForkResult,
+    SessionBeforeSwitchEvent, SessionBeforeSwitchReason, SessionBeforeSwitchResult,
+    SessionBeforeTreeEvent, SessionBeforeTreeResult, SessionBeforeTreeSummary, SessionCompactEvent,
     SessionInfoChangedEvent, SessionShutdownEvent, SessionShutdownReason, SessionStartEvent,
     SessionStartReason, SessionTreeEvent, TreePreparation,
 };

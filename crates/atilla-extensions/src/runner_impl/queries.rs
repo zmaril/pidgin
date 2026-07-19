@@ -30,7 +30,9 @@ use super::DenoExtensionRunner;
 /// event-type string against every [`HookEvent`] by its `as_str` name. Returns
 /// `None` for a name with no enum member yet (pi's opaque dispatch events).
 pub fn hook_event_from_str(name: &str) -> Option<HookEvent> {
-    HookEvent::ALL.into_iter().find(|event| event.as_str() == name)
+    HookEvent::ALL
+        .into_iter()
+        .find(|event| event.as_str() == name)
 }
 
 impl DenoExtensionRunner {
@@ -166,16 +168,18 @@ fn tool_definition(record: &ToolRecord) -> ToolDefinition {
         description: record.description.clone(),
         parameters: record.parameters.clone(),
         execution_mode: None,
-        execute: Arc::new(move |_id, _args, _signal, _on_update, _ctx| AgentToolResult {
-            content: Vec::new(),
-            details: json!({
-                "error": format!(
-                    "tool '{tool_name}' has no host-backed execute yet (deno runner impl)"
-                ),
-            }),
-            added_tool_names: None,
-            terminate: None,
-        }),
+        execute: Arc::new(
+            move |_id, _args, _signal, _on_update, _ctx| AgentToolResult {
+                content: Vec::new(),
+                details: json!({
+                    "error": format!(
+                        "tool '{tool_name}' has no host-backed execute yet (deno runner impl)"
+                    ),
+                }),
+                added_tool_names: None,
+                terminate: None,
+            },
+        ),
         prepare_arguments: None,
         prompt_snippet: record.prompt_snippet.clone(),
         prompt_guidelines: record.prompt_guidelines.clone(),

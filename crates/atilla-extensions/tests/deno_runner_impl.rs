@@ -43,9 +43,7 @@ use atilla_coding::core::extensions::runner::{
     SessionControlHost,
 };
 
-use atilla_extensions::{
-    hook_event_from_str, DenoExtensionRunner, JsPlaneHandle, SourceLanguage,
-};
+use atilla_extensions::{hook_event_from_str, DenoExtensionRunner, JsPlaneHandle, SourceLanguage};
 
 /// Spawn a plane, load each `(path, source)` fixture in order, and build a
 /// `DenoExtensionRunner` over them (the handlers stay live in the plane).
@@ -253,7 +251,10 @@ async fn has_handlers_uses_the_str_adapter() {
 
     // The adapter itself: recognized names resolve, unknown names do not.
     assert_eq!(hook_event_from_str("input"), Some(HookEvent::Input));
-    assert_eq!(hook_event_from_str("session_before_tree"), Some(HookEvent::SessionBeforeTree));
+    assert_eq!(
+        hook_event_from_str("session_before_tree"),
+        Some(HookEvent::SessionBeforeTree)
+    );
     assert_eq!(hook_event_from_str("not_a_real_event"), None);
 }
 
