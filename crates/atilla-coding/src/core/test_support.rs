@@ -7,6 +7,35 @@
 
 use std::path::{Path, PathBuf};
 
+use atilla_ai::types::{Modality, Model, ModelCost};
+
+/// A minimal `openai-completions` [`Model`] fixture used by the model-store and
+/// remote-catalog tests, which each carried an identical local `model()` helper
+/// (pi's per-test-file fixtures). Hoisted here so the builder has one home.
+pub fn model(provider: &str, id: &str) -> Model {
+    Model {
+        id: id.to_string(),
+        name: id.to_string(),
+        api: "openai-completions".to_string(),
+        provider: provider.to_string(),
+        base_url: "https://coding.example.test/openai/v1".to_string(),
+        reasoning: false,
+        thinking_level_map: None,
+        input: vec![Modality::Text],
+        cost: ModelCost {
+            input: 1.0,
+            output: 2.0,
+            cache_read: 0.5,
+            cache_write: 1.5,
+            tiers: None,
+        },
+        context_window: 1000,
+        max_tokens: 100,
+        headers: None,
+        compat: None,
+    }
+}
+
 /// Create a uniquely-named scratch directory under the system temp dir, tagged
 /// for the calling test so parallel runs never collide.
 pub fn scratch_dir(tag: &str) -> PathBuf {
