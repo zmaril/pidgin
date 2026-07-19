@@ -28,6 +28,7 @@ use tokio::sync::{mpsc, oneshot};
 use atilla_coding::core::extensions::discovery::{DiscoveredExtension, ExtensionLanguage};
 
 use crate::api_ops::{self, SharedInventory};
+use crate::dispatch::{self, HookInvocation};
 use crate::inventory::Inventory;
 use crate::loader;
 
@@ -69,6 +70,16 @@ enum Command {
         source: String,
         language: SourceLanguage,
         reply: oneshot::Sender<Result<Inventory, String>>,
+    },
+    /// Invoke a previously-registered hook handler (kept in the JS runtime,
+    /// keyed by event name) with a JSON event + ctx, returning the shaped
+    /// invocation envelope. This is the Rust-drives-JS half of hook dispatch.
+    InvokeHook {
+        event: String,
+        index: usize,
+        event_json: Value,
+        ctx_json: Value,
+        reply: oneshot::Sender<Result<HookInvocation, String>>,
     },
     /// Drain in-flight work and stop the runtime thread.
     Shutdown { reply: oneshot::Sender<()> },
@@ -171,6 +182,37 @@ impl JsPlaneHandle {
         .await
     }
 
+    /// Invoke the hook handler registered at `index` for `event`, passing the
+    /// JSON `event_json` and `ctx_json`, and await its shaped [`HookInvocation`].
+    ///
+    /// This is the closure-invocation primitive the [`crate::ExtensionRunner`]
+    /// drives once per registered handler: `index` selects into the JS-side
+    /// handler list for `event` (in load-then-registration order), the runtime
+    /// runs that handler with `(event, ctx)`, awaits its Promise if async, and
+    /// returns the plain-data envelope. A handler that throws surfaces as an
+    /// envelope with `ok == false` — the runtime thread is never unwound.
+    pub async fn invoke_hook(
+        &self,
+        event: impl Into<String>,
+        index: usize,
+        event_json: &Value,
+        ctx_json: &Value,
+    ) -> Result<HookInvocation> {
+        let (reply, rx) = oneshot::channel();
+        self.tx
+            .send(Command::InvokeHook {
+                event: event.into(),
+                index,
+                event_json: event_json.clone(),
+                ctx_json: ctx_json.clone(),
+                reply,
+            })
+            .map_err(|_| anyhow!("js plane gone"))?;
+        rx.await
+            .map_err(|_| anyhow!("js plane reply dropped"))?
+            .map_err(|e| anyhow!(e))
+    }
+
     /// Shut the runtime thread down cleanly, waiting for it to join.
     pub async fn shutdown(mut self) {
         let (reply, rx) = oneshot::channel();
@@ -225,6 +267,23 @@ fn js_plane_thread(mut rx: mpsc::UnboundedReceiver<Command>) {
                         loader::load_extension(&mut runtime, &inventory, &id, &source, language)
                             .await;
                     let _ = reply.send(res);
+                }
+                Command::InvokeHook {
+                    event,
+                    index,
+                    event_json,
+                    ctx_json,
+                    reply,
+                } => {
+                    let res = dispatch::invoke_hook_on_runtime(
+                        &mut runtime,
+                        &event,
+                        index,
+                        &event_json,
+                        &ctx_json,
+                    )
+                    .await;
+                    let _ = reply.send(res.map_err(|e| e.to_string()));
                 }
                 Command::Shutdown { reply } => {
                     let _ = reply.send(());

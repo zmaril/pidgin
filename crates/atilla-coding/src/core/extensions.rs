@@ -18,14 +18,20 @@
 //! - [`discovery`] — the filesystem-convention scan that locates extensions and
 //!   resolves each declared entrypoint into a [`discovery::DiscoveredExtension`]
 //!   inventory (pure Rust, no JS execution).
+//! - [`dispatch`] — the pure result-shaping folds (chain / merge / short-circuit
+//!   / replace) that mirror pi's `ExtensionRunner.emit*` shaping, factored out of
+//!   the JS runtime so they are unit-testable in the default (V8-free) build.
 //!
 //! The JS-execution plane (running each discovered entrypoint on the embedded
-//! `deno_core` runtime) and the `ExtensionRunner` hook-dispatch machinery land in
-//! later ports. Apart from [`discovery`], these modules are pure types and traits
-//! — no runtime, no `deno_core`, no JS.
+//! `deno_core` runtime) and the live `ExtensionRunner` that drives the hooks over
+//! the off-thread rendezvous live in `atilla-extensions` (behind its `deno`
+//! feature); this crate provides the pure types, traits, and shaping folds those
+//! bindings lower onto. Apart from [`discovery`], these modules are pure — no
+//! runtime, no `deno_core`, no JS.
 
 pub mod command;
 pub mod discovery;
+pub mod dispatch;
 pub mod events;
 pub mod hook;
 pub mod loader;
