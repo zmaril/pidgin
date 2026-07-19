@@ -14,7 +14,7 @@ path = "src/main.rs"
 
 [dependencies]
 atilla-agent = { path = "../atilla-agent" }
-atilla-ai = { path = "../atilla-ai" }
+atilla-ai = { path = "../atilla-ai", features = ["native-http"] }
 atilla-coding = { path = "../atilla-coding" }
 clap = { workspace = true }
 serde = { workspace = true }
