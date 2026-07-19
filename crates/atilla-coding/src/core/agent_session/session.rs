@@ -16,9 +16,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
-use atilla_agent::agent::{Agent, Listener, Subscription};
-use atilla_agent::types::{AgentEvent, AgentTool};
-use atilla_ai::seams::AbortSignal;
+use atilla_agent::agent::{Agent, Subscription};
+use atilla_agent::types::{AgentMessage, AgentTool};
 use atilla_ai::{Model, ThinkingLevel};
 
 use crate::core::extensions::events::session::{SessionStartEvent, SessionStartReason};
@@ -30,6 +29,7 @@ use crate::core::session_manager::SessionManager;
 use crate::core::settings_manager::SettingsManager;
 
 use super::events::{AgentSessionEvent, AgentSessionEventListener};
+use super::turn::{build_agent_listener, emit_to_listeners, AgentEventHandler};
 
 /// A model paired with an optional thinking level, cycled with Ctrl+P (pi's
 /// `AgentSessionConfig.scopedModels` element, `agent-session.ts:183`).
@@ -100,8 +100,10 @@ pub struct AgentSessionConfig {
 pub struct AgentSession {
     /// The wrapped agent (pi `readonly agent`).
     pub agent: Agent,
-    /// Session-tree persistence (pi `readonly sessionManager`).
-    pub session_manager: SessionManager,
+    /// Session-tree persistence (pi `readonly sessionManager`). Held in an
+    /// `Arc<Mutex<..>>` so the internal `agent.subscribe` handler (a `'static`
+    /// closure) can append finalized messages during a run.
+    session_manager: Arc<Mutex<SessionManager>>,
     /// Settings access (pi `readonly settingsManager`).
     pub settings_manager: SettingsManager,
 
@@ -109,8 +111,9 @@ pub struct AgentSession {
     cwd: String,
     /// The canonical model/auth runtime (pi `_modelRuntime`).
     model_runtime: ModelRuntime,
-    /// The extension runner, defaulted to the stub (pi `_extensionRunner`).
-    extension_runner: Box<dyn ExtensionRunner>,
+    /// The extension runner, defaulted to the stub (pi `_extensionRunner`). An
+    /// `Arc` so the internal agent-event handler can emit through it.
+    extension_runner: Arc<dyn ExtensionRunner>,
 
     /// Models cycled with Ctrl+P (pi `_scopedModels`).
     scoped_models: Mutex<Vec<ScopedModel>>,
@@ -154,10 +157,16 @@ pub struct AgentSession {
     #[allow(dead_code)]
     agent_subscription: Mutex<Option<Subscription>>,
 
-    /// Pending steering messages for UI display (pi `_steeringMessages`).
-    steering_messages: Mutex<Vec<String>>,
+    /// Pending steering messages for UI display (pi `_steeringMessages`). Shared
+    /// with the agent-event handler, which splices a mirrored entry out on the
+    /// matching user `message_start`.
+    steering_messages: Arc<Mutex<Vec<String>>>,
     /// Pending follow-up messages for UI display (pi `_followUpMessages`).
-    follow_up_messages: Mutex<Vec<String>>,
+    follow_up_messages: Arc<Mutex<Vec<String>>>,
+
+    /// The last assistant message, set by the agent-event handler and consumed by
+    /// the post-run loop (pi `_lastAssistantMessage`).
+    pub(super) last_assistant_message: Arc<Mutex<Option<AgentMessage>>>,
 
     /// Whether an agent run or post-run continuation is active (pi
     /// `_isAgentRunActive`). Drives [`AgentSession::is_idle`].
@@ -193,24 +202,43 @@ impl AgentSession {
             session_start_event,
         } = config;
 
-        let extension_runner: Box<dyn ExtensionRunner> =
-            extension_runner.unwrap_or_else(|| Box::new(StubExtensionRunner));
+        let extension_runner: Arc<dyn ExtensionRunner> = match extension_runner {
+            Some(runner) => Arc::from(runner),
+            None => Arc::new(StubExtensionRunner),
+        };
         let session_start_event = session_start_event.unwrap_or(SessionStartEvent {
             reason: SessionStartReason::Startup,
             previous_session_file: None,
         });
 
-        // pi always subscribes an internal `_handleAgentEvent` handler here (for
-        // session persistence, extension bridging, and auto-compaction/retry).
-        // That handler lands with the turn-runner PR; the scaffold registers a
-        // no-op so the subscription field is wired and later PRs can tear it down
-        // and swap in the real handler.
-        let noop_handler: Listener = Arc::new(|_event: &AgentEvent, _signal: &AbortSignal| {});
-        let agent_subscription = agent.subscribe(noop_handler);
+        let session_manager = Arc::new(Mutex::new(session_manager));
+        let listeners: Arc<Mutex<Vec<(u64, AgentSessionEventListener)>>> =
+            Arc::new(Mutex::new(Vec::new()));
+        let steering_messages = Arc::new(Mutex::new(Vec::new()));
+        let follow_up_messages = Arc::new(Mutex::new(Vec::new()));
+        let last_assistant_message = Arc::new(Mutex::new(None));
+        // The extension-facing turn index (pi `_turnIndex`) is owned solely by the
+        // agent-event handler, so it is created here and moved into the handler.
+        let turn_index = Arc::new(Mutex::new(0i64));
+
+        // pi always subscribes an internal `_handleAgentEvent` handler here for
+        // session persistence, extension bridging, and (later) auto-retry /
+        // compaction. Wire it with `Arc` clones of the shared turn state so the
+        // `'static` listener closure can reach it.
+        let handler = AgentEventHandler {
+            session_manager: Arc::clone(&session_manager),
+            extension_runner: Arc::clone(&extension_runner),
+            listeners: Arc::clone(&listeners),
+            steering_messages: Arc::clone(&steering_messages),
+            follow_up_messages: Arc::clone(&follow_up_messages),
+            last_assistant_message: Arc::clone(&last_assistant_message),
+            turn_index,
+        };
+        let agent_subscription = agent.subscribe(build_agent_listener(handler));
 
         // unit5: pi's constructor also calls `_installAgentToolHooks`,
         // `_installAgentNextTurnRefresh`, and `_buildRuntime`; those land with the
-        // runtime and turn-runner PRs.
+        // runtime PR.
 
         Self {
             agent,
@@ -227,11 +255,12 @@ impl AgentSession {
             excluded_tool_names: excluded_tool_names.map(|names| names.into_iter().collect()),
             base_tools_override,
             session_start_event,
-            listeners: Arc::new(Mutex::new(Vec::new())),
+            listeners,
             next_listener_id: AtomicU64::new(0),
             agent_subscription: Mutex::new(Some(agent_subscription)),
-            steering_messages: Mutex::new(Vec::new()),
-            follow_up_messages: Mutex::new(Vec::new()),
+            steering_messages,
+            follow_up_messages,
+            last_assistant_message,
             is_agent_run_active: AtomicBool::new(false),
             is_aborting: AtomicBool::new(false),
         }
@@ -267,17 +296,8 @@ impl AgentSession {
     /// The registry snapshot is taken (cloning the cheap `Arc` handles) before the
     /// lock is released, so a listener that re-enters `subscribe`/unsubscribe
     /// cannot deadlock or observe a half-mutated registry.
-    // unit5: the turn-runner, compaction, and queue PRs call this to publish
-    // their session events; the scaffold exercises it only from tests.
-    #[allow(dead_code)]
-    fn emit(&self, event: &AgentSessionEvent) {
-        let snapshot: Vec<AgentSessionEventListener> = {
-            let listeners = self.listeners.lock().unwrap();
-            listeners.iter().map(|(_, l)| Arc::clone(l)).collect()
-        };
-        for listener in &snapshot {
-            listener(event);
-        }
+    pub(super) fn emit(&self, event: &AgentSessionEvent) {
+        emit_to_listeners(&self.listeners, event);
     }
 
     // =========================================================================
@@ -300,6 +320,18 @@ impl AgentSession {
     /// `agent-session.ts:869`).
     pub fn is_idle(&self) -> bool {
         !self.is_agent_run_active.load(Ordering::Relaxed)
+    }
+
+    /// Set the active-run flag (pi assigns `_isAgentRunActive` in
+    /// `_runAgentPrompt`/`_emitAgentSettled`). Used by the turn-runner methods.
+    pub(super) fn set_agent_run_active(&self, active: bool) {
+        self.is_agent_run_active.store(active, Ordering::Relaxed);
+    }
+
+    /// Session-tree persistence access (pi's `readonly sessionManager`). Returns a
+    /// lock guard; the manager is shared with the internal agent-event handler.
+    pub fn session_manager(&self) -> std::sync::MutexGuard<'_, SessionManager> {
+        self.session_manager.lock().unwrap()
     }
 
     /// The canonical model/auth runtime (pi's `get modelRuntime`,
