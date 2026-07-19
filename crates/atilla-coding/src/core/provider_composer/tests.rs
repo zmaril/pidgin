@@ -68,7 +68,6 @@ fn base_provider(id: &str, name: &str, models: Vec<Model>) -> RegistryProvider {
         auth: ProviderAuth::default(),
         models,
         fetch_models: None,
-        filter_models: None,
         api: ApiRouting::Unimplemented,
     })
 }

@@ -123,6 +123,15 @@ type FetchModels = Arc<dyn Fn(&RefreshContext) -> Vec<Model> + Send + Sync>;
 /// A provider's optional credential-specific model filter, pi's
 /// `Provider.filterModels` (`models.ts:111`). Given the full synchronous catalog
 /// and the effective credential, it returns the subset a credential may use.
+///
+/// # Port deviation
+///
+/// pi carries `filterModels` as a field of `CreateProviderOptions`. To keep this
+/// addition crate-local (adding a field to the public [`CreateProviderOptions`]
+/// would break every exhaustive struct literal in downstream crates), the Rust
+/// port attaches it post-construction via
+/// [`RegistryProvider::with_filter_models`] instead. Purely a construction-shape
+/// difference; the runtime behavior in [`Models::get_available`] is identical.
 pub type FilterModels = Arc<dyn Fn(&[Model], Option<&Credential>) -> Vec<Model> + Send + Sync>;
 
 /// Options for [`create_provider`], mirroring pi's `CreateProviderOptions`.
@@ -141,9 +150,6 @@ pub struct CreateProviderOptions {
     pub models: Vec<Model>,
     /// Optional dynamic model fetch (makes the provider refreshable).
     pub fetch_models: Option<FetchModels>,
-    /// Optional credential-specific model filter, pi's `filterModels`
-    /// (`models.ts:111`), applied by [`Models::get_available`].
-    pub filter_models: Option<FilterModels>,
     /// Single backend, or a map keyed by `model.api`.
     pub api: ApiRouting,
 }
@@ -189,7 +195,6 @@ impl ProviderSnapshot {
             auth: self.auth,
             models: self.models,
             fetch_models: None,
-            filter_models: None,
             api: ApiRouting::Unimplemented,
         })
     }
@@ -280,6 +285,16 @@ impl RegistryProvider {
         true
     }
 
+    /// Attach a credential-specific model filter, pi's `filterModels`
+    /// (`models.ts:111`). Builder form: pi passes this through
+    /// `createProvider`'s options, but the Rust port attaches it here so the
+    /// public [`CreateProviderOptions`] stays unchanged for downstream callers
+    /// (see [`FilterModels`]).
+    pub fn with_filter_models(mut self, filter: FilterModels) -> Self {
+        self.filter_models = Some(filter);
+        self
+    }
+
     /// Whether this provider declares a credential-specific model filter (pi's
     /// presence of `filterModels`).
     pub fn has_filter(&self) -> bool {
@@ -329,7 +344,7 @@ pub fn create_provider(options: CreateProviderOptions) -> RegistryProvider {
         baseline_models: options.models,
         dynamic_models: Mutex::new(Vec::new()),
         fetch_models: options.fetch_models,
-        filter_models: options.filter_models,
+        filter_models: None,
         api: options.api,
     }
 }
@@ -801,7 +816,6 @@ mod tests {
             auth: ProviderAuth::default(),
             models: vec![],
             fetch_models: None,
-            filter_models: None,
             api: ApiRouting::Unimplemented,
         }
     }

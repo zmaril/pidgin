@@ -51,7 +51,6 @@ fn faux_models(responses: Vec<atilla_ai::AssistantMessage>) -> (atilla_ai::Model
         auth: atilla_ai::ProviderAuth::default(),
         models: vec![model.clone()],
         fetch_models: None,
-        filter_models: None,
         api: ApiRouting::Single(Arc::new(faux)),
     }));
     (models, model)

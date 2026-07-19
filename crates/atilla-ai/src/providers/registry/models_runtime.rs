@@ -476,7 +476,6 @@ mod tests {
             auth: ProviderAuth::default(),
             models: vec![model_for(id, "model-a")],
             fetch_models: None,
-            filter_models: None,
             api: ok_backend(),
         }
     }
@@ -644,14 +643,16 @@ mod tests {
     #[test]
     fn get_available_applies_filter_models() {
         let mut models = models_with_env(MemoryEnv::new());
-        models.set_provider(create_provider(CreateProviderOptions {
+        // Keep only the model whose id is "keep"; attached via the builder so the
+        // public CreateProviderOptions stays unchanged for downstream callers.
+        let provider = create_provider(CreateProviderOptions {
             models: vec![model_for("p1", "keep"), model_for("p1", "drop")],
-            // Keep only the model whose id is "keep".
-            filter_models: Some(Arc::new(|catalog: &[Model], _cred| {
-                catalog.iter().filter(|m| m.id == "keep").cloned().collect()
-            })),
             ..opts("p1")
+        })
+        .with_filter_models(Arc::new(|catalog: &[Model], _cred| {
+            catalog.iter().filter(|m| m.id == "keep").cloned().collect()
         }));
+        models.set_provider(provider);
 
         let ids: Vec<String> = models
             .get_available(None)
