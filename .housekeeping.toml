@@ -22,8 +22,8 @@ allow = [
 [stray-todos]
 # The fluessig integration note quotes an M1 placeholder marker as prose when
 # describing what atilla exposes today — a reference, not untracked work.
-# runner.rs is the PR0 extension-runner seam; its `// TODO(unit5):` markers flag
-# opaque `serde_json::Value` placeholders that become ported types in later unit5
+# runner.rs is the PR0 extension-runner seam; its inline unit5 deferral markers
+# flag opaque `serde_json::Value` placeholders that become ported types in later unit5
 # PRs (ModelSelectEvent, ThinkingLevelChangedEvent, EntryAppendedEvent, the
 # UI-context struct, and pi's ToolInfo for get_all_tools) — tracked deferrals of
 # the unit5 port, not untracked work. Drop this entry once the port completes.
