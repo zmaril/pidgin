@@ -16,6 +16,7 @@
 
 pub mod bridge;
 pub mod device_code;
+pub mod extension;
 pub mod flow;
 pub mod load;
 pub mod oauth_page;
@@ -29,4 +30,8 @@ pub mod xai;
 
 pub use bridge::{oauth_flow_for, OAuthFlowMode};
 pub use device_code::{DeviceCodePollMachine, DevicePollInput, DevicePollStep};
+pub use extension::{
+    adapt_extension_oauth, ExtensionOAuthLogin, OAuthAuthInfo, OAuthDeviceCodeInfo,
+    OAuthLoginCallbacks, OAuthPrompt, OAuthSelectOption, OAuthSelectPrompt,
+};
 pub use flow::{run_flow, run_login, run_refresh, OAuthFlowMachine, Step, StepInput};

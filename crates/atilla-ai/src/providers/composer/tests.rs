@@ -264,6 +264,7 @@ fn compose_api_key_auth_none_for_oauth_only() {
         oauth: Some(ExtensionOAuthConfig {
             name: "Extension subscription".to_string(),
             uses_callback_server: None,
+            login: None,
         }),
         ..ExtensionAuthConfig::default()
     };
