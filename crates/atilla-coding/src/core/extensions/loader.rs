@@ -62,16 +62,32 @@ pub struct ExtensionLoadError {
 /// The orchestrator holds this only as an owned `Option<Box<dyn
 /// ExtensionRuntime>>` and **moves** it through the two-pass trust flow — it
 /// never inspects, clones, or compares it — so the real runtime (owned by the
-/// extension-plane session) can preserve object identity across passes. No
-/// methods are exposed here on purpose: the seam is deliberately opaque.
-pub trait ExtensionRuntime {}
+/// extension-plane session) can preserve object identity across passes.
+///
+/// The one exposed method is [`ExtensionRuntime::as_any`], a downcast accessor.
+/// The seam stays opaque to the orchestrator (which only moves the handle), but
+/// the extension-plane host's `ExtensionRunner` factory — which knows the
+/// concrete runtime type — can recover it to **share the loader's already-live
+/// plane** (reusing the extensions/inventory the loader loaded) instead of
+/// spawning a second plane and re-loading every extension from disk.
+pub trait ExtensionRuntime {
+    /// Recover the concrete runtime for a checked downcast
+    /// (`as_any().downcast_ref::<Concrete>()`). The extension-plane factory uses
+    /// this to reach the loader's live plane and reuse its loaded inventory;
+    /// marker impls simply return `self`.
+    fn as_any(&self) -> &dyn std::any::Any;
+}
 
 /// The trivial [`ExtensionRuntime`] the [`StubExtensionLoader`] mints. A unit
 /// struct with no state; superseded by the extension-plane host's real runtime.
 #[derive(Debug, Default)]
 pub struct StubExtensionRuntime;
 
-impl ExtensionRuntime for StubExtensionRuntime {}
+impl ExtensionRuntime for StubExtensionRuntime {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
 
 /// Port of pi's `createExtensionRuntime()`: seed a fresh (uninitialized)
 /// runtime handle. Placeholder until the extension-plane host lands.

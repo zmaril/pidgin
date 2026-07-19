@@ -51,6 +51,7 @@
 // Extension or an error) and the runtime-threading mirrors the seam's stub; the
 // parallel structure is faithful to the ported source, not incidental.
 
+use std::any::Any;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -68,16 +69,41 @@ use crate::runtime::JsPlaneHandle;
 
 /// The real [`ExtensionRuntime`], backed by the persistent [`JsPlaneHandle`].
 ///
-/// Opaque per the seam contract: the orchestrator only ever *moves* it through
-/// the two-pass trust flow, never inspecting, cloning, or comparing it. It shares
-/// the loader's plane (`Arc<JsPlaneHandle>`) so the returned handle fronts the
-/// same live runtime the extensions loaded into.
+/// Opaque per the seam contract *to the orchestrator*: it only ever *moves* this
+/// through the two-pass trust flow, never inspecting, cloning, or comparing it.
+/// It shares the loader's plane (`Arc<JsPlaneHandle>`) so the returned handle
+/// fronts the same live runtime the extensions loaded into, and it carries the
+/// per-extension [`Inventory`] the loader collected while loading them.
+///
+/// The extension-plane host's `ExtensionRunner` factory recovers this concrete
+/// via [`ExtensionRuntime::as_any`] to build the runner over the **same** plane
+/// and reuse this inventory — so extensions are not re-executed on a second
+/// plane.
 pub struct RealExtensionRuntime {
-    #[allow(dead_code)] // Held to keep the shared plane alive + front it; never inspected.
     plane: Arc<JsPlaneHandle>,
+    /// The `(path, Inventory)` pairs the loader collected while loading each
+    /// extension onto `plane`. Captured at mint so the runner factory can reuse
+    /// them without re-running the extension factories.
+    loaded: Vec<(String, Inventory)>,
 }
 
-impl ExtensionRuntime for RealExtensionRuntime {}
+impl ExtensionRuntime for RealExtensionRuntime {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl RealExtensionRuntime {
+    /// A cloned handle to the shared live plane the extensions loaded into.
+    pub(crate) fn shared_plane(&self) -> Arc<JsPlaneHandle> {
+        Arc::clone(&self.plane)
+    }
+
+    /// The per-extension inventory the loader captured for this plane.
+    pub(crate) fn loaded(&self) -> &[(String, Inventory)] {
+        &self.loaded
+    }
+}
 
 /// The real `impl ExtensionLoader`: a persistent `deno_core` plane plus a Tokio
 /// runtime to `block_on` the async loads behind the sync trait.
@@ -102,10 +128,12 @@ impl RealExtensionLoader {
     }
 
     /// Mint a fresh runtime handle backed by the persistent plane — pi's
-    /// `createExtensionRuntime()` equivalent.
-    fn make_runtime(&self) -> Box<dyn ExtensionRuntime> {
+    /// `createExtensionRuntime()` equivalent — carrying the inventory just
+    /// loaded onto that plane so the runner factory can share both.
+    fn make_runtime(&self, loaded: Vec<(String, Inventory)>) -> Box<dyn ExtensionRuntime> {
         Box::new(RealExtensionRuntime {
             plane: Arc::clone(&self.plane),
+            loaded,
         })
     }
 }
@@ -120,6 +148,9 @@ impl ExtensionLoader for RealExtensionLoader {
     ) -> LoadExtensionsResult {
         let mut extensions: Vec<Extension> = Vec::new();
         let mut errors: Vec<ExtensionLoadError> = Vec::new();
+        // The per-extension inventory loaded onto the plane in this call, handed
+        // to a freshly minted runtime so the runner factory can reuse it.
+        let mut loaded: Vec<(String, Inventory)> = Vec::new();
         // Dedup within a single call by the logical resolved path, so a path
         // repeated in one call loads its factory exactly once.
         let mut seen: Vec<String> = Vec::new();
@@ -140,6 +171,7 @@ impl ExtensionLoader for RealExtensionLoader {
                             resolved_path,
                             &inventory,
                         ));
+                        loaded.push((path.clone(), inventory));
                     }
                     Err(error) => {
                         errors.push(ExtensionLoadError {
@@ -156,8 +188,9 @@ impl ExtensionLoader for RealExtensionLoader {
             errors,
             // pi's loader defaults `runtime ?? createExtensionRuntime()`: reuse a
             // supplied handle identity-preserving (the trust second pass), else
-            // mint a fresh one backed by the persistent plane.
-            runtime: Some(runtime.unwrap_or_else(|| self.make_runtime())),
+            // mint a fresh one backed by the persistent plane, carrying this
+            // call's loaded inventory for the runner factory to share.
+            runtime: Some(runtime.unwrap_or_else(|| self.make_runtime(loaded))),
         }
     }
 }

@@ -45,7 +45,7 @@ mod emit;
 
 pub use context::ContextConfig;
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use atilla_coding::core::extensions::dispatch::ExtensionError;
 use atilla_coding::core::extensions::hook::HookEvent;
@@ -87,7 +87,7 @@ type ErrorListener = Box<dyn Fn(&ExtensionError) + Send>;
 /// Owns the JS plane the handlers live in, the loaded extensions' handler
 /// inventory, the minimal ctx configuration, and the `onError` machinery.
 pub struct ExtensionRunner {
-    plane: JsPlaneHandle,
+    plane: Arc<JsPlaneHandle>,
     extensions: Vec<LoadedExtension>,
     context: ContextConfig,
     errors: Mutex<Vec<ExtensionError>>,
@@ -97,9 +97,13 @@ pub struct ExtensionRunner {
 impl ExtensionRunner {
     /// Build a runner over `plane` (holding the loaded handlers) and the
     /// `extensions` inventory that describes which handlers are registered.
-    pub fn new(plane: JsPlaneHandle, extensions: Vec<LoadedExtension>) -> Self {
+    ///
+    /// `plane` is taken as `impl Into<Arc<JsPlaneHandle>>` so a caller can pass
+    /// either an owned handle (the self-spawn path wraps it) or an
+    /// `Arc<JsPlaneHandle>` shared with the loader (the plane-sharing path).
+    pub fn new(plane: impl Into<Arc<JsPlaneHandle>>, extensions: Vec<LoadedExtension>) -> Self {
         Self {
-            plane,
+            plane: plane.into(),
             extensions,
             context: ContextConfig::default(),
             errors: Mutex::new(Vec::new()),
@@ -120,8 +124,15 @@ impl ExtensionRunner {
     }
 
     /// Shut the underlying plane down cleanly.
+    ///
+    /// Only actually shuts the plane down when this runner is its **sole** owner
+    /// (the self-spawn path). When the plane is shared with the loader (the
+    /// plane-sharing path, `Arc` strong count > 1), the loader owns the plane's
+    /// lifecycle, so this is a no-op and the loader's plane keeps running.
     pub async fn shutdown(self) {
-        self.plane.shutdown().await;
+        if let Ok(plane) = Arc::try_unwrap(self.plane) {
+            plane.shutdown().await;
+        }
     }
 
     /// Register an `onError` listener (pi's `runner.onError`). Every isolated

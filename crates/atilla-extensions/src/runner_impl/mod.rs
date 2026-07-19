@@ -70,6 +70,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::inventory::Inventory;
+use crate::resource_loader_impl::RealExtensionRuntime;
 use crate::runner::{ContextConfig, ExtensionRunner as InnerRunner, LoadedExtension};
 use crate::runtime::JsPlaneHandle;
 
@@ -148,9 +149,10 @@ pub struct DenoExtensionRunner {
 impl DenoExtensionRunner {
     /// Build a runner over a `plane` that already holds the loaded handlers and
     /// the `loaded` per-extension inventories. Used by tests and by
-    /// [`create_deno_extension_runner`].
+    /// [`create_deno_extension_runner`]. `plane` may be an owned handle or an
+    /// `Arc<JsPlaneHandle>` shared with the loader.
     pub fn from_loaded(
-        plane: JsPlaneHandle,
+        plane: impl Into<Arc<JsPlaneHandle>>,
         loaded: Vec<(String, Inventory)>,
         cwd: impl Into<String>,
     ) -> Self {
@@ -158,9 +160,11 @@ impl DenoExtensionRunner {
     }
 
     /// The shared assembly path: wire the inner engine, install the forwarding
-    /// error listener, and record the inventories.
+    /// error listener, and record the inventories. `plane` may be owned (the
+    /// self-spawn path) or an `Arc<JsPlaneHandle>` shared with the loader (the
+    /// plane-sharing path).
     fn assemble(
-        plane: JsPlaneHandle,
+        plane: impl Into<Arc<JsPlaneHandle>>,
         loaded: Vec<(String, Inventory)>,
         cwd: String,
         session_manager: Option<Arc<SessionManager>>,
@@ -370,22 +374,38 @@ impl ExtensionRunnerTrait for DenoExtensionRunner {
 /// the seam contract: build a `Box<dyn ExtensionRunner>` from the already-loaded
 /// extensions and the session/model registries.
 ///
-/// The passed `runtime` is the loader's opaque `ExtensionRuntime`. The current
-/// seam's `ExtensionRuntime` is an opaque marker with no downcast, so this
-/// factory cannot yet reach into it for the loader's live plane; instead it
-/// spawns its own [`JsPlaneHandle`] and re-loads each extension from its resolved
-/// path. Sharing the loader's plane is a follow-up that needs the seam to expose
-/// the concrete (an `as_any` accessor on `ExtensionRuntime`).
+/// The passed `runtime` is the loader's opaque `ExtensionRuntime`. When it is the
+/// real deno-backed [`RealExtensionRuntime`] (the production path), this factory
+/// recovers it via [`ExtensionRuntime::as_any`] and builds the runner over the
+/// loader's **already-live plane**, reusing the inventory the loader collected —
+/// so extensions are NOT re-executed on a second plane. When the downcast fails
+/// (e.g. a `StubExtensionRuntime` in tests), it falls back to spawning its own
+/// [`JsPlaneHandle`] and re-loading each extension from its resolved path.
 pub fn create_deno_extension_runner(
     extensions: Vec<Extension>,
-    _runtime: Box<dyn ExtensionRuntime>,
+    runtime: Box<dyn ExtensionRuntime>,
     cwd: impl Into<String>,
     session_manager: Arc<SessionManager>,
     model_registry: Arc<ModelRegistry>,
 ) -> Box<dyn ExtensionRunnerTrait> {
     let cwd = cwd.into();
-    let plane = JsPlaneHandle::spawn();
 
+    // Preferred (production): the loader handed us its real runtime. Share its
+    // live plane (Arc) and reuse the inventory it already loaded, so no extension
+    // factory runs a second time and only one V8 plane exists for the session.
+    if let Some(real) = runtime.as_any().downcast_ref::<RealExtensionRuntime>() {
+        return Box::new(DenoExtensionRunner::assemble(
+            real.shared_plane(),
+            real.loaded().to_vec(),
+            cwd,
+            Some(session_manager),
+            Some(model_registry),
+        ));
+    }
+
+    // Fallback (e.g. a StubExtensionRuntime in tests): spawn our own plane and
+    // re-load each extension from its resolved path.
+    let plane = JsPlaneHandle::spawn();
     let loaded: Vec<(String, Inventory)> = block_on_off_ambient(async {
         let mut loaded = Vec::new();
         for extension in &extensions {
