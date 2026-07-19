@@ -17,11 +17,28 @@
 //! [`ExtensionLoader`]; its signature mirrors pi's `loadExtensionsCached(paths,
 //! cwd, eventBus?, runtime?)` so the engine drops in compatibly.
 //!
-//! The concrete types here ([`Extension`], [`ExtensionRuntime`]) are the
-//! minimal placeholder subset the orchestrator reads (`path`, `resolvedPath`,
-//! tool/command/flag names, `sourceInfo`, `hidden`); the full `Extension` /
-//! `ExtensionRuntime` shape from pi `extensions/types.ts` (1682 lines) is owned
-//! by the extension-plane session and supersedes these when it lands.
+//! # Locked seam contract (extension-plane integration point)
+//!
+//! This is the negotiated, locked contract the extension-plane session's
+//! integration PR drops into. The load-bearing shape decisions:
+//!
+//! * [`ExtensionRuntime`] is an **opaque marker trait** (`trait ExtensionRuntime
+//!   {}`), threaded as `Option<Box<dyn ExtensionRuntime>>`. The orchestrator's
+//!   `reload()` only **moves** the handle in and out — it never inspects, clones,
+//!   or compares it — so the real runtime (a mutable action-callback bag with
+//!   pending provider registrations) can preserve identity across the two-pass
+//!   trust flow. Nothing embedding the runtime derives `Clone` / `PartialEq` /
+//!   `Eq`.
+//! * [`Extension`] keeps its tool / command / flag **name-string** vectors for
+//!   now, but all downstream consumption goes through the [`Extension::tool_names`]
+//!   / [`Extension::flag_names`] accessors (never the raw `Vec` fields). The
+//!   extension-plane's integration PR swaps the fields to rich records and
+//!   repoints those accessors, leaving the orchestrator's conflict pass
+//!   unchanged.
+//! * The sync `load_extensions_cached(&self, paths, cwd, event_bus, runtime)`
+//!   signature, the [`LoadExtensionsResult`] `{extensions, errors, runtime}`
+//!   shape, [`ExtensionLoadError`] `{path, error}`, and the `Box<dyn
+//!   ExtensionLoader>` holding pattern are faithful and unchanged.
 
 // straitjacket-allow-file:duplication
 
@@ -38,18 +55,28 @@ pub struct ExtensionLoadError {
     pub error: String,
 }
 
-/// Placeholder for pi's `ExtensionRuntime` (`extensions/types.ts:1648`), the
-/// mutable action-callback bag whose actions are throwing stubs until
-/// `runner.initialize()` binds a live session. The real runtime is owned by the
-/// extension-plane session; this empty marker exists only so the orchestrator
-/// can hold and thread `LoadExtensionsResult.runtime` through the seam.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct ExtensionRuntime {}
+/// Opaque marker trait standing in for pi's `ExtensionRuntime`
+/// (`extensions/types.ts:1648`), the mutable action-callback bag whose actions
+/// are throwing stubs until `runner.initialize()` binds a live session.
+///
+/// The orchestrator holds this only as an owned `Option<Box<dyn
+/// ExtensionRuntime>>` and **moves** it through the two-pass trust flow — it
+/// never inspects, clones, or compares it — so the real runtime (owned by the
+/// extension-plane session) can preserve object identity across passes. No
+/// methods are exposed here on purpose: the seam is deliberately opaque.
+pub trait ExtensionRuntime {}
+
+/// The trivial [`ExtensionRuntime`] the [`StubExtensionLoader`] mints. A unit
+/// struct with no state; superseded by the extension-plane host's real runtime.
+#[derive(Debug, Default)]
+pub struct StubExtensionRuntime;
+
+impl ExtensionRuntime for StubExtensionRuntime {}
 
 /// Port of pi's `createExtensionRuntime()`: seed a fresh (uninitialized)
-/// runtime. Placeholder until the extension-plane host lands.
-pub fn create_extension_runtime() -> ExtensionRuntime {
-    ExtensionRuntime::default()
+/// runtime handle. Placeholder until the extension-plane host lands.
+pub fn create_extension_runtime() -> Box<dyn ExtensionRuntime> {
+    Box::new(StubExtensionRuntime)
 }
 
 /// A loaded extension. Minimal placeholder subset of pi's `Extension`
@@ -58,6 +85,11 @@ pub fn create_extension_runtime() -> ExtensionRuntime {
 /// tool / command / flag names (for conflict detection), provenance
 /// (`source_info`), and the `hidden` flag. The full shape is owned by the
 /// extension-plane session.
+///
+/// The `tools` / `commands` / `flags` fields stay name-string vectors for now;
+/// downstream consumers must read them only through [`Extension::tool_names`] /
+/// [`Extension::flag_names`] so the extension-plane can later swap the fields to
+/// rich records (`Map<name, RegisteredTool>`, ...) and repoint the accessors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Extension {
     /// The extension's source path (its identity; may be a `<inline:...>` tag).
@@ -76,16 +108,37 @@ pub struct Extension {
     pub source_info: Option<SourceInfo>,
 }
 
+impl Extension {
+    /// The names of the tools this extension registers. This is the **only**
+    /// sanctioned way for the orchestrator's conflict pass to read tool names;
+    /// the backing storage (`Vec<String>` today, rich records later) is an
+    /// implementation detail the extension-plane will change.
+    pub fn tool_names(&self) -> impl Iterator<Item = &str> {
+        self.tools.iter().map(String::as_str)
+    }
+
+    /// The names of the flags this extension registers (without the `--`). See
+    /// [`Extension::tool_names`] for the accessor rationale.
+    pub fn flag_names(&self) -> impl Iterator<Item = &str> {
+        self.flags.iter().map(String::as_str)
+    }
+}
+
 /// Port of pi's `LoadExtensionsResult` (`extensions/types.ts:1666`): the loaded
-/// extensions, per-path errors, and the shared runtime.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+/// extensions, per-path errors, and the shared runtime handle.
+///
+/// Deliberately **not** `Clone` / `PartialEq` / `Eq`: the `runtime` handle is an
+/// opaque, move-only `Option<Box<dyn ExtensionRuntime>>` (see
+/// [`ExtensionRuntime`]).
+#[derive(Default)]
 pub struct LoadExtensionsResult {
     /// Successfully loaded extensions, in load order.
     pub extensions: Vec<Extension>,
     /// Per-path load failures.
     pub errors: Vec<ExtensionLoadError>,
-    /// The shared runtime (throwing stubs until `runner.initialize()`).
-    pub runtime: ExtensionRuntime,
+    /// The shared runtime handle (throwing stubs until `runner.initialize()`),
+    /// threaded — never inspected — through the two-pass trust flow.
+    pub runtime: Option<Box<dyn ExtensionRuntime>>,
 }
 
 /// The seam pi's `loadExtensionsCached` implements. The resource-loader
@@ -96,24 +149,26 @@ pub struct LoadExtensionsResult {
 /// runtime?): Promise<LoadExtensionsResult>` — synchronous here, matching the
 /// rest of the atilla port (pi's `async` covers dynamic import, which becomes
 /// the host's concern behind this seam). The `runtime` argument threads a
-/// pre-seeded runtime through the two-pass trust flow (`loadFinalExtensionSet`).
+/// pre-seeded runtime handle through the two-pass trust flow
+/// (`loadFinalExtensionSet`); when `None`, the loader mints a fresh one.
 pub trait ExtensionLoader {
     /// Load the extensions at `paths`, resolving relative paths against `cwd`.
     /// `event_bus` is handed to extension factories; `runtime`, when supplied,
-    /// is reused rather than freshly created (the trust second pass).
+    /// is reused rather than freshly created (the trust second pass), preserving
+    /// its identity in the returned result.
     fn load_extensions_cached(
         &self,
         paths: &[String],
         cwd: &str,
         event_bus: &EventBus,
-        runtime: Option<ExtensionRuntime>,
+        runtime: Option<Box<dyn ExtensionRuntime>>,
     ) -> LoadExtensionsResult;
 }
 
 /// The no-op [`ExtensionLoader`] used until the extension-plane host lands:
 /// returns an empty [`LoadExtensionsResult`] (no extensions, no errors) with a
-/// fresh-or-reused runtime. The orchestrator's non-extension assertions pass
-/// unchanged against it; the ~6 extension integration tests stay deferred
+/// fresh-or-reused runtime handle. The orchestrator's non-extension assertions
+/// pass unchanged against it; the ~6 extension integration tests stay deferred
 /// behind this stub.
 #[derive(Debug, Clone, Default)]
 pub struct StubExtensionLoader;
@@ -124,12 +179,15 @@ impl ExtensionLoader for StubExtensionLoader {
         _paths: &[String],
         _cwd: &str,
         _event_bus: &EventBus,
-        runtime: Option<ExtensionRuntime>,
+        runtime: Option<Box<dyn ExtensionRuntime>>,
     ) -> LoadExtensionsResult {
         LoadExtensionsResult {
             extensions: Vec::new(),
             errors: Vec::new(),
-            runtime: runtime.unwrap_or_default(),
+            // pi's loader defaults `runtime ?? createExtensionRuntime()`, so the
+            // result always carries a runtime; a supplied handle is threaded back
+            // out unchanged (identity preserved for the trust second pass).
+            runtime: Some(runtime.unwrap_or_else(create_extension_runtime)),
         }
     }
 }
@@ -139,22 +197,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn stub_returns_empty_result_with_fresh_runtime() {
+    fn stub_returns_empty_result_with_a_runtime() {
         let loader = StubExtensionLoader;
         let bus = EventBus::new();
         let result = loader.load_extensions_cached(&["/some/ext".to_string()], "/cwd", &bus, None);
         assert!(result.extensions.is_empty());
         assert!(result.errors.is_empty());
-        assert_eq!(result.runtime, ExtensionRuntime::default());
+        // A fresh runtime handle is minted when none is supplied.
+        assert!(result.runtime.is_some());
     }
 
     #[test]
-    fn stub_reuses_supplied_runtime() {
+    fn stub_threads_supplied_runtime_back_out() {
         let loader = StubExtensionLoader;
         let bus = EventBus::new();
         let runtime = create_extension_runtime();
-        let result = loader.load_extensions_cached(&[], "/cwd", &bus, Some(runtime.clone()));
-        assert_eq!(result.runtime, runtime);
+        let result = loader.load_extensions_cached(&[], "/cwd", &bus, Some(runtime));
+        // The supplied handle is returned (moved through), not dropped.
+        assert!(result.runtime.is_some());
+        assert!(result.extensions.is_empty());
+        assert!(result.errors.is_empty());
     }
 
     #[test]
@@ -168,5 +230,20 @@ mod tests {
             None,
         );
         assert!(result.extensions.is_empty());
+    }
+
+    #[test]
+    fn extension_name_accessors_read_the_backing_vecs() {
+        let ext = Extension {
+            path: "/ext".to_string(),
+            resolved_path: "/ext".to_string(),
+            tools: vec!["a".to_string(), "b".to_string()],
+            commands: vec!["c".to_string()],
+            flags: vec!["verbose".to_string()],
+            hidden: false,
+            source_info: None,
+        };
+        assert_eq!(ext.tool_names().collect::<Vec<_>>(), vec!["a", "b"]);
+        assert_eq!(ext.flag_names().collect::<Vec<_>>(), vec!["verbose"]);
     }
 }

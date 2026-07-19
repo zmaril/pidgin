@@ -2,6 +2,10 @@
 //! discovery integration tests. Extracted so the (large) ported test suites can
 //! split across files without duplicating setup.
 
+// Each integration-test binary that includes this module uses a different
+// subset of these helpers, so per-binary `dead_code` is expected and allowed.
+#![allow(dead_code)]
+
 use std::fs;
 use std::path::Path;
 

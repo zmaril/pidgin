@@ -405,7 +405,7 @@ impl ResourceLoader {
 
     /// Port of pi's `resolveResourcePath`: resolve `p` against `cwd`, trimming
     /// surrounding whitespace first.
-    fn resolve_resource_path(&self, p: &str) -> String {
+    pub fn resolve_resource_path(&self, p: &str) -> String {
         let options = PathInputOptions {
             trim: true,
             ..PathInputOptions::default()
