@@ -7,6 +7,7 @@ members = [
     "crates/atilla-agent",
     "crates/atilla-coding",
     "crates/atilla-model-catalog",
+    "crates/atilla-orchestrator",
     "crates/atilla-napi",
     "crates/atilla-tui",
 ]
