@@ -391,7 +391,7 @@ impl CredentialStore for AuthStorage {
 }
 
 /// The default auth path: `<agent_dir>/auth.json` (pi's `getAuthPath`).
-fn default_auth_path() -> String {
+pub fn default_auth_path() -> String {
     format!("{}/auth.json", get_agent_dir())
 }
 

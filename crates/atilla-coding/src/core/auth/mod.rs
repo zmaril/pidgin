@@ -15,3 +15,12 @@
 pub mod auth_guidance;
 pub mod auth_storage;
 pub mod runtime_credentials;
+
+// Flat re-exports of the auth-storage surface, so cross-crate consumers (e.g.
+// `atilla-orchestrator`) can reach the store, its backends, the backend trait,
+// the one-off credential reader, and the default `auth.json` path resolution
+// without spelling out the `auth_storage` submodule.
+pub use auth_storage::{
+    default_auth_path, read_stored_credential, AuthStorage, AuthStorageBackend,
+    FileAuthStorageBackend, InMemoryAuthStorageBackend,
+};
