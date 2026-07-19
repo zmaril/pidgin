@@ -45,6 +45,8 @@
 
 pub mod clock;
 pub mod http;
+#[cfg(feature = "native-http")]
+pub mod http_reqwest;
 pub mod provider;
 pub mod storage;
 pub mod subprocess;
@@ -54,6 +56,8 @@ pub use http::{
     HostTransport, HttpRequest, HttpResponse, HttpTransport, ScriptedTransport, WebSocket,
     WsMessage,
 };
+#[cfg(feature = "native-http")]
+pub use http_reqwest::{ReqwestTransport, ReqwestTransportBuilder};
 pub use provider::{AbortSignal, Provider, StreamResult};
 pub use storage::{ExecutionEnv, MemoryEnv, SystemEnv};
 pub use subprocess::{
