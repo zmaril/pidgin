@@ -1314,7 +1314,8 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/tools/ls.ts",
-      "status": "original"
+      "status": "native",
+      "tests": []
     },
     {
       "package": "coding-agent",
@@ -1353,7 +1354,8 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/tools/write.ts",
-      "status": "original"
+      "status": "native",
+      "tests": []
     },
     {
       "package": "coding-agent",
