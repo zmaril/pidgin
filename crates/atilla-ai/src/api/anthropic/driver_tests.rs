@@ -74,7 +74,11 @@ fn context_with_tools(tools: Vec<Value>) -> Context {
 
 /// An SSE body carrying a full `message_start` … `message_stop` exchange that
 /// yields a single text block "Hello".
-fn hello_sse_body() -> String {
+///
+/// Shared with the provider-backend tests
+/// ([`crate::providers::anthropic_backend`]), which drive the same fixture end to
+/// end through the generic [`Provider`](crate::seams::provider::Provider) seam.
+pub(crate) fn hello_sse_body() -> String {
     let events: Vec<(&str, String)> = vec![
         (
             "message_start",
@@ -122,8 +126,8 @@ fn hello_sse_body() -> String {
 }
 
 /// An SSE body that opens a message but never sends `message_stop` — the
-/// truncated-stream case.
-fn truncated_sse_body() -> String {
+/// truncated-stream case. Shared with the provider-backend tests.
+pub(crate) fn truncated_sse_body() -> String {
     format!(
         "event: message_start\ndata: {}\n",
         json!({

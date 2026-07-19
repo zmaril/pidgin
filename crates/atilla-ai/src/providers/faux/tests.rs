@@ -273,6 +273,7 @@ fn session_cache_accounts_prefix_on_second_call() {
     let options = StreamOptions {
         session_id: Some("s1".to_string()),
         cache_retention: None,
+        ..StreamOptions::default()
     };
 
     // Call 1: prompt "user:go" (7 utf16 units) -> cacheWrite=ceil(7/4)=2, input=2.

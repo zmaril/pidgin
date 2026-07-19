@@ -284,11 +284,27 @@ pub struct Context {
 /// Per-request stream controls (`types.ts:113`).
 ///
 /// This is the subset of pi's `StreamOptions` the ported seams read today: the
-/// session/cache fields the faux provider uses for its prompt-cache accounting.
-/// The remaining pi fields (temperature, maxTokens, transport, callbacks,
-/// headers, retry/timeout tuning, metadata, env) are additive future work; every
-/// field here is optional and skips serialization when absent so the wire shape
-/// stays a strict subset of pi's.
+/// session/cache fields the faux provider uses for its prompt-cache accounting,
+/// plus the request-auth fields (`apiKey`, `headers`, `env`) that `Models`'s
+/// `applyAuth` (`models.ts:463`) threads into the provider request. The remaining
+/// pi fields (temperature, maxTokens, transport, callbacks, retry/timeout tuning,
+/// metadata) are additive future work; every field here is optional and skips
+/// serialization when absent so the wire shape stays a strict subset of pi's.
+///
+/// # Port additions / deviations
+///
+/// - `headers` mirrors pi's `StreamOptions.headers`, but pi types it as
+///   `ProviderHeaders` (`Record<string, string | null>`, where a `null` value
+///   suppresses a provider default header). The Rust seam carries plain
+///   `string` values only; suppression via `null` is not representable here. The
+///   env-API-key / ambient auth path this crate resolves never yields a
+///   suppressing `null`, so the collapse `applyAuth` performs is lossless in
+///   practice (documented on [`crate::providers::Models::stream`]).
+/// - `base_url` has no pi `StreamOptions` counterpart. It is the seam-level
+///   carrier a directly-constructed backend (e.g. the Anthropic messages
+///   backend) reads to target a host without an auth context; `applyAuth`
+///   threads a per-credential base URL onto the request *model* instead (pi's
+///   `requestModel = auth.baseUrl ? {...model, baseUrl} : model`).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
@@ -299,6 +315,24 @@ pub struct StreamOptions {
     /// Prompt-cache retention preference; `none` disables caching (`types.ts:127`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cache_retention: Option<CacheRetention>,
+    /// The provider credential to send with the request (pi's
+    /// `StreamOptions.apiKey`, `types.ts:117`). Resolved and threaded by
+    /// `applyAuth`; wins over the provider's stored/ambient key per-field.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+    /// Caller-supplied request headers, merged over the resolved auth headers
+    /// (pi's `StreamOptions.headers`, `types.ts:152`). See the type-level note on
+    /// the `string`-only value deviation from pi's `ProviderHeaders`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub headers: Option<BTreeMap<String, String>>,
+    /// A per-request base-URL override for the seam (a Rust-port addition; see
+    /// the type-level note). `None` leaves the request model's base URL intact.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub base_url: Option<String>,
+    /// Provider-scoped environment values, taking precedence over `process.env`
+    /// for provider configuration (pi's `StreamOptions.env`, `types.ts:270`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub env: Option<BTreeMap<String, String>>,
 }
 
 // ---------------------------------------------------------------------------

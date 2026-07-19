@@ -14,22 +14,24 @@
 //!
 //! # Scope of this slice
 //!
-//! [`Models::stream`] applies the observable half of pi's `applyAuth`
-//! (`models.ts:463`): the provider-resolution and configured/unconfigured gate,
-//! reached through the injected [`AuthContext`]. pi additionally threads the
-//! resolved api key, merged headers, and per-credential `baseUrl` into the
-//! provider request options; the Rust provider seam's [`StreamOptions`] is a
-//! documented strict subset that does not yet carry those request fields (a real
-//! dialect resolves and applies them inside its own driver — see
-//! [`crate::api::anthropic`]), and the OAuth-refreshing `getAuth`/`getAvailable`
-//! read paths remain deferred (see the crate's port notes).
+//! [`Models::stream`] applies pi's `applyAuth` (`models.ts:463`) in full: it
+//! resolves the credential through the injected [`AuthContext`], gates on the
+//! configured/unconfigured outcome, and threads the resolved api key, merged
+//! headers, per-credential `baseUrl`, and env into the request model / options
+//! handed to the backend (a bound dialect — see
+//! [`crate::providers::AnthropicMessagesBackend`] — then reads them). Two narrow
+//! deviations remain, documented on [`Models::apply_auth`]: the ported
+//! [`StreamOptions::headers`] carries plain values only (pi's suppressing `null`
+//! is not representable) and pi's `transformHeaders` stream transform is not part
+//! of the ported options. The OAuth-refreshing `getAuth`/`getAvailable` read
+//! paths remain deferred (see the crate's port notes).
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
-use crate::auth::{env_api_key_auth, ApiKeyAuth, AuthContext, Credential, DefaultAuthContext};
+use crate::auth::{AuthContext, AuthResolutionOverrides, Credential, DefaultAuthContext};
 use crate::seams::provider::{AbortSignal, Provider as StreamBackend, StreamResult};
 use crate::seams::storage::SystemEnv;
 use crate::types::{
@@ -402,6 +404,50 @@ fn zero_usage() -> Usage {
     }
 }
 
+/// Merge the resolved auth headers with the caller's request headers for
+/// dispatch, pi's `mergeHeaders(auth.headers, options?.headers)`
+/// (`models.ts:483`). The caller's plain-valued headers lift to the provider
+/// `ProviderHeaders` overlay, merge (override wins, case-insensitive), then
+/// collapse back to plain values — a `null`/`None` entry (a suppressed provider
+/// default header) is dropped, since the ported [`StreamOptions::headers`] cannot
+/// carry it (see [`Models::apply_auth`]).
+fn merge_request_headers(
+    auth_headers: Option<&ProviderHeaders>,
+    option_headers: Option<&BTreeMap<String, String>>,
+) -> Option<BTreeMap<String, String>> {
+    let overlay: Option<ProviderHeaders> = option_headers.map(|headers| {
+        headers
+            .iter()
+            .map(|(name, value)| (name.clone(), Some(value.clone())))
+            .collect()
+    });
+    let merged = models_runtime::merge_headers(auth_headers, overlay.as_ref())?;
+    let collapsed: BTreeMap<String, String> = merged
+        .into_iter()
+        .filter_map(|(name, value)| value.map(|value| (name, value)))
+        .collect();
+    Some(collapsed)
+}
+
+/// Merge the resolved auth env with the caller's request env for dispatch, pi's
+/// `env = resolution.env || options?.env ? { ...resolution.env, ...options.env }
+/// : undefined` (`models.ts:485`). The caller's values win.
+fn merge_request_env(
+    auth_env: Option<&BTreeMap<String, String>>,
+    option_env: Option<&BTreeMap<String, String>>,
+) -> Option<BTreeMap<String, String>> {
+    if auth_env.is_none() && option_env.is_none() {
+        return None;
+    }
+    let mut merged = auth_env.cloned().unwrap_or_default();
+    if let Some(option_env) = option_env {
+        for (name, value) in option_env {
+            merged.insert(name.clone(), value.clone());
+        }
+    }
+    Some(merged)
+}
+
 /// A runtime collection of providers, pi's `Models`/`MutableModels`
 /// (`models.ts:127`). Providers are keyed by unique id; `set_provider` upserts.
 ///
@@ -533,38 +579,93 @@ impl Models {
             .ok_or_else(|| format!("Unknown provider: {}", model.provider))
     }
 
-    /// Apply provider auth ahead of dispatch, pi's `applyAuth`
-    /// (`models.ts:463`): confirm the provider is configured, else fail with
-    /// pi's `Provider is not configured: {id}`.
+    /// Resolve provider auth and build the request model + options ahead of
+    /// dispatch, mirroring pi's `applyAuth` (`models.ts:463`).
     ///
-    /// # Port deviation
+    /// pi resolves the credential via `getAuth(model, { apiKey, env })`, throws
+    /// `Provider is not configured: {id}` when nothing resolves, then threads the
+    /// result into the request:
     ///
-    /// pi's `applyAuth` also threads the resolved api key, merged headers, and
-    /// per-credential `baseUrl` into the provider request options. The Rust
-    /// provider seam's [`StreamOptions`] is a documented strict subset that does
-    /// not yet carry those request fields (a real dialect resolves and applies
-    /// them inside its own driver, e.g. [`crate::api::anthropic`]), so this port
-    /// applies the observable gating half: an unconfigured provider produces the
-    /// same error stream pi's `completeSimple` yields. A provider that declares
-    /// no api-key env vars is ambient/keyless (pi's `ambientAuth`, always
-    /// configured) and passes; one that declares env vars must have one set (or a
-    /// stored credential) in the injected [`AuthContext`].
-    fn apply_auth(&self, provider: &RegistryProvider, model: &Model) -> Result<(), String> {
-        let auth = provider.auth();
-        if auth.api_key_env_vars.is_empty() {
-            // Ambient/keyless provider: configured with no auth values.
-            return Ok(());
-        }
-        let vars: Vec<&str> = auth.api_key_env_vars.iter().map(String::as_str).collect();
-        let handler = env_api_key_auth(auth.name.clone(), &vars);
-        match handler.resolve(self.auth_context.as_ref(), None) {
-            Ok(Some(_)) => Ok(()),
-            Ok(None) => Err(format!("Provider is not configured: {}", model.provider)),
-            Err(error) => Err(format!(
-                "Auth resolution failed for {}: {error}",
-                model.provider
-            )),
-        }
+    /// ```text
+    /// apiKey       = options?.apiKey ?? auth.apiKey
+    /// headers      = mergeHeaders(auth.headers, options?.headers)
+    /// env          = merge(resolution.env, options?.env)
+    /// requestModel = auth.baseUrl ? { ...model, baseUrl: auth.baseUrl } : model
+    /// requestOptions = { ...providerOptions, apiKey, headers, env }
+    /// ```
+    ///
+    /// This port reproduces that end to end: the credential is resolved through
+    /// the same [`get_auth_for_model`](Models::get_auth_for_model) path pi's
+    /// `getAuth` reaches (so the ambient/keyless provider — pi's `ambientAuth` —
+    /// is always configured, and a provider with env vars must have one set or a
+    /// stored credential in the injected [`AuthContext`]). The resolved
+    /// `{apiKey, headers, env}` are merged into a cloned [`StreamOptions`] and the
+    /// per-credential `baseUrl` override is applied to a cloned [`Model`], both of
+    /// which are handed to [`provider.stream`](RegistryProvider::stream).
+    ///
+    /// # Port deviations
+    ///
+    /// - The Rust [`StreamOptions::headers`] carries plain `string` values, while
+    ///   pi's `ProviderHeaders` allows a `null` value to suppress a provider
+    ///   default header. The merged result is collapsed to plain values by
+    ///   dropping any `null` entry; the env-API-key / ambient auth path resolved
+    ///   here never produces a suppressing `null`, so the collapse is lossless.
+    /// - pi's `transformHeaders` (a `Models`-only stream transform) is not part
+    ///   of the ported [`StreamOptions`] and is therefore not applied.
+    fn apply_auth(
+        &self,
+        model: &Model,
+        options: Option<&StreamOptions>,
+    ) -> Result<(Model, StreamOptions), String> {
+        // pi: getAuth(model, { apiKey: options?.apiKey, env: options?.env }).
+        let overrides = AuthResolutionOverrides {
+            api_key: options.and_then(|o| o.api_key.clone()),
+            env: options.and_then(|o| o.env.clone()),
+        };
+        let resolution = match self.get_auth_for_model(model, Some(&overrides)) {
+            Ok(Some(resolution)) => resolution,
+            Ok(None) => return Err(format!("Provider is not configured: {}", model.provider)),
+            Err(error) => {
+                return Err(format!(
+                    "Auth resolution failed for {}: {error}",
+                    model.provider
+                ))
+            }
+        };
+        let auth = resolution.auth;
+
+        // Explicit request options win per-field (pi: `options?.apiKey ?? auth.apiKey`).
+        let api_key = options
+            .and_then(|o| o.api_key.clone())
+            .or_else(|| auth.api_key.clone());
+        // mergeHeaders(auth.headers, options?.headers), then collapse to plain values.
+        let headers = merge_request_headers(
+            auth.headers.as_ref(),
+            options.and_then(|o| o.headers.as_ref()),
+        );
+        // env = resolution.env || options?.env ? { ...resolution.env, ...options.env } : undefined.
+        let env = merge_request_env(
+            resolution.env.as_ref(),
+            options.and_then(|o| o.env.as_ref()),
+        );
+
+        // requestOptions = { ...providerOptions, apiKey, headers, env }.
+        let mut request_options = options.cloned().unwrap_or_default();
+        request_options.api_key = api_key;
+        request_options.headers = headers;
+        request_options.env = env;
+
+        // requestModel = auth.baseUrl ? { ...model, baseUrl: auth.baseUrl } : model.
+        let request_model = match auth.base_url {
+            Some(base_url) => {
+                let mut request_model = model.clone();
+                request_model.base_url = base_url;
+                request_model
+            }
+            None => model.clone(),
+        };
+
+        Ok((request_model, request_options))
     }
 
     /// Stream a response for `model`, pi's `Models.stream` (`models.ts:492`):
@@ -581,13 +682,14 @@ impl Models {
         signal: Option<&AbortSignal>,
     ) -> StreamResult {
         let provider = match self.require_provider(model) {
-            Ok(provider) => provider,
+            Ok(provider) => provider.clone(),
             Err(message) => return error_result(model, message),
         };
-        if let Err(message) = self.apply_auth(provider, model) {
-            return error_result(model, message);
-        }
-        provider.stream(model, context, options, signal)
+        let (request_model, request_options) = match self.apply_auth(model, options) {
+            Ok(resolved) => resolved,
+            Err(message) => return error_result(model, message),
+        };
+        provider.stream(&request_model, context, Some(&request_options), signal)
     }
 
     /// Stream and resolve the final message, pi's `Models.complete`

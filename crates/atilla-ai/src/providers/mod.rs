@@ -6,13 +6,16 @@
 //! pi's agent and coding-agent tests drive via `registerFauxProvider`. The real
 //! wire providers implement the same seam as their HTTP/streaming paths land.
 
+pub mod anthropic_backend;
 pub mod builtins;
 pub mod composer;
 pub mod faux;
 pub mod registry;
 
+pub use anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
 pub use builtins::{
-    builtin_models, builtin_providers, catalog_model_to_ai, provider_from_catalog, radius_provider,
+    builtin_models, builtin_providers, builtin_providers_with_transport, catalog_model_to_ai,
+    provider_from_catalog, provider_from_catalog_with_transport, radius_provider,
 };
 pub use composer::{
     adapt_oauth, compose_api_key_auth, compose_model_provider, compose_oauth_auth,
