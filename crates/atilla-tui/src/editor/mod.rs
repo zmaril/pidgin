@@ -16,22 +16,31 @@
 //! editor ([`Editor::set_terminal_rows`], default 24) — the first component to
 //! need terminal metrics.
 //!
-//! # Autocomplete seam (deferred to C6b)
+//! # Autocomplete integration
 //!
-//! The async autocomplete orchestration is intentionally not implemented here.
-//! [`Editor::is_showing_autocomplete`] always reports `false`, the render path
-//! never appends an autocomplete overlay, and the trigger hooks in
-//! `insert_character`/`handle_backspace`/`handle_forward_delete`/`move_cursor`
-//! are left as no-op seams for the follow-up PR.
+//! The async autocomplete orchestration — the two-phase request state machine
+//! with an explicit [`Editor::flush_autocomplete`] settle seam, the trigger
+//! hooks in `insert_character`/`handle_backspace`/`handle_forward_delete`/
+//! `move_cursor`, and the SelectList-backed overlay appended in `render` — lives
+//! in the [`autocomplete`] submodule. Providers sit behind the
+//! [`AutocompleteProvider`] trait.
 
+mod autocomplete;
 mod editing;
 mod layout;
 mod movement;
 mod segment;
 mod wrap;
 
+pub use autocomplete::{AutocompleteProvider, SuggestionOutcome};
 pub use segment::Segment;
 pub use wrap::{word_wrap_line, TextChunk};
+
+use std::rc::Rc;
+
+use fancy_regex::Regex;
+
+use autocomplete::{AutoState, InFlight, PendingRequest};
 
 use crate::components::select_list::SelectListTheme;
 use crate::keybindings::{tui_keybindings, KeybindingsManager};
@@ -96,7 +105,7 @@ pub struct Cursor {
 pub struct EditorTheme {
     /// Applied to the horizontal border rules and scroll indicators.
     pub border_color: Box<dyn Fn(&str) -> String>,
-    /// Theme for the autocomplete select list (used by the C6b integration).
+    /// Theme for the autocomplete select-list overlay.
     pub select_list: SelectListTheme,
 }
 
@@ -116,7 +125,11 @@ pub struct Editor {
     /// Focusable interface — set by the TUI when focus changes.
     pub focused: bool,
 
-    theme: EditorTheme,
+    /// Applied to the horizontal border rules and scroll indicators.
+    border_color: Box<dyn Fn(&str) -> String>,
+    /// Shared theme for autocomplete select lists (each `SelectList` owns a copy
+    /// that delegates back to this).
+    select_list_theme: Rc<SelectListTheme>,
     pub(crate) padding_x: usize,
 
     /// Last render layout width, used by cursor navigation wrapping.
@@ -125,9 +138,20 @@ pub struct Editor {
     /// Scroll offset into the visual-line list.
     pub(crate) scroll_offset: usize,
 
-    /// Autocomplete UI visibility (always `false` in C6a; C6b drives it).
-    pub(crate) autocomplete_showing: bool,
     autocomplete_max_visible: i64,
+
+    // --- autocomplete state machine (see `autocomplete.rs`) ---
+    pub(crate) autocomplete_provider: Option<Box<dyn AutocompleteProvider>>,
+    pub(crate) autocomplete_trigger_characters: Vec<String>,
+    pub(crate) autocomplete_trigger_pattern: Regex,
+    pub(crate) autocomplete_list: Option<crate::components::select_list::SelectList>,
+    pub(crate) autocomplete_state: Option<AutoState>,
+    pub(crate) autocomplete_prefix: String,
+    pub(crate) autocomplete_start_token: i64,
+    pub(crate) autocomplete_request_id: i64,
+    pub(crate) autocomplete_pending: Option<PendingRequest>,
+    pub(crate) autocomplete_in_flight: Option<InFlight>,
+    pub(crate) autocomplete_aborts: u64,
 
     // Paste tracking for large pastes (insertion-ordered, mirroring JS `Map`).
     pub(crate) pastes: Vec<(u64, String)>,
@@ -187,15 +211,32 @@ impl Editor {
         let padding_x = clamp_padding(options.padding_x.unwrap_or(0).max(0));
         let autocomplete_max_visible =
             clamp_max_visible(options.autocomplete_max_visible.unwrap_or(5));
+        let EditorTheme {
+            border_color,
+            select_list,
+        } = theme;
+        let default_triggers = autocomplete::default_trigger_characters();
+        let trigger_pattern = autocomplete::build_trigger_pattern(&default_triggers);
         Self {
             state: EditorState::default(),
             focused: false,
-            theme,
+            border_color,
+            select_list_theme: Rc::new(select_list),
             padding_x,
             last_width: 80,
             scroll_offset: 0,
-            autocomplete_showing: false,
             autocomplete_max_visible,
+            autocomplete_provider: None,
+            autocomplete_trigger_characters: default_triggers,
+            autocomplete_trigger_pattern: trigger_pattern,
+            autocomplete_list: None,
+            autocomplete_state: None,
+            autocomplete_prefix: String::new(),
+            autocomplete_start_token: 0,
+            autocomplete_request_id: 0,
+            autocomplete_pending: None,
+            autocomplete_in_flight: None,
+            autocomplete_aborts: 0,
             pastes: Vec::new(),
             paste_counter: 0,
             paste_buffer: String::new(),
@@ -267,10 +308,8 @@ impl Editor {
     }
 
     /// Whether the autocomplete menu is showing (`isShowingAutocomplete`).
-    ///
-    /// Always `false` in the C6a core; the C6b integration drives it.
     pub fn is_showing_autocomplete(&self) -> bool {
-        self.autocomplete_showing
+        self.autocomplete_is_showing()
     }
 
     /// Render the editor to a list of terminal lines (`render`).
@@ -287,7 +326,7 @@ impl Editor {
         // Store for cursor navigation (must match wrapping width).
         self.last_width = layout_width;
 
-        let horizontal = (self.theme.border_color)("\u{2500}");
+        let horizontal = (self.border_color)("\u{2500}");
 
         // Layout the text.
         let layout_lines = self.layout_text(layout_width);
@@ -326,9 +365,9 @@ impl Editor {
             let remaining = width - visible_width(&indicator) as i64;
             if remaining >= 0 {
                 let filled = format!("{indicator}{}", "\u{2500}".repeat(remaining as usize));
-                result.push((self.theme.border_color)(&filled));
+                result.push((self.border_color)(&filled));
             } else {
-                result.push((self.theme.border_color)(&truncate_to_width(
+                result.push((self.border_color)(&truncate_to_width(
                     &indicator, width, "...", false,
                 )));
             }
@@ -402,12 +441,14 @@ impl Editor {
             let indicator = format!("\u{2500}\u{2500}\u{2500} \u{2193} {lines_below} more ");
             let remaining = (width - visible_width(&indicator) as i64).max(0);
             let filled = format!("{indicator}{}", "\u{2500}".repeat(remaining as usize));
-            result.push((self.theme.border_color)(&filled));
+            result.push((self.border_color)(&filled));
         } else {
             result.push(horizontal.repeat(width as usize));
         }
 
-        // Autocomplete overlay is deferred to C6b (never appended here).
+        // Append the autocomplete menu (a SelectList rendered inline below the
+        // bottom border) when active.
+        self.append_autocomplete_overlay(&mut result, content_width, &left_padding, &right_padding);
 
         result
     }
@@ -480,11 +521,16 @@ impl Editor {
             return;
         }
 
-        // Autocomplete-mode keys are deferred to C6b (never showing in C6a).
+        // Handle autocomplete-mode menu keys (cancel/up/down/tab/confirm).
+        // Returns `true` when fully handled; a confirmed slash-command selection
+        // returns `false` so the Enter also falls through to submit below.
+        if self.handle_autocomplete_mode_key(&data) {
+            return;
+        }
 
-        // Tab — trigger completion (no-op without a provider in C6a).
-        if self.keybindings.matches(&data, "tui.input.tab") && !self.autocomplete_showing {
-            // C6b: handle_tab_completion() when a provider is set.
+        // Tab — trigger completion.
+        if self.keybindings.matches(&data, "tui.input.tab") && self.autocomplete_state.is_none() {
+            self.handle_tab_completion();
             return;
         }
 

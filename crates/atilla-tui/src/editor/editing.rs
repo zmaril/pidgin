@@ -81,7 +81,8 @@ impl Editor {
 
         self.emit_change();
 
-        // Autocomplete trigger detection is deferred to C6b (no provider here).
+        // Trigger or update autocomplete based on the inserted character.
+        self.autocomplete_after_insert(ch);
     }
 
     /// Insert text at the cursor as an atomic undo unit (`insertTextAtCursor`).
@@ -271,7 +272,8 @@ impl Editor {
 
         self.emit_change();
 
-        // Autocomplete re-trigger after backspace is deferred to C6b.
+        // Update or re-trigger autocomplete after backspace.
+        self.autocomplete_after_delete();
     }
 
     // Renumber markers whose id is greater than `target_id` (backspace pass).
@@ -328,7 +330,8 @@ impl Editor {
 
         self.emit_change();
 
-        // Autocomplete re-trigger after forward delete is deferred to C6b.
+        // Update or re-trigger autocomplete after forward delete.
+        self.autocomplete_after_delete();
     }
 
     pub(crate) fn delete_to_start_of_line(&mut self) {
@@ -735,14 +738,6 @@ impl Editor {
             self.push_undo_snapshot();
         }
         self.set_text_internal(&normalized, CursorPlacement::End);
-    }
-
-    // --- autocomplete seam (C6b) ---
-
-    /// Clear any autocomplete UI (`cancelAutocomplete`). In C6a there is never a
-    /// request to cancel; this only resets the (always-false) UI flag.
-    pub(crate) fn cancel_autocomplete(&mut self) {
-        self.autocomplete_showing = false;
     }
 }
 

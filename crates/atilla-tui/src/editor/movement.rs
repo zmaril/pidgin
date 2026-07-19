@@ -200,7 +200,8 @@ impl Editor {
             }
         }
 
-        // Autocomplete refresh on cursor movement is deferred to C6b.
+        // Keep an open autocomplete picker in sync with the new cursor position.
+        self.autocomplete_after_move();
     }
 
     pub(crate) fn page_scroll(&mut self, direction: i64) {
