@@ -11,6 +11,7 @@ pub mod args;
 pub mod config;
 pub mod output_guard;
 pub mod packages;
+pub mod print;
 
 use std::io::IsTerminal;
 use std::path::Path;
@@ -155,9 +156,7 @@ pub fn run(argv: &[String]) -> i32 {
         return 0;
     }
 
-    // Mode dispatch. The agent-session runtime + model catalog are not ported
-    // yet, so non-interactive runs that need a model fail cleanly here (this is
-    // the natural outcome of the black-box tests that pass `--model missing-model`).
+    // Mode dispatch.
     match app_mode {
         AppMode::Rpc => match atilla_core::coding::modes::rpc::run_rpc_mode() {
             Ok(()) => 0,
@@ -171,9 +170,10 @@ pub fn run(argv: &[String]) -> i32 {
             1
         }
         AppMode::Print | AppMode::Json => {
-            // Mirrors main.ts: `if (appMode !== "interactive" && !session.model)`.
-            err_line("No models available. Set a provider API key (e.g. ANTHROPIC_API_KEY) or run with --model.");
-            1
+            // Resolve the model and drive the completion up to the provider seam.
+            // When no model resolves (e.g. the black-box cases' `--model
+            // missing-model`), print's no-models guard fires with exit 1.
+            print::run_print_or_json(&parsed, &session_manager, app_mode == AppMode::Json)
         }
     }
 }
