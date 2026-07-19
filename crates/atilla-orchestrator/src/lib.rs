@@ -4,14 +4,15 @@
 //! socket, persisting machine/instance records and registering presence with
 //! radius. This crate ports that package faithfully, leaf-first. This first
 //! stage covers the foundational modules: record types, path/env/version
-//! config, and JSON-file persistence. The IPC protocol, RPC child process,
-//! radius presence, socket transport, supervisor, and entry points are ported
-//! in subsequent stages.
+//! config, and JSON-file persistence, plus the IPC wire protocol. The RPC child
+//! process, radius presence, socket transport, supervisor, and entry points are
+//! ported in subsequent stages.
 //!
 //! The re-export barrel below mirrors pi's `index.ts`, limited to the modules
 //! ported so far.
 
 pub mod config;
+pub mod ipc;
 pub mod storage;
 pub mod types;
 
