@@ -55,3 +55,7 @@ atilla-coding = { path = "../atilla-coding", optional = true }
 # test` resolves it; it pulls no V8 and the test file itself is cfg'd out when
 # the `deno` feature is off, so the default test build stays V8-free.
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+# The `deno`-gated resource-loader acceptance tests (tests/deno_resource_loader.rs)
+# build real on-disk extension trees in a temp dir. Cfg'd out without the feature,
+# so the default test build never pulls it.
+tempfile = "3"

@@ -199,6 +199,7 @@ dependencies = [
  "deno_core",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
 ]
 
