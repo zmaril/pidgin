@@ -76,8 +76,13 @@ Build from a checkout with a recent stable Rust toolchain:
 ```sh
 git clone https://github.com/zmaril/atilla
 cd atilla
+git submodule update --init vendor/pi
 cargo build --release
 ```
+
+The `git submodule update --init vendor/pi` step pulls in the `vendor/pi`
+overlay, which provides the fixtures the skills tests need — without it, those
+tests fail on a fresh clone.
 
 The binary lands at `target/release/atilla`. To install it onto your `PATH`:
 
