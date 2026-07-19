@@ -1,10 +1,18 @@
-//! The first Rust→JS **blocking callback bridge** for atilla (bridge slice 1).
+//! The Rust→JS **blocking callback bridge** for atilla (bridge slices 1–2).
 //!
 //! Every other napi export in this crate is one-way, synchronous, JSON-in /
 //! JSON-out. pi's agent tests are different in kind: the agent loop, driven in
-//! Rust, must call *live JS closures* mid-run (`streamFn`, `convertToLlm`, …) and
-//! block for their (possibly async) results without starving the Node event
-//! loop. This module builds that path.
+//! Rust, must call *live JS closures* mid-run (`streamFn`, `convertToLlm`, and —
+//! slice 2 — a tool's `execute` / `prepareArguments`) and block for their
+//! (possibly async) results without starving the Node event loop. This module
+//! builds that path.
+//!
+//! Slice 2 adds two seams on top of the slice-1 primitive: a blocking
+//! `toolExecute` round-trip (the Rust-side `AgentTool.execute` closure dispatches
+//! to the registered JS tool and decodes its `AgentToolResult`) and a
+//! fire-and-forget [`AgentBridge::emit_tool_update`] push (a JS tool's `onUpdate`
+//! reaches the loop's update callback via a per-`toolCallId` registry, with no
+//! round-trip and no risk of deadlocking the parked loop thread).
 //!
 //! # The primitive
 //!
@@ -63,13 +71,15 @@ use serde_json::{json, Value};
 
 use atilla_agent::agent_loop::{run_agent_loop, AgentEventSink};
 use atilla_agent::types::{
-    AgentContext, AgentEvent, AgentLoopConfig, AgentMessage, ConvertToLlm, StreamFn, ThinkingLevel,
+    AgentContext, AgentEvent, AgentLoopConfig, AgentMessage, AgentTool, AgentToolExecute,
+    AgentToolResult, AgentToolUpdateCallback, ConvertToLlm, PrepareArguments, StreamFn,
+    ThinkingLevel, ToolExecutionMode,
 };
 use atilla_ai::seams::provider::AbortSignal;
 use atilla_ai::seams::StreamResult;
 use atilla_ai::types::{
-    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Message, Model, StopReason,
-    StreamOptions, Usage, UsageCost,
+    AssistantMessage, AssistantMessageEvent, AssistantRole, ContentBlock, Context, Message, Model,
+    StopReason, StreamOptions, Usage, UsageCost,
 };
 
 /// The `kind` reserved for the terminal completion envelope. The JS dispatcher
@@ -98,11 +108,16 @@ enum BridgeError {
     Disconnected,
 }
 
-/// State shared between the JS thread (resolve/abort/join methods) and the
+/// State shared between the JS thread (resolve/abort/join/emit methods) and the
 /// dedicated loop thread (id allocation, channel inserts, blocking recv).
 struct BridgeShared {
     next_id: AtomicU64,
     pending: Mutex<HashMap<u64, SyncSender<BridgeOutcome>>>,
+    /// Per-`toolCallId` update callbacks, populated by the `toolExecute` bridge
+    /// closure before it dispatches and removed after the round-trip settles.
+    /// [`AgentBridge::emit_tool_update`] routes a JS `onUpdate` push to the
+    /// matching loop-supplied callback via this map (fire-and-forget; no id).
+    updates: Mutex<HashMap<String, AgentToolUpdateCallback>>,
     signal: AbortSignal,
     thread: Mutex<Option<JoinHandle<()>>>,
 }
@@ -112,9 +127,30 @@ impl BridgeShared {
         Arc::new(Self {
             next_id: AtomicU64::new(1),
             pending: Mutex::new(HashMap::new()),
+            updates: Mutex::new(HashMap::new()),
             signal: AbortSignal::new(),
             thread: Mutex::new(None),
         })
+    }
+
+    /// Register the loop-supplied update callback for a tool call so a JS
+    /// `onUpdate` push (via [`AgentBridge::emit_tool_update`]) can reach it.
+    fn register_update(&self, tool_call_id: &str, cb: AgentToolUpdateCallback) {
+        self.updates
+            .lock()
+            .unwrap()
+            .insert(tool_call_id.to_string(), cb);
+    }
+
+    /// Remove a tool call's update callback once its `toolExecute` round-trip
+    /// settles. A late `emitToolUpdate` for the removed id is then a no-op.
+    fn unregister_update(&self, tool_call_id: &str) {
+        self.updates.lock().unwrap().remove(tool_call_id);
+    }
+
+    /// Fetch a clone of the update callback for a tool call, if still registered.
+    fn update_callback(&self, tool_call_id: &str) -> Option<AgentToolUpdateCallback> {
+        self.updates.lock().unwrap().get(tool_call_id).cloned()
     }
 
     /// Deliver an outcome to the parked request `id`, if it is still pending.
@@ -256,6 +292,31 @@ impl AgentBridge {
         self.shared.abort();
     }
 
+    /// Push an interim tool-execution update from JS into the loop
+    /// (fire-and-forget; no round-trip, no id). Called from inside a JS tool's
+    /// `execute` via its `onUpdate` callback while the loop thread is parked on
+    /// that tool's `toolExecute` id.
+    ///
+    /// # Why this cannot deadlock
+    ///
+    /// It runs on the Node/JS thread and invokes the loop-built
+    /// [`AgentToolUpdateCallback`], which does exactly two hang-safe things: an
+    /// `AtomicBool` (`acceptingUpdates`) check, then a `NonBlocking` TSFN enqueue
+    /// of a `tool_execution_update` event. It never allocates a bridge id, never
+    /// calls `rx.recv()`, and never touches the parked loop channel. An
+    /// unknown / already-unregistered `tool_call_id` is a no-op (mirrors the
+    /// double-resolve safety of `deliver`).
+    #[napi(js_name = "emitToolUpdate")]
+    pub fn emit_tool_update(&self, tool_call_id: String, partial_json: String) {
+        let cb = self.shared.update_callback(&tool_call_id);
+        if let (Some(cb), Ok(partial)) = (
+            cb,
+            serde_json::from_str::<AgentToolResult>(&partial_json),
+        ) {
+            cb(&partial);
+        }
+    }
+
     /// Whether the abort signal has been tripped (for a JS `AbortSignal` proxy).
     #[napi(js_name = "isAborted")]
     pub fn is_aborted(&self) -> bool {
@@ -361,12 +422,29 @@ impl AgentBridge {
                 model,
                 stream_options,
                 reasoning,
+                tools,
+                tool_execution,
             } = input;
+
+            // Rebuild each AgentTool from its metadata, keying bridge closures by
+            // tool name so `toolExecute` / `prepareArguments` round-trips resolve
+            // against the right JS tool. Closures cannot cross the wire, so only
+            // metadata is serialized (see `ToolMeta`).
+            let agent_tools: Option<Vec<AgentTool>> = if tools.is_empty() {
+                None
+            } else {
+                Some(
+                    tools
+                        .into_iter()
+                        .map(|meta| build_bridge_tool(&channel, meta))
+                        .collect(),
+                )
+            };
 
             let agent_context = AgentContext {
                 system_prompt: context.system_prompt.unwrap_or_default(),
                 messages: context.messages,
-                tools: None,
+                tools: agent_tools,
             };
 
             // convertToLlm seam: serialize messages, round-trip, decode Message[].
@@ -419,7 +497,7 @@ impl AgentBridge {
                 prepare_next_turn: None,
                 get_steering_messages: None,
                 get_follow_up_messages: None,
-                tool_execution: None,
+                tool_execution,
                 before_tool_call: None,
                 after_tool_call: None,
             };
@@ -476,6 +554,34 @@ struct RunInput {
     stream_options: Option<StreamOptions>,
     #[serde(default)]
     reasoning: Option<ThinkingLevel>,
+    /// Tool metadata (name/label/description/parameters/executionMode/
+    /// hasPrepareArguments); the closures are rebuilt Rust-side as bridge seams.
+    #[serde(default)]
+    tools: Vec<ToolMeta>,
+    /// Loop-level tool-execution mode (pi's `config.toolExecution`). The hybrid
+    /// shim never routes `parallel` native, so in practice this is `sequential`
+    /// or absent, but it is threaded through faithfully.
+    #[serde(default)]
+    tool_execution: Option<ToolExecutionMode>,
+}
+
+/// Serializable tool metadata carried in the `run` payload. `AgentTool` holds
+/// closures and cannot cross the wire, so JS sends only these fields and Rust
+/// reconstructs the tool with bridge `execute` / `prepare_arguments` seams.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ToolMeta {
+    name: String,
+    #[serde(default)]
+    label: String,
+    #[serde(default)]
+    description: String,
+    #[serde(default)]
+    parameters: Value,
+    #[serde(default)]
+    execution_mode: Option<ToolExecutionMode>,
+    #[serde(default)]
+    has_prepare_arguments: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -485,6 +591,93 @@ struct RunContext {
     system_prompt: Option<String>,
     #[serde(default)]
     messages: Vec<AgentMessage>,
+}
+
+/// Reconstruct an [`AgentTool`] from its wire metadata, wiring `execute` (and,
+/// when present, `prepare_arguments`) as bridge closures that round-trip to the
+/// registered JS tool by name.
+fn build_bridge_tool(channel: &Arc<BridgeChannel>, meta: ToolMeta) -> AgentTool {
+    let ToolMeta {
+        name,
+        label,
+        description,
+        parameters,
+        execution_mode,
+        has_prepare_arguments,
+    } = meta;
+
+    // execute seam: register the per-call update callback so `emitToolUpdate`
+    // can reach it, dispatch a blocking `toolExecute` round-trip, then decode the
+    // JS `AgentToolResult`. JS throw / abort / disconnect all resolve to a clean
+    // error result so the parked loop thread is always released.
+    let exec_channel = channel.clone();
+    let exec_name = name.clone();
+    let execute: AgentToolExecute = Arc::new(move |id, args, _signal, update_cb| {
+        if let Some(cb) = update_cb {
+            exec_channel.shared.register_update(id, cb.clone());
+        }
+        let out = exec_channel.call(
+            "toolExecute",
+            json!({
+                "toolCallId": id,
+                "toolName": exec_name,
+                "args": args,
+                "aborted": exec_channel.shared.signal.is_aborted(),
+            }),
+        );
+        exec_channel.shared.unregister_update(id);
+        match out {
+            Ok(value) => serde_json::from_value::<AgentToolResult>(value)
+                .unwrap_or_else(|_| error_tool_result("invalid toolExecute result")),
+            Err(BridgeError::Errored(msg)) => error_tool_result(&msg),
+            Err(BridgeError::Aborted) | Err(BridgeError::Disconnected) => {
+                error_tool_result("Operation aborted")
+            }
+        }
+    });
+
+    // prepareArguments seam: a pure sync transform on the wire — round-trip the
+    // raw args and decode the rewritten value. On any failure fall back to the
+    // input args unchanged (identity), matching pi's "no-op when unavailable".
+    let prepare_arguments: Option<PrepareArguments> = has_prepare_arguments.then(|| {
+        let prep_channel = channel.clone();
+        let prep_name = name.clone();
+        let prepare: PrepareArguments = Arc::new(move |args: &Value| {
+            match prep_channel.call(
+                "prepareArguments",
+                json!({ "toolName": prep_name, "args": args }),
+            ) {
+                Ok(value) => value,
+                Err(_) => args.clone(),
+            }
+        });
+        prepare
+    });
+
+    AgentTool {
+        name,
+        description,
+        parameters,
+        label,
+        prepare_arguments,
+        execute,
+        execution_mode,
+    }
+}
+
+/// Build a plain error [`AgentToolResult`] (mirror of the agent loop's
+/// `create_error_tool_result`) so a JS throw / abort settles the parked loop
+/// thread with a clean error-text result instead of hanging.
+fn error_tool_result(message: &str) -> AgentToolResult {
+    AgentToolResult {
+        content: vec![ContentBlock::Text {
+            text: message.to_string(),
+            text_signature: None,
+        }],
+        details: json!({}),
+        added_tool_names: None,
+        terminate: None,
+    }
 }
 
 /// Extract the human-readable message from a `resolveBridgeError` payload. The
