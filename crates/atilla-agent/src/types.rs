@@ -38,7 +38,7 @@
 //! Source of truth: `vendor/pi/packages/agent/src/types.ts`.
 
 // straitjacket-allow-file:duplication faithful mirror of pi's `types.ts`; its
-// `AgentEvent` union is intentionally re-declared verbatim by the coding-agent
+// `AgentEvent` union is intentionally redeclared verbatim by the coding-agent
 // `AgentSessionEvent` (crates/atilla-coding/src/core/agent_session/events.rs),
 // which pi defines as `Exclude<AgentEvent, {type:"agent_end"}> | …`. This file
 // sorts first of that clone pair, so the marker lives here.
