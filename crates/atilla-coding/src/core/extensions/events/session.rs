@@ -82,20 +82,47 @@ pub struct ResourcesDiscoverEvent {
     pub reason: ResourcesDiscoverReason,
 }
 
-/// Result of a `resources_discover` handler (pi's `ResourcesDiscoverResult`,
-/// `types.ts:539`).
+/// A single discovered resource path paired with the extension that contributed
+/// it (pi's runner aggregate element `{ path, extensionPath }`,
+/// `runner.ts:1129`).
+///
+/// `AgentSession`'s `buildExtensionResourcePaths` reads `extension_path` twice
+/// per entry — for the source label (`getExtensionSourceLabel`) and for the
+/// resource base dir (`dirname`) — so the contributing extension travels
+/// alongside each path rather than being discarded.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscoveredResourcePath {
+    /// The resource directory an extension contributed.
+    pub path: String,
+    /// The `path` of the extension that contributed it.
+    pub extension_path: String,
+}
+
+/// Aggregate result of the runner's `emitResourcesDiscover` (pi's return shape,
+/// `runner.ts:1128`): each kind is a flat list of `{ path, extensionPath }`
+/// pairs collected across every `resources_discover` handler.
+///
+/// This is the *widened* form of pi's paths-only handler-result interface
+/// (`ResourcesDiscoverResult`, `types.ts:539`): the runner keeps each
+/// contributing extension's `path` alongside every discovered path so
+/// `AgentSession` can attribute and resolve it. The per-handler paths-only shape
+/// stays private to the deno impl, which folds it into these pairs.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResourcesDiscoverResult {
-    /// Additional skill directories to load.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub skill_paths: Option<Vec<String>>,
-    /// Additional prompt directories to load.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub prompt_paths: Option<Vec<String>>,
-    /// Additional theme directories to load.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub theme_paths: Option<Vec<String>>,
+    /// Additional skill directories to load, each with its contributing
+    /// extension.
+    #[serde(default)]
+    pub skill_paths: Vec<DiscoveredResourcePath>,
+    /// Additional prompt directories to load, each with its contributing
+    /// extension.
+    #[serde(default)]
+    pub prompt_paths: Vec<DiscoveredResourcePath>,
+    /// Additional theme directories to load, each with its contributing
+    /// extension.
+    #[serde(default)]
+    pub theme_paths: Vec<DiscoveredResourcePath>,
 }
 
 // ---------------------------------------------------------------------------

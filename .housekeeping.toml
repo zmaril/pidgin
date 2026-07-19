@@ -27,7 +27,13 @@ allow = [
 # PRs (ModelSelectEvent, ThinkingLevelChangedEvent, EntryAppendedEvent, the
 # UI-context struct, and pi's ToolInfo for get_all_tools) — tracked deferrals of
 # the unit5 port, not untracked work. Drop this entry once the port completes.
+# The two runner_impl files are the deno-backed ExtensionRunner impl; their
+# inline unit5 deferral markers flag the JS-backed tool/command execute + the
+# runtime-invalidate primitive that land in later unit5 PRs — tracked deferrals,
+# not untracked work. Drop these once the port completes.
 ignore = [
     "notes/fluessig-integration.md",
     "crates/atilla-coding/src/core/extensions/runner.rs",
+    "crates/atilla-extensions/src/runner_impl/mod.rs",
+    "crates/atilla-extensions/src/runner_impl/queries.rs",
 ]

@@ -40,6 +40,7 @@
 //! acceptance test needs them.
 
 mod context;
+mod dispatch_emit;
 mod emit;
 
 pub use context::ContextConfig;
@@ -147,7 +148,13 @@ impl ExtensionRunner {
     /// across all loaded extensions in load-then-registration order. The index
     /// into this vec is exactly the JS-side handler index for `event`.
     fn sites(&self, event: HookEvent) -> Vec<&str> {
-        let name = event.as_str();
+        self.sites_by_name(event.as_str())
+    }
+
+    /// Like [`sites`](Self::sites) but keyed by the raw event **name** string,
+    /// for dispatch variants whose event has no [`HookEvent`] enum member yet
+    /// (pi's opaque `model_select` / `thinking_level_changed` / `entry_appended`).
+    pub(crate) fn sites_by_name(&self, name: &str) -> Vec<&str> {
         let mut sites = Vec::new();
         for ext in &self.extensions {
             for hook_event in &ext.hook_events {
@@ -170,9 +177,32 @@ impl ExtensionRunner {
                 .unwrap_or_else(|| "unknown extension error".to_string()),
             stack: invocation.stack,
         };
+        self.deliver_error(error);
+    }
+
+    /// Build and deliver a synthetic [`ExtensionError`] with a fixed message (no
+    /// JS throw behind it) — pi's inline `emitError({ ... })` calls (e.g. the
+    /// `message_end` same-role guard).
+    pub(crate) fn record_synthetic_error(&self, event: &str, extension_path: &str, message: &str) {
+        self.deliver_error(ExtensionError {
+            extension_path: extension_path.to_string(),
+            event: event.to_string(),
+            error: message.to_string(),
+            stack: None,
+        });
+    }
+
+    /// Deliver an [`ExtensionError`] to every registered listener and record it.
+    fn deliver_error(&self, error: ExtensionError) {
         for listener in self.listeners.lock().unwrap().iter() {
             listener(&error);
         }
         self.errors.lock().unwrap().push(error);
+    }
+
+    /// The minimal ctx configuration threaded into handlers (read for building
+    /// dispatch-time ctx JSON in the sibling emitter module).
+    pub(crate) fn context_config(&self) -> &ContextConfig {
+        &self.context
     }
 }
