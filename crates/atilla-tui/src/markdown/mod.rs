@@ -23,7 +23,11 @@ use crate::width::{visible_width, wrap_text_with_ansi};
 use lexer::{Kind, Lexer, Token};
 
 /// A caller-supplied styling function (chalk-equivalent): `text -> styled`.
-pub type StyleFn = Box<dyn Fn(&str) -> String>;
+///
+/// `Send + Sync` so a [`MarkdownTheme`] can be borrowed by the large-stack worker
+/// thread [`Markdown::render`] spawns for deep-nesting stack safety. Every theme
+/// closure in practice captures only `Copy`/`'static` data, so this bound is free.
+pub type StyleFn = Box<dyn Fn(&str) -> String + Send + Sync>;
 
 /// Theme functions for markdown elements (mirrors pi's `MarkdownTheme`).
 pub struct MarkdownTheme {
@@ -42,7 +46,7 @@ pub struct MarkdownTheme {
     pub strikethrough: StyleFn,
     pub underline: StyleFn,
     #[allow(clippy::type_complexity)]
-    pub highlight_code: Option<Box<dyn Fn(&str, Option<&str>) -> Vec<String>>>,
+    pub highlight_code: Option<Box<dyn Fn(&str, Option<&str>) -> Vec<String> + Send + Sync>>,
     pub code_block_indent: Option<String>,
 }
 
@@ -117,7 +121,33 @@ impl Markdown {
     }
 
     /// Port of pi's `render(width)`.
+    ///
+    /// marked parses (and pi renders) nested blockquotes and lists *recursively*;
+    /// V8's large call stack lets deep nesting through, so pi returns output up to
+    /// several thousand levels (only past that does the JS engine throw
+    /// `RangeError: Maximum call stack size exceeded`). The hand-ported lexer and
+    /// renderer recurse identically, but Rust's default 8 MiB main / 2 MiB
+    /// test-harness thread stacks overflow at ~150-1000 nested `>` and *abort* the
+    /// process. To reproduce marked's exact, byte-for-byte output at every depth it
+    /// can produce — without altering the algorithm — the whole recursive pipeline
+    /// runs on a dedicated worker thread with a large stack (see
+    /// [`RENDER_STACK_SIZE`]). The theme closures are `Send + Sync` (see
+    /// [`StyleFn`]), so `&self` crosses the scoped-thread boundary safely.
     pub fn render(&self, width: usize) -> Vec<String> {
+        std::thread::scope(|scope| {
+            std::thread::Builder::new()
+                .name("markdown-render".to_string())
+                .stack_size(RENDER_STACK_SIZE)
+                .spawn_scoped(scope, || self.render_inner(width))
+                .expect("spawn markdown render thread")
+                .join()
+                .expect("markdown render thread panicked")
+        })
+    }
+
+    /// The actual `render` body; always invoked on a large-stack worker thread by
+    /// [`Markdown::render`] so deep blockquote/list nesting cannot overflow.
+    fn render_inner(&self, width: usize) -> Vec<String> {
         let content_width = width.saturating_sub(self.padding_x * 2).max(1);
 
         if self.text.is_empty() || self.text.trim().is_empty() {
@@ -658,6 +688,15 @@ pub fn default_markdown_theme() -> MarkdownTheme {
 pub fn markdown_render(source: &str, width: usize) -> Vec<String> {
     Markdown::new(source, 0, 0, default_markdown_theme(), None, None).render(width)
 }
+
+/// Stack size for the markdown render worker thread (see [`Markdown::render`]).
+/// 256 MiB of virtual address space — lazily paged, so ~no resident cost until
+/// touched — gives the recursive blockquote/list lexer and renderer head-room for
+/// tens of thousands of nesting levels, comfortably past every depth marked
+/// itself can process before its own engine throws `RangeError: Maximum call
+/// stack size exceeded` (empirically ~1000-5000 in Node). Wherever pi produces
+/// output, this reproduces it byte-for-byte.
+const RENDER_STACK_SIZE: usize = 256 * 1024 * 1024;
 
 /// pi's `trimPartialClosingFences`: trim streamed partial closing fences so code
 /// blocks do not shrink/flicker when the final fence char arrives.
