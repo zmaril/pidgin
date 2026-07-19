@@ -1,3 +1,7 @@
+// straitjacket-allow-file:duplication — the command-PLANNING overrides below
+// share a faithful "guard non-managed scope / delegate to pi's original via
+// prototype.call / build a CommandCore and drive it" shape; each mirrors a
+// distinct pi package-manager operation and is kept separate on purpose.
 // Native shim for packages/coding-agent/src/core/package-manager.ts, backed by
 // the atilla Rust addon (`atilla-napi`, `CommandCore`). Installed by
 // conformance/codegen.mjs when the module is marked `native` in

@@ -99,7 +99,9 @@ impl ParamsJson {
     fn config(&self) -> Result<PackageManagerConfig> {
         self.config
             .as_ref()
-            .map(|c| PackageManagerConfig::new(c.cwd.clone(), c.agent_dir.clone(), c.npm_command.clone()))
+            .map(|c| {
+                PackageManagerConfig::new(c.cwd.clone(), c.agent_dir.clone(), c.npm_command.clone())
+            })
             .ok_or_else(|| Error::from_reason("missing `config` for op"))
     }
 
@@ -184,7 +186,9 @@ fn build_machine(op: &str, params: &ParamsJson) -> Result<Box<dyn CommandFlowMac
             let installed_path = params.require(params.installed_path.as_ref(), "installedPath")?;
             Ok(Box::new(GitHasUpdateMachine::new(installed_path)))
         }
-        other => Err(Error::from_reason(format!("unknown CommandCore op: {other}"))),
+        other => Err(Error::from_reason(format!(
+            "unknown CommandCore op: {other}"
+        ))),
     }
 }
 
@@ -192,8 +196,8 @@ fn build_machine(op: &str, params: &ParamsJson) -> Result<Box<dyn CommandFlowMac
 fn step_to_json(step: CommandStep) -> Result<String> {
     let value = match step {
         CommandStep::Run { request } => {
-            let request = serde_json::to_value(&request)
-                .map_err(|e| Error::from_reason(e.to_string()))?;
+            let request =
+                serde_json::to_value(&request).map_err(|e| Error::from_reason(e.to_string()))?;
             json!({ "type": "run", "request": request })
         }
         CommandStep::Done { result } => json!({ "type": "done", "result": result }),
