@@ -1,0 +1,5427 @@
+[
+	{
+		"label": "plain-text/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Hello world                            "
+		]
+	},
+	{
+		"label": "plain-text/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Hello world                                                                    "
+		]
+	},
+	{
+		"label": "plain-text/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Hello world                            "
+		]
+	},
+	{
+		"label": "plain-text/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Hello world                                                                    "
+		]
+	},
+	{
+		"label": "plain-text/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007Hello world                             "
+		]
+	},
+	{
+		"label": "plain-text/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007Hello world                                                                     "
+		]
+	},
+	{
+		"label": "plain-text/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  Hello world                           "
+		]
+	},
+	{
+		"label": "plain-text/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Hello world"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  Hello world                                                                   "
+		]
+	},
+	{
+		"label": "markdown/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "# Heading\n\nSome **bold** and *italic* and ~~struck~~ text with `inline code`.\n\n- one\n- two\n\n> a quote\n\n[a link](https://example.com)"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[38;5;222m\u001b[1m\u001b[4mHeading\u001b[24m\u001b[22m\u001b[39m                                ",
+			"                                        ",
+			" Some \u001b[1mbold\u001b[22m and \u001b[3mitalic\u001b[23m and \u001b[9mstruck\u001b[29m text   ",
+			" with \u001b[38;5;109minline code\u001b[39m.                      ",
+			"                                        ",
+			" \u001b[38;5;109m- \u001b[39mone                                  ",
+			" \u001b[38;5;109m- \u001b[39mtwo                                  ",
+			"                                        ",
+			" \u001b[38;5;244m│ \u001b[39m\u001b[38;5;244m\u001b[3ma quote\u001b[23m\u001b[39m                              ",
+			"                                        ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;109m\u001b[4ma link\u001b[24m\u001b[39m\u001b[38;5;241m (https://example.com)\u001b[39m           "
+		]
+	},
+	{
+		"label": "markdown/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "# Heading\n\nSome **bold** and *italic* and ~~struck~~ text with `inline code`.\n\n- one\n- two\n\n> a quote\n\n[a link](https://example.com)"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[38;5;222m\u001b[1m\u001b[4mHeading\u001b[24m\u001b[22m\u001b[39m                                                                        ",
+			"                                                                                ",
+			" Some \u001b[1mbold\u001b[22m and \u001b[3mitalic\u001b[23m and \u001b[9mstruck\u001b[29m text with \u001b[38;5;109minline code\u001b[39m.                         ",
+			"                                                                                ",
+			" \u001b[38;5;109m- \u001b[39mone                                                                          ",
+			" \u001b[38;5;109m- \u001b[39mtwo                                                                          ",
+			"                                                                                ",
+			" \u001b[38;5;244m│ \u001b[39m\u001b[38;5;244m\u001b[3ma quote\u001b[23m\u001b[39m                                                                      ",
+			"                                                                                ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;109m\u001b[4ma link\u001b[24m\u001b[39m\u001b[38;5;241m (https://example.com)\u001b[39m                                                   "
+		]
+	},
+	{
+		"label": "markdown/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "# Heading\n\nSome **bold** and *italic* and ~~struck~~ text with `inline code`.\n\n- one\n- two\n\n> a quote\n\n[a link](https://example.com)"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[38;5;222m\u001b[1m\u001b[4mHeading\u001b[24m\u001b[22m\u001b[39m                                ",
+			"                                        ",
+			" Some \u001b[1mbold\u001b[22m and \u001b[3mitalic\u001b[23m and \u001b[9mstruck\u001b[29m text   ",
+			" with \u001b[38;5;109minline code\u001b[39m.                      ",
+			"                                        ",
+			" \u001b[38;5;109m- \u001b[39mone                                  ",
+			" \u001b[38;5;109m- \u001b[39mtwo                                  ",
+			"                                        ",
+			" \u001b[38;5;244m│ \u001b[39m\u001b[38;5;244m\u001b[3ma quote\u001b[23m\u001b[39m                              ",
+			"                                        ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;109m\u001b[4ma link\u001b[24m\u001b[39m\u001b[38;5;241m (https://example.com)\u001b[39m           "
+		]
+	},
+	{
+		"label": "markdown/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "# Heading\n\nSome **bold** and *italic* and ~~struck~~ text with `inline code`.\n\n- one\n- two\n\n> a quote\n\n[a link](https://example.com)"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[38;5;222m\u001b[1m\u001b[4mHeading\u001b[24m\u001b[22m\u001b[39m                                                                        ",
+			"                                                                                ",
+			" Some \u001b[1mbold\u001b[22m and \u001b[3mitalic\u001b[23m and \u001b[9mstruck\u001b[29m text with \u001b[38;5;109minline code\u001b[39m.                         ",
+			"                                                                                ",
+			" \u001b[38;5;109m- \u001b[39mone                                                                          ",
+			" \u001b[38;5;109m- \u001b[39mtwo                                                                          ",
+			"                                                                                ",
+			" \u001b[38;5;244m│ \u001b[39m\u001b[38;5;244m\u001b[3ma quote\u001b[23m\u001b[39m                                                                      ",
+			"                                                                                ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;109m\u001b[4ma link\u001b[24m\u001b[39m\u001b[38;5;241m (https://example.com)\u001b[39m                                                   "
+		]
+	},
+	{
+		"label": "markdown/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "# Heading\n\nSome **bold** and *italic* and ~~struck~~ text with `inline code`.\n\n- one\n- two\n\n> a quote\n\n[a link](https://example.com)"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b[38;5;222m\u001b[1m\u001b[4mHeading\u001b[24m\u001b[22m\u001b[39m                                 ",
+			"                                        ",
+			"Some \u001b[1mbold\u001b[22m and \u001b[3mitalic\u001b[23m and \u001b[9mstruck\u001b[29m text    ",
+			"with \u001b[38;5;109minline code\u001b[39m.                       ",
+			"                                        ",
+			"\u001b[38;5;109m- \u001b[39mone                                   ",
+			"\u001b[38;5;109m- \u001b[39mtwo                                   ",
+			"                                        ",
+			"\u001b[38;5;244m│ \u001b[39m\u001b[38;5;244m\u001b[3ma quote\u001b[23m\u001b[39m                               ",
+			"                                        ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;109m\u001b[4ma link\u001b[24m\u001b[39m\u001b[38;5;241m (https://example.com)\u001b[39m            "
+		]
+	},
+	{
+		"label": "markdown/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "# Heading\n\nSome **bold** and *italic* and ~~struck~~ text with `inline code`.\n\n- one\n- two\n\n> a quote\n\n[a link](https://example.com)"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b[38;5;222m\u001b[1m\u001b[4mHeading\u001b[24m\u001b[22m\u001b[39m                                                                         ",
+			"                                                                                ",
+			"Some \u001b[1mbold\u001b[22m and \u001b[3mitalic\u001b[23m and \u001b[9mstruck\u001b[29m text with \u001b[38;5;109minline code\u001b[39m.                          ",
+			"                                                                                ",
+			"\u001b[38;5;109m- \u001b[39mone                                                                           ",
+			"\u001b[38;5;109m- \u001b[39mtwo                                                                           ",
+			"                                                                                ",
+			"\u001b[38;5;244m│ \u001b[39m\u001b[38;5;244m\u001b[3ma quote\u001b[23m\u001b[39m                                                                       ",
+			"                                                                                ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;109m\u001b[4ma link\u001b[24m\u001b[39m\u001b[38;5;241m (https://example.com)\u001b[39m                                                    "
+		]
+	},
+	{
+		"label": "markdown/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "# Heading\n\nSome **bold** and *italic* and ~~struck~~ text with `inline code`.\n\n- one\n- two\n\n> a quote\n\n[a link](https://example.com)"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  \u001b[38;5;222m\u001b[1m\u001b[4mHeading\u001b[24m\u001b[22m\u001b[39m                               ",
+			"                                        ",
+			"  Some \u001b[1mbold\u001b[22m and \u001b[3mitalic\u001b[23m and \u001b[9mstruck\u001b[29m text  ",
+			"  with \u001b[38;5;109minline code\u001b[39m.                     ",
+			"                                        ",
+			"  \u001b[38;5;109m- \u001b[39mone                                 ",
+			"  \u001b[38;5;109m- \u001b[39mtwo                                 ",
+			"                                        ",
+			"  \u001b[38;5;244m│ \u001b[39m\u001b[38;5;244m\u001b[3ma quote\u001b[23m\u001b[39m                             ",
+			"                                        ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;109m\u001b[4ma link\u001b[24m\u001b[39m\u001b[38;5;241m (https://example.com)\u001b[39m          "
+		]
+	},
+	{
+		"label": "markdown/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "# Heading\n\nSome **bold** and *italic* and ~~struck~~ text with `inline code`.\n\n- one\n- two\n\n> a quote\n\n[a link](https://example.com)"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  \u001b[38;5;222m\u001b[1m\u001b[4mHeading\u001b[24m\u001b[22m\u001b[39m                                                                       ",
+			"                                                                                ",
+			"  Some \u001b[1mbold\u001b[22m and \u001b[3mitalic\u001b[23m and \u001b[9mstruck\u001b[29m text with \u001b[38;5;109minline code\u001b[39m.                        ",
+			"                                                                                ",
+			"  \u001b[38;5;109m- \u001b[39mone                                                                         ",
+			"  \u001b[38;5;109m- \u001b[39mtwo                                                                         ",
+			"                                                                                ",
+			"  \u001b[38;5;244m│ \u001b[39m\u001b[38;5;244m\u001b[3ma quote\u001b[23m\u001b[39m                                                                     ",
+			"                                                                                ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;109m\u001b[4ma link\u001b[24m\u001b[39m\u001b[38;5;241m (https://example.com)\u001b[39m                                                  "
+		]
+	},
+	{
+		"label": "empty-text-skipped/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "   "
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": []
+	},
+	{
+		"label": "empty-text-skipped/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "   "
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": []
+	},
+	{
+		"label": "empty-text-skipped/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "   "
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": []
+	},
+	{
+		"label": "empty-text-skipped/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "   "
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": []
+	},
+	{
+		"label": "empty-text-skipped/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "   "
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": []
+	},
+	{
+		"label": "empty-text-skipped/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "   "
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": []
+	},
+	{
+		"label": "empty-text-skipped/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "   "
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": []
+	},
+	{
+		"label": "empty-text-skipped/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "   "
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": []
+	},
+	{
+		"label": "empty-content/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": []
+	},
+	{
+		"label": "empty-content/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": []
+	},
+	{
+		"label": "empty-content/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": []
+	},
+	{
+		"label": "empty-content/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": []
+	},
+	{
+		"label": "empty-content/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": []
+	},
+	{
+		"label": "empty-content/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": []
+	},
+	{
+		"label": "empty-content/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": []
+	},
+	{
+		"label": "empty-content/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": []
+	},
+	{
+		"label": "thinking-visible/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Let me think about this carefully"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[3m\u001b[38;5;244mLet me think about this carefully\u001b[39m\u001b[23m      "
+		]
+	},
+	{
+		"label": "thinking-visible/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Let me think about this carefully"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[3m\u001b[38;5;244mLet me think about this carefully\u001b[39m\u001b[23m                                              "
+		]
+	},
+	{
+		"label": "thinking-visible/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Let me think about this carefully"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[3m\u001b[38;5;244mThinking...\u001b[39m\u001b[23m                            "
+		]
+	},
+	{
+		"label": "thinking-visible/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Let me think about this carefully"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[3m\u001b[38;5;244mThinking...\u001b[39m\u001b[23m                                                                    "
+		]
+	},
+	{
+		"label": "thinking-visible/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Let me think about this carefully"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[3m\u001b[38;5;244mLet me think about this carefully\u001b[39m\u001b[23m       "
+		]
+	},
+	{
+		"label": "thinking-visible/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Let me think about this carefully"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[3m\u001b[38;5;244mLet me think about this carefully\u001b[39m\u001b[23m                                               "
+		]
+	},
+	{
+		"label": "thinking-visible/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Let me think about this carefully"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[3m\u001b[38;5;244mReasoning\u001b[39m\u001b[23m                             "
+		]
+	},
+	{
+		"label": "thinking-visible/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Let me think about this carefully"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[3m\u001b[38;5;244mReasoning\u001b[39m\u001b[23m                                                                     "
+		]
+	},
+	{
+		"label": "thinking-then-text/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Consider the options"
+				},
+				{
+					"type": "text",
+					"text": "Here is the answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[3m\u001b[38;5;244mConsider the options\u001b[39m\u001b[23m                   ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Here is the answer                     "
+		]
+	},
+	{
+		"label": "thinking-then-text/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Consider the options"
+				},
+				{
+					"type": "text",
+					"text": "Here is the answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[3m\u001b[38;5;244mConsider the options\u001b[39m\u001b[23m                                                           ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Here is the answer                                                             "
+		]
+	},
+	{
+		"label": "thinking-then-text/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Consider the options"
+				},
+				{
+					"type": "text",
+					"text": "Here is the answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[3m\u001b[38;5;244mThinking...\u001b[39m\u001b[23m                            ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Here is the answer                     "
+		]
+	},
+	{
+		"label": "thinking-then-text/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Consider the options"
+				},
+				{
+					"type": "text",
+					"text": "Here is the answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[3m\u001b[38;5;244mThinking...\u001b[39m\u001b[23m                                                                    ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Here is the answer                                                             "
+		]
+	},
+	{
+		"label": "thinking-then-text/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Consider the options"
+				},
+				{
+					"type": "text",
+					"text": "Here is the answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b[3m\u001b[38;5;244mConsider the options\u001b[39m\u001b[23m                    ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007Here is the answer                      "
+		]
+	},
+	{
+		"label": "thinking-then-text/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Consider the options"
+				},
+				{
+					"type": "text",
+					"text": "Here is the answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b[3m\u001b[38;5;244mConsider the options\u001b[39m\u001b[23m                                                            ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007Here is the answer                                                              "
+		]
+	},
+	{
+		"label": "thinking-then-text/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Consider the options"
+				},
+				{
+					"type": "text",
+					"text": "Here is the answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  \u001b[3m\u001b[38;5;244mReasoning\u001b[39m\u001b[23m                             ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  Here is the answer                    "
+		]
+	},
+	{
+		"label": "thinking-then-text/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "Consider the options"
+				},
+				{
+					"type": "text",
+					"text": "Here is the answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  \u001b[3m\u001b[38;5;244mReasoning\u001b[39m\u001b[23m                                                                     ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  Here is the answer                                                            "
+		]
+	},
+	{
+		"label": "multi-thinking-run/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "First thought"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Second thought"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[3m\u001b[38;5;244mFirst thought\u001b[39m\u001b[23m                          ",
+			"                                        ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[3m\u001b[38;5;244mSecond thought\u001b[39m\u001b[23m                         "
+		]
+	},
+	{
+		"label": "multi-thinking-run/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "First thought"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Second thought"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" \u001b[3m\u001b[38;5;244mFirst thought\u001b[39m\u001b[23m                                                                  ",
+			"                                                                                ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[3m\u001b[38;5;244mSecond thought\u001b[39m\u001b[23m                                                                 "
+		]
+	},
+	{
+		"label": "multi-thinking-run/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "First thought"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Second thought"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[3m\u001b[38;5;244mThinking...\u001b[39m\u001b[23m                            "
+		]
+	},
+	{
+		"label": "multi-thinking-run/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "First thought"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Second thought"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[3m\u001b[38;5;244mThinking...\u001b[39m\u001b[23m                                                                    "
+		]
+	},
+	{
+		"label": "multi-thinking-run/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "First thought"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Second thought"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b[3m\u001b[38;5;244mFirst thought\u001b[39m\u001b[23m                           ",
+			"                                        ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[3m\u001b[38;5;244mSecond thought\u001b[39m\u001b[23m                          "
+		]
+	},
+	{
+		"label": "multi-thinking-run/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "First thought"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Second thought"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b[3m\u001b[38;5;244mFirst thought\u001b[39m\u001b[23m                                                                   ",
+			"                                                                                ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[3m\u001b[38;5;244mSecond thought\u001b[39m\u001b[23m                                                                  "
+		]
+	},
+	{
+		"label": "multi-thinking-run/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "First thought"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Second thought"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[3m\u001b[38;5;244mReasoning\u001b[39m\u001b[23m                             "
+		]
+	},
+	{
+		"label": "multi-thinking-run/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "thinking",
+					"thinking": "First thought"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Second thought"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[3m\u001b[38;5;244mReasoning\u001b[39m\u001b[23m                                                                     "
+		]
+	},
+	{
+		"label": "text-thinking-text/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Intro"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Middle reasoning"
+				},
+				{
+					"type": "text",
+					"text": "Conclusion"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" Intro                                  ",
+			" \u001b[3m\u001b[38;5;244mMiddle reasoning\u001b[39m\u001b[23m                       ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Conclusion                             "
+		]
+	},
+	{
+		"label": "text-thinking-text/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Intro"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Middle reasoning"
+				},
+				{
+					"type": "text",
+					"text": "Conclusion"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" Intro                                                                          ",
+			" \u001b[3m\u001b[38;5;244mMiddle reasoning\u001b[39m\u001b[23m                                                               ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Conclusion                                                                     "
+		]
+	},
+	{
+		"label": "text-thinking-text/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Intro"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Middle reasoning"
+				},
+				{
+					"type": "text",
+					"text": "Conclusion"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" Intro                                  ",
+			" \u001b[3m\u001b[38;5;244mThinking...\u001b[39m\u001b[23m                            ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Conclusion                             "
+		]
+	},
+	{
+		"label": "text-thinking-text/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Intro"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Middle reasoning"
+				},
+				{
+					"type": "text",
+					"text": "Conclusion"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" Intro                                                                          ",
+			" \u001b[3m\u001b[38;5;244mThinking...\u001b[39m\u001b[23m                                                                    ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 Conclusion                                                                     "
+		]
+	},
+	{
+		"label": "text-thinking-text/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Intro"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Middle reasoning"
+				},
+				{
+					"type": "text",
+					"text": "Conclusion"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"Intro                                   ",
+			"\u001b[3m\u001b[38;5;244mMiddle reasoning\u001b[39m\u001b[23m                        ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007Conclusion                              "
+		]
+	},
+	{
+		"label": "text-thinking-text/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Intro"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Middle reasoning"
+				},
+				{
+					"type": "text",
+					"text": "Conclusion"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"Intro                                                                           ",
+			"\u001b[3m\u001b[38;5;244mMiddle reasoning\u001b[39m\u001b[23m                                                                ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007Conclusion                                                                      "
+		]
+	},
+	{
+		"label": "text-thinking-text/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Intro"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Middle reasoning"
+				},
+				{
+					"type": "text",
+					"text": "Conclusion"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  Intro                                 ",
+			"  \u001b[3m\u001b[38;5;244mReasoning\u001b[39m\u001b[23m                             ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  Conclusion                            "
+		]
+	},
+	{
+		"label": "text-thinking-text/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Intro"
+				},
+				{
+					"type": "thinking",
+					"thinking": "Middle reasoning"
+				},
+				{
+					"type": "text",
+					"text": "Conclusion"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  Intro                                                                         ",
+			"  \u001b[3m\u001b[38;5;244mReasoning\u001b[39m\u001b[23m                                                                     ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  Conclusion                                                                    "
+		]
+	},
+	{
+		"label": "with-tool-call/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Running a tool"
+				},
+				{
+					"type": "toolCall",
+					"id": "call_1",
+					"name": "read",
+					"arguments": {
+						"path": "a.txt"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"",
+			" Running a tool                         "
+		]
+	},
+	{
+		"label": "with-tool-call/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Running a tool"
+				},
+				{
+					"type": "toolCall",
+					"id": "call_1",
+					"name": "read",
+					"arguments": {
+						"path": "a.txt"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"",
+			" Running a tool                                                                 "
+		]
+	},
+	{
+		"label": "with-tool-call/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Running a tool"
+				},
+				{
+					"type": "toolCall",
+					"id": "call_1",
+					"name": "read",
+					"arguments": {
+						"path": "a.txt"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"",
+			" Running a tool                         "
+		]
+	},
+	{
+		"label": "with-tool-call/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Running a tool"
+				},
+				{
+					"type": "toolCall",
+					"id": "call_1",
+					"name": "read",
+					"arguments": {
+						"path": "a.txt"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"",
+			" Running a tool                                                                 "
+		]
+	},
+	{
+		"label": "with-tool-call/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Running a tool"
+				},
+				{
+					"type": "toolCall",
+					"id": "call_1",
+					"name": "read",
+					"arguments": {
+						"path": "a.txt"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"",
+			"Running a tool                          "
+		]
+	},
+	{
+		"label": "with-tool-call/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Running a tool"
+				},
+				{
+					"type": "toolCall",
+					"id": "call_1",
+					"name": "read",
+					"arguments": {
+						"path": "a.txt"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"",
+			"Running a tool                                                                  "
+		]
+	},
+	{
+		"label": "with-tool-call/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Running a tool"
+				},
+				{
+					"type": "toolCall",
+					"id": "call_1",
+					"name": "read",
+					"arguments": {
+						"path": "a.txt"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"",
+			"  Running a tool                        "
+		]
+	},
+	{
+		"label": "with-tool-call/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "Running a tool"
+				},
+				{
+					"type": "toolCall",
+					"id": "call_1",
+					"name": "read",
+					"arguments": {
+						"path": "a.txt"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "stop",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"",
+			"  Running a tool                                                                "
+		]
+	},
+	{
+		"label": "stop-length/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "length",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial answer                         ",
+			"",
+			" \u001b[38;5;167mError: Model stopped because it        ",
+			" \u001b[38;5;167mreached the maximum output token       ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mlimit. The response may be incomplete.\u001b[39m "
+		]
+	},
+	{
+		"label": "stop-length/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "length",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial answer                                                                 ",
+			"",
+			" \u001b[38;5;167mError: Model stopped because it reached the maximum output token limit. The    ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mresponse may be incomplete.\u001b[39m                                                    "
+		]
+	},
+	{
+		"label": "stop-length/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "length",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial answer                         ",
+			"",
+			" \u001b[38;5;167mError: Model stopped because it        ",
+			" \u001b[38;5;167mreached the maximum output token       ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mlimit. The response may be incomplete.\u001b[39m "
+		]
+	},
+	{
+		"label": "stop-length/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "length",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial answer                                                                 ",
+			"",
+			" \u001b[38;5;167mError: Model stopped because it reached the maximum output token limit. The    ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mresponse may be incomplete.\u001b[39m                                                    "
+		]
+	},
+	{
+		"label": "stop-length/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "length",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"partial answer                          ",
+			"",
+			"\u001b[38;5;167mError: Model stopped because it reached ",
+			"\u001b[38;5;167mthe maximum output token limit. The     ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mresponse may be incomplete.\u001b[39m             "
+		]
+	},
+	{
+		"label": "stop-length/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "length",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"partial answer                                                                  ",
+			"",
+			"\u001b[38;5;167mError: Model stopped because it reached the maximum output token limit. The     ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mresponse may be incomplete.\u001b[39m                                                     "
+		]
+	},
+	{
+		"label": "stop-length/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "length",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  partial answer                        ",
+			"",
+			"  \u001b[38;5;167mError: Model stopped because it       ",
+			"  \u001b[38;5;167mreached the maximum output token      ",
+			"  \u001b[38;5;167mlimit. The response may be            ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mincomplete.\u001b[39m                           "
+		]
+	},
+	{
+		"label": "stop-length/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial answer"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "length",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  partial answer                                                                ",
+			"",
+			"  \u001b[38;5;167mError: Model stopped because it reached the maximum output token limit. The   ",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mresponse may be incomplete.\u001b[39m                                                   "
+		]
+	},
+	{
+		"label": "stop-aborted-default/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mOperation aborted\u001b[39m                      "
+		]
+	},
+	{
+		"label": "stop-aborted-default/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                                                        ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mOperation aborted\u001b[39m                                                              "
+		]
+	},
+	{
+		"label": "stop-aborted-default/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mOperation aborted\u001b[39m                      "
+		]
+	},
+	{
+		"label": "stop-aborted-default/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                                                        ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mOperation aborted\u001b[39m                                                              "
+		]
+	},
+	{
+		"label": "stop-aborted-default/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"partial                                 ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mOperation aborted\u001b[39m                       "
+		]
+	},
+	{
+		"label": "stop-aborted-default/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"partial                                                                         ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mOperation aborted\u001b[39m                                                               "
+		]
+	},
+	{
+		"label": "stop-aborted-default/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  partial                               ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mOperation aborted\u001b[39m                     "
+		]
+	},
+	{
+		"label": "stop-aborted-default/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  partial                                                                       ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mOperation aborted\u001b[39m                                                             "
+		]
+	},
+	{
+		"label": "stop-aborted-custom/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "User cancelled"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mUser cancelled\u001b[39m                         "
+		]
+	},
+	{
+		"label": "stop-aborted-custom/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "User cancelled"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                                                        ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mUser cancelled\u001b[39m                                                                 "
+		]
+	},
+	{
+		"label": "stop-aborted-custom/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "User cancelled"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mUser cancelled\u001b[39m                         "
+		]
+	},
+	{
+		"label": "stop-aborted-custom/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "User cancelled"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                                                        ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mUser cancelled\u001b[39m                                                                 "
+		]
+	},
+	{
+		"label": "stop-aborted-custom/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "User cancelled"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"partial                                 ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mUser cancelled\u001b[39m                          "
+		]
+	},
+	{
+		"label": "stop-aborted-custom/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "User cancelled"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"partial                                                                         ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mUser cancelled\u001b[39m                                                                  "
+		]
+	},
+	{
+		"label": "stop-aborted-custom/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "User cancelled"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  partial                               ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mUser cancelled\u001b[39m                        "
+		]
+	},
+	{
+		"label": "stop-aborted-custom/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "User cancelled"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  partial                                                                       ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mUser cancelled\u001b[39m                                                                "
+		]
+	},
+	{
+		"label": "stop-aborted-request-was-aborted/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "Request was aborted"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mOperation aborted\u001b[39m                      "
+		]
+	},
+	{
+		"label": "stop-aborted-request-was-aborted/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "Request was aborted"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                                                        ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mOperation aborted\u001b[39m                                                              "
+		]
+	},
+	{
+		"label": "stop-aborted-request-was-aborted/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "Request was aborted"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mOperation aborted\u001b[39m                      "
+		]
+	},
+	{
+		"label": "stop-aborted-request-was-aborted/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "Request was aborted"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" partial                                                                        ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mOperation aborted\u001b[39m                                                              "
+		]
+	},
+	{
+		"label": "stop-aborted-request-was-aborted/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "Request was aborted"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"partial                                 ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mOperation aborted\u001b[39m                       "
+		]
+	},
+	{
+		"label": "stop-aborted-request-was-aborted/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "Request was aborted"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"partial                                                                         ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mOperation aborted\u001b[39m                                                               "
+		]
+	},
+	{
+		"label": "stop-aborted-request-was-aborted/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "Request was aborted"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  partial                               ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mOperation aborted\u001b[39m                     "
+		]
+	},
+	{
+		"label": "stop-aborted-request-was-aborted/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "partial"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "aborted",
+			"timestamp": 0,
+			"errorMessage": "Request was aborted"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  partial                                                                       ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mOperation aborted\u001b[39m                                                             "
+		]
+	},
+	{
+		"label": "stop-error-default/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" oops                                   ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mError: Unknown error\u001b[39m                   "
+		]
+	},
+	{
+		"label": "stop-error-default/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" oops                                                                           ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mError: Unknown error\u001b[39m                                                           "
+		]
+	},
+	{
+		"label": "stop-error-default/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" oops                                   ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mError: Unknown error\u001b[39m                   "
+		]
+	},
+	{
+		"label": "stop-error-default/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" oops                                                                           ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mError: Unknown error\u001b[39m                                                           "
+		]
+	},
+	{
+		"label": "stop-error-default/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"oops                                    ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mError: Unknown error\u001b[39m                    "
+		]
+	},
+	{
+		"label": "stop-error-default/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"oops                                                                            ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mError: Unknown error\u001b[39m                                                            "
+		]
+	},
+	{
+		"label": "stop-error-default/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  oops                                  ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mError: Unknown error\u001b[39m                  "
+		]
+	},
+	{
+		"label": "stop-error-default/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  oops                                                                          ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mError: Unknown error\u001b[39m                                                          "
+		]
+	},
+	{
+		"label": "stop-error-custom/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "Boom"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" oops                                   ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mError: Boom\u001b[39m                            "
+		]
+	},
+	{
+		"label": "stop-error-custom/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "Boom"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" oops                                                                           ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mError: Boom\u001b[39m                                                                    "
+		]
+	},
+	{
+		"label": "stop-error-custom/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "Boom"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" oops                                   ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mError: Boom\u001b[39m                            "
+		]
+	},
+	{
+		"label": "stop-error-custom/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "Boom"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			" oops                                                                           ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007 \u001b[38;5;167mError: Boom\u001b[39m                                                                    "
+		]
+	},
+	{
+		"label": "stop-error-custom/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "Boom"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"oops                                    ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mError: Boom\u001b[39m                             "
+		]
+	},
+	{
+		"label": "stop-error-custom/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "Boom"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"oops                                                                            ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007\u001b[38;5;167mError: Boom\u001b[39m                                                                     "
+		]
+	},
+	{
+		"label": "stop-error-custom/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "Boom"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  oops                                  ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mError: Boom\u001b[39m                           "
+		]
+	},
+	{
+		"label": "stop-error-custom/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "oops"
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "Boom"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"\u001b]133;A\u0007",
+			"  oops                                                                          ",
+			"",
+			"\u001b]133;B\u0007\u001b]133;C\u0007  \u001b[38;5;167mError: Boom\u001b[39m                                                                   "
+		]
+	},
+	{
+		"label": "tool-call-with-error-stop/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "x"
+				},
+				{
+					"type": "toolCall",
+					"id": "c1",
+					"name": "bash",
+					"arguments": {
+						"command": "ls"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "ignored because tool call present"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"",
+			" x                                      "
+		]
+	},
+	{
+		"label": "tool-call-with-error-stop/hide=false/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "x"
+				},
+				{
+					"type": "toolCall",
+					"id": "c1",
+					"name": "bash",
+					"arguments": {
+						"command": "ls"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "ignored because tool call present"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"",
+			" x                                                                              "
+		]
+	},
+	{
+		"label": "tool-call-with-error-stop/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "x"
+				},
+				{
+					"type": "toolCall",
+					"id": "c1",
+					"name": "bash",
+					"arguments": {
+						"command": "ls"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "ignored because tool call present"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 40,
+		"expected": [
+			"",
+			" x                                      "
+		]
+	},
+	{
+		"label": "tool-call-with-error-stop/hide=true/pad=1",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "x"
+				},
+				{
+					"type": "toolCall",
+					"id": "c1",
+					"name": "bash",
+					"arguments": {
+						"command": "ls"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "ignored because tool call present"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 1,
+		"width": 80,
+		"expected": [
+			"",
+			" x                                                                              "
+		]
+	},
+	{
+		"label": "tool-call-with-error-stop/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "x"
+				},
+				{
+					"type": "toolCall",
+					"id": "c1",
+					"name": "bash",
+					"arguments": {
+						"command": "ls"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "ignored because tool call present"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 40,
+		"expected": [
+			"",
+			"x                                       "
+		]
+	},
+	{
+		"label": "tool-call-with-error-stop/hide=false/pad=0",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "x"
+				},
+				{
+					"type": "toolCall",
+					"id": "c1",
+					"name": "bash",
+					"arguments": {
+						"command": "ls"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "ignored because tool call present"
+		},
+		"hideThinkingBlock": false,
+		"hiddenThinkingLabel": "Thinking...",
+		"outputPad": 0,
+		"width": 80,
+		"expected": [
+			"",
+			"x                                                                               "
+		]
+	},
+	{
+		"label": "tool-call-with-error-stop/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "x"
+				},
+				{
+					"type": "toolCall",
+					"id": "c1",
+					"name": "bash",
+					"arguments": {
+						"command": "ls"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "ignored because tool call present"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 40,
+		"expected": [
+			"",
+			"  x                                     "
+		]
+	},
+	{
+		"label": "tool-call-with-error-stop/hide=true/pad=2",
+		"message": {
+			"role": "assistant",
+			"content": [
+				{
+					"type": "text",
+					"text": "x"
+				},
+				{
+					"type": "toolCall",
+					"id": "c1",
+					"name": "bash",
+					"arguments": {
+						"command": "ls"
+					}
+				}
+			],
+			"api": "test",
+			"provider": "test",
+			"model": "test",
+			"usage": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0,
+				"totalTokens": 0,
+				"cost": {
+					"input": 0,
+					"output": 0,
+					"cacheRead": 0,
+					"cacheWrite": 0,
+					"total": 0
+				}
+			},
+			"stopReason": "error",
+			"timestamp": 0,
+			"errorMessage": "ignored because tool call present"
+		},
+		"hideThinkingBlock": true,
+		"hiddenThinkingLabel": "Reasoning",
+		"outputPad": 2,
+		"width": 80,
+		"expected": [
+			"",
+			"  x                                                                             "
+		]
+	}
+]

@@ -1,0 +1,606 @@
+[
+	{
+		"label": "nodef-pending",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "ls -la",
+			"path": "/tmp"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m {                                      \u001b[49m",
+			"\u001b[48;5;17m   \"command\": \"ls -la\",                 \u001b[49m",
+			"\u001b[48;5;17m   \"path\": \"/tmp\"                       \u001b[49m",
+			"\u001b[48;5;17m }                                      \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-pending",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "ls -la",
+			"path": "/tmp"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m {                                                                              \u001b[49m",
+			"\u001b[48;5;17m   \"command\": \"ls -la\",                                                         \u001b[49m",
+			"\u001b[48;5;17m   \"path\": \"/tmp\"                                                               \u001b[49m",
+			"\u001b[48;5;17m }                                                                              \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-success",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "cat file"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "line 1\nline 2\nline 3"
+				}
+			],
+			"isError": false
+		},
+		"isPartial": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m {                                      \u001b[49m",
+			"\u001b[48;5;22m   \"command\": \"cat file\"                \u001b[49m",
+			"\u001b[48;5;22m }                                      \u001b[49m",
+			"\u001b[48;5;22m line 1                                 \u001b[49m",
+			"\u001b[48;5;22m line 2                                 \u001b[49m",
+			"\u001b[48;5;22m line 3                                 \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-success",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "cat file"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "line 1\nline 2\nline 3"
+				}
+			],
+			"isError": false
+		},
+		"isPartial": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m {                                                                              \u001b[49m",
+			"\u001b[48;5;22m   \"command\": \"cat file\"                                                        \u001b[49m",
+			"\u001b[48;5;22m }                                                                              \u001b[49m",
+			"\u001b[48;5;22m line 1                                                                         \u001b[49m",
+			"\u001b[48;5;22m line 2                                                                         \u001b[49m",
+			"\u001b[48;5;22m line 3                                                                         \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-error",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "bad"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "command failed: not found"
+				}
+			],
+			"isError": true
+		},
+		"isPartial": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;52m                                        \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;52m                                        \u001b[49m",
+			"\u001b[48;5;52m {                                      \u001b[49m",
+			"\u001b[48;5;52m   \"command\": \"bad\"                     \u001b[49m",
+			"\u001b[48;5;52m }                                      \u001b[49m",
+			"\u001b[48;5;52m command failed: not found              \u001b[49m",
+			"\u001b[48;5;52m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-error",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "bad"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "command failed: not found"
+				}
+			],
+			"isError": true
+		},
+		"isPartial": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;52m                                                                                \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;52m                                                                                \u001b[49m",
+			"\u001b[48;5;52m {                                                                              \u001b[49m",
+			"\u001b[48;5;52m   \"command\": \"bad\"                                                             \u001b[49m",
+			"\u001b[48;5;52m }                                                                              \u001b[49m",
+			"\u001b[48;5;52m command failed: not found                                                      \u001b[49m",
+			"\u001b[48;5;52m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-partial",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "stream"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "partial output so far"
+				}
+			],
+			"isError": false
+		},
+		"isPartial": true,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m {                                      \u001b[49m",
+			"\u001b[48;5;17m   \"command\": \"stream\"                  \u001b[49m",
+			"\u001b[48;5;17m }                                      \u001b[49m",
+			"\u001b[48;5;17m partial output so far                  \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-partial",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "stream"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "partial output so far"
+				}
+			],
+			"isError": false
+		},
+		"isPartial": true,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m {                                                                              \u001b[49m",
+			"\u001b[48;5;17m   \"command\": \"stream\"                                                          \u001b[49m",
+			"\u001b[48;5;17m }                                                                              \u001b[49m",
+			"\u001b[48;5;17m partial output so far                                                          \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-nested-args",
+		"toolName": "myUnknownTool",
+		"args": {
+			"config": {
+				"depth": 2,
+				"enabled": true
+			},
+			"name": "run"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m {                                      \u001b[49m",
+			"\u001b[48;5;17m   \"config\": {                          \u001b[49m",
+			"\u001b[48;5;17m     \"depth\": 2,                        \u001b[49m",
+			"\u001b[48;5;17m     \"enabled\": true                    \u001b[49m",
+			"\u001b[48;5;17m   },                                   \u001b[49m",
+			"\u001b[48;5;17m   \"name\": \"run\"                        \u001b[49m",
+			"\u001b[48;5;17m }                                      \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-nested-args",
+		"toolName": "myUnknownTool",
+		"args": {
+			"config": {
+				"depth": 2,
+				"enabled": true
+			},
+			"name": "run"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m {                                                                              \u001b[49m",
+			"\u001b[48;5;17m   \"config\": {                                                                  \u001b[49m",
+			"\u001b[48;5;17m     \"depth\": 2,                                                                \u001b[49m",
+			"\u001b[48;5;17m     \"enabled\": true                                                            \u001b[49m",
+			"\u001b[48;5;17m   },                                                                           \u001b[49m",
+			"\u001b[48;5;17m   \"name\": \"run\"                                                                \u001b[49m",
+			"\u001b[48;5;17m }                                                                              \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-empty-result",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "quiet"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": ""
+				}
+			],
+			"isError": false
+		},
+		"isPartial": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m {                                      \u001b[49m",
+			"\u001b[48;5;22m   \"command\": \"quiet\"                   \u001b[49m",
+			"\u001b[48;5;22m }                                      \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "nodef-empty-result",
+		"toolName": "myUnknownTool",
+		"args": {
+			"command": "quiet"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": ""
+				}
+			],
+			"isError": false
+		},
+		"isPartial": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m {                                                                              \u001b[49m",
+			"\u001b[48;5;22m   \"command\": \"quiet\"                                                           \u001b[49m",
+			"\u001b[48;5;22m }                                                                              \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "def-default-pending",
+		"toolName": "myUnknownTool",
+		"args": {
+			"path": "notes.md"
+		},
+		"toolDefinition": {
+			"renderShell": "default"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "def-default-pending",
+		"toolName": "myUnknownTool",
+		"args": {
+			"path": "notes.md"
+		},
+		"toolDefinition": {
+			"renderShell": "default"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "def-default-success",
+		"toolName": "myUnknownTool",
+		"args": {
+			"path": "notes.md"
+		},
+		"toolDefinition": {
+			"renderShell": "default"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "file contents here"
+				}
+			],
+			"isError": false
+		},
+		"isPartial": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile contents here\u001b[39m                     \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "def-default-success",
+		"toolName": "myUnknownTool",
+		"args": {
+			"path": "notes.md"
+		},
+		"toolDefinition": {
+			"renderShell": "default"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "file contents here"
+				}
+			],
+			"isError": false
+		},
+		"isPartial": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile contents here\u001b[39m                                                             \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "def-default-error",
+		"toolName": "myUnknownTool",
+		"args": {
+			"path": "missing.md"
+		},
+		"toolDefinition": {
+			"renderShell": "default"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "ENOENT: no such file"
+				}
+			],
+			"isError": true
+		},
+		"isPartial": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;52m                                        \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;244mENOENT: no such file\u001b[39m                   \u001b[49m",
+			"\u001b[48;5;52m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "def-default-error",
+		"toolName": "myUnknownTool",
+		"args": {
+			"path": "missing.md"
+		},
+		"toolDefinition": {
+			"renderShell": "default"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "ENOENT: no such file"
+				}
+			],
+			"isError": true
+		},
+		"isPartial": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;52m                                                                                \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;244mENOENT: no such file\u001b[39m                                                           \u001b[49m",
+			"\u001b[48;5;52m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "def-self-pending",
+		"toolName": "myUnknownTool",
+		"args": {
+			"query": "needle"
+		},
+		"toolDefinition": {
+			"renderShell": "self"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                           "
+		]
+	},
+	{
+		"label": "def-self-pending",
+		"toolName": "myUnknownTool",
+		"args": {
+			"query": "needle"
+		},
+		"toolDefinition": {
+			"renderShell": "self"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                   "
+		]
+	},
+	{
+		"label": "def-self-success",
+		"toolName": "myUnknownTool",
+		"args": {
+			"query": "needle"
+		},
+		"toolDefinition": {
+			"renderShell": "self"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "match at line 5"
+				}
+			],
+			"isError": false
+		},
+		"isPartial": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                           ",
+			"\u001b[38;5;244mmatch at line 5\u001b[39m                         "
+		]
+	},
+	{
+		"label": "def-self-success",
+		"toolName": "myUnknownTool",
+		"args": {
+			"query": "needle"
+		},
+		"toolDefinition": {
+			"renderShell": "self"
+		},
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "match at line 5"
+				}
+			],
+			"isError": false
+		},
+		"isPartial": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                   ",
+			"\u001b[38;5;244mmatch at line 5\u001b[39m                                                                 "
+		]
+	}
+]
