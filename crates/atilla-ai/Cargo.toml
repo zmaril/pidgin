@@ -6,6 +6,14 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+# The native reqwest-backed HttpTransport pulls reqwest + rustls, a heavier dep
+# tree the default build (and `cargo build/test --workspace`) never needs. Keep
+# it OFF by default so the lean default target stays reqwest-free, mirroring the
+# way atilla-extensions gates deno_core/V8 behind its non-default `deno` feature.
+# The gated transport is compiled and tested only under `--features native-http`.
+native-http = ["dep:reqwest"]
+
 [dependencies]
 base64 = "0.22"
 getrandom = "0.4.3"
@@ -18,6 +26,17 @@ sha2 = "0.11.0"
 # WHATWG-compatible URL parsing/normalization for utils/node_http_proxy.rs, so
 # target parsing and the proxy URL's string form match pi's `URL` byte-for-byte.
 url = "2"
+# Native HTTP transport (seams/http_reqwest.rs). Optional + gated behind the
+# non-default `native-http` feature so the workspace never pulls reqwest/rustls
+# by default. rustls-only (NO native-tls/openssl) to avoid a system TLS build
+# dependency; blocking client matches the synchronous HttpTransport seam.
+reqwest = { version = "0.12", default-features = false, features = [
+    "blocking",
+    "rustls-tls",
+    "gzip",
+    "charset",
+    "http2",
+], optional = true }
 atilla-model-catalog = { path = "../atilla-model-catalog" }
 
 [dev-dependencies]
