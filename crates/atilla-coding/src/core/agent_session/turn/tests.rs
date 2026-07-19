@@ -1,366 +1,30 @@
 //! Turn-runner tests, ported from pi's `test/suite/agent-session-prompt.test.ts`.
 //!
 //! Each `#[test]` mirrors a pi `AgentSession prompt characterization` case: same
-//! setup (a faux stream fn + in-memory session/settings/model runtime), same
-//! assertions on the emitted events and persisted / in-state messages. The pi
-//! cases that depend on subsystems deferred to a later PR of the AgentSession
-//! port are `#[ignore]`d with the PR that enables them.
+//! setup (a faux stream fn + in-memory session/settings/model runtime, from
+//! [`super::super::test_support`]), same assertions on the emitted events and
+//! persisted / in-state messages. The pi cases that depend on subsystems deferred
+//! to a later PR of the AgentSession port are `#[ignore]`d with the PR that
+//! enables them.
 
 // straitjacket-allow-file:duplication
 
-use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde_json::{json, Value};
 
-use atilla_agent::agent::{Agent, AgentOptions, InitialAgentState};
-use atilla_agent::types::{AgentTool, AgentToolResult, AgentToolUpdateCallback};
-use atilla_ai::providers::faux::{faux_assistant_message, faux_tool_call, FauxAssistantOptions};
-use atilla_ai::seams::{AbortSignal, StreamResult};
-use atilla_ai::{
-    AssistantMessage, AssistantMessageEvent, ContentBlock, Context, Model, ModelCost, StopReason,
-    StreamOptions,
-};
+use atilla_ai::providers::faux::faux_tool_call;
+use atilla_ai::Context;
 
 use crate::core::agent_session::events::AgentSessionEvent;
-use crate::core::agent_session::session::{AgentSession, AgentSessionConfig};
-use crate::core::model_runtime::{CreateModelRuntimeOptions, ModelRuntime, ModelsPath};
-use crate::core::resource_loader_orchestrator::{
-    DefaultResourceLoader, DefaultResourceLoaderOptions,
+use crate::core::agent_session::test_support::{
+    assistant_text, assistant_tool_use, create_harness, echo_tool, events_of_type, message_text,
+    recording_tool, FauxResponse, HarnessOptions, TestExtensionRunner,
 };
-use crate::core::session_manager::SessionManager;
-use crate::core::settings_manager::SettingsManager;
+use crate::core::extensions::events::selection::StreamingBehavior;
 
-use super::PromptError;
-
-// ---------------------------------------------------------------------------
-// Faux stream fn + harness (mirrors test/suite/harness.ts)
-// ---------------------------------------------------------------------------
-
-/// A scripted provider response: a canned message, or a function of the request
-/// context (pi's `FauxResponseStep`).
-enum FauxResponse {
-    Message(Box<AssistantMessage>),
-    #[allow(clippy::type_complexity)]
-    Fn(Box<dyn Fn(&Context) -> AssistantMessage + Send + Sync>),
-}
-
-/// A [`StreamResult`] whose only event is the terminal `done`/`error` carrying
-/// the final message (pi's `MockAssistantStream`).
-fn mock_stream(message: AssistantMessage) -> StreamResult {
-    let reason = message.stop_reason;
-    let event = if matches!(reason, StopReason::Error | StopReason::Aborted) {
-        AssistantMessageEvent::Error {
-            reason,
-            error: message.clone(),
-        }
-    } else {
-        AssistantMessageEvent::Done {
-            reason,
-            message: message.clone(),
-        }
-    };
-    StreamResult {
-        events: vec![event],
-        message,
-    }
-}
-
-/// The `faux` test model (pi's `registerFauxProvider().getModel()`).
-fn faux_model() -> Model {
-    Model {
-        id: "faux-1".to_string(),
-        name: "faux-1".to_string(),
-        api: "openai-completions".to_string(),
-        provider: "faux".to_string(),
-        base_url: "https://faux.test/v1".to_string(),
-        reasoning: false,
-        thinking_level_map: None,
-        input: Vec::new(),
-        cost: ModelCost {
-            input: 0.0,
-            output: 0.0,
-            cache_read: 0.0,
-            cache_write: 0.0,
-            tiers: None,
-        },
-        context_window: 128_000,
-        max_tokens: 4096,
-        headers: None,
-        compat: None,
-    }
-}
-
-fn text_block(text: &str) -> ContentBlock {
-    ContentBlock::Text {
-        text: text.to_string(),
-        text_signature: None,
-    }
-}
-
-/// A plain-text assistant response (pi's `fauxAssistantMessage("text")`).
-fn assistant_text(text: &str) -> AssistantMessage {
-    faux_assistant_message(vec![text_block(text)], FauxAssistantOptions::default(), 0)
-}
-
-/// A tool-use assistant response (pi's `fauxAssistantMessage(fauxToolCall(...), { stopReason: "toolUse" })`).
-fn assistant_tool_use(content: Vec<ContentBlock>) -> AssistantMessage {
-    faux_assistant_message(
-        content,
-        FauxAssistantOptions {
-            stop_reason: Some(StopReason::ToolUse),
-            ..Default::default()
-        },
-        0,
-    )
-}
-
-/// A configured in-memory harness (pi's `createHarness`).
-struct Harness {
-    session: AgentSession,
-    responses: Arc<Mutex<(Vec<FauxResponse>, usize)>>,
-    events: Arc<Mutex<Vec<AgentSessionEvent>>>,
-    _temp_dir: tempfile::TempDir,
-}
-
-struct HarnessOptions {
-    tools: Vec<AgentTool>,
-    with_model: bool,
-    with_configured_auth: bool,
-}
-
-impl Default for HarnessOptions {
-    fn default() -> Self {
-        Self {
-            tools: Vec::new(),
-            with_model: true,
-            with_configured_auth: true,
-        }
-    }
-}
-
-impl Harness {
-    fn set_responses(&self, responses: Vec<FauxResponse>) {
-        let mut guard = self.responses.lock().unwrap();
-        *guard = (responses, 0);
-    }
-
-    fn pending_response_count(&self) -> usize {
-        let guard = self.responses.lock().unwrap();
-        guard.0.len() - guard.1
-    }
-
-    fn message_roles(&self) -> Vec<String> {
-        self.session
-            .messages()
-            .iter()
-            .filter_map(|m| m.get("role").and_then(Value::as_str).map(String::from))
-            .collect()
-    }
-}
-
-/// The text content of an [`AgentMessage`] value (pi's `getMessageText`).
-fn message_text(message: &Value) -> String {
-    match message.get("content") {
-        Some(Value::String(text)) => text.clone(),
-        Some(Value::Array(blocks)) => blocks
-            .iter()
-            .filter(|b| b.get("type").and_then(Value::as_str) == Some("text"))
-            .filter_map(|b| b.get("text").and_then(Value::as_str))
-            .collect::<Vec<_>>()
-            .join("\n"),
-        _ => String::new(),
-    }
-}
-
-fn create_harness(options: HarnessOptions) -> Harness {
-    let temp_dir = tempfile::tempdir().expect("tempdir");
-    let cwd = temp_dir.path().to_string_lossy().to_string();
-    let agent_dir = temp_dir.path().join(".agent").to_string_lossy().to_string();
-
-    // A model runtime that knows the `faux` provider, optionally with a runtime
-    // api key so `has_configured_auth("faux")` is true.
-    let model_runtime = build_model_runtime(&temp_dir, options.with_configured_auth);
-
-    let resource_loader = DefaultResourceLoader::new(DefaultResourceLoaderOptions {
-        cwd: cwd.clone(),
-        agent_dir: agent_dir.clone(),
-        ..Default::default()
-    });
-
-    let responses: Arc<Mutex<(Vec<FauxResponse>, usize)>> = Arc::new(Mutex::new((Vec::new(), 0)));
-    let stream_responses = Arc::clone(&responses);
-    let stream_fn: atilla_agent::types::StreamFn = Arc::new(
-        move |_model: &Model,
-              context: &Context,
-              _options: Option<&StreamOptions>,
-              _signal: Option<&AbortSignal>| {
-            let mut guard = stream_responses.lock().unwrap();
-            let (list, index) = &mut *guard;
-            let step = list.get(*index).unwrap_or_else(|| {
-                panic!("no queued faux response for stream call #{index}");
-            });
-            let message = match step {
-                FauxResponse::Message(message) => (**message).clone(),
-                FauxResponse::Fn(builder) => builder(context),
-            };
-            *index += 1;
-            mock_stream(message)
-        },
-    );
-
-    let initial_state = InitialAgentState {
-        system_prompt: Some("You are a test assistant.".to_string()),
-        model: options.with_model.then(faux_model),
-        thinking_level: None,
-        tools: Some(options.tools),
-        messages: None,
-    };
-    let agent = Agent::new(AgentOptions {
-        initial_state: Some(initial_state),
-        stream_fn: Some(stream_fn),
-        ..Default::default()
-    });
-
-    let session = AgentSession::new(AgentSessionConfig {
-        agent,
-        session_manager: SessionManager::in_memory(&cwd),
-        settings_manager: SettingsManager::create(&cwd, &agent_dir),
-        cwd,
-        scoped_models: Vec::new(),
-        resource_loader,
-        custom_tools: Vec::new(),
-        model_runtime,
-        initial_active_tool_names: None,
-        allowed_tool_names: None,
-        excluded_tool_names: None,
-        base_tools_override: None,
-        extension_runner: None,
-        session_start_event: None,
-    });
-
-    let events: Arc<Mutex<Vec<AgentSessionEvent>>> = Arc::new(Mutex::new(Vec::new()));
-    let sink = Arc::clone(&events);
-    // The unsubscribe handle is intentionally dropped; the listener stays
-    // registered for the harness lifetime (dropping the handle does not remove it).
-    let _unsubscribe = session.subscribe(Arc::new(move |event: &AgentSessionEvent| {
-        sink.lock().unwrap().push(event.clone());
-    }));
-
-    Harness {
-        session,
-        responses,
-        events,
-        _temp_dir: temp_dir,
-    }
-}
-
-/// A model runtime that knows the `faux` provider via a temp `models.json`,
-/// optionally marked configured through a runtime api key.
-fn build_model_runtime(temp_dir: &tempfile::TempDir, with_configured_auth: bool) -> ModelRuntime {
-    let models_path = temp_dir.path().join("models.json");
-    let providers = json!({
-        "providers": {
-            "faux": {
-                "baseUrl": "https://faux.test/v1",
-                "api": "openai-completions",
-                "models": [{
-                    "id": "faux-1",
-                    "name": "faux-1",
-                    "reasoning": false,
-                    "input": ["text"],
-                    "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-                    "contextWindow": 128000,
-                    "maxTokens": 4096
-                }]
-            }
-        }
-    });
-    std::fs::write(&models_path, providers.to_string()).expect("write models.json");
-
-    let mut runtime = ModelRuntime::create(CreateModelRuntimeOptions {
-        models_path: ModelsPath::Path(models_path.to_string_lossy().to_string()),
-        allow_model_network: Some(false),
-        ..Default::default()
-    });
-    if with_configured_auth {
-        runtime.set_runtime_api_key("faux", "faux-key");
-    }
-    runtime
-}
-
-/// An echo tool that records the `text` argument of each call.
-fn echo_tool(runs: Arc<Mutex<Vec<String>>>) -> AgentTool {
-    AgentTool {
-        name: "echo".to_string(),
-        description: "Echo text back".to_string(),
-        parameters: json!({ "type": "object" }),
-        label: "Echo".to_string(),
-        prepare_arguments: None,
-        execution_mode: None,
-        execute: Arc::new(
-            move |_id: &str,
-                  params: &Value,
-                  _signal: Option<&AbortSignal>,
-                  _on_update: Option<&AgentToolUpdateCallback>| {
-                let text = params
-                    .get("text")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_string();
-                runs.lock().unwrap().push(text.clone());
-                AgentToolResult {
-                    content: vec![text_block(&format!("echo:{text}"))],
-                    details: json!({ "text": text }),
-                    added_tool_names: None,
-                    terminate: None,
-                }
-            },
-        ),
-    }
-}
-
-/// A tool that records `name:value` for each call.
-fn recording_tool(name: &str, runs: Arc<Mutex<Vec<String>>>) -> AgentTool {
-    let tool_name = name.to_string();
-    AgentTool {
-        name: name.to_string(),
-        description: format!("{name} tool"),
-        parameters: json!({ "type": "object" }),
-        label: name.to_string(),
-        prepare_arguments: None,
-        execution_mode: None,
-        execute: Arc::new(
-            move |_id: &str,
-                  params: &Value,
-                  _signal: Option<&AbortSignal>,
-                  _on_update: Option<&AgentToolUpdateCallback>| {
-                let value = params
-                    .get("value")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_string();
-                runs.lock().unwrap().push(format!("{tool_name}:{value}"));
-                AgentToolResult {
-                    content: vec![text_block(&format!("{tool_name}:{value}"))],
-                    details: json!({ "value": value }),
-                    added_tool_names: None,
-                    terminate: None,
-                }
-            },
-        ),
-    }
-}
-
-fn events_of_type(harness: &Harness, matcher: impl Fn(&AgentSessionEvent) -> bool) -> usize {
-    harness
-        .events
-        .lock()
-        .unwrap()
-        .iter()
-        .filter(|e| matcher(e))
-        .count()
-}
+use super::{PromptError, PromptOptions};
 
 // ---------------------------------------------------------------------------
 // Ported prompt-suite cases
@@ -470,7 +134,7 @@ fn preserves_image_attachments_in_the_provider_context() {
                 })
                 .unwrap_or(false);
             if has_image {
-                saw_image_stream.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                saw_image_stream.fetch_add(1, Ordering::SeqCst);
             }
             assistant_text("ok")
         },
@@ -486,7 +150,7 @@ fn preserves_image_attachments_in_the_provider_context() {
         .prompt("describe", Some(images), None)
         .unwrap();
 
-    assert_eq!(saw_image.load(std::sync::atomic::Ordering::SeqCst), 1);
+    assert_eq!(saw_image.load(Ordering::SeqCst), 1);
 }
 
 #[test]
@@ -587,8 +251,76 @@ fn persists_finalized_messages_to_the_session_manager() {
 }
 
 // ---------------------------------------------------------------------------
+// Queue-slice prompt cases (enabled by PR4)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn send_user_message_while_idle_triggers_a_turn() {
+    let harness = create_harness(HarnessOptions::default());
+    harness.set_responses(vec![FauxResponse::Message(Box::new(assistant_text(
+        "response",
+    )))]);
+
+    harness
+        .session
+        .send_user_message("from extension", None)
+        .unwrap();
+
+    assert_eq!(harness.message_roles(), vec!["user", "assistant"]);
+    assert_eq!(
+        message_text(&harness.session.messages()[0]),
+        "from extension"
+    );
+}
+
+#[test]
+fn does_not_report_streaming_behavior_to_input_handlers_while_idle() {
+    let input_events = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&input_events);
+    let harness = create_harness(HarnessOptions {
+        make_runner: Some(Box::new(move |_agent| {
+            Box::new(TestExtensionRunner::new().with_input_recording(sink))
+        })),
+        ..Default::default()
+    });
+    harness.set_responses(vec![FauxResponse::Message(Box::new(assistant_text("ok")))]);
+
+    // A streaming behavior is supplied, but the session is idle, so it is NOT
+    // reported to the input handler (pi `this.isStreaming ? behavior : undefined`).
+    harness
+        .session
+        .prompt_with(
+            "idle",
+            PromptOptions {
+                streaming_behavior: Some(StreamingBehavior::FollowUp),
+                ..PromptOptions::defaults()
+            },
+        )
+        .unwrap();
+
+    let events = input_events.lock().unwrap();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].streaming_behavior, None);
+}
+
+// ---------------------------------------------------------------------------
 // Deferred pi cases (enabled by later PRs of the AgentSession port)
 // ---------------------------------------------------------------------------
+
+// The streaming-guard queue routing IS ported (see `prompt_with`), but these two
+// pi cases can only be observed by acting on the session *while a turn is in
+// flight*. Under the sync/eager agent that is structurally impossible: the loop
+// runs to completion on the calling thread, `AgentSession` is not `Send`/`Sync`,
+// and every mid-run hook (tool `execute`, listeners, the stream fn) is
+// `Send + Sync`-bounded and so cannot capture the live session. The idle-driven
+// queue tests (`queue::tests`) cover the routing / mirror mechanics instead.
+#[test]
+#[ignore = "unit5: sync/eager + !Send AgentSession — no mid-run hook can call session.prompt while streaming; routing covered idle in queue::tests"]
+fn reports_streaming_behavior_to_input_handlers_while_streaming() {}
+
+#[test]
+#[ignore = "unit5: sync/eager + !Send AgentSession — the streaming guard needs an in-flight run, unreachable from any mid-run hook"]
+fn throws_when_prompted_during_streaming_without_a_streaming_behavior() {}
 
 #[test]
 #[ignore = "unit5: enabled by PR7 (skill-command expansion)"]
@@ -601,19 +333,3 @@ fn expands_prompt_templates_before_sending_the_prompt() {}
 #[test]
 #[ignore = "unit5: enabled by PR7 (extension-command dispatch)"]
 fn dispatches_extension_commands_without_consuming_a_provider_response() {}
-
-#[test]
-#[ignore = "unit5: enabled by PR4 (sendUserMessage delivery)"]
-fn send_user_message_while_idle_triggers_a_turn() {}
-
-#[test]
-#[ignore = "unit5: enabled by PR7 (input-handler extension events)"]
-fn does_not_report_streaming_behavior_to_input_handlers_while_idle() {}
-
-#[test]
-#[ignore = "unit5: enabled by PR4 (streaming queue routing) + PR7 (input handlers)"]
-fn reports_streaming_behavior_to_input_handlers_while_streaming() {}
-
-#[test]
-#[ignore = "unit5: enabled by PR4 (streaming guard requires concurrent in-flight run)"]
-fn throws_when_prompted_during_streaming_without_a_streaming_behavior() {}
