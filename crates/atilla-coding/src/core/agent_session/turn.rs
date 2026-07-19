@@ -20,9 +20,10 @@
 //! Branches that belong to later PRs of the AgentSession port are stubbed to
 //! their minimal safe default with a plain `// unit5:` note pointing at the PR
 //! that lands them: the `/`-command shortcut and skill/prompt-template expansion
-//! (PR7) and the pre-send compaction check (PR6). Auto-retry (the retryable-error
-//! branch of `handle_post_agent_run`, the `will_retry` computation, and the
-//! success reset) lands in the sibling [`super::retry`] module.
+//! (PR7). Auto-retry (the retryable-error branch of `handle_post_agent_run`, the
+//! `will_retry` computation, and the success reset) lands in the sibling
+//! [`super::retry`] module; the pre-send and post-run compaction checks
+//! (`check_compaction`) live in [`super::compaction_turn`].
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/agent-session.ts`.
 
@@ -207,6 +208,10 @@ pub(super) struct AgentEventHandler {
     /// The shared snapshot of resolved retry settings (pi's `getRetrySettings`),
     /// read for `will_retry`.
     pub retry_settings: Arc<Mutex<crate::core::settings_manager::RetryResolved>>,
+    /// The one-shot overflow-recovery guard (pi `_overflowRecoveryAttempted`),
+    /// cleared here on a user `message_start` and on a non-error assistant
+    /// `message_end`; read and set by `check_compaction`.
+    pub overflow_recovery_attempted: Arc<Mutex<bool>>,
 }
 
 impl AgentEventHandler {
@@ -217,7 +222,9 @@ impl AgentEventHandler {
         //    so the UI sees the updated queue state before the event is emitted.
         if let AgentEvent::MessageStart { message } = event {
             if message_role(message) == Some("user") {
-                // unit5: _overflowRecoveryAttempted reset lands with compaction (PR6).
+                // A fresh user turn clears the one-shot overflow-recovery guard so
+                // the next overflow can compact-and-retry once (pi L577).
+                *self.overflow_recovery_attempted.lock().unwrap() = false;
                 let text = user_message_text(message);
                 if !text.is_empty() {
                     self.remove_from_queues(&text);
@@ -428,8 +435,13 @@ impl AgentEventHandler {
 
         if message_role(message) == Some("assistant") {
             *self.last_assistant_message.lock().unwrap() = Some(message.clone());
-            // unit5: the stopReason-gated _overflowRecoveryAttempted reset (PR6)
-            // lands with compaction.
+            // A successful (non-error) assistant response clears the one-shot
+            // overflow-recovery guard (pi L629): the next overflow may compact-and-
+            // retry again. An error keeps the guard so recovery only fires once.
+            let assistant_stop_reason = message.get("stopReason").and_then(Value::as_str);
+            if assistant_stop_reason != Some("error") {
+                *self.overflow_recovery_attempted.lock().unwrap() = false;
+            }
 
             // Reset the retry counter immediately on a successful assistant
             // response so it does not accumulate across LLM calls within a turn
@@ -647,8 +659,13 @@ impl AgentSession {
             )));
         }
 
-        // unit5: the pre-send compaction check (pi L1187, `_checkCompaction`) lands
-        // in PR6; the safe default is to skip compaction.
+        // Pre-send compaction: if a stale assistant response left the context over
+        // the threshold (or carried an overflow error), compact before sending the
+        // new prompt (pi L1187). `skip_aborted_check = false` because a fresh prompt
+        // follows regardless of whether the prior turn was user-aborted.
+        if let Some(last_assistant) = self.find_last_assistant_message() {
+            self.check_compaction(&last_assistant, false);
+        }
 
         // Build the user message (pi L1193).
         let mut content = vec![json!({ "type": "text", "text": expanded_text })];
@@ -740,12 +757,27 @@ impl AgentSession {
             *self.retry_attempt.lock().unwrap() = 0;
         }
 
-        // unit5: the auto-compaction branch (pi L1084, PR6) lands with compaction;
-        // its safe default is no continuation.
+        // Auto-compaction: a threshold-crossing or overflow assistant response
+        // compacts the context; when it wants a continuation (overflow retry, or
+        // queued messages waiting behind the compaction) the loop runs again (pi
+        // L1084). `check_compaction` defaults `skip_aborted_check = true` here.
+        if self.check_compaction(&message, true) {
+            return true;
+        }
 
         // The agent loop drains both queues before emitting agent_end; anything
         // queued during agent_end handlers needs a continuation (pi L1090).
         self.agent.has_queued_messages()
+    }
+
+    /// The most recent `assistant` message in agent state, if any (pi's
+    /// `_findLastAssistantMessage`, L663). Used by the pre-send compaction check.
+    pub(super) fn find_last_assistant_message(&self) -> Option<AgentMessage> {
+        self.agent
+            .messages()
+            .into_iter()
+            .rev()
+            .find(|message| message_role(message) == Some("assistant"))
     }
 
     /// Flush pending bash messages before/after a run (pi's

@@ -46,7 +46,8 @@ use crate::core::extensions::events::selection::{
     InputEvent, InputEventResult, InputSource, StreamingBehavior,
 };
 use crate::core::extensions::events::session::{
-    ResourcesDiscoverReason, ResourcesDiscoverResult, SessionShutdownEvent,
+    ResourcesDiscoverReason, ResourcesDiscoverResult, SessionBeforeCompactEvent,
+    SessionBeforeCompactResult, SessionShutdownEvent,
 };
 use crate::core::extensions::events::tool::{
     ToolCallEvent, ToolCallEventResult, ToolResultEvent, ToolResultEventResult,
@@ -242,6 +243,11 @@ pub(crate) struct HarnessOptions {
     /// `createHarness({ settings })` → `settingsManager.applyOverrides`). Used by
     /// the retry suite to set `retry.baseDelayMs`/`maxRetries`/`enabled`.
     pub settings: Option<Settings>,
+    /// The compaction summarization provider seam (pi's per-test
+    /// `session.agent.streamFn = ...` override that returns the summary). `Some`
+    /// is the "custom `streamFn`" analog: it drives summarization and bypasses the
+    /// configured-auth gate. `None` is the default `streamSimple` analog.
+    pub summarization_models: Option<Box<dyn crate::core::compaction::Models>>,
 }
 
 impl Default for HarnessOptions {
@@ -252,6 +258,7 @@ impl Default for HarnessOptions {
             with_configured_auth: true,
             make_runner: None,
             settings: None,
+            summarization_models: None,
         }
     }
 }
@@ -281,6 +288,48 @@ impl Harness {
             .iter()
             .filter_map(|m| m.get("role").and_then(Value::as_str).map(String::from))
             .collect()
+    }
+}
+
+/// A compaction summarization [`Models`](crate::core::compaction::Models) seam
+/// that returns a fixed `summary` and counts its calls (pi's per-test
+/// `useSummaryStreamFn`, which overrides `session.agent.streamFn` to emit the
+/// summary and returns a call counter).
+pub(crate) struct SummaryModels {
+    summary: String,
+    calls: Arc<AtomicUsize>,
+}
+
+impl SummaryModels {
+    /// Build a summarizer that always answers with `summary`; the returned counter
+    /// tracks how many times it was invoked (pi returns `getStreamCallCount`).
+    pub fn build(summary: &str) -> (Box<dyn crate::core::compaction::Models>, Arc<AtomicUsize>) {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let models = Box::new(Self {
+            summary: summary.to_string(),
+            calls: Arc::clone(&calls),
+        });
+        (models, calls)
+    }
+}
+
+impl crate::core::compaction::Models for SummaryModels {
+    fn complete_simple(
+        &self,
+        model: &Model,
+        _context: &Context,
+        _options: &crate::core::compaction::CompletionOptions,
+    ) -> AssistantMessage {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        let mut message = faux_assistant_message(
+            vec![text_block(&self.summary)],
+            FauxAssistantOptions::default(),
+            0,
+        );
+        message.api = model.api.clone();
+        message.provider = model.provider.clone();
+        message.model = model.id.clone();
+        message
     }
 }
 
@@ -479,6 +528,7 @@ pub(crate) fn create_harness(options: HarnessOptions) -> Harness {
         base_tools_override: None,
         extension_runner,
         session_start_event: None,
+        summarization_models: options.summarization_models,
     });
 
     let events: Arc<Mutex<Vec<AgentSessionEvent>>> = Arc::new(Mutex::new(Vec::new()));
@@ -558,7 +608,15 @@ pub(crate) struct TestExtensionRunner {
     on_agent_end: Option<AgentEndCallback>,
     agent_end_fired: AtomicBool,
     event_order: Option<Arc<Mutex<Vec<String>>>>,
+    #[allow(clippy::type_complexity)]
+    before_compact:
+        Option<Arc<dyn Fn(&SessionBeforeCompactEvent) -> SessionBeforeCompactResult + Send + Sync>>,
 }
+
+/// A `session_before_compact` handler for [`TestExtensionRunner`] (pi's
+/// `pi.on("session_before_compact", ...)`).
+pub(crate) type BeforeCompactHandler =
+    Arc<dyn Fn(&SessionBeforeCompactEvent) -> SessionBeforeCompactResult + Send + Sync>;
 
 impl TestExtensionRunner {
     /// Start from a runner that only forwards to the stub.
@@ -570,7 +628,16 @@ impl TestExtensionRunner {
             on_agent_end: None,
             agent_end_fired: AtomicBool::new(false),
             event_order: None,
+            before_compact: None,
         }
+    }
+
+    /// Register a `session_before_compact` handler (pi's
+    /// `pi.on("session_before_compact", ...)`); it may cancel or supply a
+    /// replacement compaction. Also reports `has_handlers("session_before_compact")`.
+    pub fn with_before_compact(mut self, handler: BeforeCompactHandler) -> Self {
+        self.before_compact = Some(handler);
+        self
     }
 
     /// Record `extension:message_start:<role>` / `extension:message_end:<role>`
@@ -632,6 +699,11 @@ impl ExtensionRunner for TestExtensionRunner {
                 if !self.agent_end_fired.swap(true, Ordering::SeqCst) {
                     callback();
                 }
+            }
+        }
+        if let ExtensionDispatchEvent::SessionBeforeCompact(before) = event {
+            if let Some(handler) = &self.before_compact {
+                return ExtensionEmitOutcome::BeforeCompact(handler(before));
             }
         }
         if let (Some(sink), ExtensionDispatchEvent::MessageStart(start)) =
@@ -711,6 +783,7 @@ impl ExtensionRunner for TestExtensionRunner {
     fn has_handlers(&self, event_type: &str) -> bool {
         (event_type == "input" && self.input_events.is_some())
             || (matches!(event_type, "message_start" | "message_end") && self.event_order.is_some())
+            || (event_type == "session_before_compact" && self.before_compact.is_some())
             || self.inner.has_handlers(event_type)
     }
 
