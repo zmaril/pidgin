@@ -1,3 +1,9 @@
+// straitjacket-allow-file:duplication — the three tool shims (ls/write/bash)
+// share pi's native-flip overlay shape (`export *` the original, rebuild the
+// tool factory, route the default path to the addon, delegate to the original
+// when a custom `operations` backend is injected); the structural overlap
+// mirrors pi's own parallel tool factories and is intentional/load-bearing.
+//
 // Native shim for packages/coding-agent/src/core/tools/bash.ts, backed by the
 // atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: pi's original file
@@ -20,8 +26,8 @@
 // house rule (faux.rs) avoids. So this shim DELEGATES to pi's original whenever a
 // custom `operations`, `commandPrefix`, `shellPath`, or `spawnHook` is supplied;
 // only the bare default path is native. Full-native injected bash is a follow-up
-// once a TSFN seam lands (see PR #114). Per the coordinator ruling this is a
-// hybrid flip.
+// once a TSFN seam lands (see the ThreadsafeFunction PR cohort). Per the
+// coordinator ruling this is a hybrid flip.
 
 export * from "./bash.__pi_original__.ts";
 

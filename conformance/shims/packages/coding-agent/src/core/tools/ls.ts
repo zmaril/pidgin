@@ -1,3 +1,9 @@
+// straitjacket-allow-file:duplication — the three tool shims (ls/write/bash)
+// share pi's native-flip overlay shape (`export *` the original, rebuild the
+// tool factory, route the default path to the addon, delegate to the original
+// when a custom `operations` backend is injected); the structural overlap
+// mirrors pi's own parallel tool factories and is intentional/load-bearing.
+//
 // Native shim for packages/coding-agent/src/core/tools/ls.ts, backed by the
 // atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: pi's original file
