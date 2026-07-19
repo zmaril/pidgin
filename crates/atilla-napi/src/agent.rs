@@ -14,6 +14,17 @@ use napi_derive::napi;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
+/// Serialize a slice of `serde`-able items (e.g. loader diagnostics) to a
+/// `Vec<Value>`, mapping any per-item serialization failure to `Value::Null`.
+/// Shared by the `loadSkills` / `loadPromptTemplates` loaders below, whose
+/// diagnostics arrays are otherwise identical.
+fn to_json_values<T: serde::Serialize>(items: &[T]) -> Vec<Value> {
+    items
+        .iter()
+        .map(|item| serde_json::to_value(item).unwrap_or(Value::Null))
+        .collect()
+}
+
 // --- agent harness: system-prompt ------------------------------------------
 //
 // Thin wrapper over `atilla_agent::harness::system_prompt`, backing the native
@@ -374,11 +385,7 @@ impl NodeExecutionEnvCore {
         let refs: Vec<&str> = dirs.iter().map(String::as_str).collect();
         let loaded = atilla_agent::harness::skills::load_skills(&self.inner, &refs);
         let skills: Vec<Value> = loaded.skills.iter().map(skill_to_value).collect();
-        let diagnostics: Vec<Value> = loaded
-            .diagnostics
-            .iter()
-            .map(|d| serde_json::to_value(d).unwrap_or(Value::Null))
-            .collect();
+        let diagnostics = to_json_values(&loaded.diagnostics);
         json!({ "skills": skills, "diagnostics": diagnostics }).to_string()
     }
 
@@ -396,11 +403,7 @@ impl NodeExecutionEnvCore {
             .iter()
             .map(prompt_template_to_value)
             .collect();
-        let diagnostics: Vec<Value> = loaded
-            .diagnostics
-            .iter()
-            .map(|d| serde_json::to_value(d).unwrap_or(Value::Null))
-            .collect();
+        let diagnostics = to_json_values(&loaded.diagnostics);
         json!({ "promptTemplates": prompt_templates, "diagnostics": diagnostics }).to_string()
     }
 }
