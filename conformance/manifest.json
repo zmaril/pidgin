@@ -4,7 +4,8 @@
     {
       "package": "agent",
       "src": "packages/agent/src/agent-loop.ts",
-      "status": "original"
+      "status": "native",
+      "tests": []
     },
     {
       "package": "agent",
