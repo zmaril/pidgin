@@ -32,6 +32,36 @@ many suites create working dirs inside the package tree and transpile extensions
 at runtime, which is fragile under a dropped uid: it made the baseline both worse
 and less stable, so it is a follow-up rather than part of this change.
 
+## Baseline auto-refresh
+
+The committed `conformance.json` baseline is refreshed automatically by
+`.github/workflows/conformance-baseline.yml`. On every push/merge to `main` the
+workflow regenerates the full five-package baseline (`scripts/conformance.sh
+--setup`) and, if the result drifted, commits `conformance.json` back to `main`
+under the `github-actions[bot]` identity with a `[skip ci]` message.
+
+Three design points to keep in mind when touching this:
+
+- **Main only, never per-PR.** The baseline moves only on `main`. PR runs stay
+  read-only, so a PR's conformance delta always compares against the last merged
+  baseline rather than a moving target. Do not add per-PR baseline writes.
+- **Offline profile is enforced inside `conformance.sh`.** The regen runs
+  `scripts/conformance.sh --setup` plainly; the script strips `AWS_ACCESS_KEY_ID`,
+  `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, and `ANTHROPIC_BASE_URL` from the
+  vitest invocation itself (#85), so packages/ai stays on the offline profile (ai
+  556/0/738). With ambient creds present, ai flips to the live-failing profile
+  (562/24/708) and the baseline would be non-deterministic. No manual `env -u`
+  wrapper is needed in the workflow.
+- **Pushing to protected `main` needs the bot ruleset bypass.** The commit-back
+  pushes `conformance.json` straight to protected `main`, so `main`'s branch
+  ruleset must grant `github-actions[bot]` a one-time bypass for the default
+  `GITHUB_TOKEN` push to be accepted. Without it, branch protection rejects the
+  push.
+
+Loop prevention: the commit-back is a no-op when the baseline is unchanged (the
+steady state), and the `[skip ci]` message stops the commit-back push from
+re-triggering CI.
+
 ## Merge queue
 
 Current native count on main: **16** (ai anthropic-messages + ai faux, tui keys
