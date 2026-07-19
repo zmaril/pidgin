@@ -41,19 +41,33 @@ The workspace is a Cargo workspace so the engine and the shell stay separate:
   [clap](https://docs.rs/clap)) and hands off to `atilla-core`. It builds the
   `atilla` binary.
 
-This is early scaffolding: the CLI exposes a single `run` placeholder command
-while the actual surface is designed. The structure already works, so new
-functionality slots into an established shape rather than a blank repo.
+The workspace has grown well past scaffolding: the crates now mirror pi's
+packages (`ai`, `agent`, `coding-agent`, `tui`, `orchestrator`) behind the
+`atilla-core` façade, plus the `atilla-napi` bridge that fronts the conformance
+harness. New functionality slots into this established shape rather than a
+blank repo.
 
 ## Status
 
-Early — research phase. There is no working port of pi yet; the current focus
-is understanding upstream and planning the rewrite.
+Active port, well past research phase. All of pi's major packages are ported —
+`ai` (providers, per-dialect codecs, OAuth, the model catalog, the Models
+wrapper), the `agent` tier, the `coding-agent` core (glue, config, exec tools,
+compaction, `SessionManager`), and the `tui` components. **`orchestrator` is the
+remaining in-progress package**, alongside coding-agent's interactive mode and
+the full jiti extension engine.
 
-- **`notes/`** — research reports on pi's architecture and behavior, landed via
-  pull requests. (Intended location; the directory appears as reports arrive.)
-- **`throwaway/`** — spikes and experiments that inform the rewrite but are not
-  meant to ship. (Intended location.)
+Correctness is measured by running pi's **own unmodified** test suite against
+the Rust port through the `vendor/pi` overlay. The honest headline is
+**rust-backed passing: 258/3777 (6.8%)** — cases in files whose module under
+test is a native (Rust addon) module; raw all-pass is a secondary
+**2919/3777**, inflated by unflipped TypeScript that passes without touching any
+Rust. **Native modules: 21/397.** A separate black-box signal runs pi's CLI
+tests, repointed at `target/release/atilla`: **CLI conformance 15/15**.
+
+- **`notes/`** — research reports and design notes on pi's architecture and the
+  port, landed via pull requests.
+- **`conformance/`** — the harness (shims, codegen, manifest) that runs pi's
+  suite against the Rust port; the baseline lives in `conformance.json`.
 
 ## Install
 
@@ -74,9 +88,10 @@ cargo install --path crates/atilla-cli
 ## Usage
 
 ```sh
-atilla run       # run the engine (placeholder for now)
-atilla --help    # list commands
-atilla --version # print the version
+atilla "explain this repo"   # run the agent on a prompt
+atilla list                  # list installed extensions
+atilla --help                # list commands and options
+atilla --version             # print the version
 ```
 
 ## Development

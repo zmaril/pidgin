@@ -10,13 +10,13 @@ Upstream is pinned at commit `3da591ab` (v0.80.10) and tracked continuously: a m
 
 ## The bar: pi's own tests
 
-Correctness is defined as passing pi's own test suite, literally — pi's ~3,600 test cases run unmodified against the Rust core.
+Correctness is defined as passing pi's own test suite, literally — pi's 3,777 test cases run unmodified against the Rust core.
 
-The mechanism: napi-rs shim packages present pi's exact TypeScript module surface (pi's own `.d.ts` files front the Rust runtime exports, since types erase at runtime), and a generated `src`-tree swap intercepts the 93 percent of pi's test files that deep-import relative `../src/*` paths. A module manifest marks each pi module `native` (Rust-backed) or `original` (still pi's TS), and doubles as the porting ledger. pi's four black-box CLI tests repoint at the `atilla` binary. A conformance dashboard reports "N of M pi tests passing" and CI fails on regression.
+The mechanism: napi-rs shim packages present pi's exact TypeScript module surface (pi's own `.d.ts` files front the Rust runtime exports, since types erase at runtime), and a generated `src`-tree swap intercepts the 93 percent of pi's test files that deep-import relative `../src/*` paths. A module manifest marks each pi module `native` (Rust-backed) or `original` (still pi's TS), and doubles as the porting ledger. pi's four black-box CLI test files (15 cases) repoint at the `atilla` binary and run as a separate signal — CLI conformance is 15/15. The conformance dashboard's headline is deliberately **rust-backed**: it counts passing cases only in files whose module-under-test is a native (Rust addon) module, so raw all-pass — inflated by unflipped TypeScript that passes without touching any Rust — is reported only as a secondary number. That headline currently reads 258 of 3,777 rust-backed (6.8 percent), with raw all-pass at 2,919 of 3,777; CI fails on regression.
 
 We aim for 100 percent eventually; until then, the irreducibly-Node residue (worker_threads, clipboard, environment-shaped tests) lives on a documented, CI-tracked exclusion list that shrinks over time rather than being silently ignored.
 
-Because roughly 58 of pi's test files mock internal collaborators and roughly 68 stub global fetch, the Rust core builds injection seams in from the start — injectable provider, HTTP transport, clock, and storage environment, as production-grade traits, not test hacks. This is the difference between passing most of the suite and passing all of it.
+Because roughly 58 of pi's test files mock internal collaborators and roughly 68 stub global fetch, the Rust core builds injection seams in from the start — five of them, as production-grade traits, not test hacks: an injectable provider (22 mock sites), HTTP transport including WebSocket (80), clock (3), storage environment (3), and a subprocess / command-runner seam (44). The subprocess seam earns its place on the strength of those 44 sites alone; the mock inventory in `mock-inventory.md` is the census. This is the difference between passing most of the suite and passing all of it.
 
 ## Architecture
 
@@ -46,9 +46,11 @@ Shadow pi faithfully. pi's TUI is an inline line-diff renderer with a crash-on-m
 
 ## Sequencing
 
-1. The napi bridge harness first: shim packages, module manifest, codegen, and one `ai` test file green against Rust. The conformance mechanism precedes everything it gates.
-2. `ai` bottom-up (Anthropic SSE parsing, request shaping, providers), flipping manifest modules to `native` as their tests pass; the dashboard and CI gate ship here.
-3. `agent`, then `coding-agent` dependencies-first; the PHP binding surface grows in parallel once the façade exists.
-4. `tui` (faithful port) and the extension plane per the porting order in `startup/porting-map.md`; `orchestrator` last.
+The napi bridge harness landed first, and the packages below have been ported in roughly this order; orchestration is the remaining tail. The ordering rationale still holds — it is now mostly a record of what happened rather than a forward plan.
 
-Distribution and packaging (PECL matrices, wheels, prebuilt binaries) are explicitly deferred until the core and first bindings are proven.
+1. The napi bridge harness came first: shim packages, module manifest, codegen, and one `ai` test file green against Rust. The conformance mechanism precedes everything it gates, and it did. (Done.)
+2. `ai` bottom-up (Anthropic SSE parsing, request shaping, providers), flipping manifest modules to `native` as their tests pass; the dashboard and CI gate shipped here. (Done — providers, dialects, auth/OAuth, and the Models wrapper are ported.)
+3. `agent`, then `coding-agent` dependencies-first; the PHP binding surface grows in parallel once the façade exists. (Done for the agent tier and the coding-agent core, tools, compaction, and SessionManager; the interactive mode is the in-progress remainder.)
+4. `tui` (faithful port) and the extension plane per the porting order in `startup/porting-map.md`; `orchestrator` last. (TUI is ported byte-exact; the extension plane has its bootstrap and seams in place with the full jiti engine still pending; `orchestrator` is the in-progress tail.)
+
+Distribution and packaging (PECL matrices, wheels, prebuilt binaries) remain explicitly deferred until the core and first bindings are proven.

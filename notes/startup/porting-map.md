@@ -97,26 +97,26 @@ Status legend: `[ ] not started` · `[~] in progress` · `[x] ported` · `[T] pa
 
 | # | Module | Package | Src LOC | Upstream tests | Coupling | Status | atilla crate / PR |
 |---|---|---|---|---|---|---|---|
-| 1 | ai/utils | ai | 1,428 | packages/ai/test/** | Low | [ ] not started | — |
-| 2 | ai/api (anthropic-messages) — **first slice** | ai | ~part of 9,800 | packages/ai/test/** | Med | [ ] not started | — |
-| 3 | ai/api (openai, google, bedrock, mistral, pi) | ai | ~rest of 9,800 | packages/ai/test/** | Med | [ ] not started | — |
-| 4 | ai/providers | ai | 6,314 | packages/ai/test/** | Low | [ ] not started | — |
-| 5 | ai/auth | ai | 2,714 | packages/ai/test/** | Med | [ ] not started | — |
-| 6 | ai/model-catalog codegen | ai | — | — | Low | [ ] not started | — |
-| 7 | agent (`.` entrypoint) | agent | ~part of 8,498 | packages/agent/test/** | Low | [ ] not started | — |
-| 8 | agent (`./node` entrypoint) | agent | ~rest of 8,498 | packages/agent/test/** | Med | [ ] not started | — |
-| 9 | coding-agent/utils | coding-agent | 3,236 | packages/coding-agent/test/** | Low–Med | [ ] not started | — |
-| 10 | coding-agent/core/tools | coding-agent | 4,072 | packages/coding-agent/test/** | High | [ ] not started | — |
-| 11 | coding-agent/core (root) | coding-agent | ~17,000 | packages/coding-agent/test/** | High | [ ] not started | — |
-| 12 | coding-agent/core/compaction | coding-agent | 1,420 | packages/coding-agent/test/** | Med | [ ] not started | — |
+| 1 | ai/utils | ai | 1,428 | packages/ai/test/** | Low | [x] ported | #52, #80 (also #71 compat) |
+| 2 | ai/api (anthropic-messages) — **first slice** | ai | ~part of 9,800 | packages/ai/test/** | Med | [x] ported | native per manifest (first-slice + seam series) |
+| 3 | ai/api (openai, google, bedrock, mistral, pi) | ai | ~rest of 9,800 | packages/ai/test/** | Med | [x] ported | #54 (Google/Vertex), #117 (Bedrock); openai/mistral/pi via registry #47 |
+| 4 | ai/providers | ai | 6,314 | packages/ai/test/** | Low | [x] ported | #47 (+#131 dup marker) |
+| 5 | ai/auth | ai | 2,714 | packages/ai/test/** | Med | [x] ported | #57, #87, #118 |
+| 6 | ai/model-catalog codegen | ai | — | — | Low | [~] in progress | #65, #128 (runtime/registry/store landed; build-time codegen step pending) |
+| 7 | agent (`.` entrypoint) | agent | ~part of 8,498 | packages/agent/test/** | Low | [x] ported | #46, #97, #109, #142 |
+| 8 | agent (`./node` entrypoint) | agent | ~rest of 8,498 | packages/agent/test/** | Med | [x] ported | #99, #120 |
+| 9 | coding-agent/utils | coding-agent | 3,236 | packages/coding-agent/test/** | Low–Med | [x] ported | #68 (core-glue/utils series) |
+| 10 | coding-agent/core/tools | coding-agent | 4,072 | packages/coding-agent/test/** | High | [x] ported | #48, #94, #81, #139, #130 |
+| 11 | coding-agent/core (root) | coding-agent | ~17,000 | packages/coding-agent/test/** | High | [x] ported | #68, #45, #102, #104 |
+| 12 | coding-agent/core/compaction | coding-agent | 1,420 | packages/coding-agent/test/** | Med | [x] ported | #83 |
 | 13 | coding-agent/core/export-html | coding-agent | 746 | packages/coding-agent/test/** | Low | [ ] not started | — |
 | 14 | coding-agent/modes/rpc | coding-agent | 1,726 | packages/coding-agent/test/** | Med | [ ] not started | — |
-| 15 | coding-agent/cli | coding-agent | 1,043 | packages/coding-agent/test/** | Med | [ ] not started | — |
-| 16 | tui (renderer + widgets) | tui | 12,843 | packages/tui/test/** (node:test) | High | [ ] not started | — |
-| 17 | tui native (darwin/win32 modifiers) | tui | (C addons) | — | Native C | [ ] not started | — |
-| 18 | coding-agent/modes/interactive | coding-agent | 16,663 | packages/coding-agent/test/** | High | [ ] not started | — |
-| 19 | coding-agent/core/extensions (jiti) | coding-agent | 3,846 | packages/coding-agent/test/** | Extreme | [ ] not started | — |
-| 20 | orchestrator | orchestrator | 1,982 | none | Med | [ ] not started | — |
+| 15 | coding-agent/cli | coding-agent | 1,043 | packages/coding-agent/test/** | Med | [x] ported | #73 (CLI conformance), #101 (shared SessionManager) |
+| 16 | tui (renderer + widgets) | tui | 12,843 | packages/tui/test/** (node:test) | High | [x] ported | #91, #86, #95, #88, #106, #124, #133, #105 |
+| 17 | tui native (darwin/win32 modifiers) | tui | (C addons) | — | Native C | [x] ported | #78 (crossterm + native replacements) |
+| 18 | coding-agent/modes/interactive | coding-agent | 16,663 | packages/coding-agent/test/** | High | [~] in progress | — (needs tui; in progress) |
+| 19 | coding-agent/core/extensions (jiti) | coding-agent | 3,846 | packages/coding-agent/test/** | Extreme | [~] in progress | #108, #112, #122, #125, #144 (bootstrap + seams; full jiti engine pending) |
+| 20 | orchestrator | orchestrator | 1,982 | none | Med | [~] in progress | #107, #110, #116, #127, #135 |
 
 ## Re-sync checklist (for future upstream bumps)
 - [ ] `git -C <pi-clone> fetch && git rev-parse origin/main` → compare to pinned hash above.
