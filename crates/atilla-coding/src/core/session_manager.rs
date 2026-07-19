@@ -34,6 +34,10 @@
 //! discovery free functions. Its public surface is a superset drop-in of the
 //! CLI's stopgap `crates/atilla-cli/src/cli/session.rs`.
 
+// straitjacket-allow-file[:duplication] — the `format_iso_millis` epoch-to-ISO
+// helper here is one of several deliberate parallel implementations across the
+// workspace (cf. the faithful port in `atilla-orchestrator`'s `radius.rs`).
+
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
