@@ -46,15 +46,17 @@
 //! resolver. This mirrors how the rest of atilla-ai injects environment-coupled
 //! behavior through seams.
 //!
-//! # `adaptOAuth` seam (deferred to slice D)
+//! # `adaptOAuth` bridge
 //!
 //! pi's `adaptOAuth` (`:230`) bridges an extension's callback-style OAuth flow
 //! (`login(callbacks)` / `refreshToken` / `getApiKey`) to a canonical
-//! [`OAuthAuth`]. atilla-ai's [`OAuthAuth`] is flow-machine-shaped, so that
-//! bridge is a channel-bridge design owned by downstream slice D. It is left as
-//! the [`adapt_oauth`] seam; [`compose_oauth_auth`] references it exactly where
-//! pi references `adaptOAuth`, so composing an *extension* OAuth provider reaches
-//! the seam while composing a base OAuth provider (the tested path) does not.
+//! [`OAuthAuth`]. atilla-ai's [`OAuthAuth`] is flow-machine-shaped, so the
+//! re-inversion (presenting the push login as a suspend/resume flow machine)
+//! lives in [`crate::auth::oauth::extension`] behind a thread + channel bridge;
+//! [`adapt_oauth`] is the thin call into it. [`compose_oauth_auth`] references it
+//! exactly where pi references `adaptOAuth`, so composing an *extension* OAuth
+//! provider drives the bridge while composing a base OAuth provider (the tested
+//! path) does not.
 //!
 //! # Streaming
 //!
@@ -68,6 +70,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use crate::auth::error::AuthFlowError;
+use crate::auth::oauth::extension::{adapt_extension_oauth, ExtensionOAuthLogin};
 use crate::auth::oauth::flow::OAuthFlowMachine;
 use crate::auth::types::{
     ApiKeyAuth, ApiKeyCredential, AuthCheck, AuthContext, AuthInteraction, AuthPrompt,
@@ -151,20 +154,47 @@ pub struct ProviderAuthConfig {
 
 /// OAuth config an extension may attach to a provider (`provider-composer.ts:33-41`).
 ///
-/// pi's `ExtensionOAuthConfig` additionally carries the effectful
-/// `login`/`refreshToken`/`getApiKey`/`modifyModels` members that drive the
-/// extension OAuth flow; those are the channel-bridge concern of [`adapt_oauth`]
-/// (slice D) and are not modeled here yet. The composer surface reads only
-/// [`name`](Self::name) (a provider-name fallback) plus the presence of this
-/// config.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// pi's `ExtensionOAuthConfig` carries the effectful
+/// `login`/`refreshToken`/`getApiKey` members that drive the extension OAuth
+/// flow; [`login`](Self::login) carries those (as an [`ExtensionOAuthLogin`]
+/// callable) so [`adapt_oauth`] can bridge them onto the flow-machine
+/// [`OAuthAuth`]. The concrete login is JS in the extension plane
+/// (atilla-extensions); it wires its closures onto the trait, so `login` is
+/// `None` until that wiring runs. pi's `modifyModels` is a model-layering concern
+/// of the credential-blind half and is not modeled on this auth surface.
+#[derive(Clone)]
 pub struct ExtensionOAuthConfig {
     /// The OAuth handler name (also a provider-name fallback).
     pub name: String,
     /// Retained for extension source compatibility; ignored by canonical auth
     /// flows (pi's deprecated `usesCallbackServer`).
     pub uses_callback_server: Option<bool>,
+    /// The extension's callback-driven login callable (pi's
+    /// `login`/`refreshToken`/`getApiKey`), wired by the extension plane. `None`
+    /// until wired; [`adapt_oauth`]'s flow machines then report a wiring error.
+    pub login: Option<Arc<dyn ExtensionOAuthLogin>>,
 }
+
+// `login` is a trait object, so `Debug`/`PartialEq`/`Eq` (which slice C's config
+// surface exposed) are hand-written to skip it: two configs are equal on their
+// declarative fields, and the login callable is opaque.
+impl std::fmt::Debug for ExtensionOAuthConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ExtensionOAuthConfig")
+            .field("name", &self.name)
+            .field("uses_callback_server", &self.uses_callback_server)
+            .field("login", &self.login.as_ref().map(|_| "<login>"))
+            .finish()
+    }
+}
+
+impl PartialEq for ExtensionOAuthConfig {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.uses_callback_server == other.uses_callback_server
+    }
+}
+
+impl Eq for ExtensionOAuthConfig {}
 
 /// Minimal ai-side mirror of the extension `registerProvider` input's
 /// auth-relevant fields, the `extension` layer of pi's composers
@@ -599,7 +629,7 @@ impl OAuthAuth for ComposedOAuthAuth {
 
 /// Compose a provider's OAuth auth handler (`provider-composer.ts:359-382`).
 ///
-/// The source handler is the extension's OAuth (via [`adapt_oauth`], slice D)
+/// The source handler is the extension's OAuth (via [`adapt_oauth`])
 /// when present, else the base provider's OAuth (`base_oauth`). Returns `None`
 /// when neither is present. The returned handler layers the configured headers
 /// and `authHeader` onto the source's `to_auth`.
@@ -629,18 +659,16 @@ pub fn compose_oauth_auth(
 /// Bridge an extension's callback-style OAuth config to a canonical
 /// [`OAuthAuth`] (`provider-composer.ts:230-248` `adaptOAuth`).
 ///
-/// # Deferred seam (slice D)
-///
-/// pi's `adaptOAuth` wraps the extension's `login(callbacks)` /
-/// `refreshToken` / `getApiKey` closures. atilla-ai's [`OAuthAuth`] is
-/// flow-machine-shaped, so bridging the callback flow is a channel-bridge design
-/// owned by downstream slice D. This stub exists so [`compose_oauth_auth`] and
-/// the coding-side `adapt_oauth(config) -> Box<dyn OAuthAuth>` call site compile
-/// today; it is only reached when composing an *extension* OAuth provider.
-pub fn adapt_oauth(_config: ExtensionOAuthConfig) -> Box<dyn OAuthAuth> {
-    unimplemented!(
-        "adaptOAuth (provider-composer.ts:230) is deferred to slice D (channel-bridge design)"
-    )
+/// pi's `adaptOAuth` wraps the extension's push-based `login(callbacks)` /
+/// `refreshToken` / `getApiKey` closures, mapping the callback surface onto
+/// `interaction.notify` / `interaction.prompt`. atilla-ai's [`OAuthAuth`] is the
+/// pull flow machine, so the re-inversion — presenting the push login as a
+/// suspend/resume machine — lives in [`crate::auth::oauth::extension`] behind a
+/// thread + channel bridge. This function just hands that adapter the config's
+/// [`ExtensionOAuthConfig::login`] callable; it is only reached when composing an
+/// *extension* OAuth provider.
+pub fn adapt_oauth(config: ExtensionOAuthConfig) -> Box<dyn OAuthAuth> {
+    adapt_extension_oauth(config.name, config.login)
 }
 
 /// The composed provider produced by [`compose_model_provider`].
