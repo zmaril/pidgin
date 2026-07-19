@@ -164,9 +164,13 @@ fn op_register_flag(state: &mut OpState, #[string] payload: String) {
 
 /// `pi.getFlag(name)` — the current value of a registered flag, or `null`
 /// (mapped to `undefined` in JS) when the flag was never registered.
+// The `#[serde]` return type must be spelled fully-qualified: the deno_ops
+// macro pattern-matches on the literal `serde_json::Value` / `v8::Value` path
+// tokens and rejects the imported `Value` alias ("Invalid or deprecated #[serde]
+// type").
 #[op2]
 #[serde]
-fn op_get_flag(state: &mut OpState, #[string] name: String) -> Value {
+fn op_get_flag(state: &mut OpState, #[string] name: String) -> serde_json::Value {
     inventory(state)
         .borrow()
         .flag_value(&name)
