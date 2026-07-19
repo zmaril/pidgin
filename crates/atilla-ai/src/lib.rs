@@ -31,8 +31,8 @@ pub use env_api_keys::{find_env_keys, get_api_key_env_vars, get_env_api_key, AMB
 pub use providers::{
     builtin_models, builtin_providers, clamp_thinking_level, create_models, create_provider,
     get_supported_thinking_levels, models_are_equal, radius_provider, ApiRouting,
-    CreateProviderOptions, Models, MutableModels, ProviderAuth, ProviderHeaders, ProviderSnapshot,
-    RefreshContext, RegistryProvider,
+    CreateProviderOptions, FilterModels, Models, MutableModels, ProviderAuth, ProviderHeaders,
+    ProviderSnapshot, RefreshContext, RefreshOptions, RefreshResult, RegistryProvider,
 };
 pub use types::*;
 pub use utils::event_stream::{

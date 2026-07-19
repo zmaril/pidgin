@@ -29,13 +29,17 @@ use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
-use crate::auth::{env_api_key_auth, ApiKeyAuth, AuthContext, DefaultAuthContext};
+use crate::auth::{env_api_key_auth, ApiKeyAuth, AuthContext, Credential, DefaultAuthContext};
 use crate::seams::provider::{AbortSignal, Provider as StreamBackend, StreamResult};
 use crate::seams::storage::SystemEnv;
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
     StopReason, StreamOptions, Usage, UsageCost,
 };
+
+mod models_runtime;
+
+pub use models_runtime::{RefreshOptions, RefreshResult};
 
 /// A stream backend: pi's `ProviderStreams`. In Rust this is the model/streaming
 /// seam [`crate::seams::provider::Provider`], shared behind an [`Arc`].
@@ -103,9 +107,23 @@ pub struct RefreshContext {
     pub allow_network: bool,
     /// Bypass freshness checks and fetch immediately when the network is allowed.
     pub force: bool,
+    /// The effective configured credential resolved by [`Models::refresh`] before
+    /// the fetch (pi's `RefreshModelsContext.credential`, `models.ts:36`). `None`
+    /// when a provider is refreshed outside the auth-resolving [`Models::refresh`]
+    /// path (e.g. the provider-level tests). pi resolves this via
+    /// `resolveRefreshCredential` (`models.ts:330`) and OAuth credentials are
+    /// refreshed before network access; this port resolves the api-key/ambient
+    /// credential (OAuth refresh-before-fetch is deferred with the rest of the
+    /// OAuth read path).
+    pub credential: Option<Credential>,
 }
 
 type FetchModels = Arc<dyn Fn(&RefreshContext) -> Vec<Model> + Send + Sync>;
+
+/// A provider's optional credential-specific model filter, pi's
+/// `Provider.filterModels` (`models.ts:111`). Given the full synchronous catalog
+/// and the effective credential, it returns the subset a credential may use.
+pub type FilterModels = Arc<dyn Fn(&[Model], Option<&Credential>) -> Vec<Model> + Send + Sync>;
 
 /// Options for [`create_provider`], mirroring pi's `CreateProviderOptions`.
 pub struct CreateProviderOptions {
@@ -123,6 +141,9 @@ pub struct CreateProviderOptions {
     pub models: Vec<Model>,
     /// Optional dynamic model fetch (makes the provider refreshable).
     pub fetch_models: Option<FetchModels>,
+    /// Optional credential-specific model filter, pi's `filterModels`
+    /// (`models.ts:111`), applied by [`Models::get_available`].
+    pub filter_models: Option<FilterModels>,
     /// Single backend, or a map keyed by `model.api`.
     pub api: ApiRouting,
 }
@@ -168,6 +189,7 @@ impl ProviderSnapshot {
             auth: self.auth,
             models: self.models,
             fetch_models: None,
+            filter_models: None,
             api: ApiRouting::Unimplemented,
         })
     }
@@ -186,6 +208,7 @@ pub struct RegistryProvider {
     baseline_models: Vec<Model>,
     dynamic_models: Mutex<Vec<Model>>,
     fetch_models: Option<FetchModels>,
+    filter_models: Option<FilterModels>,
     api: ApiRouting,
 }
 
@@ -257,6 +280,22 @@ impl RegistryProvider {
         true
     }
 
+    /// Whether this provider declares a credential-specific model filter (pi's
+    /// presence of `filterModels`).
+    pub fn has_filter(&self) -> bool {
+        self.filter_models.is_some()
+    }
+
+    /// Apply the provider's credential-specific model filter, pi's
+    /// `provider.filterModels?.(models, credential) ?? models`
+    /// (`models.ts:407`). A provider with no filter returns `models` unchanged.
+    pub fn filter_models(&self, models: Vec<Model>, credential: Option<&Credential>) -> Vec<Model> {
+        match &self.filter_models {
+            Some(filter) => filter(&models, credential),
+            None => models,
+        }
+    }
+
     /// Stream a response for `model`, dispatching to the backend for `model.api`.
     /// A model whose api has no backend yields the "no API implementation"
     /// stream error (pi's `dispatch`, `models.ts:576`).
@@ -290,6 +329,7 @@ pub fn create_provider(options: CreateProviderOptions) -> RegistryProvider {
         baseline_models: options.models,
         dynamic_models: Mutex::new(Vec::new()),
         fetch_models: options.fetch_models,
+        filter_models: options.filter_models,
         api: options.api,
     }
 }
@@ -761,6 +801,7 @@ mod tests {
             auth: ProviderAuth::default(),
             models: vec![],
             fetch_models: None,
+            filter_models: None,
             api: ApiRouting::Unimplemented,
         }
     }
@@ -834,6 +875,7 @@ mod tests {
         provider.refresh_models(&RefreshContext {
             allow_network: true,
             force: false,
+            credential: None,
         });
         assert_eq!(*fetches.lock().unwrap(), 1);
         assert_eq!(
@@ -848,6 +890,7 @@ mod tests {
         provider.refresh_models(&RefreshContext {
             allow_network: true,
             force: false,
+            credential: None,
         });
         assert_eq!(*fetches.lock().unwrap(), 2);
     }
@@ -862,6 +905,7 @@ mod tests {
         assert!(!provider.refresh_models(&RefreshContext {
             allow_network: false,
             force: false,
+            credential: None,
         }));
         assert!(provider.get_models().is_empty());
     }

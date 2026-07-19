@@ -187,6 +187,7 @@ pub fn provider_from_catalog(id: &str) -> RegistryProvider {
         auth: env_auth(id, name),
         models,
         fetch_models: None,
+        filter_models: None,
         api: ApiRouting::Unimplemented,
     })
 }
@@ -220,6 +221,7 @@ pub fn radius_provider() -> RegistryProvider {
         models: Vec::new(),
         // The real gateway fetch is deferred; refreshing offline yields nothing.
         fetch_models: Some(std::sync::Arc::new(|_ctx: &RefreshContext| Vec::new())),
+        filter_models: None,
         api: ApiRouting::Unimplemented,
     })
 }
