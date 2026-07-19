@@ -59,6 +59,18 @@ if [ -f "$VALE_YML" ]; then
   elif ! grep -qE 'reporter:[[:space:]]*local' "$VALE_YML"; then
     perl -0777 -i -pe 's/(uses:[[:space:]]*errata-ai\/vale-action[^\n]*\n(\s+)with:\n)/${1}${2}  reporter: local\n/s' "$VALE_YML"
   fi
+  # shallow checkout (depth 1) can't produce the added-lines diff reviewdog wants,
+  # so disable filtering and enforce at error level (content is clean of errors)
+  if ! grep -qE 'filter_mode:[[:space:]]*nofilter' "$VALE_YML"; then
+    perl -0777 -i -pe 's/^([ \t]*)reporter:[ \t]*local[ \t]*\n/${1}reporter: local\n${1}filter_mode: nofilter\n/m' "$VALE_YML"
+  fi
+  if ! grep -qE 'vale_flags:' "$VALE_YML"; then
+    if grep -qE 'fail_on_error:' "$VALE_YML"; then
+      perl -0777 -i -pe 's/^([ \t]*)fail_on_error:[ \t]*[^\n]*\n/${1}fail_on_error: true\n${1}vale_flags: "--minAlertLevel=error"\n/m' "$VALE_YML"
+    else
+      perl -0777 -i -pe 's/^([ \t]*)filter_mode:[ \t]*nofilter[ \t]*\n/${1}filter_mode: nofilter\n${1}fail_on_error: true\n${1}vale_flags: "--minAlertLevel=error"\n/m' "$VALE_YML"
+    fi
+  fi
 fi
 
 echo ">> done. Now regenerate lockfiles: cargo build --workspace (root) and in bindings/php"

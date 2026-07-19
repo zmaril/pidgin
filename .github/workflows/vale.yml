@@ -13,4 +13,6 @@ jobs:
       - uses: errata-ai/vale-action@reviewdog
         with:
           reporter: local
+          filter_mode: nofilter
           fail_on_error: true
+          vale_flags: "--minAlertLevel=error"
