@@ -6,6 +6,12 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+# Passthrough of atilla-ai's native reqwest HTTP transport. OFF by default so
+# the lean workspace build stays reqwest-free; the CLI binary turns it on (its
+# own default) to inject a live transport into the builtin provider registry.
+native-http = ["atilla-ai/native-http"]
+
 [dependencies]
 anyhow = { workspace = true }
 atilla-agent = { path = "../atilla-agent" }

@@ -173,15 +173,46 @@ pub fn run_print_mode(
 
 /// Build a [`Models`](AiModels) registry populated with the builtin providers.
 ///
-/// The builtins have no native HTTP transport in this workspace, so every
-/// builtin model routes via `ApiRouting::Unimplemented`; a stream attempt
-/// yields the faithful provider-unavailable error rather than a network call.
+/// Under the `native-http` feature (the shipped CLI binary's default) the
+/// builtins are bound to a live reqwest transport via
+/// [`builtin_providers_with_transport`](atilla_ai::builtin_providers_with_transport),
+/// so a model whose dialect has an adapter (e.g. anthropic) routes through
+/// `ApiRouting::Single` over real HTTP; a turn with configured auth reaches the
+/// provider, and an unconfigured one surfaces a clean not-configured error.
+///
+/// Without the feature the builtins have no transport, so every builtin model
+/// routes via `ApiRouting::Unimplemented`; a stream attempt yields the faithful
+/// provider-unavailable error rather than a network call.
 pub fn builtin_models_registry() -> Rc<AiModels> {
     let mut models = create_models();
-    for provider in atilla_ai::builtin_providers() {
+    for provider in builtin_registry_providers() {
         models.set_provider(provider);
     }
     Rc::new(models)
+}
+
+/// The builtin providers wired into the registry, with a live transport bound
+/// when `native-http` is enabled.
+#[cfg(feature = "native-http")]
+fn builtin_registry_providers() -> Vec<atilla_ai::RegistryProvider> {
+    use std::sync::Arc;
+
+    use atilla_ai::seams::clock::{Clock, SystemClock};
+    use atilla_ai::seams::http::HttpTransport;
+    use atilla_ai::seams::ReqwestTransport;
+
+    // Default builder: honor the ambient proxy (no `.no_proxy()`, which is a
+    // loopback-test-only bypass). The production clock reads real wall time.
+    let transport: Arc<dyn HttpTransport> = Arc::new(ReqwestTransport::builder().build());
+    let clock: Arc<dyn Clock> = Arc::new(SystemClock::new());
+    atilla_ai::builtin_providers_with_transport(transport, clock)
+}
+
+/// The builtin providers with no transport bound: every model routes
+/// `Unimplemented`, matching the reqwest-free default build.
+#[cfg(not(feature = "native-http"))]
+fn builtin_registry_providers() -> Vec<atilla_ai::RegistryProvider> {
+    atilla_ai::builtin_providers()
 }
 
 /// Build the harness's [`ProviderStream`] seam.
