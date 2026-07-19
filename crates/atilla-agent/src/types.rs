@@ -432,8 +432,15 @@ pub type GetFollowUpMessages = Arc<dyn Fn() -> Vec<AgentMessage> + Send + Sync>;
 /// Called before a tool executes, after arguments are validated (pi's
 /// `beforeToolCall`, `types.ts:265`). Return `Some(result)` with `block:
 /// Some(true)` to prevent execution.
+///
+/// The context is passed by `&mut` so the hook can mutate `ctx.args` in place,
+/// faithfully mirroring pi: pi's hook mutates the validated-args object in place
+/// and the loop re-reads that same reference for `execute` (see
+/// `agent-loop.test.ts` "should execute mutated beforeToolCall args without
+/// revalidation"). `BeforeToolCallResult` itself carries only `block`/`reason`;
+/// updated arguments flow back through `ctx.args`, not the return value.
 pub type BeforeToolCall = Arc<
-    dyn Fn(&BeforeToolCallContext, Option<&AbortSignal>) -> Option<BeforeToolCallResult>
+    dyn Fn(&mut BeforeToolCallContext, Option<&AbortSignal>) -> Option<BeforeToolCallResult>
         + Send
         + Sync,
 >;

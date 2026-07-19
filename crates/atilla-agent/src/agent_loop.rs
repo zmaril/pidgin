@@ -906,7 +906,7 @@ fn prepare_tool_call(
     // not throw, so the catch arm (mapping a thrown error to an immediate error
     // result) cannot be reached here.
     let prepared_tool_call = prepare_tool_call_arguments(&tool, tool_call);
-    let validated_args = match validate_tool_arguments(&tool, &prepared_tool_call) {
+    let mut validated_args = match validate_tool_arguments(&tool, &prepared_tool_call) {
         Ok(args) => args,
         Err(error) => {
             return Preparation::Immediate {
@@ -917,13 +917,19 @@ fn prepare_tool_call(
     };
 
     if let Some(before_tool_call) = &config.before_tool_call {
-        let before_context = BeforeToolCallContext {
+        let mut before_context = BeforeToolCallContext {
             assistant_message: assistant_message.clone(),
             tool_call: tool_call.clone(),
-            args: validated_args.clone(),
+            args: validated_args,
             context: current_context.clone(),
         };
-        let before_result = before_tool_call(&before_context, signal);
+        let before_result = before_tool_call(&mut before_context, signal);
+        // Faithful to pi (`agent-loop.ts:657`): pi's hook mutates the validated
+        // `args` object in place and the loop reuses that same reference for
+        // `execute`. atilla mirrors that by passing `&mut before_context` and
+        // adopting the (possibly hook-mutated) args for execution — validation is
+        // not re-run afterward.
+        validated_args = before_context.args;
         if aborted(signal) {
             return Preparation::Immediate {
                 result: create_error_tool_result("Operation aborted"),

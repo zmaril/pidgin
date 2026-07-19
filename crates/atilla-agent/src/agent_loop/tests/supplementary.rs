@@ -89,7 +89,7 @@ fn supplementary_before_tool_call_abort_blocks_execution() {
     };
 
     let mut config = base_config();
-    config.before_tool_call = Some(Arc::new(|_ctx: &BeforeToolCallContext, signal| {
+    config.before_tool_call = Some(Arc::new(|_ctx: &mut BeforeToolCallContext, signal| {
         if let Some(signal) = signal {
             signal.abort();
         }
@@ -146,7 +146,7 @@ fn supplementary_before_tool_call_block_prevents_execution() {
     };
 
     let mut config = base_config();
-    config.before_tool_call = Some(Arc::new(|_ctx: &BeforeToolCallContext, _signal| {
+    config.before_tool_call = Some(Arc::new(|_ctx: &mut BeforeToolCallContext, _signal| {
         Some(BeforeToolCallResult {
             block: Some(true),
             reason: Some("nope".into()),

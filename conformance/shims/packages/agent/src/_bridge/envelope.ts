@@ -22,7 +22,7 @@ export type BridgeKind =
 	| "prepareNextTurn" // per-turn next-turn snapshot → AgentLoopTurnUpdate | null
 	| "getSteeringMessages" // nullary → AgentMessage[] injected before next turn
 	| "getFollowUpMessages" // nullary → AgentMessage[] to re-enter the loop with
-	| "beforeToolCall" // pre-execution hook → { block?, reason? } | null
+	| "beforeToolCall" // pre-execution hook → { block?, reason?, args } (args echoes the possibly-mutated in-place args)
 	| "afterToolCall" // post-execution override → { content?, details?, isError?, terminate? } | null
 	| "event" // fire-and-forget forward of an AgentEvent (no resolve)
 	| "__complete__"; // terminal: the run's AgentMessage[] (resolve the promise)
