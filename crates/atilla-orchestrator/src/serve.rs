@@ -23,17 +23,14 @@
 //!   via [`atilla_coding::core::auth::read_stored_credential`];
 //! * `SIGINT`/`SIGTERM` are handled with tokio's `signal` feature.
 //!
-//! # Deferred radius-HTTP caveat
+//! # Radius HTTP transport
 //!
-//! Radius registration/heartbeat is an HTTP round-trip. Consistent with the auth
-//! port (which deliberately keeps HTTP on the JS side of the napi boundary rather
-//! than embedding a Rust HTTP stack), the standalone `orchestrator` binary has no
-//! host `fetch` to delegate to, so the production transport wired here reports the
-//! WebSocket-less "no native HTTP transport" error if a radius call is ever made.
-//! This only surfaces when radius is *enabled* (credentials present); with radius
-//! disabled — the default — `serve()` performs no HTTP at all. Full radius-over-
-//! native-HTTP is deferred until a `reqwest`-backed [`HttpTransport`] lands (it
-//! implements the same trait and slots in here without other changes).
+//! Radius registration/heartbeat is an HTTP round-trip. The standalone
+//! `orchestrator` binary has no host `fetch` to delegate to, so it performs
+//! radius HTTP directly through the native [`ReqwestTransport`], which honors the
+//! ambient proxy environment (`HTTPS_PROXY`/`NO_PROXY`) like pi's undici client.
+//! HTTP is only exercised when radius is *enabled* (credentials present); with
+//! radius disabled — the default — `serve()` performs no HTTP at all.
 
 // straitjacket-allow-file:duplication — the tempdir `TestEnv` scaffold and the
 // production seam wiring parallel the equivalents in `handler.rs` and
@@ -44,7 +41,7 @@ use std::io;
 use std::path::Path;
 use std::sync::Arc;
 
-use atilla_ai::seams::http::{HostTransport, HttpRequest, HttpResponse, HttpTransport};
+use atilla_ai::seams::ReqwestTransport;
 
 use crate::config::get_socket_path;
 use crate::handler::OrchestratorHandler;
@@ -112,22 +109,14 @@ fn build_production_supervisor() -> OrchestratorSupervisor {
     )
 }
 
-/// The production radius [`HttpTransport`].
+/// The production radius `HttpTransport`.
 ///
-/// The standalone binary has no host `fetch` (see the module-level deferred-HTTP
-/// caveat), so this transport reports an honest "no native HTTP transport" error
-/// on any request. It is only consulted when radius is enabled.
-fn production_radius_transport() -> impl HttpTransport {
-    HostTransport::new(|request: &HttpRequest| -> io::Result<HttpResponse> {
-        Err(io::Error::new(
-            io::ErrorKind::Unsupported,
-            format!(
-                "native radius HTTP transport is not available in the standalone \
-                 orchestrator binary ({} {})",
-                request.method, request.url
-            ),
-        ))
-    })
+/// The standalone binary has no host `fetch`, so it reaches providers directly
+/// through the native [`ReqwestTransport`]. That transport honors the ambient
+/// proxy environment (`HTTPS_PROXY`/`NO_PROXY`) and applies no total timeout,
+/// mirroring pi's undici client. It is only consulted when radius is enabled.
+fn production_radius_transport() -> ReqwestTransport {
+    ReqwestTransport::new()
 }
 
 /// pi's `serve.ts` body between "server bound" and the signal wait: recover
