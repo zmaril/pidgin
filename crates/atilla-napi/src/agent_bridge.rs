@@ -309,10 +309,9 @@ impl AgentBridge {
     #[napi(js_name = "emitToolUpdate")]
     pub fn emit_tool_update(&self, tool_call_id: String, partial_json: String) {
         let cb = self.shared.update_callback(&tool_call_id);
-        if let (Some(cb), Ok(partial)) = (
-            cb,
-            serde_json::from_str::<AgentToolResult>(&partial_json),
-        ) {
+        if let (Some(cb), Ok(partial)) =
+            (cb, serde_json::from_str::<AgentToolResult>(&partial_json))
+        {
             cb(&partial);
         }
     }
