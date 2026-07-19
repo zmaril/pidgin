@@ -15,6 +15,7 @@ pub use builtins::{
 };
 pub use registry::{
     clamp_thinking_level, create_models, create_provider, get_supported_thinking_levels,
-    models_are_equal, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
-    ProviderHeaders, ProviderSnapshot, RefreshContext, RegistryProvider, StreamBackendRef,
+    models_are_equal, ApiRouting, CreateProviderOptions, FilterModels, Models, MutableModels,
+    ProviderAuth, ProviderHeaders, ProviderSnapshot, RefreshContext, RefreshOptions, RefreshResult,
+    RegistryProvider, StreamBackendRef,
 };
