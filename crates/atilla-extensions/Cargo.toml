@@ -23,6 +23,7 @@ deno = [
     "dep:serde_json",
     "dep:tokio",
     "dep:atilla-coding",
+    "dep:atilla-agent",
 ]
 
 [dependencies]
@@ -48,6 +49,11 @@ tokio = { version = "1", optional = true, features = [
 # alongside the rest of the runtime, since only the gated code uses it — the
 # default (no-feature) crate stays empty and V8-free.
 atilla-coding = { path = "../atilla-coding", optional = true }
+# The `ExtensionRunner` seam's `RegisteredTool { tool: ToolDefinition, .. }`
+# carries a `ToolDefinition` whose `execute` returns an `atilla_agent`
+# `AgentToolResult`; the runner impl synthesizes those when lowering the
+# Inventory's tool records. Gated behind `deno` alongside the rest of the impl.
+atilla-agent = { path = "../atilla-agent", optional = true }
 
 [dev-dependencies]
 # The `deno`-gated integration tests (tests/deno_extensions.rs) drive the async
@@ -55,6 +61,11 @@ atilla-coding = { path = "../atilla-coding", optional = true }
 # test` resolves it; it pulls no V8 and the test file itself is cfg'd out when
 # the `deno` feature is off, so the default test build stays V8-free.
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+# The `deno`-gated runner-impl tests mock the seam's `SessionContextHost`, whose
+# `get_signal` returns an `atilla_ai::seams::AbortSignal`. A plain (non-optional)
+# dev dep so the test can name it; it is V8-free, and the test file is cfg'd out
+# without the `deno` feature, so the default test build stays V8-free.
+atilla-ai = { path = "../atilla-ai" }
 # The `deno`-gated resource-loader acceptance tests (tests/deno_resource_loader.rs)
 # build real on-disk extension trees in a temp dir. Cfg'd out without the feature,
 # so the default test build never pulls it.

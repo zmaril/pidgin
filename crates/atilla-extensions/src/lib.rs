@@ -75,6 +75,8 @@ mod resource_loader_impl;
 #[cfg(feature = "deno")]
 mod runner;
 #[cfg(feature = "deno")]
+mod runner_impl;
+#[cfg(feature = "deno")]
 mod runtime;
 
 #[cfg(feature = "deno")]
@@ -89,5 +91,7 @@ pub use inventory::{
 pub use resource_loader_impl::{RealExtensionLoader, RealExtensionRuntime};
 #[cfg(feature = "deno")]
 pub use runner::{ContextConfig, ExtensionRunner, LoadedExtension};
+#[cfg(feature = "deno")]
+pub use runner_impl::{create_deno_extension_runner, hook_event_from_str, DenoExtensionRunner};
 #[cfg(feature = "deno")]
 pub use runtime::{JsPlaneHandle, SourceLanguage};

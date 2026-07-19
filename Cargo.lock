@@ -208,6 +208,8 @@ name = "atilla-extensions"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "atilla-agent",
+ "atilla-ai",
  "atilla-coding",
  "deno_ast",
  "deno_core",

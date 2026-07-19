@@ -49,12 +49,12 @@ pub use selection::{
     StreamingBehavior, ThinkingLevelSelectEvent, UserBashEvent, UserBashEventResult,
 };
 pub use session::{
-    CompactionReason, ForkPosition, ProjectTrustEvent, ProjectTrustEventDecision,
-    ProjectTrustEventResult, ResourcesDiscoverEvent, ResourcesDiscoverReason,
-    ResourcesDiscoverResult, SessionBeforeCompactEvent, SessionBeforeCompactResult,
-    SessionBeforeForkEvent, SessionBeforeForkResult, SessionBeforeSwitchEvent,
-    SessionBeforeSwitchReason, SessionBeforeSwitchResult, SessionBeforeTreeEvent,
-    SessionBeforeTreeResult, SessionBeforeTreeSummary, SessionCompactEvent,
+    CompactionReason, DiscoveredResourcePath, ForkPosition, ProjectTrustEvent,
+    ProjectTrustEventDecision, ProjectTrustEventResult, ResourcesDiscoverEvent,
+    ResourcesDiscoverReason, ResourcesDiscoverResult, SessionBeforeCompactEvent,
+    SessionBeforeCompactResult, SessionBeforeForkEvent, SessionBeforeForkResult,
+    SessionBeforeSwitchEvent, SessionBeforeSwitchReason, SessionBeforeSwitchResult,
+    SessionBeforeTreeEvent, SessionBeforeTreeResult, SessionBeforeTreeSummary, SessionCompactEvent,
     SessionInfoChangedEvent, SessionShutdownEvent, SessionShutdownReason, SessionStartEvent,
     SessionStartReason, SessionTreeEvent, TreePreparation,
 };

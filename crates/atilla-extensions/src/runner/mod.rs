@@ -40,11 +40,12 @@
 //! acceptance test needs them.
 
 mod context;
+mod dispatch_emit;
 mod emit;
 
 pub use context::ContextConfig;
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use atilla_coding::core::extensions::dispatch::ExtensionError;
 use atilla_coding::core::extensions::hook::HookEvent;
@@ -86,7 +87,7 @@ type ErrorListener = Box<dyn Fn(&ExtensionError) + Send>;
 /// Owns the JS plane the handlers live in, the loaded extensions' handler
 /// inventory, the minimal ctx configuration, and the `onError` machinery.
 pub struct ExtensionRunner {
-    plane: JsPlaneHandle,
+    plane: Arc<JsPlaneHandle>,
     extensions: Vec<LoadedExtension>,
     context: ContextConfig,
     errors: Mutex<Vec<ExtensionError>>,
@@ -96,9 +97,13 @@ pub struct ExtensionRunner {
 impl ExtensionRunner {
     /// Build a runner over `plane` (holding the loaded handlers) and the
     /// `extensions` inventory that describes which handlers are registered.
-    pub fn new(plane: JsPlaneHandle, extensions: Vec<LoadedExtension>) -> Self {
+    ///
+    /// `plane` is taken as `impl Into<Arc<JsPlaneHandle>>` so a caller can pass
+    /// either an owned handle (the self-spawn path wraps it) or an
+    /// `Arc<JsPlaneHandle>` shared with the loader (the plane-sharing path).
+    pub fn new(plane: impl Into<Arc<JsPlaneHandle>>, extensions: Vec<LoadedExtension>) -> Self {
         Self {
-            plane,
+            plane: plane.into(),
             extensions,
             context: ContextConfig::default(),
             errors: Mutex::new(Vec::new()),
@@ -119,8 +124,15 @@ impl ExtensionRunner {
     }
 
     /// Shut the underlying plane down cleanly.
+    ///
+    /// Only actually shuts the plane down when this runner is its **sole** owner
+    /// (the self-spawn path). When the plane is shared with the loader (the
+    /// plane-sharing path, `Arc` strong count > 1), the loader owns the plane's
+    /// lifecycle, so this is a no-op and the loader's plane keeps running.
     pub async fn shutdown(self) {
-        self.plane.shutdown().await;
+        if let Ok(plane) = Arc::try_unwrap(self.plane) {
+            plane.shutdown().await;
+        }
     }
 
     /// Register an `onError` listener (pi's `runner.onError`). Every isolated
@@ -147,7 +159,13 @@ impl ExtensionRunner {
     /// across all loaded extensions in load-then-registration order. The index
     /// into this vec is exactly the JS-side handler index for `event`.
     fn sites(&self, event: HookEvent) -> Vec<&str> {
-        let name = event.as_str();
+        self.sites_by_name(event.as_str())
+    }
+
+    /// Like [`sites`](Self::sites) but keyed by the raw event **name** string,
+    /// for dispatch variants whose event has no [`HookEvent`] enum member yet
+    /// (pi's opaque `model_select` / `thinking_level_changed` / `entry_appended`).
+    pub(crate) fn sites_by_name(&self, name: &str) -> Vec<&str> {
         let mut sites = Vec::new();
         for ext in &self.extensions {
             for hook_event in &ext.hook_events {
@@ -170,9 +188,32 @@ impl ExtensionRunner {
                 .unwrap_or_else(|| "unknown extension error".to_string()),
             stack: invocation.stack,
         };
+        self.deliver_error(error);
+    }
+
+    /// Build and deliver a synthetic [`ExtensionError`] with a fixed message (no
+    /// JS throw behind it) — pi's inline `emitError({ ... })` calls (e.g. the
+    /// `message_end` same-role guard).
+    pub(crate) fn record_synthetic_error(&self, event: &str, extension_path: &str, message: &str) {
+        self.deliver_error(ExtensionError {
+            extension_path: extension_path.to_string(),
+            event: event.to_string(),
+            error: message.to_string(),
+            stack: None,
+        });
+    }
+
+    /// Deliver an [`ExtensionError`] to every registered listener and record it.
+    fn deliver_error(&self, error: ExtensionError) {
         for listener in self.listeners.lock().unwrap().iter() {
             listener(&error);
         }
         self.errors.lock().unwrap().push(error);
+    }
+
+    /// The minimal ctx configuration threaded into handlers (read for building
+    /// dispatch-time ctx JSON in the sibling emitter module).
+    pub(crate) fn context_config(&self) -> &ContextConfig {
+        &self.context
     }
 }
