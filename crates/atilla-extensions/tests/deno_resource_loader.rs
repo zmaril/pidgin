@@ -173,8 +173,12 @@ fn keep_both_extensions_loaded_when_command_names_collide() {
 #[test]
 fn detect_tool_conflicts_between_extensions() {
     let e = env();
+    // pi's fixture imports typebox for `Type.Object({})`; the current runtime has
+    // no module loader for bare specifiers (a deferred, off-critical-path item),
+    // so we register the tool with a plain-object parameters schema instead — the
+    // tool NAME is all the conflict pass reads, so the assertion is unchanged.
     let tool_ext = |desc: &str| {
-        format!("import {{ Type }} from \"typebox\"; export default function(pi) {{ pi.registerTool({{ name: \"duplicate-tool\", description: \"{desc}\", parameters: Type.Object({{}}), execute: async () => ({{ result: \"x\" }}) }}); }}")
+        format!("export default function(pi) {{ pi.registerTool({{ name: \"duplicate-tool\", description: \"{desc}\", parameters: {{}}, execute: async () => ({{ result: \"x\" }}) }}); }}")
     };
     write(
         &join(&e.agent, &["extensions", "ext1", "index.ts"]),
@@ -198,8 +202,11 @@ fn detect_tool_conflicts_between_extensions() {
 fn prefer_explicit_cli_extensions_over_discovered_on_conflict() {
     let e = env();
     let explicit = join(&e.root, &["explicit-extension.ts"]);
+    // Plain-object parameters schema instead of typebox (see the note in
+    // `detect_tool_conflicts_between_extensions`); the assertion reads only the
+    // extension path precedence, so this is faithful.
     let ext_src = |tool: &str, cmd: &str| {
-        format!("import {{ Type }} from \"typebox\"; export default function(pi) {{ pi.registerTool({{ name: \"duplicate-tool\", description: \"{tool}\", parameters: Type.Object({{}}), execute: async () => ({{ result: \"x\" }}) }}); pi.registerCommand(\"deploy\", {{ description: \"{cmd}\", handler: async () => {{}} }}); }}")
+        format!("export default function(pi) {{ pi.registerTool({{ name: \"duplicate-tool\", description: \"{tool}\", parameters: {{}}, execute: async () => ({{ result: \"x\" }}) }}); pi.registerCommand(\"deploy\", {{ description: \"{cmd}\", handler: async () => {{}} }}); }}")
     };
     write(
         &join(&e.agent, &["extensions", "global.ts"]),
