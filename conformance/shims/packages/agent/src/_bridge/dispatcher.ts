@@ -11,9 +11,16 @@
 // forward). Slice 2 adds the tool seams: `toolExecute` runs the registered JS
 // tool's `execute(id, args, signal, onUpdate)`, wiring `onUpdate` back to Rust
 // via the fire-and-forget `emitToolUpdate` method (routed by closing over the
-// toolCallId), and `prepareArguments` rewrites raw args before validation. The
-// remaining loop hooks, agent.ts, and the harness are later slices. This module
-// is the seam the `agent-loop.ts` native shim delegates to.
+// toolCallId), and `prepareArguments` rewrites raw args before validation.
+// Slice 3 adds the eight loop hooks (`transformContext`, `getApiKey`,
+// `shouldStopAfterTurn`, `prepareNextTurn`, `getSteeringMessages`,
+// `getFollowUpMessages`, `beforeToolCall`, `afterToolCall`): each case just
+// invokes the test's closure off `config` and returns its value; the revive
+// helpers reconstruct the JS hook-context, substituting `context.tools` with the
+// live JS tool objects from `toolsByName` (and a returned `prepareNextTurn`
+// context re-serializes its tools to `ToolMeta[]` for Rust to rebuild). agent.ts
+// and the harness are later slices. This module is the seam the `agent-loop.ts`
+// native shim delegates to.
 //
 // NOTE (codegen): this helper is NOT a pi source module and has no manifest row.
 // `conformance/codegen.mjs::overlayHelpers` copies these row-less `_bridge/*`
@@ -34,15 +41,28 @@ import type {
 	StreamFn,
 } from "../types.ts";
 import type {
+	AfterToolCallPayload,
+	BeforeToolCallPayload,
 	BridgeEnvelope,
+	CtxJson,
+	GetApiKeyPayload,
 	PrepareArgumentsPayload,
 	ToolExecutePayload,
+	TransformContextPayload,
+	TurnHookPayload,
 } from "./envelope.ts";
 
 /** A JS AbortSignal-like: only `.aborted` and `addEventListener` are used. */
 interface AbortSignalLike {
 	readonly aborted: boolean;
 	addEventListener(type: "abort", listener: () => void): void;
+}
+
+/** A minimal AbortSignal carrying the dispatch-time `aborted` snapshot. pi's
+ * loop-hook signatures take an `AbortSignal`; the hooks that read one (transform,
+ * before/afterToolCall) only ever inspect `.aborted`. */
+function mkSignal(aborted: boolean | undefined): AbortSignal {
+	return { aborted: !!aborted } as AbortSignal;
 }
 
 /** Fully drain a pi `AssistantMessageEventStream` into the eager StreamResult
@@ -113,6 +133,47 @@ export function runAgentLoopNative(
 	const tools = Array.isArray(context.tools) ? context.tools : [];
 	const toolsByName = new Map<string, AgentTool<any>>(tools.map((t) => [t.name, t]));
 
+	// Revive a wire `CtxJson` into the JS `AgentContext` the hooks expect,
+	// substituting each `ToolMeta` with its live JS tool by name so a case that
+	// reads `context.tools` (or passes it through — 970) round-trips real tools.
+	const reviveContext = (wire: CtxJson): AgentContext => {
+		const wireTools = Array.isArray(wire?.tools) ? wire.tools : [];
+		const liveTools = wireTools.map(
+			(m) => toolsByName.get((m as { name: string }).name) ?? (m as AgentTool<any>),
+		);
+		return {
+			systemPrompt: wire?.systemPrompt,
+			messages: (wire?.messages ?? []) as AgentMessage[],
+			tools: liveTools,
+		} as AgentContext;
+	};
+
+	// Revive a shouldStopAfterTurn / prepareNextTurn context (they share pi's
+	// `ShouldStopAfterTurnContext` shape).
+	const reviveTurnCtx = (p: TurnHookPayload) => ({
+		message: p.message as never,
+		toolResults: p.toolResults as never,
+		context: reviveContext(p.context),
+		newMessages: p.newMessages as never,
+	});
+
+	// A `prepareNextTurn` snapshot's context carries live JS tools; re-serialize
+	// them to `ToolMeta[]` so Rust rebuilds bridge tools (same path as `run`).
+	const serializeUpdate = (update: unknown): unknown => {
+		if (!update || typeof update !== "object") return update ?? null;
+		const u = update as { context?: { systemPrompt?: string; messages?: unknown[]; tools?: unknown[] } };
+		if (!u.context) return update;
+		const ctx = u.context;
+		return {
+			...u,
+			context: {
+				systemPrompt: ctx.systemPrompt,
+				messages: ctx.messages ?? [],
+				tools: Array.isArray(ctx.tools) ? ctx.tools.map((t) => toolMeta(t as AgentTool<any>)) : [],
+			},
+		};
+	};
+
 	// The cooperative abort signal is Rust-owned; a JS abort just trips it, which
 	// also unblocks any request currently parked on the loop thread.
 	if (signal) {
@@ -181,6 +242,59 @@ export function runAgentLoopNative(
 						}
 						return tool.prepareArguments(p.args);
 					}
+					case "transformContext": {
+						const p = payload as TransformContextPayload;
+						return await config.transformContext!(
+							p.messages as AgentMessage[],
+							mkSignal(p.aborted),
+						);
+					}
+					case "getApiKey": {
+						const p = payload as GetApiKeyPayload;
+						return (await config.getApiKey!(p.provider)) ?? null;
+					}
+					case "getSteeringMessages":
+						return (await config.getSteeringMessages!()) ?? [];
+					case "getFollowUpMessages":
+						return (await config.getFollowUpMessages!()) ?? [];
+					case "shouldStopAfterTurn":
+						return await config.shouldStopAfterTurn!(
+							reviveTurnCtx(payload as TurnHookPayload),
+						);
+					case "prepareNextTurn":
+						return serializeUpdate(
+							await config.prepareNextTurn!(reviveTurnCtx(payload as TurnHookPayload)),
+						);
+					case "beforeToolCall": {
+						const p = payload as BeforeToolCallPayload;
+						return (
+							(await config.beforeToolCall!(
+								{
+									assistantMessage: p.assistantMessage as never,
+									toolCall: p.toolCall as never,
+									args: p.args as never,
+									context: reviveContext(p.context),
+								},
+								mkSignal(p.aborted),
+							)) ?? null
+						);
+					}
+					case "afterToolCall": {
+						const p = payload as AfterToolCallPayload;
+						return (
+							(await config.afterToolCall!(
+								{
+									assistantMessage: p.assistantMessage as never,
+									toolCall: p.toolCall as never,
+									args: p.args as never,
+									result: p.result as never,
+									isError: p.isError,
+									context: reviveContext(p.context),
+								},
+								mkSignal(p.aborted),
+							)) ?? null
+						);
+					}
 					default:
 						throw new Error(`bridge: unhandled kind "${kind}"`);
 				}
@@ -212,6 +326,18 @@ export function runAgentLoopNative(
 				reasoning: config.reasoning ?? null,
 				tools: tools.map(toolMeta),
 				toolExecution: config.toolExecution ?? null,
+				// Report which loop hooks this case defined so Rust wires a bridge
+				// round-trip only for those (closures cannot cross the wire).
+				hooks: {
+					transformContext: typeof config.transformContext === "function",
+					getApiKey: typeof config.getApiKey === "function",
+					shouldStopAfterTurn: typeof config.shouldStopAfterTurn === "function",
+					prepareNextTurn: typeof config.prepareNextTurn === "function",
+					getSteeringMessages: typeof config.getSteeringMessages === "function",
+					getFollowUpMessages: typeof config.getFollowUpMessages === "function",
+					beforeToolCall: typeof config.beforeToolCall === "function",
+					afterToolCall: typeof config.afterToolCall === "function",
+				},
 			}),
 		);
 	});
