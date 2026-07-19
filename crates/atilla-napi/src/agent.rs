@@ -245,34 +245,34 @@ impl NodeExecutionEnvCore {
     /// pi's `absolutePath`.
     #[napi(js_name = "absolutePath")]
     pub fn absolute_path(&self, path: String) -> String {
-        file_result_json(self.inner.absolute_path(&path), Value::from)
+        file_result_json(self.inner.absolute_path(&path, None), Value::from)
     }
 
     /// pi's `joinPath`.
     #[napi(js_name = "joinPath")]
     pub fn join_path(&self, parts: Vec<String>) -> String {
         let refs: Vec<&str> = parts.iter().map(String::as_str).collect();
-        file_result_json(self.inner.join_path(&refs), Value::from)
+        file_result_json(self.inner.join_path(&refs, None), Value::from)
     }
 
     /// pi's `readTextFile` (non-abort path).
     #[napi(js_name = "readTextFile")]
     pub fn read_text_file(&self, path: String) -> String {
-        file_result_json(self.inner.read_text_file(&path), Value::from)
+        file_result_json(self.inner.read_text_file(&path, None), Value::from)
     }
 
     /// pi's `readTextLines` (non-abort path). `max_lines < 0` means "no limit".
     #[napi(js_name = "readTextLines")]
     pub fn read_text_lines(&self, path: String, max_lines: Option<i64>) -> String {
         let max = max_lines.and_then(|n| if n < 0 { None } else { Some(n as usize) });
-        file_result_json(self.inner.read_text_lines(&path, max), Value::from)
+        file_result_json(self.inner.read_text_lines(&path, max, None), Value::from)
     }
 
     /// pi's `readBinaryFile` (non-abort path). Raw bytes cross as a `Buffer`;
     /// an error is thrown with a `{code,message,path?}` JSON reason.
     #[napi(js_name = "readBinaryFile")]
     pub fn read_binary_file(&self, path: String) -> napi::Result<Buffer> {
-        match self.inner.read_binary_file(&path) {
+        match self.inner.read_binary_file(&path, None) {
             Ok(bytes) => Ok(Buffer::from(bytes)),
             Err(error) => Err(napi::Error::from_reason(
                 file_error_value(&error).to_string(),
@@ -284,7 +284,8 @@ impl NodeExecutionEnvCore {
     #[napi(js_name = "writeFile")]
     pub fn write_file(&self, path: String, content: String) -> String {
         file_result_json(
-            self.inner.write_file(&path, FileContent::Text(&content)),
+            self.inner
+                .write_file(&path, FileContent::Text(&content), None),
             |()| Value::Null,
         )
     }
@@ -293,7 +294,8 @@ impl NodeExecutionEnvCore {
     #[napi(js_name = "appendFile")]
     pub fn append_file(&self, path: String, content: String) -> String {
         file_result_json(
-            self.inner.append_file(&path, FileContent::Text(&content)),
+            self.inner
+                .append_file(&path, FileContent::Text(&content), None),
             |()| Value::Null,
         )
     }
@@ -301,13 +303,15 @@ impl NodeExecutionEnvCore {
     /// pi's `fileInfo`.
     #[napi(js_name = "fileInfo")]
     pub fn file_info(&self, path: String) -> String {
-        file_result_json(self.inner.file_info(&path), |info| file_info_value(&info))
+        file_result_json(self.inner.file_info(&path, None), |info| {
+            file_info_value(&info)
+        })
     }
 
     /// pi's `listDir` (non-abort path).
     #[napi(js_name = "listDir")]
     pub fn list_dir(&self, path: String) -> String {
-        file_result_json(self.inner.list_dir(&path), |infos| {
+        file_result_json(self.inner.list_dir(&path, None), |infos| {
             Value::Array(infos.iter().map(file_info_value).collect())
         })
     }
@@ -315,37 +319,44 @@ impl NodeExecutionEnvCore {
     /// pi's `canonicalPath`.
     #[napi(js_name = "canonicalPath")]
     pub fn canonical_path(&self, path: String) -> String {
-        file_result_json(self.inner.canonical_path(&path), Value::from)
+        file_result_json(self.inner.canonical_path(&path, None), Value::from)
     }
 
     /// pi's `exists`.
     #[napi(js_name = "exists")]
     pub fn exists(&self, path: String) -> String {
-        file_result_json(self.inner.exists(&path), Value::from)
+        file_result_json(self.inner.exists(&path, None), Value::from)
     }
 
     /// pi's `createDir`.
     #[napi(js_name = "createDir")]
     pub fn create_dir(&self, path: String, recursive: bool) -> String {
-        file_result_json(self.inner.create_dir(&path, recursive), |()| Value::Null)
+        file_result_json(self.inner.create_dir(&path, recursive, None), |()| {
+            Value::Null
+        })
     }
 
     /// pi's `remove`.
     #[napi(js_name = "remove")]
     pub fn remove(&self, path: String, recursive: bool, force: bool) -> String {
-        file_result_json(self.inner.remove(&path, recursive, force), |()| Value::Null)
+        file_result_json(self.inner.remove(&path, recursive, force, None), |()| {
+            Value::Null
+        })
     }
 
     /// pi's `createTempDir`.
     #[napi(js_name = "createTempDir")]
     pub fn create_temp_dir(&self, prefix: String) -> String {
-        file_result_json(self.inner.create_temp_dir(&prefix), Value::from)
+        file_result_json(self.inner.create_temp_dir(&prefix, None), Value::from)
     }
 
     /// pi's `createTempFile`.
     #[napi(js_name = "createTempFile")]
     pub fn create_temp_file(&self, prefix: String, suffix: String) -> String {
-        file_result_json(self.inner.create_temp_file(&prefix, &suffix), Value::from)
+        file_result_json(
+            self.inner.create_temp_file(&prefix, &suffix, None),
+            Value::from,
+        )
     }
 
     /// pi's `exec` (non-streaming, non-abort path). `options_json` carries only
@@ -362,6 +373,7 @@ impl NodeExecutionEnvCore {
             cwd: parsed.cwd,
             env: parsed.env,
             timeout: parsed.timeout,
+            abort_signal: None,
             on_stdout: None,
             on_stderr: None,
         };
