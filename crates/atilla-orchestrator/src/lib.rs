@@ -5,9 +5,11 @@
 //! radius. This crate ports that package faithfully, leaf-first. The ported
 //! modules so far cover the foundational layer — record types, path/env/version
 //! config, and JSON-file persistence — plus the IPC wire protocol, the RPC child
-//! process (spawn, JSONL framing, and request/response correlation), and radius
-//! presence (registration and heartbeat). Socket transport, supervisor, and
-//! entry points are ported in subsequent stages.
+//! process (spawn, JSONL framing, and request/response correlation), radius
+//! presence (registration and heartbeat), and the IPC Unix-socket transport (the
+//! [`ipc::client`] and [`ipc::server`], behind an in-memory-testable
+//! [`ipc::transport`] seam). The supervisor and entry points are ported in
+//! subsequent stages.
 //!
 //! The re-export barrel below mirrors pi's `index.ts`, limited to the modules
 //! ported so far. Like pi's `index.ts`, it does **not** re-export [`radius`]:

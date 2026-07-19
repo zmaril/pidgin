@@ -17,6 +17,7 @@ tokio = { version = "1", features = [
     "process",
     "io-util",
     "sync",
+    "net",
 ] }
 
 [target.'cfg(unix)'.dependencies]
