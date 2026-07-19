@@ -5,13 +5,16 @@
 //! session tree, steering/follow-up queues, compaction, auto-retry, and the
 //! TUI-facing event channel. This is a staged port.
 //!
-//! **PR1 (this change): event types only.** [`events`] defines
-//! [`AgentSessionEvent`] (the wire union pi emits to TUI/RPC subscribers) and
-//! the [`AgentSessionEvent::from_agent_event`] bridge that lifts a core
-//! `atilla_agent::AgentEvent` into the session union. The `AgentSession` struct
-//! itself, its `subscribe`/`_emit` machinery, and the `ExtensionRunner` seam land
-//! in later PRs.
+//! [`events`] defines [`AgentSessionEvent`] (the wire union pi emits to TUI/RPC
+//! subscribers) and the [`AgentSessionEvent::from_agent_event`] bridge that lifts
+//! a core `atilla_agent::AgentEvent` into the session union. [`session`] carries
+//! the [`AgentSession`] struct scaffold: the [`AgentSessionConfig`] options bag,
+//! the struct and its fields, the constructor, and the `subscribe`/`emit` event
+//! machinery. The turn-runner methods (`prompt`/`steer`/`follow_up`/`compact`/
+//! tree-nav/stats/export) and the runtime/tool-registry wiring land in later PRs.
 
 pub mod events;
+pub mod session;
 
 pub use events::*;
+pub use session::*;
