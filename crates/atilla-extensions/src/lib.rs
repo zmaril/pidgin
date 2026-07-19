@@ -33,9 +33,18 @@
 //!     `ExtensionHost` `Registry`, the single Rust source of truth from
 //!     `notes/design.md`.
 //!
-//! The remaining `ExtensionAPI` methods that need a live host (`sendMessage`,
-//! `exec`, `setModel`, provider registration, …) are stubbed as documented
-//! no-ops; they belong to PR-F (hook dispatch + session wiring).
+//! # What PR-F adds (hook DISPATCH)
+//!
+//! PR-F makes the registered handlers *run*: [`JsPlaneHandle::invoke_hook`]
+//! invokes a previously-registered handler closure (kept in the runtime, keyed
+//! by event name) with a JSON `(event, ctx)` over the rendezvous and returns its
+//! shaped result; [`ExtensionRunner`] is the Rust orchestrator that dispatches a
+//! hook by calling each registered handler in order and applying pi's per-hook
+//! result semantics (chain / merge / short-circuit / replace + error isolation).
+//! The `ctx` handlers receive exposes the data getters the acceptance suite reads
+//! (notably `getSystemPrompt()`); the action methods (`sendMessage`, `exec`,
+//! `setModel`, provider registration, …) remain present-but-no-op — no
+//! acceptance fixture calls one, so their host-backed wiring is deferred.
 //!
 //! # The `deno` feature gate
 //!
@@ -54,19 +63,27 @@ mod api_ops;
 #[cfg(feature = "deno")]
 mod context;
 #[cfg(feature = "deno")]
+mod dispatch;
+#[cfg(feature = "deno")]
 mod host;
 #[cfg(feature = "deno")]
 mod inventory;
 #[cfg(feature = "deno")]
 mod loader;
 #[cfg(feature = "deno")]
+mod runner;
+#[cfg(feature = "deno")]
 mod runtime;
 
 #[cfg(feature = "deno")]
 pub use context::MinimalExtensionContext;
 #[cfg(feature = "deno")]
+pub use dispatch::HookInvocation;
+#[cfg(feature = "deno")]
 pub use inventory::{
     CommandRecord, FlagRecord, HookRecord, Inventory, RendererRecord, ShortcutRecord, ToolRecord,
 };
+#[cfg(feature = "deno")]
+pub use runner::{ContextConfig, ExtensionRunner, LoadedExtension};
 #[cfg(feature = "deno")]
 pub use runtime::{JsPlaneHandle, SourceLanguage};

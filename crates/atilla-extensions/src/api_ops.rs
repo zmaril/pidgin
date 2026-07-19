@@ -329,9 +329,86 @@ const pi = {
   registerProvider: unimplemented(undefined),
   unregisterProvider: unimplemented(undefined),
 
-  // Minimal EventBus stub: on/off/emit are no-ops until PR-F.
+  // Minimal EventBus stub: on/off/emit are no-ops.
   events: { on() {}, off() {}, emit() {}, once() {} },
 };
 
 globalThis.__pi = pi;
+
+// ---- Hook DISPATCH surface (PR-F) --------------------------------------
+// The Rust ExtensionRunner drives the dispatch loop and result-shaping; JS only
+// runs one handler at a time over the OwnRuntime rendezvous. These helpers are
+// the JS half: enumerate a hook's handlers, build the `ctx` passed to a handler,
+// and invoke handler N with a JSON event + ctx, returning a plain-data envelope.
+
+// The number of handlers registered for an event, across all loaded extensions
+// in load-then-registration order (the order Rust indexes into).
+globalThis.__atilla.handlerCount = (event) => (reg.hooks.get(event) ?? []).length;
+
+// Build the `ctx` object handed to a handler. Only the data GETTERS the
+// acceptance suite reads are live: getSystemPrompt() returns the value Rust
+// threads in (kept in sync with the chained before_agent_start prompt). The
+// action methods (sendMessage/appendEntry/setModel/exec/setActiveTools/…) are
+// present-but-no-op — no acceptance fixture calls one (see the dispatch-boundary
+// analysis), so they exist only so a handler that touches ctx does not crash.
+globalThis.__atilla.makeContext = (data) => {
+  data = data ?? {};
+  const noop = () => {};
+  return {
+    getSystemPrompt: () => data.systemPrompt ?? "",
+    cwd: data.cwd ?? "",
+    mode: data.mode ?? "print",
+    hasUI: data.hasUI ?? false,
+    isProjectTrusted: () => data.projectTrusted ?? true,
+    sendMessage: noop,
+    sendUserMessage: noop,
+    appendEntry: noop,
+    setSessionName: noop,
+    getSessionName: () => undefined,
+    setLabel: noop,
+    exec: async () => ({ stdout: "", stderr: "", exitCode: 0 }),
+    getActiveTools: () => [],
+    setActiveTools: noop,
+    getAllTools: () => [],
+    setModel: async () => false,
+    getThinkingLevel: () => undefined,
+    setThinkingLevel: noop,
+    abort: noop,
+    compact: async () => {},
+  };
+};
+
+// Invoke handler `index` for `event`, given the event + ctx as JSON strings.
+// Only JSON crosses the boundary: Rust passes `eventJson`/`ctxJson` as JS string
+// literals (see crate::dispatch), this parses them, runs the (awaited) handler,
+// and returns a JSON.stringify'd envelope string. A thrown handler is isolated
+// into an error envelope (never propagated), so one bad handler cannot kill the
+// runtime. The returned `event` is the (possibly mutated-in-place) event object,
+// so Rust can observe in-place mutations (e.g. before_provider_headers writing
+// event.headers). `index` arrives as a string; array indexing coerces it.
+globalThis.__atilla.invokeHook = async (event, index, eventJson, ctxJson) => {
+  const eventObj = JSON.parse(eventJson);
+  const handlers = reg.hooks.get(event) ?? [];
+  const handler = handlers[index];
+  if (typeof handler !== "function") {
+    return JSON.stringify({ ok: true, result: null, event: eventObj });
+  }
+  const ctx = globalThis.__atilla.makeContext(JSON.parse(ctxJson));
+  try {
+    const result = await handler(eventObj, ctx);
+    return JSON.stringify({
+      ok: true,
+      result: result === undefined ? null : result,
+      event: eventObj,
+    });
+  } catch (err) {
+    return JSON.stringify({
+      ok: false,
+      result: null,
+      event: eventObj,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+  }
+};
 "#;
