@@ -217,8 +217,8 @@ pub fn provider_from_catalog(id: &str) -> RegistryProvider {
 /// [`provider_from_catalog`]'s [`ApiRouting::Unimplemented`]. The already-ported
 /// sibling dialects (openai_completions/responses, google, bedrock, mistral,
 /// azure) are a documented follow-up: each needs its own `Provider` adapter
-/// bridging the generic seam onto its typed driver, tracked as TODO here to keep
-/// this a small, focused, green change.
+/// bridging the generic seam onto its typed driver, deferred here to keep this a
+/// small, focused, green change.
 pub fn provider_from_catalog_with_transport(
     id: &str,
     transport: &Arc<dyn HttpTransport>,
@@ -231,7 +231,7 @@ pub fn provider_from_catalog_with_transport(
         ));
         return catalog_provider(id, ApiRouting::Single(backend));
     }
-    // TODO(port): bind the remaining ported dialects (openai_completions,
+    // Follow-up (port): bind the remaining ported dialects (openai_completions,
     // openai_responses, google, bedrock, mistral, azure) with their own
     // transport-aware `Provider` adapters; until then they stay Unimplemented.
     provider_from_catalog(id)
