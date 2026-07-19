@@ -175,9 +175,12 @@ fn leak_id(id: &str) -> &'static str {
     Box::leak(id.to_string().into_boxed_str())
 }
 
-/// Build a [`RegistryProvider`] for one catalog provider, using its catalog
-/// models as the baseline and its known display name / base URL / env auth.
-pub fn provider_from_catalog(id: &str) -> RegistryProvider {
+/// Build a [`RegistryProvider`] for one catalog provider with the given stream
+/// routing, using its catalog models as the baseline and its known display name /
+/// base URL / env auth. Shared by [`provider_from_catalog`] (which passes
+/// [`ApiRouting::Unimplemented`]) and
+/// [`provider_from_catalog_with_transport`] (which binds a live backend).
+fn catalog_provider(id: &str, api: ApiRouting) -> RegistryProvider {
     let (name, base_url) = provider_config(id);
     let models: Vec<Model> = catalog()
         .provider(id)
@@ -191,8 +194,16 @@ pub fn provider_from_catalog(id: &str) -> RegistryProvider {
         auth: env_auth(id, name),
         models,
         fetch_models: None,
-        api: ApiRouting::Unimplemented,
+        api,
     })
+}
+
+/// Build a [`RegistryProvider`] for one catalog provider, using its catalog
+/// models as the baseline and its known display name / base URL / env auth. The
+/// stream backend is [`ApiRouting::Unimplemented`] (pi's builtins wire a concrete
+/// HTTP client; see [`provider_from_catalog_with_transport`] for the bound form).
+pub fn provider_from_catalog(id: &str) -> RegistryProvider {
+    catalog_provider(id, ApiRouting::Unimplemented)
 }
 
 /// Build a [`RegistryProvider`] for one catalog provider with a live stream
@@ -214,25 +225,11 @@ pub fn provider_from_catalog_with_transport(
     clock: &Arc<dyn Clock>,
 ) -> RegistryProvider {
     if id == "anthropic" {
-        let (name, base_url) = provider_config(id);
-        let models: Vec<Model> = catalog()
-            .provider(id)
-            .map(|entries| entries.values().map(catalog_model_to_ai).collect())
-            .unwrap_or_default();
         let backend: StreamBackendRef = Arc::new(AnthropicMessagesBackend::new(
             transport.clone(),
             clock.clone(),
         ));
-        return create_provider(CreateProviderOptions {
-            id: id.to_string(),
-            name: Some(name.to_string()),
-            base_url: base_url.map(str::to_string),
-            headers: None,
-            auth: env_auth(id, name),
-            models,
-            fetch_models: None,
-            api: ApiRouting::Single(backend),
-        });
+        return catalog_provider(id, ApiRouting::Single(backend));
     }
     // TODO(port): bind the remaining ported dialects (openai_completions,
     // openai_responses, google, bedrock, mistral, azure) with their own
