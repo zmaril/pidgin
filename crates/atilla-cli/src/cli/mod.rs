@@ -9,6 +9,7 @@
 
 pub mod args;
 pub mod config;
+pub mod list_models;
 pub mod output_guard;
 pub mod packages;
 
@@ -147,11 +148,21 @@ pub fn run(argv: &[String]) -> i32 {
         return 0;
     }
 
-    // --list-models: no model runtime yet; exit cleanly without reserving.
-    if parsed.list_models.is_some() {
-        // pi lists available models to stdout; with no model runtime there is
-        // nothing to print. The read-only contract only requires exit 0 and no
-        // session reservation (guaranteed by the in-memory session above).
+    // --list-models: enumerate available models (pi's `main.ts:760-763`).
+    if let Some(list) = &parsed.list_models {
+        // pi builds the runtime via `createAgentSessionServices`
+        // (`agent-session-services.ts:141`): auth.json + models.json under the
+        // agent dir, with `allowModelNetwork` left to its `PI_OFFLINE`-aware
+        // default. `auth_path: None`/`models_path: Default` resolve to those
+        // same locations.
+        let runtime = atilla_coding::core::model_runtime::ModelRuntime::create(
+            atilla_coding::core::model_runtime::CreateModelRuntimeOptions::default(),
+        );
+        let search_pattern = match list {
+            args::ListModels::Search(pattern) => Some(pattern.as_str()),
+            args::ListModels::All => None,
+        };
+        list_models::list_models(&runtime, search_pattern);
         return 0;
     }
 
