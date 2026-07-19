@@ -179,18 +179,18 @@ impl ChatState {
     }
 
     fn on_message_update(&mut self, message: &Value) {
-        if role_of(message) != Some("assistant") {
-            return;
-        }
-        let Some(assistant) = as_assistant(message) else {
-            return;
-        };
-        if let Some(streaming) = &self.streaming {
-            streaming.borrow_mut().update_content(&assistant);
-        }
+        self.apply_streaming_content(message);
     }
 
     fn on_message_end(&mut self, message: &Value) {
+        self.apply_streaming_content(message);
+        self.streaming = None;
+    }
+
+    /// Push an assistant message value into the in-flight streaming bubble, if
+    /// any. Shared by `message_update` (keep streaming) and `message_end`
+    /// (finalize, then the caller clears `streaming`).
+    fn apply_streaming_content(&self, message: &Value) {
         if role_of(message) != Some("assistant") {
             return;
         }
@@ -200,7 +200,6 @@ impl ChatState {
         if let Some(streaming) = &self.streaming {
             streaming.borrow_mut().update_content(&assistant);
         }
-        self.streaming = None;
     }
 
     // --- tool panels --------------------------------------------------------

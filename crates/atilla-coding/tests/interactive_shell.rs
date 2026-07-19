@@ -1,3 +1,10 @@
+// straitjacket-allow-file:duplication — the `SharedSink` in-memory `Write`
+// harness and the `bytes(..)` helper faithfully mirror atilla-tui's run-loop
+// test harness (`crates/atilla-tui/tests/run_loop.rs`): each integration-test
+// binary is standalone and cannot import the other's private test helper, so the
+// mock-terminal boilerplate is duplicated by design (same pattern the PR-4A
+// vector test carries).
+
 //! Headless tests for the interactive shell (Unit 4, PR-4B).
 //!
 //! Two layers, both fully headless (no TTY):
