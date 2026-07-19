@@ -289,6 +289,16 @@ pub struct Unsubscribe {
 }
 
 impl Unsubscribe {
+    /// Build an unsubscribe handle from a removal closure.
+    ///
+    /// Used by alternative [`crate::supervisor::RpcProcess`] implementations (test
+    /// fakes) that need to return the same handle type as [`RpcProcessInstance`].
+    pub fn from_fn(remove: impl Fn() + Send + 'static) -> Self {
+        Self {
+            remove: Box::new(remove),
+        }
+    }
+
     /// Remove the associated listener.
     pub fn unsubscribe(&self) {
         (self.remove)();

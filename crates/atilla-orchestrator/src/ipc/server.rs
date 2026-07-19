@@ -100,6 +100,16 @@ pub struct RpcStreamSink {
 }
 
 impl RpcStreamSink {
+    /// Build a sink over a frame sender.
+    ///
+    /// The server builds one internally per `rpc_stream` connection; exposed to
+    /// the crate so the [`crate::handler`] adapter can be driven in tests without
+    /// standing up a full connection.
+    #[cfg(test)]
+    pub(crate) fn from_sender(tx: mpsc::UnboundedSender<serde_json::Value>) -> Self {
+        Self { tx }
+    }
+
     /// Relay an RPC response frame (pi's `onResponse`).
     pub fn send_response(&self, response: RpcResponse) {
         let _ = self.tx.send(response);

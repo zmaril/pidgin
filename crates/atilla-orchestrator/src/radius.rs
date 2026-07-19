@@ -937,7 +937,7 @@ mod tests {
     use super::*;
     use atilla_ai::auth::{InMemoryCredentialStore, OAuthCredential};
     use atilla_ai::seams::http::{HttpResponse, ScriptedTransport};
-    use std::sync::{Mutex, MutexGuard};
+    use std::sync::MutexGuard;
 
     // --- pure helpers --------------------------------------------------------
 
@@ -991,10 +991,6 @@ mod tests {
 
     // --- credential resolution ----------------------------------------------
 
-    /// `RADIUS_API_KEY` / `PI_RADIUS_*` are process-global; serialize the tests
-    /// that depend on them.
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
-
     struct RadiusEnvGuard {
         _lock: MutexGuard<'static, ()>,
         saved: Vec<(&'static str, Option<String>)>,
@@ -1002,7 +998,7 @@ mod tests {
 
     impl RadiusEnvGuard {
         fn new(keys: &[&'static str]) -> Self {
-            let lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+            let lock = crate::ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
             let saved = keys
                 .iter()
                 .map(|key| (*key, std::env::var(key).ok()))
