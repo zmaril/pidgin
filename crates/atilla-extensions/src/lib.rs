@@ -12,16 +12,30 @@
 //!   * a [`JsPlaneHandle`] — which carries only a channel, so it is `Send +
 //!     Sync` — is handed to the outside world;
 //!   * callers submit work over the channel and await the answer; only plain
-//!     data (`serde_json::Value`) crosses the thread boundary, never a V8
-//!     handle.
+//!     data (`serde_json::Value` / the [`Inventory`]) crosses the thread
+//!     boundary, never a V8 handle.
 //!
-//! This is PR-A of the extension plane: the runtime host bootstrap. The public
-//! surface is deliberately tiny — [`JsPlaneHandle::spawn`],
-//! [`JsPlaneHandle::eval`], and [`JsPlaneHandle::shutdown`] — enough to prove
-//! that V8 boots off-thread and that JavaScript results round-trip back to the
-//! caller. The pi-facing surface (tool/hook ops, TypeScript transpile,
-//! discovery, the registry) is layered on in later PRs. The shape is
-//! productionized from the `throwaway/deno-hello` spike.
+//! # What this crate does (PR-A + PR-E)
+//!
+//! PR-A bootstrapped the runtime host: [`JsPlaneHandle::spawn`] /
+//! [`JsPlaneHandle::eval`] / [`JsPlaneHandle::shutdown`]. PR-E adds the module
+//! loader and the `ExtensionAPI` registration bindings on top:
+//!
+//!   * [`JsPlaneHandle::load_extension_source`] transpiles a pi-style TypeScript
+//!     (or JavaScript) extension, evaluates it as an ES module, extracts its
+//!     default-export factory, and runs it with a `pi` object bound through
+//!     `deno_core` ops (see the `api_ops` module);
+//!   * every registration call the factory makes (`registerTool`, `on`,
+//!     `registerCommand`, `registerShortcut`, `registerFlag`/`getFlag`,
+//!     `registerMessageRenderer`/`registerEntryRenderer`) lands in a Rust-side
+//!     [`Inventory`];
+//!   * [`Inventory::lower_onto`] lowers that inventory onto atilla-coding's
+//!     `ExtensionHost` `Registry`, the single Rust source of truth from
+//!     `notes/design.md`.
+//!
+//! The remaining `ExtensionAPI` methods that need a live host (`sendMessage`,
+//! `exec`, `setModel`, provider registration, …) are stubbed as documented
+//! no-ops; they belong to PR-F (hook dispatch + session wiring).
 //!
 //! # The `deno` feature gate
 //!
@@ -36,7 +50,23 @@
 //! this in a dedicated job where the blob download succeeds).
 
 #[cfg(feature = "deno")]
+mod api_ops;
+#[cfg(feature = "deno")]
+mod context;
+#[cfg(feature = "deno")]
+mod host;
+#[cfg(feature = "deno")]
+mod inventory;
+#[cfg(feature = "deno")]
+mod loader;
+#[cfg(feature = "deno")]
 mod runtime;
 
 #[cfg(feature = "deno")]
-pub use runtime::JsPlaneHandle;
+pub use context::MinimalExtensionContext;
+#[cfg(feature = "deno")]
+pub use inventory::{
+    CommandRecord, FlagRecord, HookRecord, Inventory, RendererRecord, ShortcutRecord, ToolRecord,
+};
+#[cfg(feature = "deno")]
+pub use runtime::{JsPlaneHandle, SourceLanguage};
