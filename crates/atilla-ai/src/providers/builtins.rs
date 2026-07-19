@@ -18,13 +18,17 @@
 //! be wired backend-by-backend without changing this construction.
 
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use atilla_model_catalog::{catalog, Modality as CatModality, Model as CatModel};
 
+use crate::providers::anthropic_backend::AnthropicMessagesBackend;
 use crate::providers::registry::{
     create_provider, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
-    RefreshContext, RegistryProvider,
+    RefreshContext, RegistryProvider, StreamBackendRef,
 };
+use crate::seams::clock::Clock;
+use crate::seams::http::HttpTransport;
 use crate::types::{Modality, Model, ModelCost, ModelCostTier, ModelThinkingLevel};
 
 /// Map a catalog [`CatModel`] onto the canonical [`Model<serde_json::Value>`]
@@ -191,6 +195,51 @@ pub fn provider_from_catalog(id: &str) -> RegistryProvider {
     })
 }
 
+/// Build a [`RegistryProvider`] for one catalog provider with a live stream
+/// backend wired for the api dialects that have a transport-aware adapter,
+/// mirroring pi's builtins wiring a concrete stream implementation per provider
+/// (`anthropicMessagesApi()` and friends).
+///
+/// Today only `anthropic` binds a real backend
+/// ([`AnthropicMessagesBackend`](crate::providers::AnthropicMessagesBackend),
+/// [`ApiRouting::Single`]); every other builtin falls back to
+/// [`provider_from_catalog`]'s [`ApiRouting::Unimplemented`]. The already-ported
+/// sibling dialects (openai_completions/responses, google, bedrock, mistral,
+/// azure) are a documented follow-up: each needs its own `Provider` adapter
+/// bridging the generic seam onto its typed driver, tracked as TODO here to keep
+/// this a small, focused, green change.
+pub fn provider_from_catalog_with_transport(
+    id: &str,
+    transport: &Arc<dyn HttpTransport>,
+    clock: &Arc<dyn Clock>,
+) -> RegistryProvider {
+    if id == "anthropic" {
+        let (name, base_url) = provider_config(id);
+        let models: Vec<Model> = catalog()
+            .provider(id)
+            .map(|entries| entries.values().map(catalog_model_to_ai).collect())
+            .unwrap_or_default();
+        let backend: StreamBackendRef = Arc::new(AnthropicMessagesBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ));
+        return create_provider(CreateProviderOptions {
+            id: id.to_string(),
+            name: Some(name.to_string()),
+            base_url: base_url.map(str::to_string),
+            headers: None,
+            auth: env_auth(id, name),
+            models,
+            fetch_models: None,
+            api: ApiRouting::Single(backend),
+        });
+    }
+    // TODO(port): bind the remaining ported dialects (openai_completions,
+    // openai_responses, google, bedrock, mistral, azure) with their own
+    // transport-aware `Provider` adapters; until then they stay Unimplemented.
+    provider_from_catalog(id)
+}
+
 /// The env-API-key auth descriptor for a provider, derived from the same env-var
 /// table as [`crate::env_api_keys::get_api_key_env_vars`].
 fn env_auth(id: &str, name: &str) -> ProviderAuth {
@@ -229,6 +278,26 @@ pub fn radius_provider() -> RegistryProvider {
 pub fn builtin_providers() -> Vec<RegistryProvider> {
     let mut providers: Vec<RegistryProvider> =
         catalog().providers().map(provider_from_catalog).collect();
+    providers.push(radius_provider());
+    providers
+}
+
+/// All built-in providers with live stream backends bound where a
+/// transport-aware adapter exists, pi's `builtinProviders` wired for real HTTP.
+///
+/// Identical to [`builtin_providers`] except each catalog provider is built via
+/// [`provider_from_catalog_with_transport`], so `anthropic` routes through
+/// [`ApiRouting::Single`] over the injected `transport`/`clock` instead of
+/// [`ApiRouting::Unimplemented`]. Providers whose dialect has no adapter yet stay
+/// Unimplemented (see [`provider_from_catalog_with_transport`]).
+pub fn builtin_providers_with_transport(
+    transport: Arc<dyn HttpTransport>,
+    clock: Arc<dyn Clock>,
+) -> Vec<RegistryProvider> {
+    let mut providers: Vec<RegistryProvider> = catalog()
+        .providers()
+        .map(|id| provider_from_catalog_with_transport(id, &transport, &clock))
+        .collect();
     providers.push(radius_provider());
     providers
 }

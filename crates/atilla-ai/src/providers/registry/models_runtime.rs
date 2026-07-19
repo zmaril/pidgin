@@ -85,7 +85,10 @@ pub struct RefreshResult {
 /// Merge header maps, pi's `mergeHeaders` (`models.ts:202`): `override` wins,
 /// replacing any base entry whose name matches case-insensitively while keeping
 /// the override's own casing. `None`/`None` yields `None`.
-fn merge_headers(
+///
+/// Shared with the streaming `applyAuth` path in [`super`], which merges the
+/// resolved auth headers with the caller's request headers exactly as pi does.
+pub(super) fn merge_headers(
     base: Option<&ProviderHeaders>,
     override_headers: Option<&ProviderHeaders>,
 ) -> Option<ProviderHeaders> {

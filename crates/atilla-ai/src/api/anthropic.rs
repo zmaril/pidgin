@@ -748,4 +748,4 @@ mod tests;
 mod request_tests;
 
 #[cfg(test)]
-mod driver_tests;
+pub(crate) mod driver_tests;

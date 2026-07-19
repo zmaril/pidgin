@@ -36,10 +36,12 @@ pub use providers::composer::{
     ExtensionOAuthConfig, ProviderAuthConfig,
 };
 pub use providers::{
-    builtin_models, builtin_providers, clamp_thinking_level, create_models, create_provider,
-    get_supported_thinking_levels, models_are_equal, radius_provider, ApiRouting,
+    builtin_models, builtin_providers, builtin_providers_with_transport, clamp_thinking_level,
+    create_models, create_provider, get_supported_thinking_levels, models_are_equal,
+    provider_from_catalog_with_transport, radius_provider, AnthropicMessagesBackend, ApiRouting,
     CreateProviderOptions, FilterModels, Models, MutableModels, ProviderAuth, ProviderHeaders,
     ProviderSnapshot, RefreshContext, RefreshOptions, RefreshResult, RegistryProvider,
+    ANTHROPIC_MESSAGES_API,
 };
 pub use types::*;
 pub use utils::event_stream::{
