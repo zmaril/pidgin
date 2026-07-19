@@ -105,4 +105,4 @@ the addon; when in doubt, under-report rather than over-claim.
 
 ## atilla-napi lib.rs: keep it a thin module list
 
-Every napi addition (a flip's #[napi] class/functions) goes in its OWN module file crates/atilla-napi/src/<name>.rs with only a `mod <name>;` line added to lib.rs — never inline code in lib.rs. Rationale: straitjacket enforces a 1500-line file-size ceiling; lib.rs hit 1621 lines and had to be split (autocomplete.rs, #149). Keeping lib.rs a thin mod list keeps it under the ceiling and keeps cross-PR merges to single additive mod lines (trivial keep-both resolution).
+Every napi addition (a flip's #[napi] class/functions) goes in its OWN module file crates/atilla-napi/src/<name>.rs with only a `mod <name>;` line added to lib.rs — never inline code in lib.rs. Rationale: Straitjacket enforces a 1500-line file-size ceiling; lib.rs hit 1621 lines and had to be split (autocomplete.rs, #149). Keeping lib.rs a thin mod list keeps it under the ceiling and keeps cross-PR merges to single additive mod lines (trivial keep-both resolution).
