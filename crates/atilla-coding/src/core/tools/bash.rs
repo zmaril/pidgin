@@ -36,6 +36,8 @@
 //! layer, so — as with the other ported tools — they are not reproduced here;
 //! only the `execute` path is ported.
 
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -189,19 +191,25 @@ pub struct BashExecOptions {
 }
 
 /// Pluggable command-execution backend for the bash tool, mirroring pi's
-/// `BashOperations` interface. Kept a trait so extensions can delegate command
-/// execution to remote systems (for example SSH or containers) while pi's
+/// `BashOperations` interface. Kept a `dyn`-object-safe trait (the method
+/// returns a boxed future) so a custom backend can be injected as
+/// `Arc<dyn BashOperations>` — for example across the napi boundary — while pi's
 /// standard streaming/timeout/abort semantics stay in the `execute` layer.
-#[allow(async_fn_in_trait)] // Local seam; callers use concrete impls, not `dyn`.
-pub trait BashOperations {
+///
+/// The `Send + Sync` supertrait makes the *backend value* shareable across
+/// threads (`Arc<dyn BashOperations>: Send + Sync`). The returned future is
+/// deliberately **not** `+ Send`: it captures `opts.on_data`, a
+/// `Box<dyn FnMut>` that is itself `!Send`. The `execute` layer and the tools
+/// bridge (`block_on`) drive `!Send` futures, so this is intentional.
+pub trait BashOperations: Send + Sync {
     /// Execute `command` in `cwd`, streaming output through `opts.on_data`, and
     /// resolve to the exit code (or a [`BashError`]).
-    async fn exec(
-        &self,
-        command: &str,
-        cwd: &str,
+    fn exec<'a>(
+        &'a self,
+        command: &'a str,
+        cwd: &'a str,
         opts: BashExecOptions,
-    ) -> Result<BashExecResult, BashError>;
+    ) -> Pin<Box<dyn Future<Output = Result<BashExecResult, BashError>> + 'a>>;
 }
 
 /// Context describing a spawn, passed to a [`BashSpawnHook`] (pi's
@@ -250,156 +258,158 @@ pub fn create_local_bash_operations(shell_path: Option<String>) -> LocalBashOper
 }
 
 impl BashOperations for LocalBashOperations {
-    async fn exec(
-        &self,
-        command: &str,
-        cwd: &str,
+    fn exec<'a>(
+        &'a self,
+        command: &'a str,
+        cwd: &'a str,
         opts: BashExecOptions,
-    ) -> Result<BashExecResult, BashError> {
-        use std::process::Stdio;
-        use tokio::process::Command;
+    ) -> Pin<Box<dyn Future<Output = Result<BashExecResult, BashError>> + 'a>> {
+        Box::pin(async move {
+            use std::process::Stdio;
+            use tokio::process::Command;
 
-        let BashExecOptions {
-            mut on_data,
-            signal,
-            timeout,
-            env,
-        } = opts;
+            let BashExecOptions {
+                mut on_data,
+                signal,
+                timeout,
+                env,
+            } = opts;
 
-        let timeout_ms = resolve_timeout_ms(timeout)?;
+            let timeout_ms = resolve_timeout_ms(timeout)?;
 
-        // Fast-path abort before doing any work (pi's `if (signal?.aborted)`).
-        if let Some(sig) = &signal {
-            if *sig.borrow() {
-                return Err(BashError::Aborted);
+            // Fast-path abort before doing any work (pi's `if (signal?.aborted)`).
+            if let Some(sig) = &signal {
+                if *sig.borrow() {
+                    return Err(BashError::Aborted);
+                }
             }
-        }
 
-        let shell_config = get_shell_config(self.shell_path.as_deref())
-            .map_err(|e| BashError::Spawn(e.to_string()))?;
+            let shell_config = get_shell_config(self.shell_path.as_deref())
+                .map_err(|e| BashError::Spawn(e.to_string()))?;
 
-        // Verify the working directory exists (pi's `fsAccess(cwd, F_OK)`).
-        if tokio::fs::metadata(cwd).await.is_err() {
-            return Err(BashError::WorkingDirectoryMissing(cwd.to_string()));
-        }
-
-        let use_stdin = shell_config.use_stdin_transport();
-
-        let mut cmd = Command::new(&shell_config.shell);
-        cmd.args(&shell_config.args);
-        if !use_stdin {
-            // Non-legacy shells take the command as an argv element (`-c <cmd>`).
-            cmd.arg(command);
-        }
-        cmd.current_dir(cwd);
-
-        // pi passes a full `env` object, which Node uses to *replace* the
-        // environment. `get_shell_env` already returns the complete env with
-        // the agent bin dir prepended, so clear + set reproduces that.
-        cmd.env_clear();
-        for (key, value) in env.unwrap_or_else(get_shell_env) {
-            cmd.env(key, value);
-        }
-
-        // Pipes, never PTYs. stdin is piped only for the legacy-WSL stdin
-        // transport; otherwise it is null (pi's `stdio: [ignore|pipe, pipe, pipe]`).
-        cmd.stdin(if use_stdin {
-            Stdio::piped()
-        } else {
-            Stdio::null()
-        });
-        cmd.stdout(Stdio::piped());
-        cmd.stderr(Stdio::piped());
-
-        // Own process group so `killpg` reaps the whole tree (pi's
-        // `detached: true`). Unix is the tested path; on Windows tree reaping
-        // relies on `taskkill /T` inside `kill_process_tree`.
-        #[cfg(unix)]
-        {
-            cmd.process_group(0);
-        }
-        // Safety net: if this future is dropped, kill the direct child.
-        cmd.kill_on_drop(true);
-
-        let mut child = cmd.spawn().map_err(|e| BashError::Spawn(e.to_string()))?;
-
-        // Legacy-WSL stdin transport: feed the command over stdin and close it
-        // (pi's `child.stdin?.end(command)`, errors ignored).
-        if use_stdin {
-            if let Some(mut stdin) = child.stdin.take() {
-                use tokio::io::AsyncWriteExt;
-                let _ = stdin.write_all(command.as_bytes()).await;
-                let _ = stdin.shutdown().await;
+            // Verify the working directory exists (pi's `fsAccess(cwd, F_OK)`).
+            if tokio::fs::metadata(cwd).await.is_err() {
+                return Err(BashError::WorkingDirectoryMissing(cwd.to_string()));
             }
-        }
 
-        let pid = child.id().map(|p| p as i32);
-        if let Some(pid) = pid {
-            track_detached_child_pid(pid);
-        }
+            let use_stdin = shell_config.use_stdin_transport();
 
-        // Timeout monitor: on elapse, flag it and kill the tree (pi's
-        // `setTimeout` -> `killProcessTree`).
-        let timed_out = Arc::new(AtomicBool::new(false));
-        let timeout_task = match (timeout_ms, pid) {
-            (Some(ms), Some(pid)) => {
-                let timed_out = Arc::clone(&timed_out);
-                Some(tokio::spawn(async move {
-                    tokio::time::sleep(Duration::from_millis(ms)).await;
-                    timed_out.store(true, Ordering::SeqCst);
-                    kill_process_tree(pid);
-                }))
+            let mut cmd = Command::new(&shell_config.shell);
+            cmd.args(&shell_config.args);
+            if !use_stdin {
+                // Non-legacy shells take the command as an argv element (`-c <cmd>`).
+                cmd.arg(command);
             }
-            _ => None,
-        };
+            cmd.current_dir(cwd);
 
-        // Abort monitor: on abort, kill the tree (pi's `signal.addEventListener`).
-        let abort_task = match (&signal, pid) {
-            (Some(sig), Some(pid)) => {
-                let mut rx = sig.clone();
-                Some(tokio::spawn(async move {
-                    loop {
-                        if *rx.borrow() {
-                            kill_process_tree(pid);
-                            return;
+            // pi passes a full `env` object, which Node uses to *replace* the
+            // environment. `get_shell_env` already returns the complete env with
+            // the agent bin dir prepended, so clear + set reproduces that.
+            cmd.env_clear();
+            for (key, value) in env.unwrap_or_else(get_shell_env) {
+                cmd.env(key, value);
+            }
+
+            // Pipes, never PTYs. stdin is piped only for the legacy-WSL stdin
+            // transport; otherwise it is null (pi's `stdio: [ignore|pipe, pipe, pipe]`).
+            cmd.stdin(if use_stdin {
+                Stdio::piped()
+            } else {
+                Stdio::null()
+            });
+            cmd.stdout(Stdio::piped());
+            cmd.stderr(Stdio::piped());
+
+            // Own process group so `killpg` reaps the whole tree (pi's
+            // `detached: true`). Unix is the tested path; on Windows tree reaping
+            // relies on `taskkill /T` inside `kill_process_tree`.
+            #[cfg(unix)]
+            {
+                cmd.process_group(0);
+            }
+            // Safety net: if this future is dropped, kill the direct child.
+            cmd.kill_on_drop(true);
+
+            let mut child = cmd.spawn().map_err(|e| BashError::Spawn(e.to_string()))?;
+
+            // Legacy-WSL stdin transport: feed the command over stdin and close it
+            // (pi's `child.stdin?.end(command)`, errors ignored).
+            if use_stdin {
+                if let Some(mut stdin) = child.stdin.take() {
+                    use tokio::io::AsyncWriteExt;
+                    let _ = stdin.write_all(command.as_bytes()).await;
+                    let _ = stdin.shutdown().await;
+                }
+            }
+
+            let pid = child.id().map(|p| p as i32);
+            if let Some(pid) = pid {
+                track_detached_child_pid(pid);
+            }
+
+            // Timeout monitor: on elapse, flag it and kill the tree (pi's
+            // `setTimeout` -> `killProcessTree`).
+            let timed_out = Arc::new(AtomicBool::new(false));
+            let timeout_task = match (timeout_ms, pid) {
+                (Some(ms), Some(pid)) => {
+                    let timed_out = Arc::clone(&timed_out);
+                    Some(tokio::spawn(async move {
+                        tokio::time::sleep(Duration::from_millis(ms)).await;
+                        timed_out.store(true, Ordering::SeqCst);
+                        kill_process_tree(pid);
+                    }))
+                }
+                _ => None,
+            };
+
+            // Abort monitor: on abort, kill the tree (pi's `signal.addEventListener`).
+            let abort_task = match (&signal, pid) {
+                (Some(sig), Some(pid)) => {
+                    let mut rx = sig.clone();
+                    Some(tokio::spawn(async move {
+                        loop {
+                            if *rx.borrow() {
+                                kill_process_tree(pid);
+                                return;
+                            }
+                            if rx.changed().await.is_err() {
+                                return;
+                            }
                         }
-                        if rx.changed().await.is_err() {
-                            return;
-                        }
-                    }
-                }))
+                    }))
+                }
+                _ => None,
+            };
+
+            // Wait for the process, forwarding every stdout/stderr chunk to
+            // `on_data` (pi attaches `onData` to both streams).
+            let wait_result = wait_for_child_process(&mut child, |_src, data| on_data(data)).await;
+
+            if let Some(task) = timeout_task {
+                task.abort();
             }
-            _ => None,
-        };
-
-        // Wait for the process, forwarding every stdout/stderr chunk to
-        // `on_data` (pi attaches `onData` to both streams).
-        let wait_result = wait_for_child_process(&mut child, |_src, data| on_data(data)).await;
-
-        if let Some(task) = timeout_task {
-            task.abort();
-        }
-        if let Some(task) = abort_task {
-            task.abort();
-        }
-        if let Some(pid) = pid {
-            untrack_detached_child_pid(pid);
-        }
-
-        let exit_code = wait_result.map_err(|e| BashError::Spawn(e.to_string()))?;
-
-        // pi order: aborted takes precedence over timed-out.
-        if let Some(sig) = &signal {
-            if *sig.borrow() {
-                return Err(BashError::Aborted);
+            if let Some(task) = abort_task {
+                task.abort();
             }
-        }
-        if timed_out.load(Ordering::SeqCst) {
-            let secs = timeout.map(js_number_to_string).unwrap_or_default();
-            return Err(BashError::Timeout(secs));
-        }
+            if let Some(pid) = pid {
+                untrack_detached_child_pid(pid);
+            }
 
-        Ok(BashExecResult { exit_code })
+            let exit_code = wait_result.map_err(|e| BashError::Spawn(e.to_string()))?;
+
+            // pi order: aborted takes precedence over timed-out.
+            if let Some(sig) = &signal {
+                if *sig.borrow() {
+                    return Err(BashError::Aborted);
+                }
+            }
+            if timed_out.load(Ordering::SeqCst) {
+                let secs = timeout.map(js_number_to_string).unwrap_or_default();
+                return Err(BashError::Timeout(secs));
+            }
+
+            Ok(BashExecResult { exit_code })
+        })
     }
 }
 
@@ -437,35 +447,42 @@ pub struct BashUpdate {
 /// Callback type for streaming updates.
 pub type OnUpdate = Box<dyn FnMut(BashUpdate)>;
 
-/// Options for [`create_bash_tool`] (the local-shell subset of pi's
-/// `BashToolOptions`; a custom `operations` backend is supplied instead via
-/// [`BashTool::new`]).
+/// Options for [`create_bash_tool`], mirroring pi's `BashToolOptions`. A custom
+/// `operations` backend can be injected here (pi's `options.operations`); when
+/// absent, the default local-shell backend is built from `shell_path`.
 #[derive(Default)]
 pub struct BashToolOptions {
+    /// Custom command-execution backend (pi's `operations`). When `None`, a
+    /// [`LocalBashOperations`] built from `shell_path` is used.
+    pub operations: Option<Arc<dyn BashOperations>>,
     /// Command prefix prepended to every command (pi's `commandPrefix`).
     pub command_prefix: Option<String>,
-    /// Explicit shell path (pi's `shellPath`).
+    /// Explicit shell path (pi's `shellPath`). Ignored when `operations` is set.
     pub shell_path: Option<String>,
     /// Hook to adjust command/cwd/env before execution (pi's `spawnHook`).
     pub spawn_hook: Option<BashSpawnHook>,
 }
 
 /// The bash tool: an execution backend plus the streaming/truncation/exit-code
-/// `execute` layer (pi's `createBashToolDefinition`).
-pub struct BashTool<O: BashOperations> {
+/// `execute` layer (pi's `createBashToolDefinition`). The backend is held as
+/// `Arc<dyn BashOperations>` so the tool is non-generic and a custom backend can
+/// be injected through [`BashToolOptions::operations`].
+pub struct BashTool {
     cwd: String,
-    ops: O,
+    ops: Arc<dyn BashOperations>,
     command_prefix: Option<String>,
     spawn_hook: Option<BashSpawnHook>,
 }
 
-impl<O: BashOperations> BashTool<O> {
+impl BashTool {
     /// Construct a bash tool with an explicit operations backend (pi's
-    /// `options.operations`).
-    pub fn new(cwd: impl Into<String>, ops: O) -> Self {
+    /// `options.operations`). Accepts any concrete backend and stores it as
+    /// `Arc<dyn BashOperations>`; use [`create_bash_tool`] to inject an
+    /// already-boxed `Arc<dyn BashOperations>`.
+    pub fn new(cwd: impl Into<String>, ops: impl BashOperations + 'static) -> Self {
         Self {
             cwd: cwd.into(),
-            ops,
+            ops: Arc::new(ops),
             command_prefix: None,
             spawn_hook: None,
         }
@@ -541,10 +558,11 @@ impl<O: BashOperations> BashTool<O> {
             env: Some(spawn_context.env),
         };
 
-        let exec_fut = self
+        // `exec` returns an already-boxed `Pin<Box<dyn Future>>`, which is
+        // `Unpin`, so `&mut exec_fut` is directly pollable in the `select!`.
+        let mut exec_fut = self
             .ops
             .exec(&spawn_context.command, &spawn_context.cwd, exec_opts);
-        tokio::pin!(exec_fut);
 
         let exec_result: Result<BashExecResult, BashError> = loop {
             let deadline = next_deadline;
@@ -649,19 +667,23 @@ impl<O: BashOperations> BashTool<O> {
     }
 }
 
-/// Convenience constructor for the local-shell bash tool (pi's `createBashTool`
-/// with the default operations backend).
-pub fn create_bash_tool(
-    cwd: impl Into<String>,
-    options: Option<BashToolOptions>,
-) -> BashTool<LocalBashOperations> {
-    let options = options.unwrap_or_default();
-    let ops = create_local_bash_operations(options.shell_path);
+/// Convenience constructor for the bash tool (pi's `createBashTool`). Uses the
+/// injected [`BashToolOptions::operations`] backend when present, otherwise a
+/// default local-shell backend built from `shell_path`.
+pub fn create_bash_tool(cwd: impl Into<String>, options: Option<BashToolOptions>) -> BashTool {
+    let BashToolOptions {
+        operations,
+        command_prefix,
+        shell_path,
+        spawn_hook,
+    } = options.unwrap_or_default();
+    let ops: Arc<dyn BashOperations> =
+        operations.unwrap_or_else(|| Arc::new(create_local_bash_operations(shell_path)));
     BashTool {
         cwd: cwd.into(),
         ops,
-        command_prefix: options.command_prefix,
-        spawn_hook: options.spawn_hook,
+        command_prefix,
+        spawn_hook,
     }
 }
 
@@ -772,20 +794,22 @@ mod tests {
     }
 
     impl BashOperations for FakeOps {
-        async fn exec(
-            &self,
-            _command: &str,
-            _cwd: &str,
+        fn exec<'a>(
+            &'a self,
+            _command: &'a str,
+            _cwd: &'a str,
             mut opts: BashExecOptions,
-        ) -> Result<BashExecResult, BashError> {
-            for (delay_ms, data) in &self.chunks {
-                if *delay_ms > 0 {
-                    tokio::time::sleep(Duration::from_millis(*delay_ms)).await;
+        ) -> Pin<Box<dyn Future<Output = Result<BashExecResult, BashError>> + 'a>> {
+            Box::pin(async move {
+                for (delay_ms, data) in &self.chunks {
+                    if *delay_ms > 0 {
+                        tokio::time::sleep(Duration::from_millis(*delay_ms)).await;
+                    }
+                    (opts.on_data)(data);
                 }
-                (opts.on_data)(data);
-            }
-            Ok(BashExecResult {
-                exit_code: self.exit_code,
+                Ok(BashExecResult {
+                    exit_code: self.exit_code,
+                })
             })
         }
     }
@@ -910,6 +934,24 @@ mod tests {
             last_content,
             "chunk0\nchunk1\nchunk2\nchunk3\nchunk4\nchunk5\n"
         );
+    }
+
+    #[tokio::test]
+    async fn fake_decodes_utf8_split_across_chunks() {
+        // pi's "should decode UTF-8 characters split across output chunks": the
+        // euro sign is 3 UTF-8 bytes (E2 82 AC); split it after the first byte so
+        // the streaming decoder must coalesce across `on_data` boundaries.
+        let euro = "\u{20AC}\n".as_bytes().to_vec();
+        assert_eq!(euro, vec![0xE2, 0x82, 0xAC, 0x0A]);
+        let ops = FakeOps {
+            chunks: vec![(0, euro[0..1].to_vec()), (0, euro[1..].to_vec())],
+            exit_code: Some(0),
+        };
+        let tool = BashTool::new("/tmp", ops);
+        let result = tool.execute("noop", None, None, None).await.unwrap();
+        // Materialized output is the intact euro sign (pi asserts the trimmed
+        // `getTextOutput` equals "€").
+        assert_eq!(get_text_output(&result.content).trim(), "\u{20AC}");
     }
 
     // ---- Real-subprocess integration tests (unix, hermetic) ----

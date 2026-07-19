@@ -31,13 +31,18 @@
 //! runtime on the calling thread; if this were ever called from within a runtime,
 //! the `block_on` would need to move to `spawn_blocking`.
 //!
-//! # Deferred option surface
+//! # Option surface
 //!
 //! pi's per-tool option bags carry custom `operations` backends (SSH/remote),
-//! image auto-resize (`read`), and bash `spawnHook`. atilla's ported tools do not
-//! expose those seams yet, so the option structs here are minimal placeholders;
-//! `bash` threads `command_prefix` / `shell_path` through (both are `Send + Sync`)
-//! but not `spawn_hook` (its `Box<dyn Fn>` is not `Send + Sync`).
+//! image auto-resize (`read`), and bash `spawnHook`. The `bash` / `write` / `ls`
+//! bags now expose a real `operations` injection point: each carries an
+//! `Option<Arc<dyn XOperations>>` that, when set, replaces the default local
+//! backend (otherwise the factory falls back to the `Local*` implementation).
+//! `bash` also threads `command_prefix` / `shell_path` through (both are
+//! `Send + Sync`) but still drops `spawn_hook` (its `Box<dyn Fn>` is not
+//! `Send + Sync`, which the `AgentToolExecute` closure requires). The remaining
+//! bags (`read` image auto-resize, `edit` / `grep` / `find` operations) stay
+//! minimal placeholders.
 
 // straitjacket-allow-file:duplication — the seven factories intentionally share
 // the same parallel prepare/execute/map shape, mirroring pi's per-file factories.
@@ -60,10 +65,10 @@ use super::edit::{compute_edit_result, prepare_edit_arguments, validate_edit_inp
 use super::file_mutation_queue::with_file_mutation_queue;
 use super::find::run_find;
 use super::grep::{run_grep, GrepParams};
-use super::ls::{create_local_ls_operations, run_ls, LsParams};
+use super::ls::{run_ls, LocalLsOperations, LsOperations, LsParams};
 use super::path_utils::{resolve_read_path, resolve_to_cwd};
 use super::read::format_text_read;
-use super::write::{create_local_write_operations, run_write, WriteParams};
+use super::write::{run_write, LocalWriteOperations, WriteOperations, WriteParams};
 
 // ---------------------------------------------------------------------------
 // Runtime + async bridges
@@ -210,10 +215,14 @@ pub struct ReadToolOptions {}
 #[derive(Debug, Clone, Copy, Default)]
 pub struct EditToolOptions {}
 
-/// Options for [`create_write_tool_definition`]. pi's `WriteToolOptions`
-/// (custom `operations`) is deferred.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct WriteToolOptions {}
+/// Options for [`create_write_tool_definition`], mirroring pi's
+/// `WriteToolOptions`. A custom `operations` backend can be injected here; when
+/// absent, the factory uses [`LocalWriteOperations`].
+#[derive(Clone, Default)]
+pub struct WriteToolOptions {
+    /// Custom filesystem backend (pi's `operations`). `None` uses the default.
+    pub operations: Option<Arc<dyn WriteOperations>>,
+}
 
 /// Options for [`create_grep_tool_definition`]. pi's `GrepToolOptions`
 /// (custom `operations`) is deferred.
@@ -225,10 +234,14 @@ pub struct GrepToolOptions {}
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FindToolOptions {}
 
-/// Options for [`create_ls_tool_definition`]. pi's `LsToolOptions`
-/// (custom `operations`) is deferred.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct LsToolOptions {}
+/// Options for [`create_ls_tool_definition`], mirroring pi's `LsToolOptions`. A
+/// custom `operations` backend can be injected here; when absent, the factory
+/// uses [`LocalLsOperations`].
+#[derive(Clone, Default)]
+pub struct LsToolOptions {
+    /// Custom directory-listing backend (pi's `operations`). `None` uses default.
+    pub operations: Option<Arc<dyn LsOperations>>,
+}
 
 // ---------------------------------------------------------------------------
 // read (sync)
@@ -393,18 +406,21 @@ pub fn create_find_tool_definition(
 /// Build the `ls` [`ToolDefinition`] (pi's `createLsToolDefinition`).
 pub fn create_ls_tool_definition(
     cwd: impl Into<String>,
-    _options: Option<LsToolOptions>,
+    options: Option<LsToolOptions>,
 ) -> ToolDefinition {
     let cwd = cwd.into();
+    let operations = options.and_then(|o| o.operations);
     let execute: ToolDefinitionExecute = Arc::new(move |_id, params, signal, _on_update, _ctx| {
         let ls_params = LsParams {
             path: arg_str(params, "path").map(str::to_string),
             limit: arg_usize(params, "limit"),
         };
         let cwd = cwd.clone();
-        let ops = create_local_ls_operations();
+        let ops: Arc<dyn LsOperations> = operations
+            .clone()
+            .unwrap_or_else(|| Arc::new(LocalLsOperations));
         let result = run_with_abort(signal, move |rx| async move {
-            run_ls(&cwd, &ls_params, &ops, rx.as_ref()).await
+            run_ls(&cwd, &ls_params, ops.as_ref(), rx.as_ref()).await
         });
         match result {
             Ok(result) => ok_result(result.text),
@@ -438,18 +454,21 @@ pub fn create_ls_tool_definition(
 /// Build the `write` [`ToolDefinition`] (pi's `createWriteToolDefinition`).
 pub fn create_write_tool_definition(
     cwd: impl Into<String>,
-    _options: Option<WriteToolOptions>,
+    options: Option<WriteToolOptions>,
 ) -> ToolDefinition {
     let cwd = cwd.into();
+    let operations = options.and_then(|o| o.operations);
     let execute: ToolDefinitionExecute = Arc::new(move |_id, params, signal, _on_update, _ctx| {
         let write_params = WriteParams {
             path: arg_str(params, "path").unwrap_or("").to_string(),
             content: arg_str(params, "content").unwrap_or("").to_string(),
         };
         let cwd = cwd.clone();
-        let ops = create_local_write_operations();
+        let ops: Arc<dyn WriteOperations> = operations
+            .clone()
+            .unwrap_or_else(|| Arc::new(LocalWriteOperations));
         let result = run_with_abort(signal, move |rx| async move {
-            run_write(&cwd, &write_params, &ops, rx.as_ref()).await
+            run_write(&cwd, &write_params, ops.as_ref(), rx.as_ref()).await
         });
         match result {
             Ok(result) => ok_result(result.text),
@@ -580,10 +599,11 @@ pub fn create_bash_tool_definition(
     let cwd = cwd.into();
     // `spawn_hook` is intentionally dropped: its `Box<dyn Fn>` is not
     // `Send + Sync`, which the `AgentToolExecute` closure requires. The
-    // `Send + Sync` `command_prefix` / `shell_path` are threaded through.
-    let (command_prefix, shell_path) = match options {
-        Some(o) => (o.command_prefix, o.shell_path),
-        None => (None, None),
+    // `Send + Sync` `operations` / `command_prefix` / `shell_path` are threaded
+    // through — a custom `operations` backend replaces the local shell.
+    let (operations, command_prefix, shell_path) = match options {
+        Some(o) => (o.operations, o.command_prefix, o.shell_path),
+        None => (None, None, None),
     };
     let execute: ToolDefinitionExecute = Arc::new(move |_id, params, signal, on_update, _ctx| {
         let command = arg_str(params, "command").unwrap_or("").to_string();
@@ -591,6 +611,7 @@ pub fn create_bash_tool_definition(
         let tool = create_bash_tool(
             cwd.clone(),
             Some(BashToolOptions {
+                operations: operations.clone(),
                 command_prefix: command_prefix.clone(),
                 shell_path: shell_path.clone(),
                 spawn_hook: None,
