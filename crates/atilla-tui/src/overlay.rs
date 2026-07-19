@@ -828,7 +828,7 @@ impl<T: Terminal> Tui<T> {
             self.input_deliveries.push((fc, data.to_string()));
             if let Some(component) = self.components.get(fc).cloned() {
                 let wants_release = component.borrow().wants_key_release();
-                if !(is_key_release(data) && !wants_release) {
+                if !is_key_release(data) || wants_release {
                     component.borrow_mut().handle_input(data);
                 }
             }
