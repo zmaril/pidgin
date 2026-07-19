@@ -248,6 +248,19 @@ pub(super) fn rtrim(s: &str, c: char, invert: bool) -> String {
     chars[..n - cut].iter().collect()
 }
 
+/// Advance past a consumed token, mirroring JS `String.prototype.substring(n)`
+/// exactly as marked's `blockTokens` uses it (`src = src.substring(token.raw
+/// .length)`). marked's blockquote tokenizer can report a `raw` LONGER than the
+/// remaining source: its list / lazy-continuation re-join synthesizes an extra
+/// blank line (e.g. `">-\n*"` yields a blockquote whose `raw` is `">-\n\n*"`,
+/// 6 bytes over a 4-byte source). JS `substring` clamps an out-of-range start to
+/// `""`; Rust's `src[n..]` panics instead (the historical out-of-bounds slice in
+/// the blockquote arm of `block_tokens`). Clamp here to match marked byte-for-
+/// byte while eliminating the panic.
+fn substring_from(src: &str, n: usize) -> String {
+    src.get(n..).unwrap_or("").to_string()
+}
+
 /// marked `escape` helper (`ee`): drop trailing blank lines unless <=2 lines.
 fn remove_trailing_blank_lines(s: &str, rules: &Rules) -> String {
     let lines: Vec<&str> = s.split('\n').collect();
@@ -392,7 +405,7 @@ impl Lexer {
             // space
             if let Some(tok) = self.space(&src) {
                 let raw_len = tok.raw.len();
-                src = src[raw_len..].to_string();
+                src = substring_from(&src, raw_len);
                 if tok.raw.chars().count() == 1 && !tokens.is_empty() {
                     tokens.last_mut().unwrap().raw.push('\n');
                 } else {
@@ -403,7 +416,7 @@ impl Lexer {
             // indented code
             if let Some(tok) = self.code(&src) {
                 let raw_len = tok.raw.len();
-                src = src[raw_len..].to_string();
+                src = substring_from(&src, raw_len);
                 let merge = matches!(
                     tokens.last().map(|t| t.kind),
                     Some(Kind::Paragraph) | Some(Kind::Text)
@@ -425,50 +438,50 @@ impl Lexer {
             }
             // fences
             if let Some(tok) = self.fences(&src) {
-                src = src[tok.raw.len()..].to_string();
+                src = substring_from(&src, tok.raw.len());
                 tokens.push(tok);
                 continue;
             }
             // heading
             if let Some(tok) = self.heading(&src) {
-                src = src[tok.raw.len()..].to_string();
+                src = substring_from(&src, tok.raw.len());
                 tokens.push(tok);
                 continue;
             }
             // hr
             if let Some(tok) = self.hr(&src) {
-                src = src[tok.raw.len()..].to_string();
+                src = substring_from(&src, tok.raw.len());
                 tokens.push(tok);
                 continue;
             }
             // blockquote
             if let Some(tok) = self.blockquote(&src) {
-                src = src[tok.raw.len()..].to_string();
+                src = substring_from(&src, tok.raw.len());
                 tokens.push(tok);
                 continue;
             }
             // list
             if let Some(tok) = self.list(&src) {
-                src = src[tok.raw.len()..].to_string();
+                src = substring_from(&src, tok.raw.len());
                 tokens.push(tok);
                 continue;
             }
             // html
             if let Some(tok) = self.html(&src) {
-                src = src[tok.raw.len()..].to_string();
+                src = substring_from(&src, tok.raw.len());
                 tokens.push(tok);
                 continue;
             }
             // (reference-link def: unreachable for pi's inputs — omitted)
             // table
             if let Some(tok) = self.table(&src) {
-                src = src[tok.raw.len()..].to_string();
+                src = substring_from(&src, tok.raw.len());
                 tokens.push(tok);
                 continue;
             }
             // lheading
             if let Some(tok) = self.lheading(&src) {
-                src = src[tok.raw.len()..].to_string();
+                src = substring_from(&src, tok.raw.len());
                 tokens.push(tok);
                 continue;
             }
@@ -492,14 +505,14 @@ impl Lexer {
                         tokens.push(tok);
                     }
                     cont = true; // subsequent single-line srcs continue
-                    src = src[raw_len..].to_string();
+                    src = substring_from(&src, raw_len);
                     continue;
                 }
             }
             // text
             if let Some(tok) = self.text_block(&src) {
                 let raw_len = tok.raw.len();
-                src = src[raw_len..].to_string();
+                src = substring_from(&src, raw_len);
                 let merge = matches!(tokens.last().map(|t| t.kind), Some(Kind::Text));
                 if merge {
                     let last = tokens.last_mut().unwrap();
