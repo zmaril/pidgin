@@ -3,11 +3,19 @@
 //! pi's `DefaultPackageManager` mixes two concerns: pure filesystem resolution
 //! (settings parsing, resource discovery, pattern filtering) and external
 //! command execution (npm install/uninstall/view, git fetch/reset/clean/clone,
-//! `npm root -g`, `pnpm list -g`). This module ports the *command* concern — the
-//! 43-site command-mock cohort of `package-manager.test.ts` — as
-//! [`CommandFlowMachine`]s whose planned [`CommandRequest`]s are byte-exact with
-//! pi's `runCommand` / `runCommandCapture` / `runCommandSync` argv (and, where
-//! pi asserts them, `cwd` / `timeoutMs` / `env`).
+//! `npm root -g`, `pnpm list -g`). Both concerns live here now:
+//!
+//! * The *command* concern — the 43-site command-mock cohort of
+//!   `package-manager.test.ts` — is ported as [`CommandFlowMachine`]s whose
+//!   planned [`CommandRequest`]s are byte-exact with pi's `runCommand` /
+//!   `runCommandCapture` / `runCommandSync` argv (and, where pi asserts them,
+//!   `cwd` / `timeoutMs` / `env`).
+//! * The *pure-filesystem resolution* concern — pi's `resolve` /
+//!   `resolveExtensionSources` — is ported as [`PackageResolver`] (see
+//!   [`resolve`], [`discovery`], [`patterns`], and [`resource`]). The npm/git
+//!   *install* machinery that pi's resolver would trigger for a missing online
+//!   package is left behind the [`InstallFallback`] seam, whose default reports
+//!   every missing source as "not found" so a pure-FS resolve skips it.
 //!
 //! # Config injection
 //!
@@ -34,10 +42,36 @@ mod git;
 mod git_update;
 mod npm;
 
+// Pure-filesystem resolution concern (pi's `DefaultPackageManager.resolve` /
+// `resolveExtensionSources`): resource discovery, pattern/ignore filtering,
+// pi-manifest reading, precedence, and the accumulator. Split by concern to
+// stay under the file-size cap.
+mod discovery;
+mod patterns;
+mod resolve;
+mod resource;
+
 pub use config::*;
 pub use git::*;
 pub use git_update::*;
 pub use npm::*;
+
+pub use discovery::{
+    collect_ancestor_agents_skill_dirs, collect_auto_extension_entries,
+    collect_auto_prompt_entries, collect_auto_theme_entries, collect_files, collect_resource_files,
+    collect_skill_entries, find_git_repo_root, read_pi_manifest_file, resolve_extension_entries,
+    SkillDiscoveryMode,
+};
+pub use resolve::{
+    InstallFallback, MissingSourceAction, NoInstall, PackageResolver, ResolveSettings,
+    ScopeResources,
+};
+pub use resource::{
+    resource_precedence_rank, PackageFilter, PiManifest, ResolvedPaths, ResolvedResource,
+    ResourceType, RESOURCE_TYPES,
+};
+
+pub(crate) use resolve::path_resolve;
 
 #[cfg(test)]
 mod test_support;
