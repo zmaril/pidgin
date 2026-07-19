@@ -36,6 +36,11 @@ mod tools;
 // JSON in/out driver loop, backing the native `package-manager.ts` shim.
 mod command_core;
 
+// The tui autocomplete provider (`AutocompleteCore`): wraps pi's
+// `CombinedAutocompleteProvider` over a native `FileProvider` (std::fs + real
+// `fd`), backing the native `autocomplete.ts` shim. Additive.
+mod autocomplete;
+
 /// `createLsTool(...).execute` default path (`ls.ts`): list a directory through
 /// the native `run_ls` port, returning pi's `AgentToolResult` JSON. See
 /// [`tools::ls_execute`].

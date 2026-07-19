@@ -1907,7 +1907,10 @@
     {
       "package": "tui",
       "src": "packages/tui/src/autocomplete.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/autocomplete.test.ts"
+      ]
     },
     {
       "package": "tui",
