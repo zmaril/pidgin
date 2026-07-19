@@ -68,6 +68,13 @@ pub fn bash_tool_execute(cwd: String, input_json: String) -> napi::Result<String
 // driving the Rust agent loop while live JS closures fire mid-run. Additive.
 mod agent_bridge;
 
+// Agent-tier exports (`crates/atilla-agent`), namespaced in their own module so
+// the agent flips stay merge-clean beside the coding-agent/ai exports here.
+// `pub` so the module's free `#[napi]` functions register as crate-reachable
+// (matching the crate-root exports); otherwise `--all-targets` clippy reads them
+// as dead code in the lib-test target.
+pub mod agent;
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `atillaNativeVersion`.
