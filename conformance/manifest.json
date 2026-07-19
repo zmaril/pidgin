@@ -1915,7 +1915,10 @@
     {
       "package": "tui",
       "src": "packages/tui/src/components/input.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/input.test.ts"
+      ]
     },
     {
       "package": "tui",
@@ -1933,7 +1936,10 @@
     {
       "package": "tui",
       "src": "packages/tui/src/components/select-list.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/select-list.test.ts"
+      ]
     },
     {
       "package": "tui",
