@@ -71,6 +71,8 @@ mod inventory;
 #[cfg(feature = "deno")]
 mod loader;
 #[cfg(feature = "deno")]
+mod resource_loader_impl;
+#[cfg(feature = "deno")]
 mod runner;
 #[cfg(feature = "deno")]
 mod runtime;
@@ -83,6 +85,8 @@ pub use dispatch::HookInvocation;
 pub use inventory::{
     CommandRecord, FlagRecord, HookRecord, Inventory, RendererRecord, ShortcutRecord, ToolRecord,
 };
+#[cfg(feature = "deno")]
+pub use resource_loader_impl::{RealExtensionLoader, RealExtensionRuntime};
 #[cfg(feature = "deno")]
 pub use runner::{ContextConfig, ExtensionRunner, LoadedExtension};
 #[cfg(feature = "deno")]
