@@ -14,7 +14,9 @@
 //! and depend on the theme layer, so — as with the other ported tools — they
 //! are not reproduced here; only the execute path is ported.
 
+use std::future::Future;
 use std::path::{Path, PathBuf};
+use std::pin::Pin;
 
 use tokio::sync::watch;
 
@@ -39,13 +41,24 @@ pub struct WriteResult {
 
 /// Pluggable operations for the write tool, mirroring pi's `WriteOperations`
 /// interface. Override these to delegate file writing to remote systems (for
-/// example SSH). Kept a trait so extensions can supply their own backend.
-#[allow(async_fn_in_trait)] // Local seam; callers use concrete impls, not `dyn`.
-pub trait WriteOperations {
+/// example SSH). Kept a `dyn`-object-safe trait (methods return boxed futures)
+/// so a custom backend can be injected as `Arc<dyn WriteOperations>` — for
+/// example across the napi boundary — the same way the package-manager flip
+/// injects `Box<dyn CommandFlowMachine>`.
+///
+/// The `Send + Sync` supertrait makes the *backend value* shareable across
+/// threads (`Arc<dyn WriteOperations>: Send + Sync`). The returned futures are
+/// deliberately **not** `+ Send`, matching the other tool seams; they are driven
+/// on the tools bridge runtime via `block_on`, which accepts `!Send` futures.
+pub trait WriteOperations: Send + Sync {
     /// Write `content` to the file at `absolute_path`.
-    async fn write_file(&self, absolute_path: &str, content: &str) -> Result<(), String>;
+    fn write_file<'a>(
+        &'a self,
+        absolute_path: &'a str,
+        content: &'a str,
+    ) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>>;
     /// Create `dir` (and any missing parents) recursively.
-    async fn mkdir(&self, dir: &str) -> Result<(), String>;
+    fn mkdir<'a>(&'a self, dir: &'a str) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>>;
 }
 
 /// The default local-filesystem [`WriteOperations`], backed by `tokio::fs`.
@@ -53,16 +66,24 @@ pub trait WriteOperations {
 pub struct LocalWriteOperations;
 
 impl WriteOperations for LocalWriteOperations {
-    async fn write_file(&self, absolute_path: &str, content: &str) -> Result<(), String> {
-        tokio::fs::write(absolute_path, content)
-            .await
-            .map_err(|e| e.to_string())
+    fn write_file<'a>(
+        &'a self,
+        absolute_path: &'a str,
+        content: &'a str,
+    ) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>> {
+        Box::pin(async move {
+            tokio::fs::write(absolute_path, content)
+                .await
+                .map_err(|e| e.to_string())
+        })
     }
 
-    async fn mkdir(&self, dir: &str) -> Result<(), String> {
-        tokio::fs::create_dir_all(dir)
-            .await
-            .map_err(|e| e.to_string())
+    fn mkdir<'a>(&'a self, dir: &'a str) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>> {
+        Box::pin(async move {
+            tokio::fs::create_dir_all(dir)
+                .await
+                .map_err(|e| e.to_string())
+        })
     }
 }
 
@@ -87,10 +108,10 @@ fn is_aborted(signal: Option<&watch::Receiver<bool>>) -> bool {
 /// checked after each await point — exactly like pi's `throwIfAborted` — so an
 /// abort is observed without releasing the mutation queue mid-operation; on
 /// abort this returns `Err("Operation aborted")` to match pi's thrown error.
-pub async fn run_write<O: WriteOperations>(
+pub async fn run_write(
     cwd: &str,
     params: &WriteParams,
-    ops: &O,
+    ops: &dyn WriteOperations,
     signal: Option<&watch::Receiver<bool>>,
 ) -> Result<WriteResult, String> {
     let absolute_path = resolve_to_cwd(&params.path, cwd).map_err(|e| e.to_string())?;
@@ -217,17 +238,28 @@ mod tests {
     }
 
     impl WriteOperations for RecordingWriteOperations {
-        async fn write_file(&self, absolute_path: &str, content: &str) -> Result<(), String> {
-            self.writes
-                .lock()
-                .unwrap()
-                .push((absolute_path.to_string(), content.to_string()));
-            Ok(())
+        fn write_file<'a>(
+            &'a self,
+            absolute_path: &'a str,
+            content: &'a str,
+        ) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>> {
+            Box::pin(async move {
+                self.writes
+                    .lock()
+                    .unwrap()
+                    .push((absolute_path.to_string(), content.to_string()));
+                Ok(())
+            })
         }
 
-        async fn mkdir(&self, dir: &str) -> Result<(), String> {
-            self.mkdirs.lock().unwrap().push(dir.to_string());
-            Ok(())
+        fn mkdir<'a>(
+            &'a self,
+            dir: &'a str,
+        ) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>> {
+            Box::pin(async move {
+                self.mkdirs.lock().unwrap().push(dir.to_string());
+                Ok(())
+            })
         }
     }
 
@@ -246,5 +278,266 @@ mod tests {
             *ops.writes.lock().unwrap(),
             vec![("/base/cwd/sub/file.txt".to_string(), "abc".to_string())]
         );
+    }
+
+    // ---- File-mutation-queue serialization / abort-in-flight ----
+    //
+    // These port pi's `test/file-mutation-queue.test.ts` cases that inject a
+    // delayed `writeFile` backend through the write tool's operations seam to
+    // prove same-file serialization and, crucially, that the queue stays locked
+    // while an aborted write is still in flight (pi L176).
+
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use std::sync::Arc;
+    use std::time::Duration;
+    use tokio::sync::Notify;
+
+    /// A one-shot gate — the Rust analogue of pi's `createDeferred()` promise.
+    ///
+    /// `resolve()` opens the gate (idempotent); `wait()` returns immediately once
+    /// resolved, otherwise parks until it is. Built on [`Notify`] plus a flag so
+    /// it is race-free regardless of whether `resolve` or `wait` happens first,
+    /// and reusable across the queue tests.
+    #[derive(Default)]
+    struct Deferred {
+        resolved: AtomicBool,
+        notify: Notify,
+    }
+
+    impl Deferred {
+        fn new() -> Self {
+            Self::default()
+        }
+
+        fn resolve(&self) {
+            self.resolved.store(true, Ordering::SeqCst);
+            self.notify.notify_waiters();
+        }
+
+        async fn wait(&self) {
+            loop {
+                if self.resolved.load(Ordering::SeqCst) {
+                    return;
+                }
+                // Register interest before re-checking so a `resolve()` racing in
+                // between cannot be missed (no lost wakeup).
+                let notified = self.notify.notified();
+                if self.resolved.load(Ordering::SeqCst) {
+                    return;
+                }
+                notified.await;
+            }
+        }
+    }
+
+    /// The boxed-future return type the fake [`WriteOperations`] impls share.
+    type BoxWriteFuture<'a> = Pin<Box<dyn Future<Output = Result<(), String>> + 'a>>;
+
+    /// The terminal filesystem write both queue backends perform once their
+    /// scripted preamble completes — pi's real `writeFile`, boxed. Sharing this
+    /// keeps the `write_file` impls free of duplicated write-and-map-err tails.
+    fn write_through<'a>(absolute_path: &'a str, content: &'a str) -> BoxWriteFuture<'a> {
+        Box::pin(async move {
+            tokio::fs::write(absolute_path, content)
+                .await
+                .map_err(|e| e.to_string())
+        })
+    }
+
+    /// The no-op `mkdir` shared by fake backends that never create directories.
+    fn noop_mkdir<'a>() -> BoxWriteFuture<'a> {
+        Box::pin(async { Ok(()) })
+    }
+
+    /// A [`WriteOperations`] whose `write_file` sleeps and records occupancy, so
+    /// two writes to the same path can be proven to serialize (pi's "serializes
+    /// operations for the same file" via an injected delayed backend).
+    struct DelayedWriteOperations {
+        active: AtomicUsize,
+        max_active: AtomicUsize,
+    }
+
+    impl WriteOperations for DelayedWriteOperations {
+        fn write_file<'a>(
+            &'a self,
+            absolute_path: &'a str,
+            content: &'a str,
+        ) -> BoxWriteFuture<'a> {
+            Box::pin(async move {
+                let now = self.active.fetch_add(1, Ordering::SeqCst) + 1;
+                self.max_active.fetch_max(now, Ordering::SeqCst);
+                tokio::time::sleep(Duration::from_millis(30)).await;
+                self.active.fetch_sub(1, Ordering::SeqCst);
+                write_through(absolute_path, content).await
+            })
+        }
+
+        fn mkdir<'a>(&'a self, _dir: &'a str) -> BoxWriteFuture<'a> {
+            noop_mkdir()
+        }
+    }
+
+    #[tokio::test]
+    async fn serializes_same_path_writes_via_delayed_backend() {
+        let dir = TempDir::new("write-serialize");
+        let cwd = dir.cwd().to_string();
+        let ops: Arc<DelayedWriteOperations> = Arc::new(DelayedWriteOperations {
+            active: AtomicUsize::new(0),
+            max_active: AtomicUsize::new(0),
+        });
+
+        // `run_write`'s futures are `!Send` (the seam's boxed futures carry no
+        // `+ Send` bound), so drive the two concurrent writes on a `LocalSet`.
+        let local = tokio::task::LocalSet::new();
+        local
+            .run_until(async {
+                let a_ops = ops.clone();
+                let a_cwd = cwd.clone();
+                let a = tokio::task::spawn_local(async move {
+                    run_write(&a_cwd, &params("same.txt", "a\n"), &*a_ops, None)
+                        .await
+                        .unwrap();
+                });
+                let b_ops = ops.clone();
+                let b_cwd = cwd.clone();
+                let b = tokio::task::spawn_local(async move {
+                    run_write(&b_cwd, &params("same.txt", "b\n"), &*b_ops, None)
+                        .await
+                        .unwrap();
+                });
+                a.await.unwrap();
+                b.await.unwrap();
+            })
+            .await;
+
+        assert_eq!(
+            ops.max_active.load(Ordering::SeqCst),
+            1,
+            "same-path writes must not overlap"
+        );
+    }
+
+    /// The L176 backend: the first write (content `"first\n"`) resolves
+    /// `first_started`, blocks on `finish_first`, writes, then flags `settled`.
+    /// The second write (content `"second\n"`) asserts `settled` before it may
+    /// begin and resolves `second_started`.
+    struct AbortInFlightWriteOperations {
+        first_started: Arc<Deferred>,
+        finish_first: Arc<Deferred>,
+        second_started: Arc<Deferred>,
+        settled: Arc<AtomicBool>,
+    }
+
+    impl WriteOperations for AbortInFlightWriteOperations {
+        fn write_file<'a>(
+            &'a self,
+            absolute_path: &'a str,
+            content: &'a str,
+        ) -> BoxWriteFuture<'a> {
+            Box::pin(async move {
+                if content == "first\n" {
+                    self.first_started.resolve();
+                    self.finish_first.wait().await;
+                    write_through(absolute_path, content).await?;
+                    self.settled.store(true, Ordering::SeqCst);
+                    return Ok(());
+                }
+                if content == "second\n" {
+                    assert!(
+                        self.settled.load(Ordering::SeqCst),
+                        "second write must not begin until the first has settled"
+                    );
+                    self.second_started.resolve();
+                }
+                write_through(absolute_path, content).await
+            })
+        }
+
+        fn mkdir<'a>(&'a self, _dir: &'a str) -> BoxWriteFuture<'a> {
+            noop_mkdir()
+        }
+    }
+
+    #[tokio::test]
+    async fn keeps_write_queue_locked_while_aborted_write_in_flight() {
+        let dir = TempDir::new("write-abort-inflight");
+        let cwd = dir.cwd().to_string();
+        let file_path = dir.path.join("abort-write.txt");
+
+        let first_started = Arc::new(Deferred::new());
+        let finish_first = Arc::new(Deferred::new());
+        let second_started = Arc::new(Deferred::new());
+        let settled = Arc::new(AtomicBool::new(false));
+
+        let ops: Arc<AbortInFlightWriteOperations> = Arc::new(AbortInFlightWriteOperations {
+            first_started: first_started.clone(),
+            finish_first: finish_first.clone(),
+            second_started: second_started.clone(),
+            settled: settled.clone(),
+        });
+
+        let (tx, rx) = watch::channel(false);
+
+        let local = tokio::task::LocalSet::new();
+        local
+            .run_until(async {
+                // Start the first (aborted) write; it parks inside `write_file`.
+                let first_ops = ops.clone();
+                let first_cwd = cwd.clone();
+                let first_rx = rx.clone();
+                let first = tokio::task::spawn_local(async move {
+                    run_write(
+                        &first_cwd,
+                        &params("abort-write.txt", "first\n"),
+                        &*first_ops,
+                        Some(&first_rx),
+                    )
+                    .await
+                });
+
+                // Wait until the first write is in flight, then abort it.
+                first_started.wait().await;
+                let _ = tx.send(true);
+
+                // Start the second write (no signal). It must not begin while the
+                // first — aborted but still in flight — holds the queue lock.
+                let second_ops = ops.clone();
+                let second_cwd = cwd.clone();
+                let second = tokio::task::spawn_local(async move {
+                    run_write(
+                        &second_cwd,
+                        &params("abort-write.txt", "second\n"),
+                        &*second_ops,
+                        None,
+                    )
+                    .await
+                });
+
+                let began =
+                    tokio::time::timeout(Duration::from_millis(20), second_started.wait()).await;
+                assert!(
+                    began.is_err(),
+                    "second write must not start while the aborted first is in flight"
+                );
+
+                // Release the first write; it finishes its filesystem write, then
+                // `run_write` observes the abort and rejects with pi's error.
+                finish_first.resolve();
+                let first_result = first.await.unwrap();
+                assert_eq!(first_result.unwrap_err(), "Operation aborted");
+
+                // The second write now runs to completion.
+                let second_result = second.await.unwrap();
+                assert_eq!(
+                    second_result.unwrap().text,
+                    "Successfully wrote 7 bytes to abort-write.txt"
+                );
+            })
+            .await;
+
+        drop(tx);
+        // Final on-disk content is the second write's, exactly like pi.
+        let content = std::fs::read_to_string(&file_path).unwrap();
+        assert_eq!(content, "second\n");
     }
 }

@@ -13,7 +13,9 @@
 //! TUI-only and depend on the theme layer, so — as with the other ported tools
 //! — they are not reproduced here; only the execute path is ported.
 
+use std::future::Future;
 use std::path::Path;
+use std::pin::Pin;
 
 use tokio::sync::watch;
 
@@ -66,15 +68,26 @@ pub struct LsResult {
 
 /// Pluggable operations for the ls tool, mirroring pi's `LsOperations`
 /// interface. Override these to delegate directory listing to remote systems
-/// (for example SSH). Kept a trait so extensions can supply their own backend.
-#[allow(async_fn_in_trait)] // Local seam; callers use concrete impls, not `dyn`.
-pub trait LsOperations {
+/// (for example SSH). Kept a `dyn`-object-safe trait (methods return boxed
+/// futures) so a custom backend can be injected as `Arc<dyn LsOperations>` — for
+/// example across the napi boundary.
+///
+/// The `Send + Sync` supertrait makes the *backend value* shareable across
+/// threads (`Arc<dyn LsOperations>: Send + Sync`); the returned futures are not
+/// `+ Send`, matching the other tool seams (driven via `block_on`).
+pub trait LsOperations: Send + Sync {
     /// Check whether `absolute_path` exists.
-    async fn exists(&self, absolute_path: &str) -> bool;
+    fn exists<'a>(&'a self, absolute_path: &'a str) -> Pin<Box<dyn Future<Output = bool> + 'a>>;
     /// Get metadata for `absolute_path`. Returns `Err` if it cannot be stat'd.
-    async fn stat(&self, absolute_path: &str) -> Result<Metadata, String>;
+    fn stat<'a>(
+        &'a self,
+        absolute_path: &'a str,
+    ) -> Pin<Box<dyn Future<Output = Result<Metadata, String>> + 'a>>;
     /// Read the entry names of the directory at `absolute_path`.
-    async fn readdir(&self, absolute_path: &str) -> Result<Vec<String>, String>;
+    fn readdir<'a>(
+        &'a self,
+        absolute_path: &'a str,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<String>, String>> + 'a>>;
 }
 
 /// The default local-filesystem [`LsOperations`], backed by `std::fs`.
@@ -82,23 +95,33 @@ pub trait LsOperations {
 pub struct LocalLsOperations;
 
 impl LsOperations for LocalLsOperations {
-    async fn exists(&self, absolute_path: &str) -> bool {
-        Path::new(absolute_path).exists()
+    fn exists<'a>(&'a self, absolute_path: &'a str) -> Pin<Box<dyn Future<Output = bool> + 'a>> {
+        Box::pin(async move { Path::new(absolute_path).exists() })
     }
 
-    async fn stat(&self, absolute_path: &str) -> Result<Metadata, String> {
-        let meta = std::fs::metadata(absolute_path).map_err(|e| e.to_string())?;
-        Ok(Metadata::new(meta.is_dir()))
+    fn stat<'a>(
+        &'a self,
+        absolute_path: &'a str,
+    ) -> Pin<Box<dyn Future<Output = Result<Metadata, String>> + 'a>> {
+        Box::pin(async move {
+            let meta = std::fs::metadata(absolute_path).map_err(|e| e.to_string())?;
+            Ok(Metadata::new(meta.is_dir()))
+        })
     }
 
-    async fn readdir(&self, absolute_path: &str) -> Result<Vec<String>, String> {
-        let mut names = Vec::new();
-        let read = std::fs::read_dir(absolute_path).map_err(|e| e.to_string())?;
-        for entry in read {
-            let entry = entry.map_err(|e| e.to_string())?;
-            names.push(entry.file_name().to_string_lossy().into_owned());
-        }
-        Ok(names)
+    fn readdir<'a>(
+        &'a self,
+        absolute_path: &'a str,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<String>, String>> + 'a>> {
+        Box::pin(async move {
+            let mut names = Vec::new();
+            let read = std::fs::read_dir(absolute_path).map_err(|e| e.to_string())?;
+            for entry in read {
+                let entry = entry.map_err(|e| e.to_string())?;
+                names.push(entry.file_name().to_string_lossy().into_owned());
+            }
+            Ok(names)
+        })
     }
 }
 
@@ -116,10 +139,10 @@ pub fn create_local_ls_operations() -> LocalLsOperations {
 /// modules (a `watch::Receiver<bool>` that flips to `true` on abort); it is
 /// checked up front, mirroring pi's `if (signal?.aborted)` fast path, returning
 /// `Err("Operation aborted")` to match pi's thrown error.
-pub async fn run_ls<O: LsOperations>(
+pub async fn run_ls(
     cwd: &str,
     params: &LsParams,
-    ops: &O,
+    ops: &dyn LsOperations,
     signal: Option<&watch::Receiver<bool>>,
 ) -> Result<LsResult, String> {
     if signal.map(|s| *s.borrow()).unwrap_or(false) {
@@ -343,24 +366,35 @@ mod tests {
     }
 
     impl LsOperations for FakeLsOperations {
-        async fn exists(&self, _absolute_path: &str) -> bool {
-            true
+        fn exists<'a>(
+            &'a self,
+            _absolute_path: &'a str,
+        ) -> Pin<Box<dyn Future<Output = bool> + 'a>> {
+            Box::pin(async { true })
         }
 
-        async fn stat(&self, absolute_path: &str) -> Result<Metadata, String> {
-            // The root listing target is a directory; entries are dirs when
-            // their basename is in `dirs`.
-            let name = Path::new(absolute_path)
-                .file_name()
-                .map(|n| n.to_string_lossy().into_owned())
-                .unwrap_or_default();
-            Ok(Metadata::new(
-                self.dirs.contains(&name) || !self.entries.iter().any(|e| e == &name),
-            ))
+        fn stat<'a>(
+            &'a self,
+            absolute_path: &'a str,
+        ) -> Pin<Box<dyn Future<Output = Result<Metadata, String>> + 'a>> {
+            Box::pin(async move {
+                // The root listing target is a directory; entries are dirs when
+                // their basename is in `dirs`.
+                let name = Path::new(absolute_path)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                Ok(Metadata::new(
+                    self.dirs.contains(&name) || !self.entries.iter().any(|e| e == &name),
+                ))
+            })
         }
 
-        async fn readdir(&self, _absolute_path: &str) -> Result<Vec<String>, String> {
-            Ok(self.entries.clone())
+        fn readdir<'a>(
+            &'a self,
+            _absolute_path: &'a str,
+        ) -> Pin<Box<dyn Future<Output = Result<Vec<String>, String>> + 'a>> {
+            Box::pin(async move { Ok(self.entries.clone()) })
         }
     }
 
