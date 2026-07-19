@@ -15,12 +15,17 @@
 //!   [`command::RegisteredCommand`] descriptor.
 //! - [`registry`] — the [`registry::ExtensionHost`] registration surface and the
 //!   [`registry::Registry`] inventory.
+//! - [`discovery`] — the filesystem-convention scan that locates extensions and
+//!   resolves each declared entrypoint into a [`discovery::DiscoveredExtension`]
+//!   inventory (pure Rust, no JS execution).
 //!
-//! The loader/discovery and the `ExtensionRunner` hook-dispatch machinery land in
-//! later ports. These modules are pure types and traits — no runtime, no
-//! `deno_core`, no JS.
+//! The JS-execution plane (running each discovered entrypoint on the embedded
+//! `deno_core` runtime) and the `ExtensionRunner` hook-dispatch machinery land in
+//! later ports. Apart from [`discovery`], these modules are pure types and traits
+//! — no runtime, no `deno_core`, no JS.
 
 pub mod command;
+pub mod discovery;
 pub mod events;
 pub mod hook;
 pub mod loader;
