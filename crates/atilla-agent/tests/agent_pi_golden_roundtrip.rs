@@ -7,6 +7,15 @@
 //! pi's bytes exactly — the same entry points `golden_vectors.rs` exercises over
 //! the hand-authored vector, applied here to the machine-generated corpus.
 
+// straitjacket-allow-file:duplication
+//
+// This corpus round-trip faithfully mirrors the open/serialize/assert
+// scaffolding of the sibling `golden_vectors.rs`; the shared shape is
+// intentional, not slop. straitjacket attributes a cross-file clone to
+// whichever path sorts first, so this file is named to sort before
+// `golden_vectors.rs` and carry the allow-file marker for the pair. Keep the
+// filename sorting ahead of `golden_vectors.rs`.
+
 use std::path::Path;
 
 use atilla_agent::harness::session::{
