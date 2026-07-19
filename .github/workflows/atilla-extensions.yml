@@ -1,0 +1,35 @@
+name: atilla-extensions
+
+# The atilla-extensions crate gates deno_core (and therefore V8) behind the
+# non-default `deno` feature, so the shared workspace CI never builds V8. This
+# dedicated job is the ONLY place the real runtime is compiled and tested, and
+# thus the sole V8-in-CI probe. Path-filtered so it only runs when the crate or
+# this workflow changes.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/atilla-extensions/**"
+      - ".github/workflows/atilla-extensions.yml"
+  pull_request:
+    paths:
+      - "crates/atilla-extensions/**"
+      - ".github/workflows/atilla-extensions.yml"
+
+jobs:
+  deno:
+    name: deno runtime (V8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      # deno_core embeds V8; its prebuilt static blob (~38 MB) downloads from
+      # GitHub release assets on first build. GitHub Actions runners have open
+      # egress, so the download succeeds here even though it 403s in the sandbox.
+      - run: cargo build -p atilla-extensions --features deno
+      - run: cargo clippy -p atilla-extensions --features deno --all-targets -- -D warnings
+      - run: cargo test -p atilla-extensions --features deno

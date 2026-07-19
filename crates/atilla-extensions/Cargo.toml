@@ -1,0 +1,32 @@
+[package]
+name = "atilla-extensions"
+description = "Embedded deno_core JavaScript extension plane for atilla (off-thread !Send runtime host)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+# V8 is heavy and its prebuilt static blob is downloaded from GitHub release
+# assets on first build. That download 403s through the sandbox egress proxy, so
+# building `deno_core` is impossible in-sandbox. Keep it OFF by default: the
+# default build (and therefore `cargo build/test --workspace`) stays V8-free and
+# locally buildable in every session. The real runtime is compiled and tested
+# only under `--features deno`, which CI exercises in a dedicated job
+# (.github/workflows/atilla-extensions.yml) where the blob download succeeds.
+default = []
+deno = ["dep:anyhow", "dep:deno_core", "dep:serde_json", "dep:tokio"]
+
+[dependencies]
+anyhow = { workspace = true, optional = true }
+# Pinned exact to match the throwaway/deno-hello spike. Optional + gated behind
+# the `deno` feature so the workspace never pulls V8 by default.
+deno_core = { version = "=0.408.0", optional = true }
+serde_json = { workspace = true, optional = true }
+tokio = { version = "1", optional = true, features = [
+    "rt",
+    "rt-multi-thread",
+    "macros",
+    "sync",
+    "time",
+] }
