@@ -24,6 +24,7 @@ deno = [
     "dep:tokio",
     "dep:atilla-coding",
     "dep:atilla-agent",
+    "dep:atilla-ai",
 ]
 
 [dependencies]
@@ -54,6 +55,12 @@ atilla-coding = { path = "../atilla-coding", optional = true }
 # `AgentToolResult`; the runner impl synthesizes those when lowering the
 # Inventory's tool records. Gated behind `deno` alongside the rest of the impl.
 atilla-agent = { path = "../atilla-agent", optional = true }
+# The concrete `ExtensionOAuthLogin` seam impl (oauth_login_impl.rs) implements
+# atilla-ai's trait and maps to its `OAuthCredential` / `AuthFlowError`. NO cycle:
+# atilla-ai depends only downward (atilla-model-catalog), never on atilla-coding
+# or atilla-extensions. Optional + gated behind `deno` alongside the rest of the
+# impl, so the default (no-feature) crate stays empty and V8-free.
+atilla-ai = { path = "../atilla-ai", optional = true }
 
 [dev-dependencies]
 # The `deno`-gated integration tests (tests/deno_extensions.rs) drive the async

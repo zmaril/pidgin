@@ -123,6 +123,14 @@ impl ExtensionRunner {
         &self.plane
     }
 
+    /// A cloned `Arc` handle to the shared JS plane, for closures that must own a
+    /// plane reference and outlive this borrow — e.g. the tool `execute` /
+    /// command `handler` closures the runner-impl synthesizes, which invoke the
+    /// stored JS closure over the one-shot primitive.
+    pub fn plane_arc(&self) -> Arc<JsPlaneHandle> {
+        Arc::clone(&self.plane)
+    }
+
     /// Shut the underlying plane down cleanly.
     ///
     /// Only actually shuts the plane down when this runner is its **sole** owner

@@ -94,6 +94,40 @@ pub struct RendererRecord {
     pub custom_type: String,
 }
 
+/// A provider registered through `pi.registerProvider(config)` (pi's
+/// `ProviderConfigInput`, `provider-composer.ts:43`). Only the serializable
+/// metadata is recorded; the live `oauth` closures (`login`/`refreshToken`/
+/// `getApiKey`) and the streaming closures stay in JS, keyed by provider name in
+/// `globalThis.__atilla.registry.providers`, and are invoked over the one-shot
+/// [`JsPlaneHandle::invoke_stored`](crate::runtime::JsPlaneHandle::invoke_stored)
+/// primitive.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProviderRecord {
+    /// The provider name (the registry key, pi's `config.name`).
+    pub name: String,
+    /// The provider base URL, if declared (pi's `config.baseUrl`).
+    pub base_url: Option<String>,
+    /// The provider api family, if declared (pi's `config.api`).
+    pub api: Option<String>,
+    /// Whether the provider authenticates via an `Authorization` header (pi's
+    /// `config.authHeader`).
+    pub auth_header: Option<bool>,
+    /// Whether the provider declared an `oauth` config block at all.
+    pub has_oauth: bool,
+    /// Whether `oauth.login` is a live closure (pi's interactive login).
+    pub has_login: bool,
+    /// Whether `oauth.refreshToken` is a live closure.
+    pub has_refresh_token: bool,
+    /// Whether `oauth.getApiKey` is a live closure.
+    pub has_get_api_key: bool,
+    /// The `oauth.name` the config carries, if any (the OAuth flow's provider
+    /// name, which may differ from the provider name).
+    pub oauth_name: Option<String>,
+    /// pi's deprecated `oauth.usesCallbackServer` flag, retained for source
+    /// compatibility.
+    pub uses_callback_server: Option<bool>,
+}
+
 /// Everything one extension registered, in registration order.
 ///
 /// The plain-data mirror of pi's per-extension collections. Empty until a
@@ -115,6 +149,9 @@ pub struct Inventory {
     pub message_renderers: Vec<RendererRecord>,
     /// Entry renderers, in registration order.
     pub entry_renderers: Vec<RendererRecord>,
+    /// Providers, in registration order (one entry per `pi.registerProvider`
+    /// still registered — `unregisterProvider` removes its entry).
+    pub providers: Vec<ProviderRecord>,
 }
 
 impl Inventory {
@@ -132,6 +169,7 @@ impl Inventory {
             && self.flags.is_empty()
             && self.message_renderers.is_empty()
             && self.entry_renderers.is_empty()
+            && self.providers.is_empty()
     }
 
     /// The current value of a registered flag (its runtime value, falling back
@@ -226,5 +264,24 @@ mod tests {
             ..Inventory::default()
         };
         assert_eq!(inv.hook_events(), vec!["tool_call", "input"]);
+    }
+
+    #[test]
+    fn provider_record_marks_inventory_non_empty() {
+        let inv = Inventory {
+            providers: vec![ProviderRecord {
+                name: "acme".into(),
+                has_oauth: true,
+                has_get_api_key: true,
+                has_refresh_token: true,
+                has_login: true,
+                ..ProviderRecord::default()
+            }],
+            ..Inventory::default()
+        };
+        assert!(!inv.is_empty());
+        assert_eq!(inv.providers.len(), 1);
+        assert_eq!(inv.providers[0].name, "acme");
+        assert!(inv.providers[0].has_get_api_key);
     }
 }
