@@ -28,3 +28,12 @@ pub fn scratch_dir(tag: &str) -> PathBuf {
 pub fn s(path: &Path) -> String {
     path.to_string_lossy().into_owned()
 }
+
+/// Write `contents` to `path`, creating any missing parent directories first.
+/// Shared by the many tests that stage on-disk resource fixtures.
+pub fn write(path: &str, contents: &str) {
+    if let Some(parent) = Path::new(path).parent() {
+        std::fs::create_dir_all(parent).unwrap();
+    }
+    std::fs::write(path, contents).unwrap();
+}

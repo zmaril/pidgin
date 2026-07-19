@@ -30,6 +30,7 @@ pub mod provider_composer;
 pub mod radius;
 pub mod resolve_config_value;
 pub mod resource_loader;
+pub mod resource_loader_orchestrator;
 pub mod session_cwd;
 pub mod session_manager;
 pub mod settings_manager;
