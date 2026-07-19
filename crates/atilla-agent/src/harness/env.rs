@@ -16,12 +16,17 @@
 //!   [`core::result::Result`] *is* that monad, so it is reused directly; the
 //!   [`ok`]/[`err`]/[`get_or_throw`]/[`get_or_undefined`]/[`to_error`] helpers
 //!   mirror pi's free functions.
-//! - **No `AbortSignal`.** pi threads an optional `AbortSignal` through every
-//!   method for cooperative async cancellation. A fully synchronous, eager port
-//!   has no concurrency to cancel mid-call, so the parameter is dropped. The
-//!   stable [`FileErrorCode::Aborted`] and [`ExecutionErrorCode::Aborted`] codes
-//!   are retained so an implementation may still report an operation that its
-//!   backend aborted.
+//! - **Cooperative `AbortSignal`.** pi threads an optional `AbortSignal`
+//!   through every `FileSystem`/`Shell` method for cooperative cancellation.
+//!   This port carries the same seam as a `signal: Option<&AbortSignal>`
+//!   parameter (and, for [`Shell::exec`], the `abort_signal` field of
+//!   [`ShellExecOptions`], mirroring pi's `ShellExecOptions.abortSignal`). At
+//!   the exact points pi checks `signal.aborted` it returns the stable
+//!   [`FileErrorCode::Aborted`]/[`ExecutionErrorCode::Aborted`] codes. The
+//!   signal is cooperative (an `Arc<AtomicBool>`): the eager, synchronous port
+//!   has no async `await` to interrupt, so pi's mid-`await` re-checks that guard
+//!   an async gap absent here collapse to the entry check, and the wiring of the
+//!   signal to real syscall/process cancellation is deliberately not reproduced.
 //!
 //! This is the harness's *own* rich contract. It is distinct from
 //! `atilla_ai::seams::storage::ExecutionEnv`, the reduced 5-method seam the
@@ -32,9 +37,30 @@ use std::error::Error;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
+use atilla_ai::seams::AbortSignal;
+
 mod nodejs;
 
 pub use nodejs::NodeExecutionEnv;
+
+/// pi's `abortResult`: an `aborted`-coded [`FileError`] for `path` when `signal`
+/// is tripped, else `None`. The cooperative analog of pi's `signal?.aborted`
+/// guard (`nodejs-env.ts`'s `abortResult`), shared by every `FileSystem` method
+/// that checks the signal at pi's check points.
+fn aborted_file_error(signal: Option<&AbortSignal>, path: &str) -> Option<FileError> {
+    signal
+        .is_some_and(AbortSignal::is_aborted)
+        .then(|| FileError::with_path(FileErrorCode::Aborted, "aborted", path))
+}
+
+/// The cooperative analog of pi's inline `err(new ExecutionError("aborted",
+/// "aborted"))` guard in `exec`: an `aborted`-coded [`ExecutionError`] when
+/// `signal` is tripped, else `None`.
+fn aborted_execution_error(signal: Option<&AbortSignal>) -> Option<ExecutionError> {
+    signal
+        .is_some_and(AbortSignal::is_aborted)
+        .then(|| ExecutionError::new(ExecutionErrorCode::Aborted, "aborted"))
+}
 
 // ---------------------------------------------------------------------------
 // Result monad helpers (`types.ts:5-38`)
@@ -285,9 +311,8 @@ impl FileContent<'_> {
 /// A streamed-output callback invoked with chunks as they are produced.
 pub type OutputCallback<'a> = Box<dyn FnMut(&str) + 'a>;
 
-/// Options for [`Shell::exec`]. Mirrors pi's `ShellExecOptions` (minus the
-/// dropped `abortSignal`). The `on_stdout`/`on_stderr` callbacks receive output
-/// chunks as they are produced.
+/// Options for [`Shell::exec`]. Mirrors pi's `ShellExecOptions`. The
+/// `on_stdout`/`on_stderr` callbacks receive output chunks as they are produced.
 #[derive(Default)]
 pub struct ShellExecOptions<'a> {
     /// Working directory for the command. Relative paths resolve against the
@@ -298,6 +323,9 @@ pub struct ShellExecOptions<'a> {
     /// Timeout in seconds. Implementations should return a timeout error when
     /// the command exceeds this duration.
     pub timeout: Option<f64>,
+    /// Cooperative abort signal used to terminate the command. Mirrors pi's
+    /// `ShellExecOptions.abortSignal`. Defaults to no signal.
+    pub abort_signal: Option<&'a AbortSignal>,
     /// Called with stdout chunks as they are produced.
     pub on_stdout: Option<OutputCallback<'a>>,
     /// Called with stderr chunks as they are produced.
@@ -327,43 +355,84 @@ pub trait FileSystem {
     fn cwd(&self) -> String;
     /// Return an absolute addressed path without requiring it to exist and
     /// without resolving symlinks.
-    fn absolute_path(&self, path: &str) -> Result<String, FileError>;
+    fn absolute_path(&self, path: &str, signal: Option<&AbortSignal>) -> Result<String, FileError>;
     /// Join path segments in the filesystem namespace.
-    fn join_path(&self, parts: &[&str]) -> Result<String, FileError>;
+    fn join_path(&self, parts: &[&str], signal: Option<&AbortSignal>) -> Result<String, FileError>;
     /// Read a UTF-8 text file.
-    fn read_text_file(&self, path: &str) -> Result<String, FileError>;
+    fn read_text_file(&self, path: &str, signal: Option<&AbortSignal>)
+        -> Result<String, FileError>;
     /// Read UTF-8 text lines, stopping once `max_lines` lines have been read.
     fn read_text_lines(
         &self,
         path: &str,
         max_lines: Option<usize>,
+        signal: Option<&AbortSignal>,
     ) -> Result<Vec<String>, FileError>;
     /// Read a binary file.
-    fn read_binary_file(&self, path: &str) -> Result<Vec<u8>, FileError>;
+    fn read_binary_file(
+        &self,
+        path: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<Vec<u8>, FileError>;
     /// Create or overwrite a file, creating parent directories when supported.
-    fn write_file(&self, path: &str, content: FileContent<'_>) -> Result<(), FileError>;
+    fn write_file(
+        &self,
+        path: &str,
+        content: FileContent<'_>,
+        signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError>;
     /// Create or append to a file, creating parent directories when supported.
-    fn append_file(&self, path: &str, content: FileContent<'_>) -> Result<(), FileError>;
+    fn append_file(
+        &self,
+        path: &str,
+        content: FileContent<'_>,
+        signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError>;
     /// Return metadata for the addressed path without following symlinks.
-    fn file_info(&self, path: &str) -> Result<FileInfo, FileError>;
+    fn file_info(&self, path: &str, signal: Option<&AbortSignal>) -> Result<FileInfo, FileError>;
     /// List direct children of a directory without following symlinks.
-    fn list_dir(&self, path: &str) -> Result<Vec<FileInfo>, FileError>;
+    fn list_dir(
+        &self,
+        path: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<Vec<FileInfo>, FileError>;
     /// Return the canonical path for an existing path, resolving symlinks where
     /// supported.
-    fn canonical_path(&self, path: &str) -> Result<String, FileError>;
+    fn canonical_path(&self, path: &str, signal: Option<&AbortSignal>)
+        -> Result<String, FileError>;
     /// Return false for missing paths. Other errors return a [`FileError`].
-    fn exists(&self, path: &str) -> Result<bool, FileError>;
+    fn exists(&self, path: &str, signal: Option<&AbortSignal>) -> Result<bool, FileError>;
     /// Create a directory (pi default: `recursive: true`).
-    fn create_dir(&self, path: &str, recursive: bool) -> Result<(), FileError>;
+    fn create_dir(
+        &self,
+        path: &str,
+        recursive: bool,
+        signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError>;
     /// Remove a file or directory (pi defaults: `recursive: false`,
     /// `force: false`).
-    fn remove(&self, path: &str, recursive: bool, force: bool) -> Result<(), FileError>;
+    fn remove(
+        &self,
+        path: &str,
+        recursive: bool,
+        force: bool,
+        signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError>;
     /// Create a temporary directory and return its absolute path (pi default
     /// prefix: `"tmp-"`).
-    fn create_temp_dir(&self, prefix: &str) -> Result<String, FileError>;
+    fn create_temp_dir(
+        &self,
+        prefix: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError>;
     /// Create a temporary file and return its absolute path (pi defaults:
     /// prefix `""`, suffix `""`).
-    fn create_temp_file(&self, prefix: &str, suffix: &str) -> Result<String, FileError>;
+    fn create_temp_file(
+        &self,
+        prefix: &str,
+        suffix: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError>;
     /// Release filesystem resources. Best-effort; must not panic.
     fn cleanup(&self);
 }
@@ -548,7 +617,11 @@ impl FileSystem for MemoryExecutionEnv {
         self.state.lock().unwrap().cwd.clone()
     }
 
-    fn absolute_path(&self, path: &str) -> Result<String, FileError> {
+    fn absolute_path(
+        &self,
+        path: &str,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         if path.starts_with('/') {
             Ok(path.to_string())
         } else {
@@ -557,11 +630,22 @@ impl FileSystem for MemoryExecutionEnv {
         }
     }
 
-    fn join_path(&self, parts: &[&str]) -> Result<String, FileError> {
+    fn join_path(
+        &self,
+        parts: &[&str],
+        _signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         Ok(parts.join("/"))
     }
 
-    fn read_text_file(&self, path: &str) -> Result<String, FileError> {
+    fn read_text_file(
+        &self,
+        path: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
+        if let Some(error) = aborted_file_error(signal, path) {
+            return Err(error);
+        }
         let state = self.state.lock().unwrap();
         let resolved = Self::resolve(&state, path, true);
         match state.files.get(&resolved) {
@@ -579,8 +663,12 @@ impl FileSystem for MemoryExecutionEnv {
         &self,
         path: &str,
         max_lines: Option<usize>,
+        signal: Option<&AbortSignal>,
     ) -> Result<Vec<String>, FileError> {
-        let text = self.read_text_file(path)?;
+        if let Some(error) = aborted_file_error(signal, path) {
+            return Err(error);
+        }
+        let text = self.read_text_file(path, signal)?;
         let mut lines: Vec<String> = text.split('\n').map(str::to_string).collect();
         if lines.last().is_some_and(String::is_empty) {
             lines.pop();
@@ -591,7 +679,14 @@ impl FileSystem for MemoryExecutionEnv {
         Ok(lines)
     }
 
-    fn read_binary_file(&self, path: &str) -> Result<Vec<u8>, FileError> {
+    fn read_binary_file(
+        &self,
+        path: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<Vec<u8>, FileError> {
+        if let Some(error) = aborted_file_error(signal, path) {
+            return Err(error);
+        }
         let state = self.state.lock().unwrap();
         let resolved = Self::resolve(&state, path, true);
         state.files.get(&resolved).cloned().ok_or_else(|| {
@@ -603,7 +698,15 @@ impl FileSystem for MemoryExecutionEnv {
         })
     }
 
-    fn write_file(&self, path: &str, content: FileContent<'_>) -> Result<(), FileError> {
+    fn write_file(
+        &self,
+        path: &str,
+        content: FileContent<'_>,
+        signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError> {
+        if let Some(error) = aborted_file_error(signal, path) {
+            return Err(error);
+        }
         self.state
             .lock()
             .unwrap()
@@ -612,7 +715,12 @@ impl FileSystem for MemoryExecutionEnv {
         Ok(())
     }
 
-    fn append_file(&self, path: &str, content: FileContent<'_>) -> Result<(), FileError> {
+    fn append_file(
+        &self,
+        path: &str,
+        content: FileContent<'_>,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError> {
         self.state
             .lock()
             .unwrap()
@@ -623,7 +731,7 @@ impl FileSystem for MemoryExecutionEnv {
         Ok(())
     }
 
-    fn file_info(&self, path: &str) -> Result<FileInfo, FileError> {
+    fn file_info(&self, path: &str, _signal: Option<&AbortSignal>) -> Result<FileInfo, FileError> {
         let state = self.state.lock().unwrap();
         // lstat semantics: intermediate symlinks are followed, the final
         // component is not, so a symlink reports its own `symlink` kind.
@@ -648,7 +756,14 @@ impl FileSystem for MemoryExecutionEnv {
         }
     }
 
-    fn list_dir(&self, path: &str) -> Result<Vec<FileInfo>, FileError> {
+    fn list_dir(
+        &self,
+        path: &str,
+        signal: Option<&AbortSignal>,
+    ) -> Result<Vec<FileInfo>, FileError> {
+        if let Some(error) = aborted_file_error(signal, path) {
+            return Err(error);
+        }
         let state = self.state.lock().unwrap();
         // Listing follows the addressed path to its real directory, but reports
         // each child under the *queried* path (as a real readdir does through a
@@ -694,18 +809,27 @@ impl FileSystem for MemoryExecutionEnv {
         Ok(infos)
     }
 
-    fn canonical_path(&self, path: &str) -> Result<String, FileError> {
+    fn canonical_path(
+        &self,
+        path: &str,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         let state = self.state.lock().unwrap();
         Ok(Self::resolve(&state, path, true))
     }
 
-    fn exists(&self, path: &str) -> Result<bool, FileError> {
+    fn exists(&self, path: &str, _signal: Option<&AbortSignal>) -> Result<bool, FileError> {
         let state = self.state.lock().unwrap();
         let resolved = Self::resolve(&state, path, false);
         Ok(Self::classify(&state, &resolved).is_some())
     }
 
-    fn create_dir(&self, path: &str, recursive: bool) -> Result<(), FileError> {
+    fn create_dir(
+        &self,
+        path: &str,
+        recursive: bool,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError> {
         let mut state = self.state.lock().unwrap();
         if recursive {
             // Register every ancestor so the whole chain is stat-able.
@@ -721,7 +845,13 @@ impl FileSystem for MemoryExecutionEnv {
         Ok(())
     }
 
-    fn remove(&self, path: &str, recursive: bool, force: bool) -> Result<(), FileError> {
+    fn remove(
+        &self,
+        path: &str,
+        recursive: bool,
+        force: bool,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<(), FileError> {
         let mut state = self.state.lock().unwrap();
         if recursive {
             let prefix = format!("{}/", path.trim_end_matches('/'));
@@ -740,13 +870,22 @@ impl FileSystem for MemoryExecutionEnv {
         }
     }
 
-    fn create_temp_dir(&self, prefix: &str) -> Result<String, FileError> {
+    fn create_temp_dir(
+        &self,
+        prefix: &str,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         let mut state = self.state.lock().unwrap();
         state.temp_counter += 1;
         Ok(format!("/tmp/{prefix}{}", state.temp_counter))
     }
 
-    fn create_temp_file(&self, prefix: &str, suffix: &str) -> Result<String, FileError> {
+    fn create_temp_file(
+        &self,
+        prefix: &str,
+        suffix: &str,
+        _signal: Option<&AbortSignal>,
+    ) -> Result<String, FileError> {
         let mut state = self.state.lock().unwrap();
         state.temp_counter += 1;
         let path = format!("/tmp/{prefix}{}{suffix}", state.temp_counter);
@@ -763,6 +902,10 @@ impl Shell for MemoryExecutionEnv {
         _command: &str,
         mut options: ShellExecOptions<'_>,
     ) -> Result<ShellExecOutput, ExecutionError> {
+        // pi's `exec` entry guard (`options?.abortSignal?.aborted`).
+        if let Some(error) = aborted_execution_error(options.abort_signal) {
+            return Err(error);
+        }
         // Pop the scripted outcome under the lock, then release it before
         // invoking callbacks (they may re-enter through createTempFile/appendFile).
         let outcome = {
@@ -847,32 +990,35 @@ mod tests {
     fn memory_env_round_trips_files() {
         let env = MemoryExecutionEnv::new("/work");
         assert_eq!(env.cwd(), "/work");
-        assert_eq!(env.absolute_path("rel").unwrap(), "/work/rel");
-        assert_eq!(env.absolute_path("/abs").unwrap(), "/abs");
+        assert_eq!(env.absolute_path("rel", None).unwrap(), "/work/rel");
+        assert_eq!(env.absolute_path("/abs", None).unwrap(), "/abs");
 
-        assert!(!env.exists("/work/a.txt").unwrap());
-        env.write_file("/work/a.txt", FileContent::Text("l1\nl2\n"))
+        assert!(!env.exists("/work/a.txt", None).unwrap());
+        env.write_file("/work/a.txt", FileContent::Text("l1\nl2\n"), None)
             .unwrap();
-        assert!(env.exists("/work/a.txt").unwrap());
-        assert_eq!(env.read_text_file("/work/a.txt").unwrap(), "l1\nl2\n");
+        assert!(env.exists("/work/a.txt", None).unwrap());
+        assert_eq!(env.read_text_file("/work/a.txt", None).unwrap(), "l1\nl2\n");
         assert_eq!(
-            env.read_text_lines("/work/a.txt", None).unwrap(),
+            env.read_text_lines("/work/a.txt", None, None).unwrap(),
             vec!["l1", "l2"]
         );
         assert_eq!(
-            env.read_text_lines("/work/a.txt", Some(1)).unwrap(),
+            env.read_text_lines("/work/a.txt", Some(1), None).unwrap(),
             vec!["l1"]
         );
 
-        env.append_file("/work/a.txt", FileContent::Text("l3"))
+        env.append_file("/work/a.txt", FileContent::Text("l3"), None)
             .unwrap();
-        assert_eq!(env.read_text_file("/work/a.txt").unwrap(), "l1\nl2\nl3");
+        assert_eq!(
+            env.read_text_file("/work/a.txt", None).unwrap(),
+            "l1\nl2\nl3"
+        );
     }
 
     #[test]
     fn memory_env_missing_file_is_not_found() {
         let env = MemoryExecutionEnv::new("/work");
-        let error = env.read_text_file("/nope").unwrap_err();
+        let error = env.read_text_file("/nope", None).unwrap_err();
         assert_eq!(error.code, FileErrorCode::NotFound);
         assert_eq!(error.path.as_deref(), Some("/nope"));
     }

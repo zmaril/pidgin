@@ -132,7 +132,7 @@ pub fn format_skill_invocation(skill: &Skill, additional_instructions: Option<&s
 pub fn load_skills(env: &impl ExecutionEnv, dirs: &[&str]) -> LoadedSkills {
     let mut out = LoadedSkills::default();
     for dir in dirs {
-        let root_info = match env.file_info(dir) {
+        let root_info = match env.file_info(dir, None) {
             Ok(info) => info,
             Err(error) => {
                 if error.code != FileErrorCode::NotFound {
@@ -202,7 +202,7 @@ fn load_skills_from_dir_internal(
 ) -> LoadedSkills {
     let mut out = LoadedSkills::default();
 
-    let dir_info = match env.file_info(dir) {
+    let dir_info = match env.file_info(dir, None) {
         Ok(info) => info,
         Err(error) => {
             if error.code != FileErrorCode::NotFound {
@@ -221,7 +221,7 @@ fn load_skills_from_dir_internal(
 
     add_ignore_rules(env, ignore_matcher, dir, root_dir, &mut out.diagnostics);
 
-    let entries = match env.list_dir(dir) {
+    let entries = match env.list_dir(dir, None) {
         Ok(entries) => entries,
         Err(error) => {
             out.diagnostics.push(warning(
@@ -310,7 +310,7 @@ fn add_ignore_rules(
 
     for filename in IGNORE_FILE_NAMES {
         let ignore_path = join_env_path(dir, filename);
-        let info = match env.file_info(&ignore_path) {
+        let info = match env.file_info(&ignore_path, None) {
             Ok(info) => info,
             Err(error) => {
                 if error.code != FileErrorCode::NotFound {
@@ -326,7 +326,7 @@ fn add_ignore_rules(
         if info.kind != FileKind::File {
             continue;
         }
-        let content = match env.read_text_file(&ignore_path) {
+        let content = match env.read_text_file(&ignore_path, None) {
             Ok(content) => content,
             Err(error) => {
                 diagnostics.push(warning(
@@ -389,7 +389,7 @@ struct LoadedSkill {
 
 fn load_skill_from_file(env: &impl ExecutionEnv, file_path: &str) -> LoadedSkill {
     let mut diagnostics = Vec::new();
-    let raw_content = match env.read_text_file(file_path) {
+    let raw_content = match env.read_text_file(file_path, None) {
         Ok(content) => content,
         Err(error) => {
             diagnostics.push(warning(
@@ -526,7 +526,7 @@ fn resolve_kind(
     if info.kind == FileKind::File || info.kind == FileKind::Directory {
         return Some(info.kind);
     }
-    let canonical_path = match env.canonical_path(&info.path) {
+    let canonical_path = match env.canonical_path(&info.path, None) {
         Ok(path) => path,
         Err(error) => {
             if error.code != FileErrorCode::NotFound {
@@ -539,7 +539,7 @@ fn resolve_kind(
             return None;
         }
     };
-    let target = match env.file_info(&canonical_path) {
+    let target = match env.file_info(&canonical_path, None) {
         Ok(target) => target,
         Err(error) => {
             if error.code != FileErrorCode::NotFound {

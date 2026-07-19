@@ -110,7 +110,7 @@ pub struct LoadedSourcedPromptTemplates<S> {
 pub fn load_prompt_templates(env: &impl ExecutionEnv, paths: &[&str]) -> LoadedPromptTemplates {
     let mut out = LoadedPromptTemplates::default();
     for path in paths {
-        let info = match env.file_info(path) {
+        let info = match env.file_info(path, None) {
             Ok(info) => info,
             Err(error) => {
                 if error.code != FileErrorCode::NotFound {
@@ -176,7 +176,7 @@ pub fn load_sourced_prompt_templates<S: Clone>(
 
 fn load_templates_from_dir(env: &impl ExecutionEnv, dir: &str) -> LoadedPromptTemplates {
     let mut out = LoadedPromptTemplates::default();
-    let mut entries = match env.list_dir(dir) {
+    let mut entries = match env.list_dir(dir, None) {
         Ok(entries) => entries,
         Err(error) => {
             out.diagnostics.push(warning(
@@ -209,7 +209,7 @@ struct LoadedTemplate {
 
 fn load_template_from_file(env: &impl ExecutionEnv, file_path: &str) -> LoadedTemplate {
     let mut diagnostics = Vec::new();
-    let raw_content = match env.read_text_file(file_path) {
+    let raw_content = match env.read_text_file(file_path, None) {
         Ok(content) => content,
         Err(error) => {
             diagnostics.push(warning(
@@ -270,7 +270,7 @@ fn resolve_kind(
     if info.kind == FileKind::File || info.kind == FileKind::Directory {
         return Some(info.kind);
     }
-    let canonical_path = match env.canonical_path(&info.path) {
+    let canonical_path = match env.canonical_path(&info.path, None) {
         Ok(path) => path,
         Err(error) => {
             if error.code != FileErrorCode::NotFound {
@@ -283,7 +283,7 @@ fn resolve_kind(
             return None;
         }
     };
-    let target = match env.file_info(&canonical_path) {
+    let target = match env.file_info(&canonical_path, None) {
         Ok(target) => target,
         Err(error) => {
             if error.code != FileErrorCode::NotFound {

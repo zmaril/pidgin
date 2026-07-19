@@ -54,44 +54,45 @@ fn reads_writes_lists_and_removes_files_and_directories() {
     let base = root.as_str();
 
     assert_eq!(
-        env.absolute_path("nested/child").unwrap(),
+        env.absolute_path("nested/child", None).unwrap(),
         format!("{base}/nested/child")
     );
     assert_eq!(
-        env.join_path(&[&base, "nested", "child"]).unwrap(),
+        env.join_path(&[&base, "nested", "child"], None).unwrap(),
         format!("{base}/nested/child")
     );
-    env.create_dir("nested/child", true).unwrap();
+    env.create_dir("nested/child", true, None).unwrap();
     // pi writes a partial word then appends the rest; split as "h" + "ello"
     // to keep the resulting "hello" while avoiding a codespell word token.
-    env.write_file("nested/child/file.txt", FileContent::Text("h"))
+    env.write_file("nested/child/file.txt", FileContent::Text("h"), None)
         .unwrap();
-    env.append_file("nested/child/file.txt", FileContent::Text("ello"))
+    env.append_file("nested/child/file.txt", FileContent::Text("ello"), None)
         .unwrap();
     assert_eq!(
-        env.read_text_file("nested/child/file.txt").unwrap(),
+        env.read_text_file("nested/child/file.txt", None).unwrap(),
         "hello"
     );
     assert_eq!(
-        env.read_text_lines("nested/child/file.txt", Some(1))
+        env.read_text_lines("nested/child/file.txt", Some(1), None)
             .unwrap(),
         vec!["hello".to_string()]
     );
     assert_eq!(
-        env.read_binary_file("nested/child/file.txt").unwrap(),
+        env.read_binary_file("nested/child/file.txt", None).unwrap(),
         b"hello".to_vec()
     );
 
-    let entries = env.list_dir("nested/child").unwrap();
+    let entries = env.list_dir("nested/child", None).unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].name, "file.txt");
     assert_eq!(entries[0].path, format!("{base}/nested/child/file.txt"));
     assert_eq!(entries[0].kind, FileKind::File);
     assert_eq!(entries[0].size, 5);
 
-    assert!(env.exists("nested/child/file.txt").unwrap());
-    env.remove("nested/child/file.txt", false, false).unwrap();
-    assert!(!env.exists("nested/child/file.txt").unwrap());
+    assert!(env.exists("nested/child/file.txt", None).unwrap());
+    env.remove("nested/child/file.txt", false, false, None)
+        .unwrap();
+    assert!(!env.exists("nested/child/file.txt", None).unwrap());
 }
 
 #[cfg(unix)]
@@ -102,25 +103,31 @@ fn returns_file_info_without_following_symlinks() {
     let root = TempRoot::new();
     let env = env_at(&root);
     let base = root.as_str();
-    env.create_dir("dir", true).unwrap();
-    env.write_file("dir/file.txt", FileContent::Text("hello"))
+    env.create_dir("dir", true, None).unwrap();
+    env.write_file("dir/file.txt", FileContent::Text("hello"), None)
         .unwrap();
     symlink(format!("{base}/dir/file.txt"), format!("{base}/file-link")).unwrap();
     symlink(format!("{base}/dir"), format!("{base}/dir-link")).unwrap();
 
-    let dir_info = env.file_info("dir").unwrap();
+    let dir_info = env.file_info("dir", None).unwrap();
     assert_eq!(dir_info.name, "dir");
     assert_eq!(dir_info.path, format!("{base}/dir"));
     assert_eq!(dir_info.kind, FileKind::Directory);
 
-    let file_info = env.file_info("dir/file.txt").unwrap();
+    let file_info = env.file_info("dir/file.txt", None).unwrap();
     assert_eq!(file_info.kind, FileKind::File);
     assert_eq!(file_info.size, 5);
 
-    assert_eq!(env.file_info("file-link").unwrap().kind, FileKind::Symlink);
-    assert_eq!(env.file_info("dir-link").unwrap().kind, FileKind::Symlink);
+    assert_eq!(
+        env.file_info("file-link", None).unwrap().kind,
+        FileKind::Symlink
+    );
+    assert_eq!(
+        env.file_info("dir-link", None).unwrap().kind,
+        FileKind::Symlink
+    );
 
-    let canonical = env.canonical_path("file-link").unwrap();
+    let canonical = env.canonical_path("file-link", None).unwrap();
     let expected = fs::canonicalize(format!("{base}/dir/file.txt"))
         .unwrap()
         .to_string_lossy()
@@ -136,12 +143,12 @@ fn lists_symlinks_as_symlinks() {
     let root = TempRoot::new();
     let env = env_at(&root);
     let base = root.as_str();
-    env.write_file("target.txt", FileContent::Text("hello"))
+    env.write_file("target.txt", FileContent::Text("hello"), None)
         .unwrap();
     symlink(format!("{base}/target.txt"), format!("{base}/link.txt")).unwrap();
 
     let mut entries: Vec<(String, FileKind)> = env
-        .list_dir(".")
+        .list_dir(".", None)
         .unwrap()
         .into_iter()
         .map(|entry| (entry.name, entry.kind))
@@ -160,14 +167,14 @@ fn lists_symlinks_as_symlinks() {
 fn stops_reading_text_lines_at_the_requested_limit() {
     let root = TempRoot::new();
     let env = env_at(&root);
-    env.write_file("file.txt", FileContent::Text("one\ntwo\nthree"))
+    env.write_file("file.txt", FileContent::Text("one\ntwo\nthree"), None)
         .unwrap();
     assert_eq!(
-        env.read_text_lines("file.txt", Some(1)).unwrap(),
+        env.read_text_lines("file.txt", Some(1), None).unwrap(),
         vec!["one".to_string()]
     );
     assert_eq!(
-        env.read_text_lines("file.txt", None).unwrap(),
+        env.read_text_lines("file.txt", None, None).unwrap(),
         vec!["one".to_string(), "two".to_string(), "three".to_string()]
     );
 }
@@ -177,23 +184,23 @@ fn returns_file_error_for_missing_paths_and_keeps_exists_false() {
     let root = TempRoot::new();
     let env = env_at(&root);
     let base = root.as_str();
-    let info = env.file_info("missing.txt");
+    let info = env.file_info("missing.txt", None);
     let error = info.unwrap_err();
     assert_eq!(error.code, FileErrorCode::NotFound);
     assert_eq!(
         error.path.as_deref(),
         Some(format!("{base}/missing.txt").as_str())
     );
-    assert!(!env.exists("missing.txt").unwrap());
+    assert!(!env.exists("missing.txt", None).unwrap());
 }
 
 #[test]
 fn returns_file_error_for_listing_non_directories() {
     let root = TempRoot::new();
     let env = env_at(&root);
-    env.write_file("file.txt", FileContent::Text("hello"))
+    env.write_file("file.txt", FileContent::Text("hello"), None)
         .unwrap();
-    let error = env.list_dir("file.txt").unwrap_err();
+    let error = env.list_dir("file.txt", None).unwrap_err();
     assert_eq!(error.code, FileErrorCode::NotDirectory);
 }
 
@@ -201,21 +208,24 @@ fn returns_file_error_for_listing_non_directories() {
 fn appends_to_new_files_and_creates_parent_directories() {
     let root = TempRoot::new();
     let env = env_at(&root);
-    env.append_file("new/nested/file.txt", FileContent::Text("a"))
+    env.append_file("new/nested/file.txt", FileContent::Text("a"), None)
         .unwrap();
-    env.append_file("new/nested/file.txt", FileContent::Text("b"))
+    env.append_file("new/nested/file.txt", FileContent::Text("b"), None)
         .unwrap();
-    assert_eq!(env.read_text_file("new/nested/file.txt").unwrap(), "ab");
+    assert_eq!(
+        env.read_text_file("new/nested/file.txt", None).unwrap(),
+        "ab"
+    );
 }
 
 #[test]
 fn creates_temporary_directories_and_files() {
     let root = TempRoot::new();
     let env = env_at(&root);
-    let temp_dir = env.create_temp_dir("node-env-test-").unwrap();
+    let temp_dir = env.create_temp_dir("node-env-test-", None).unwrap();
     assert!(path_exists(&temp_dir));
     assert!(basename(&temp_dir).starts_with("node-env-test-"));
-    let temp_file = env.create_temp_file("prefix-", ".txt").unwrap();
+    let temp_file = env.create_temp_file("prefix-", ".txt", None).unwrap();
     assert!(path_exists(&temp_file));
     assert!(temp_file.ends_with(".txt"));
     // clean up the spilled temp entries
@@ -229,17 +239,17 @@ fn creates_temporary_directories_and_files() {
 fn honors_create_dir_recursive_false_and_remove_options() {
     let root = TempRoot::new();
     let env = env_at(&root);
-    let create_error = env.create_dir("missing/child", false).unwrap_err();
+    let create_error = env.create_dir("missing/child", false, None).unwrap_err();
     assert_eq!(create_error.code, FileErrorCode::NotFound);
 
-    env.write_file("dir/child/file.txt", FileContent::Text("hello"))
+    env.write_file("dir/child/file.txt", FileContent::Text("hello"), None)
         .unwrap();
-    assert!(env.remove("dir", false, false).is_err());
-    env.remove("dir", true, false).unwrap();
-    assert!(!env.exists("dir").unwrap());
+    assert!(env.remove("dir", false, false, None).is_err());
+    env.remove("dir", true, false, None).unwrap();
+    assert!(!env.exists("dir", None).unwrap());
 
-    assert!(env.remove("missing", false, false).is_err());
-    env.remove("missing", false, true).unwrap();
+    assert!(env.remove("missing", false, false, None).is_err());
+    env.remove("missing", false, true, None).unwrap();
 }
 
 #[test]
@@ -269,7 +279,7 @@ fn executes_commands_in_cwd_with_env_overrides() {
             },
         )
         .unwrap();
-    let expected_pwd = env.canonical_path(".").unwrap();
+    let expected_pwd = env.canonical_path(".", None).unwrap();
     assert_eq!(result.stdout, format!("{expected_pwd}:ok"));
     assert_eq!(result.stderr, "");
     assert_eq!(result.exit_code, 0);
@@ -344,7 +354,7 @@ fn returns_shell_unavailable_and_spawn_errors() {
 
     let shell_path = format!("{base}/not-executable-shell");
     let env = env_at(&root);
-    env.write_file(&shell_path, FileContent::Text("not executable"))
+    env.write_file(&shell_path, FileContent::Text("not executable"), None)
         .unwrap();
     let spawn_error_env = NodeExecutionEnv::new(base).with_shell_path(shell_path);
     let spawn_error = spawn_error_env
@@ -361,7 +371,7 @@ fn captures_large_shell_output_to_a_full_output_file() {
     let result = execute_shell_with_capture(env_ref, "yes line | head -n 15000", None).unwrap();
     assert!(result.truncated);
     let full_output_path = result.full_output_path.expect("full output path");
-    let full_output = env.read_text_file(&full_output_path).unwrap();
+    let full_output = env.read_text_file(&full_output_path, None).unwrap();
     assert!(full_output.split('\n').count() > 10000);
     assert!(result.output.len() < full_output.len());
     if let Some(parent) = Path::new(&full_output_path).parent() {
