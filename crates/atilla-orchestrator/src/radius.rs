@@ -518,6 +518,12 @@ impl RadiusPresence {
         self.machine.as_ref()
     }
 
+    /// Whether radius presence is enabled for the injected credential store (pi's
+    /// `isRadiusEnabled()`, which `serve.ts` checks before starting presence).
+    pub fn is_enabled(&self) -> bool {
+        self.enabled()
+    }
+
     fn enabled(&self) -> bool {
         is_radius_enabled(self.credentials.as_ref())
     }

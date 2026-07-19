@@ -2,21 +2,23 @@
 //!
 //! pi's orchestrator manages multiple coding-agent instances behind a Unix
 //! socket, persisting machine/instance records and registering presence with
-//! radius. This crate ports that package faithfully, leaf-first. The ported
-//! modules so far cover the foundational layer — record types, path/env/version
-//! config, and JSON-file persistence — plus the IPC wire protocol, the RPC child
-//! process (spawn, JSONL framing, and request/response correlation), radius
-//! presence (registration and heartbeat), and the IPC Unix-socket transport (the
-//! [`ipc::client`] and [`ipc::server`], behind an in-memory-testable
-//! [`ipc::transport`] seam). The supervisor and entry points are ported in
-//! subsequent stages.
+//! radius. This crate ports that package faithfully, leaf-first, and is now
+//! complete: record types, path/env/version config, and JSON-file persistence;
+//! the IPC wire protocol; the RPC child process (spawn, JSONL framing, and
+//! request/response correlation); radius presence (registration and heartbeat);
+//! the IPC Unix-socket transport (the [`ipc::client`] and [`ipc::server`], behind
+//! an in-memory-testable [`ipc::transport`] seam); the [`supervisor`] instance
+//! lifecycle and its IPC request [`handler`]; and the [`serve`] entrypoint that
+//! ties them together behind a real Unix socket with graceful signal-driven
+//! shutdown. The `orchestrator` command-line binary (pi's `cli.ts`) lives in the
+//! crate's `main.rs`.
 //!
-//! The re-export barrel below mirrors pi's `index.ts`, limited to the modules
-//! ported so far. Like pi's `index.ts`, it does **not** re-export [`radius`]:
-//! that module is imported directly by the [`supervisor`]. The
-//! [`credential_store`] module is a Rust-native seam supporting radius (pi reads
-//! the file through `@earendil-works/pi-coding-agent`), so it is likewise not
-//! part of pi's barrel.
+//! The re-export barrel below mirrors pi's `index.ts`, which re-exports every
+//! module **except** `radius` and `cli`. [`radius`] is imported directly by the
+//! [`supervisor`] (not re-exported), matching pi; the CLI is the binary, not a
+//! library module. The [`credential_store`] module is a Rust-native seam
+//! supporting radius (pi reads the file through `@earendil-works/pi-coding-agent`),
+//! so it is likewise not part of pi's barrel.
 
 pub mod config;
 pub mod credential_store;
@@ -24,6 +26,7 @@ pub mod handler;
 pub mod ipc;
 pub mod radius;
 pub mod rpc_process;
+pub mod serve;
 pub mod storage;
 pub mod supervisor;
 pub mod types;
