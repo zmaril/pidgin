@@ -23,6 +23,7 @@
 
 use std::fmt;
 
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use atilla_ai::seams::AbortSignal;
@@ -132,8 +133,11 @@ pub trait Models {
 // ---------------------------------------------------------------------------
 
 /// File-operation details stored on generated compaction entries. Mirrors pi's
-/// `CompactionDetails`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// `CompactionDetails` (`compaction.ts:33` — `readFiles`, `modifiedFiles`, both
+/// required `string[]`). pi emits camelCase keys and always writes both arrays,
+/// so `rename_all = "camelCase"` with no per-field skip reproduces the wire shape.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CompactionDetails {
     /// Files read in the compacted history.
     pub read_files: Vec<String>,
@@ -169,7 +173,20 @@ pub const DEFAULT_COMPACTION_SETTINGS: CompactionSettings = CompactionSettings {
 /// extension engine yet, so [`compact`] always produces the concrete
 /// [`CompactionDetails`] (file lists). A future extension engine would surface
 /// its own structured payload through this field.
-#[derive(Debug, Clone, PartialEq)]
+/// # Wire format (matches pi's `CompactionResult`, `compaction.ts:87`)
+///
+/// pi emits camelCase keys (`summary`, `firstKeptEntryId`, `tokensBefore`,
+/// `details`), so `rename_all = "camelCase"` pins the naming. Per pi's TS type:
+/// `summary`/`firstKeptEntryId`/`tokensBefore` are required (always emitted);
+/// `details?: T` is truly optional, so absent `details` is dropped from the JSON
+/// (never emitted as explicit `null`) — hence `skip_serializing_if` on it.
+///
+/// pi additionally has an optional `estimatedTokensAfter?: number` field. The
+/// ported Rust struct does not compute or carry it (it was deliberately omitted
+/// when this type was first ported), so it is not represented here; adding it is
+/// out of scope for this change.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CompactionResult {
     /// Summary text that replaces compacted history in future context.
     pub summary: String,
@@ -178,6 +195,8 @@ pub struct CompactionResult {
     /// Estimated context tokens before compaction.
     pub tokens_before: i64,
     /// Implementation-specific details stored with the compaction entry.
+    /// pi's `details?` is optional: omitted from the wire when absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<CompactionDetails>,
 }
 
