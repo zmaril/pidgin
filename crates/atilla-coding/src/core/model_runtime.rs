@@ -373,16 +373,10 @@ impl ModelRuntime {
         // fallback of `get_provider_auth_status` and `is_using_oauth` without
         // changing the offline `configured_providers` set (the models.json-key
         // path stays resolved by `compute_configured_providers`).
-        let provider_ids: Vec<String> = self
-            .models
-            .get_providers()
-            .iter()
-            .map(|provider| provider.id().to_string())
-            .collect();
         let mut auth: BTreeMap<String, AuthCheck> = BTreeMap::new();
-        for provider_id in &provider_ids {
-            if let Ok(Some(check)) = self.models.check_auth(provider_id) {
-                auth.insert(provider_id.clone(), check);
+        for provider in self.models.get_providers() {
+            if let Ok(Some(check)) = self.models.check_auth(provider.id()) {
+                auth.insert(provider.id().to_string(), check);
             }
         }
         self.snapshot = ModelRuntimeSnapshot {
@@ -809,14 +803,7 @@ fn merge_model_headers(
     if let Some(override_headers) = override_headers {
         for (name, value) in override_headers {
             let lower = name.to_lowercase();
-            let clashes: Vec<String> = merged
-                .keys()
-                .filter(|existing| existing.to_lowercase() == lower)
-                .cloned()
-                .collect();
-            for existing in clashes {
-                merged.remove(&existing);
-            }
+            merged.retain(|existing, _| existing.to_lowercase() != lower);
             merged.insert(name, Some(value));
         }
     }
