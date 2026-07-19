@@ -4,7 +4,7 @@
     "emitter": "0.0.0",
     "compiler": "1.14.0"
   },
-  "source": "atilla.tsp",
+  "source": "pidgin.tsp",
   "scalars": [],
   "unions": [],
   "enums": [],

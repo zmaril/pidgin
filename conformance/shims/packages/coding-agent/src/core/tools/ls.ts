@@ -5,14 +5,14 @@
 // mirrors pi's own parallel tool factories and is intentional/load-bearing.
 //
 // Native shim for packages/coding-agent/src/core/tools/ls.ts, backed by the
-// atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
+// pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: pi's original file
 // is preserved alongside as `ls.__pi_original__.ts` and this shim takes its
 // place, so pi's tools (and every importer that builds the default tool set)
 // hit the Rust `run_ls` port.
 //
 // Scope of the native flip (FULL): the ls tool's `execute` runs through
-// `atilla_coding::core::tools::ls::run_ls` with the local-filesystem operations
+// `pidgin_coding::core::tools::ls::run_ls` with the local-filesystem operations
 // (resolve → exists → stat → readdir → case-insensitive sort → per-entry `/`
 // suffix → entry cap → byte truncation → notices). The addon returns pi's
 // `AgentToolResult` JSON (`{ content: [{ type: "text", text }], details? }`),
@@ -31,7 +31,7 @@
 export * from "./ls.__pi_original__.ts";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { lsToolExecute } from "atilla-napi";
+import { lsToolExecute } from "pidgin-napi";
 import type { ToolDefinition } from "../extensions/types.ts";
 import {
 	createLsToolDefinition as originalCreateLsToolDefinition,

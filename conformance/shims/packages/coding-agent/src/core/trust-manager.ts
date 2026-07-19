@@ -5,14 +5,14 @@
 // overlap with the preserved pi original is intentional.
 //
 // Native shim for packages/coding-agent/src/core/trust-manager.ts, backed by the
-// atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
+// pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: the original pi
 // file is preserved alongside as `trust-manager.__pi_original__.ts` and this shim
 // takes its place, so pi's callers and test/trust-manager.test.ts import
 // `../src/core/trust-manager.ts` unchanged and hit Rust.
 //
 // Scope of the native flip: every ported symbol, backed by
-// `atilla_coding::core::trust_manager`. `getProjectTrustParentPath`,
+// `pidgin_coding::core::trust_manager`. `getProjectTrustParentPath`,
 // `getProjectTrustOptions`, and `hasTrustRequiringProjectResources` route to
 // Rust (the last one takes an explicit home dir so the shim supplies pi's
 // `process.env.HOME || homedir()` rather than mutating process-global env in
@@ -35,7 +35,7 @@ import {
 	hasTrustRequiringProjectResources as nativeHasTrustRequiringProjectResources,
 	trustStoreGetEntry as nativeTrustStoreGetEntry,
 	trustStoreSetMany as nativeTrustStoreSetMany,
-} from "atilla-napi";
+} from "pidgin-napi";
 import type {
 	ProjectTrustDecision,
 	ProjectTrustOption,

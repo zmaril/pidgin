@@ -2308,9 +2308,9 @@
     "passing": 15,
     "failing": 0,
     "skipped": 0,
-    "bin": "/workspace/atilla/target/release/atilla",
+    "bin": "/workspace/pidgin/target/release/pidgin",
     "status": "ok",
-    "note": "vitest run against atilla binary, exit 0",
+    "note": "vitest run against pidgin binary, exit 0",
     "files": [
       {
         "file": "packages/coding-agent/test/session-file-invalid.test.ts",

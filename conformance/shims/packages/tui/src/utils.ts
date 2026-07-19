@@ -1,11 +1,11 @@
-// Native shim for packages/tui/src/utils.ts, backed by the atilla Rust addon
-// (`atilla-napi`). Installed by conformance/codegen.mjs when the module is
+// Native shim for packages/tui/src/utils.ts, backed by the pidgin Rust addon
+// (`pidgin-napi`). Installed by conformance/codegen.mjs when the module is
 // marked `native` in conformance/manifest.json: the original pi file is
 // preserved alongside as `utils.__pi_original__.ts` and this shim takes its
 // place, so pi's tests import `../src/utils.ts` unchanged and hit Rust.
 //
 // Scope of the native flip: the width layer ported bit-exactly in
-// `crates/atilla-tui` (validated against 8029 vectors extracted from pi) —
+// `crates/pidgin-tui` (validated against 8029 vectors extracted from pi) —
 // `visibleWidth`, `normalizeTerminalOutput`, `truncateToWidth`,
 // `wrapTextWithAnsi`, `sliceWithWidth`, and `extractSegments`. Every other
 // export (segmenters, regexes, whitespace/punctuation helpers,
@@ -23,7 +23,7 @@ import {
 	truncateToWidth as nativeTruncateToWidth,
 	visibleWidth as nativeVisibleWidth,
 	wrapTextWithAnsi as nativeWrapTextWithAnsi,
-} from "atilla-napi";
+} from "pidgin-napi";
 
 export function visibleWidth(str: string): number {
 	return nativeVisibleWidth(str);

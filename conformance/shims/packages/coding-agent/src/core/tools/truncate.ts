@@ -1,5 +1,5 @@
 // Native shim for packages/coding-agent/src/core/tools/truncate.ts, backed by
-// the atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs
+// the pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs
 // when the module is marked `native` in conformance/manifest.json: the original
 // pi file is preserved alongside as `truncate.__pi_original__.ts` and this shim
 // takes its place, so pi's read/bash tools (which import `./truncate.ts`
@@ -7,7 +7,7 @@
 // transitively via test/tools.test.ts (read + bash blocks).
 //
 // Scope of the native flip: `formatSize`, `truncateHead`, `truncateTail`,
-// `truncateLine`, ported to `atilla_coding::core::tools::truncate`. The Rust
+// `truncateLine`, ported to `pidgin_coding::core::tools::truncate`. The Rust
 // port dropped pi's JS default arguments and required `TruncationOptions`
 // fields, so this shim re-adds the `options = {}` / `maxChars` defaults and
 // supplies the `DEFAULT_MAX_LINES`/`DEFAULT_MAX_BYTES`/`GREP_MAX_LINE_LENGTH`
@@ -23,7 +23,7 @@ import {
 	truncateHead as nativeTruncateHead,
 	truncateLine as nativeTruncateLine,
 	truncateTail as nativeTruncateTail,
-} from "atilla-napi";
+} from "pidgin-napi";
 import {
 	DEFAULT_MAX_BYTES,
 	DEFAULT_MAX_LINES,

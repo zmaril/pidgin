@@ -28,9 +28,9 @@
 // `restoreHelpers` removes them after a run), so the shim resolves at conformance
 // time. The manifest row's `tests[]` still stays empty until agent-loop crosses
 // majority-native; the tool seams are also proven directly against the built
-// addon in crates/atilla-napi/__tests__/agent-bridge-tools.mjs.
+// addon in crates/pidgin-napi/__tests__/agent-bridge-tools.mjs.
 
-import { AgentBridge } from "atilla-napi";
+import { AgentBridge } from "pidgin-napi";
 import type {
 	AgentContext,
 	AgentEvent,

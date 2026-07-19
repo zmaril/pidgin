@@ -1,11 +1,11 @@
-// Native shim for packages/tui/src/tui.ts, backed by the atilla Rust addon
-// (`atilla-napi`). Installed by conformance/codegen.mjs when the module is
+// Native shim for packages/tui/src/tui.ts, backed by the pidgin Rust addon
+// (`pidgin-napi`). Installed by conformance/codegen.mjs when the module is
 // marked `native` in conformance/manifest.json: the original pi file is
 // preserved alongside as `tui.__pi_original__.ts` and this shim takes its place,
 // so pi's tests import `../src/tui.ts` unchanged and hit Rust.
 //
 // Scope of the native flip: pi's differential RENDER PATH (`TUI::doRender`),
-// ported bit-exactly in `crates/atilla-tui` (the renderer, validated against 342
+// ported bit-exactly in `crates/pidgin-tui` (the renderer, validated against 342
 // byte-exact vectors) and exposed as `TuiCore`. The Rust renderer consumes
 // PRE-RENDERED LINES: pi's TS components still render themselves to `string[]`
 // (unchanged), and this shim feeds those lines into Rust via `setBaseLines`,
@@ -26,7 +26,7 @@
 
 export * from "./tui.__pi_original__.ts";
 
-import { TuiCore } from "atilla-napi";
+import { TuiCore } from "pidgin-napi";
 import { TUI as OriginalTUI } from "./tui.__pi_original__.ts";
 import type { Terminal } from "./terminal.ts";
 

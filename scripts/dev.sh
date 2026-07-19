@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stand up the atilla dev environment: format-check, lint, and test the Rust
+# Stand up the pidgin dev environment: format-check, lint, and test the Rust
 # workspace — the same three gates CI runs. Safe to run from anywhere.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -18,4 +18,4 @@ cargo test
 echo
 echo "dev environment ready:"
 echo "  cargo test                     # the workspace tests"
-echo "  cargo run -p atilla-cli -- run # the atilla CLI"
+echo "  cargo run -p pidgin-cli -- run # the pidgin CLI"

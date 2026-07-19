@@ -6,7 +6,7 @@
 //     top-level numPassedTests/numFailedTests/numPendingTests/numTodoTests and
 //     a testResults[] array whose entries carry assertionResults[] per file.
 //   - a concatenated TAP file for tui, one node:test run per file, each block
-//     prefixed by a "# ATILLA-FILE: <relpath>" marker line and carrying the
+//     prefixed by a "# PIDGIN-FILE: <relpath>" marker line and carrying the
 //     node:test summary counters (# tests / # pass / # fail / # skipped).
 //
 // Emits conformance.json at the repo root. Numbers reflect the ACTUAL run:
@@ -125,7 +125,7 @@ function parseVitest(path) {
 /** Count statuses from the concatenated tui TAP file. */
 function parseTuiTap(path) {
   const text = readFileSync(path, "utf8");
-  const blocks = text.split(/^# ATILLA-FILE: /m).slice(1);
+  const blocks = text.split(/^# PIDGIN-FILE: /m).slice(1);
   let total = 0;
   let passing = 0;
   let failing = 0;
@@ -158,7 +158,7 @@ function parseTuiTap(path) {
  * Build the black-box CLI conformance metric from meta.cli. This is tracked
  * SEPARATELY from the package smoke: it never touches by_package, the run
  * totals, or manifest_native_modules. It reports the four repointed CLI test
- * files run against the compiled atilla binary. An env-blocked build (binary
+ * files run against the compiled pidgin binary. An env-blocked build (binary
  * absent) contributes zero and keeps its note, mirroring the package logic.
  */
 function buildCliConformance(cli) {

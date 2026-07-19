@@ -1,12 +1,12 @@
-// Native shim for packages/tui/src/components/input.ts, backed by the atilla
-// Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when the
+// Native shim for packages/tui/src/components/input.ts, backed by the pidgin
+// Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when the
 // module is marked `native` in conformance/manifest.json: the original pi file
 // is preserved alongside as `input.__pi_original__.ts` and this shim takes its
 // place, so pi's tests import `../src/components/input.ts` unchanged and hit
 // Rust.
 //
 // Scope of the native flip: the single-line `Input` component ported bit-exactly
-// in `crates/atilla-tui` (validated against pi's input.test.ts) — grapheme-aware
+// in `crates/pidgin-tui` (validated against pi's input.test.ts) — grapheme-aware
 // cursor movement, the Emacs-style kill ring, undo, word navigation, bracketed
 // paste, and the horizontally-scrolling `render`. This shim re-implements pi's
 // `Input` class over the native `InputCore`, keeping `onSubmit`/`onEscape` as JS
@@ -19,7 +19,7 @@
 export * from "./input.__pi_original__.ts";
 
 import type { Component, Focusable } from "../tui.ts";
-import { InputCore } from "atilla-napi";
+import { InputCore } from "pidgin-napi";
 
 /**
  * Input component - single-line text input with horizontal scrolling.

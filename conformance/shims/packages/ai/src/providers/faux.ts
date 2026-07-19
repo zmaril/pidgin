@@ -1,5 +1,5 @@
-// Native shim for packages/ai/src/providers/faux.ts, backed by the atilla Rust
-// addon (`atilla-napi`). Installed by conformance/codegen.mjs when the module is
+// Native shim for packages/ai/src/providers/faux.ts, backed by the pidgin Rust
+// addon (`pidgin-napi`). Installed by conformance/codegen.mjs when the module is
 // marked `native` in conformance/manifest.json: the original pi file is preserved
 // alongside as `faux.__pi_original__.ts` and this shim takes its place, so pi's
 // tests (and compat.ts's `registerFauxProvider`) import `../providers/faux.ts`
@@ -7,7 +7,7 @@
 //
 // Scope of the native flip (Stage 3): `createFauxCore` — the deterministic delta
 // streaming plus token/cache accounting — is served by the Rust faux provider
-// (`atilla_ai::providers::faux`). The response *queue* and JS response *factories*
+// (`pidgin_ai::providers::faux`). The response *queue* and JS response *factories*
 // stay on the JS side: the shim pops the next step and, when it is a function,
 // calls it here, then hands the resolved `AssistantMessage` to Rust. That is why
 // no threadsafe callback is needed — the JS-closure case is resolved in JS and
@@ -43,7 +43,7 @@
 
 export * from "./faux.__pi_original__.ts";
 
-import { FauxCore } from "atilla-napi";
+import { FauxCore } from "pidgin-napi";
 import type {
 	AssistantMessage,
 	AssistantMessageEvent,

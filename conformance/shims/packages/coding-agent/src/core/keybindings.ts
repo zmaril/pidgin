@@ -5,7 +5,7 @@
 // table and migration, so the structural overlap is intentional.
 //
 // Native shim for packages/coding-agent/src/core/keybindings.ts, backed by the
-// atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
+// pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: the original pi
 // file is preserved alongside as `keybindings.__pi_original__.ts` and this shim
 // takes its place, so pi's app and test/keybindings-migration.test.ts import
@@ -15,7 +15,7 @@
 // default keybinding table (`KEYBINDINGS`, incl. the `app.*` actions and their
 // platform-dependent defaults) and the legacy-name migration
 // (`migrateKeybindingsConfig`, which `migrations.ts` calls to rewrite
-// `keybindings.json`) — are backed by `atilla_coding::core::keybindings`. The
+// `keybindings.json`) — are backed by `pidgin_coding::core::keybindings`. The
 // resolution engine and `matches()` live in pi-tui's base `KeybindingsManager`,
 // a SEPARATE, still-original module (its own manifest row); this shim keeps
 // extending that base (so `matches()`, conflict detection, and `instanceof`
@@ -37,7 +37,7 @@ import { join } from "path";
 import {
 	keybindingsFor as nativeKeybindingsFor,
 	migrateKeybindingsConfig as nativeMigrateKeybindingsConfig,
-} from "atilla-napi";
+} from "pidgin-napi";
 import { getAgentDir } from "../config.ts";
 
 /** The default keybinding table for the current platform, built by the Rust port. */

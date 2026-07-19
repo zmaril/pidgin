@@ -10,18 +10,18 @@ conventional-commits = "required"
 # test.sh is bindings/php's build + load + version harness; it must sit next to
 # the crate it drives (a standalone workspace), not under the repo-wide scripts/.
 # gen_eaw_table.sh is a vector-generator that lives beside its sibling .mjs
-# generators for the atilla-tui bit-exact port, not under the repo-wide scripts/.
+# generators for the pidgin-tui bit-exact port, not under the repo-wide scripts/.
 # regen.sh is the fluessig->PHP regeneration driver; it must sit next to the
 # standalone crate it regenerates, not under the repo-wide scripts/.
 allow = [
     "bindings/php/test.sh",
     "bindings/php/regen.sh",
-    "crates/atilla-tui/vectors/gen/gen_eaw_table.sh",
+    "crates/pidgin-tui/vectors/gen/gen_eaw_table.sh",
 ]
 
 [stray-todos]
 # The fluessig integration note quotes an M1 placeholder marker as prose when
-# describing what atilla exposes today — a reference, not untracked work.
+# describing what pidgin exposes today — a reference, not untracked work.
 # runner.rs is the PR0 extension-runner seam; its inline unit5 deferral markers
 # flag opaque `serde_json::Value` placeholders that become ported types in later unit5
 # PRs (ModelSelectEvent, ThinkingLevelChangedEvent, EntryAppendedEvent, the
@@ -33,7 +33,7 @@ allow = [
 # not untracked work. Drop these once the port completes.
 ignore = [
     "notes/fluessig-integration.md",
-    "crates/atilla-coding/src/core/extensions/runner.rs",
-    "crates/atilla-extensions/src/runner_impl/mod.rs",
-    "crates/atilla-extensions/src/runner_impl/queries.rs",
+    "crates/pidgin-coding/src/core/extensions/runner.rs",
+    "crates/pidgin-extensions/src/runner_impl/mod.rs",
+    "crates/pidgin-extensions/src/runner_impl/queries.rs",
 ]

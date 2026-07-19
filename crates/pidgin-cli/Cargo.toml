@@ -1,0 +1,26 @@
+[package]
+name = "pidgin-cli"
+description = "The pidgin CLI — a thin shell over pidgin-core."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "pidgin"
+path = "src/main.rs"
+
+[features]
+# The shipped binary builds with `native-http` ON by default so `cargo build -p
+# pidgin-cli` / the release binary can reach a live provider out of the box: the
+# feature threads through pidgin-coding to pidgin-ai, enabling the reqwest-backed
+# transport that the builtin provider registry injects. `--no-default-features`
+# drops back to the reqwest-free build, whose builtins stay `Unimplemented`.
+default = ["native-http"]
+native-http = ["pidgin-coding/native-http"]
+
+[dependencies]
+pidgin-core = { path = "../pidgin-core" }
+pidgin-coding = { path = "../pidgin-coding" }
+pidgin-tui = { path = "../pidgin-tui" }
+serde_json = { workspace = true }

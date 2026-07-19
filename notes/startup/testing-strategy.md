@@ -2,7 +2,7 @@
 
 # Testing Strategy: Passing pi's Own Test Suite
 
-**Status:** proposal · **Decision (user-confirmed):** build a **napi-rs bridge** that presents pi's exact TS module surface backed by the Rust core, and run pi's own suites against it. Node is a first-class target for atilla, so the bridge is a shipped deliverable, not test-only scaffolding. **Bar: literally pass all of pi's tests.**
+**Status:** proposal · **Decision (user-confirmed):** build a **napi-rs bridge** that presents pi's exact TS module surface backed by the Rust core, and run pi's own suites against it. Node is a first-class target for pidgin, so the bridge is a shipped deliverable, not test-only scaffolding. **Bar: literally pass all of pi's tests.**
 
 ## TL;DR
 
@@ -12,7 +12,7 @@ pi's suite is **319 test files / ~3,631 cases** across a 5-package ESM/TypeScrip
 
 1. **Shim packages (the deliverable).** Compile the Rust core with napi-rs into `.node` addons, wrapped in npm packages that reproduce pi's exact package names, exports, and `.d.ts` types (`@earendil-works/pi-ai`, `pi-agent-core`, `pi-coding-agent`, `pi-tui`).
 2. **Src-module swap (the test seam).** Because 93% of tests import `../src/<module>.ts` by relative path — which bypasses package resolution — vendor pi's tests unmodified and generate a shim `src/**/*.ts` tree where each module re-exports its Rust-backed binding. Tests import `../src/...` exactly as before and hit Rust. A **module manifest** (`src-path → native | original`) is the swap map and the progress ledger.
-3. **Black-box tier.** Repoint the 4 CLI tests (and the API-key-gated `rpc.test.ts`) at the `atilla` binary; reuse pi's fixtures and inline stdout/exit goldens unchanged.
+3. **Black-box tier.** Repoint the 4 CLI tests (and the API-key-gated `rpc.test.ts`) at the `pidgin` binary; reuse pi's fixtures and inline stdout/exit goldens unchanged.
 
 **The honest constraint on "literally pass ALL":** ~58 `vi.mock`/`vi.spyOn` and ~68 `vi.stubGlobal("fetch")` tests inject mocks *between* internal modules or at the HTTP boundary. A monolithic Rust core does not honor a JS mock of one of its internal seams. Passing those requires **building matching injection seams into the Rust core** (an injectable provider, HTTP transport, and clock) or porting the specific tests. This is the load-bearing architectural cost of the 100% bar — it is real, and it shapes the Rust core's design (§5).
 
@@ -92,9 +92,9 @@ No Vitest snapshots in practice (0 `__snapshots__`, 1 `toMatchSnapshot`); explic
 The deliverable is a set of Node packages whose public surface is byte-for-byte pi's, backed by Rust:
 
 ```
-crates/atilla-ai        (Rust core)      ─┐
-crates/atilla-agent     (Rust core)       │  napi-rs  →  *.node addon + generated .d.ts
-crates/atilla-napi      (#[napi] surface) ─┘
+crates/pidgin-ai        (Rust core)      ─┐
+crates/pidgin-agent     (Rust core)       │  napi-rs  →  *.node addon + generated .d.ts
+crates/pidgin-napi      (#[napi] surface) ─┘
                                              │
         wrapped as npm packages that re-export the addon:
         @earendil-works/pi-ai        (index + ./compat + ./providers/* + ./api/* + ./oauth …)
@@ -108,7 +108,7 @@ Each shim package must reproduce pi's **exact export names and TypeScript types*
 Example binding + the faux-provider callback (the trickiest seam — a JS test must drive the Rust streaming loop):
 
 ```rust
-// crates/atilla-napi/src/anthropic.rs
+// crates/pidgin-napi/src/anthropic.rs
 use napi_derive::napi;
 
 #[napi(object)]
@@ -118,7 +118,7 @@ pub struct StreamEvent { pub kind: String, pub text: Option<String> }
 /// normalized event stream the tests assert on.
 #[napi]
 pub fn parse_anthropic_sse(body: String) -> napi::Result<Vec<StreamEvent>> {
-    atilla_ai::anthropic::parse_sse(&body)
+    pidgin_ai::anthropic::parse_sse(&body)
         .map(|evs| evs.into_iter().map(Into::into).collect())
         .map_err(|e| napi::Error::from_reason(e.to_string()))
 }
@@ -176,14 +176,14 @@ Alternative considered: a custom vitest resolver plugin that rewrites `../src/*`
 
 ## 6. Black-box tier: the 4 CLI tests + gated RPC
 
-Four files (15 cases) drive the program purely through stdin/stdout/exit/files and repoint trivially at the `atilla` binary (they currently `spawn(process.execPath, [src/cli.ts, …])` via tsx; change the target to the Rust binary):
+Four files (15 cases) drive the program purely through stdin/stdout/exit/files and repoint trivially at the `pidgin` binary (they currently `spawn(process.execPath, [src/cli.ts, …])` via tsx; change the target to the Rust binary):
 
 - `stdout-cleanliness.test.ts` (5) — `--version` matches `/^\d+\.\d+\.\d+/`, stderr empty; `--help` prints `Usage:` to stdout; in `--mode json`/`-p` the Usage text and npm chatter go to **stderr** and stdout stays empty. (Tests stream routing / stdout cleanliness.)
 - `session-id-readonly.test.ts` (7) — session-id reservation, warnings ("No project session found with id …", "Session already exists with id …", "Session id must be non-empty"), exit codes, no stack-trace leakage.
 - `startup-session-name.test.ts` (2) — `--name` trimming, name written to the session `.jsonl` before model validation aborts, `--name "   "` → "requires a non-empty value".
 - `session-file-invalid.test.ts` (1) — invalid session file → exit 1, `Error: Session file is not a valid pi session: <path>`, no stack trace, file left byte-identical.
 
-Plus **`rpc.test.ts`** (API-key-gated) drives the built `dist/cli.js` over a JSONL RPC protocol via a `src`-imported `RpcClient`; repointable only once the `atilla` binary implements that protocol (commands: `prompt`, `get_state`, `new_session`, `fork`, `compact`, `export_html`, `set_model`, `bash`, `skill`, `extension`, …). These tests define the **CLI/RPC contract** the Rust binary must satisfy; reuse pi's fixtures and the inline stdout/exit goldens verbatim.
+Plus **`rpc.test.ts`** (API-key-gated) drives the built `dist/cli.js` over a JSONL RPC protocol via a `src`-imported `RpcClient`; repointable only once the `pidgin` binary implements that protocol (commands: `prompt`, `get_state`, `new_session`, `fork`, `compact`, `export_html`, `set_model`, `bash`, `skill`, `extension`, …). These tests define the **CLI/RPC contract** the Rust binary must satisfy; reuse pi's fixtures and the inline stdout/exit goldens verbatim.
 
 ---
 
@@ -192,7 +192,7 @@ Plus **`rpc.test.ts`** (API-key-gated) drives the built `dist/cli.js` over a JSO
 - **Runner** (`scripts/conformance.sh`): checkout pinned pi submodule → apply the module manifest (generate shim src) → `npm test -- --reporter=json` (vitest) + node:test JSON → parse per-file/per-case `pass | fail | skip`.
 - **Output:** `conformance.json` (`{ pi_sha, total, passing, skipped, by_package, by_file, manifest_native_modules }`) + a rendered HTML dashboard published as a CI artifact: `N of M pi tests literally passing`, per-package bars, and a "modules still on pi's TS" list.
 - **Upstream drift as a first-class signal:** a weekly cron bumps the pi submodule to upstream HEAD and re-runs. New upstream tests default **red** and expand the denominator, so the score drops until ported. Diff the test-file set between SHAs to auto-file "new pi tests to claim"; diff pi's `src` module list against the manifest to flag new modules needing shims.
-- **CI gate:** atilla CI fails if the passing count regresses below the committed baseline in `conformance.json` — the mirror only moves forward.
+- **CI gate:** pidgin CI fails if the passing count regresses below the committed baseline in `conformance.json` — the mirror only moves forward.
 
 Because the bridge runs the *actual* tests, "N of M" is now a real, non-subjective conformance number — the whole point of taking on the bridge.
 
@@ -216,7 +216,7 @@ We ran pi's suite under v8 coverage (Node v22.22, keys unset so network tests sk
 - **`agent`** (0 skips) still has `proxy.ts` at **0%** (104 lines) and the 440-line core `agent-harness.ts` at 71% line / **50% branch**. Session/storage is well covered (session 99%, compaction 98%).
 - **`coding-agent` / `tui`** unmeasured.
 
-So the suite is a strong gate for the well-covered core but must be supplemented with atilla's own Rust tests (and golden LLM transcripts) for provider-I/O, OAuth, and the agent-harness branches the offline suite never exercises.
+So the suite is a strong gate for the well-covered core but must be supplemented with pidgin's own Rust tests (and golden LLM transcripts) for provider-I/O, OAuth, and the agent-harness branches the offline suite never exercises.
 
 **Two environment gotchas** (both block a from-scratch `npm test`): `packages/ai` devDepends on native `canvas` (needs `libcairo2`/`pango`/`jpeg`/`gif`/`rsvg`), and `packages/ai/src/providers/data/*.json` is **generated, not committed** (`npm run generate-models` fetches catalogs over HTTPS). The conformance harness must install the system libs and run the model-catalog generation (or vendor the JSON).
 
@@ -224,11 +224,11 @@ So the suite is a strong gate for the well-covered core but must be supplemented
 
 ## 9. Recommendation & sequencing
 
-1. **Prove the seam on one file end-to-end.** Add `crates/atilla-napi`, vendor pi as a pinned submodule, build the manifest + shim codegen, and get `packages/ai/test/anthropic-sse-parsing.test.ts` green against Rust. De-risks the whole approach.
+1. **Prove the seam on one file end-to-end.** Add `crates/pidgin-napi`, vendor pi as a pinned submodule, build the manifest + shim codegen, and get `packages/ai/test/anthropic-sse-parsing.test.ts` green against Rust. De-risks the whole approach.
 2. **Build the injection seams into the Rust core up front** (§5): injectable provider, HTTP transport, and clock, plus the `NodeExecutionEnv`-equivalent storage trait. Retrofitting these later is expensive and they gate the 100% bar.
 3. **Solve the faux-provider threadsafe callback early** — it unblocks the entire agent/coding-agent tier.
 4. **Port `pi-ai` bottom-up** (SSE/request-shaping/token/model-catalog) — mostly pure logic, best ROI, ~100 files; flip manifest modules to `native` as they pass.
-5. **Repoint the 4 black-box CLI tests** at the `atilla` binary as soon as it has `--version`/`--help`/`--session*` (cheap early wins, real end-to-end signal).
+5. **Repoint the 4 black-box CLI tests** at the `pidgin` binary as soon as it has `--version`/`--help`/`--session*` (cheap early wins, real end-to-end signal).
 6. **Enumerate and classify the ~58 `vi.mock` targets** (collaborator vs whole-module) to get a true estimate of the 100% cost before committing to it.
 7. **Ship the dashboard + CI gate** once step 1 is green, so N-of-M is visible and monotonic.
 

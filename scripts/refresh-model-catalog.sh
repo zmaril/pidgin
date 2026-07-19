@@ -3,9 +3,9 @@
 # refresh-model-catalog.sh
 #
 # Regenerates the vendored model-catalog snapshot consumed by the
-# atilla-model-catalog crate. This is the mechanism for bumping the upstream pi
+# pidgin-model-catalog crate. This is the mechanism for bumping the upstream pi
 # pin: it re-runs pi's generator at the CURRENT vendor/pi submodule commit and
-# rewrites crates/atilla-model-catalog/data/ (models.json, providers.json,
+# rewrites crates/pidgin-model-catalog/data/ (models.json, providers.json,
 # providers/<id>.json, manifest.json).
 #
 # This step is manual and NON-GATING — CI does not run it. Run it after bumping
@@ -19,7 +19,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-crate_data="$repo_root/crates/atilla-model-catalog/data"
+crate_data="$repo_root/crates/pidgin-model-catalog/data"
 generator="$repo_root/vendor/pi/packages/ai/scripts/generate-models.ts"
 
 if [[ ! -f "$generator" ]]; then
@@ -80,4 +80,4 @@ fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
 console.log(`Wrote manifest: ${providers.length} providers, ${modelCount} models`);
 NODE
 
-echo "Done. Review the diff under crates/atilla-model-catalog/data/ and commit."
+echo "Done. Review the diff under crates/pidgin-model-catalog/data/ and commit."

@@ -1,12 +1,12 @@
-# atilla
+# pidgin
 
 A continually updating mirror of [pi](https://github.com/earendil-works/pi),
-rewritten in Rust. atilla tracks upstream pi and re-implements it crate by
+rewritten in Rust. pidgin tracks upstream pi and re-implements it crate by
 crate, keeping pace as pi evolves.
 
 pi is an open-source agent harness — a self-extensible coding agent, an agent
 runtime with tool calling and state management, and a unified multi-provider
-LLM API — written in TypeScript and running on Node.js. atilla is the same
+LLM API — written in TypeScript and running on Node.js. pidgin is the same
 thing in Rust.
 
 ## Why
@@ -35,15 +35,15 @@ hand-written Rust that happens to be produced quickly.
 
 The workspace is a Cargo workspace so the engine and the shell stay separate:
 
-- **`atilla-core`** — the library. All the real work lives here so it stays
+- **`pidgin-core`** — the library. All the real work lives here so it stays
   testable without going through argv.
-- **`atilla-cli`** — a thin shell that parses arguments (with
-  [clap](https://docs.rs/clap)) and hands off to `atilla-core`. It builds the
-  `atilla` binary.
+- **`pidgin-cli`** — a thin shell that parses arguments (with
+  [clap](https://docs.rs/clap)) and hands off to `pidgin-core`. It builds the
+  `pidgin` binary.
 
 The workspace has grown well past scaffolding: the crates now mirror pi's
 packages (`ai`, `agent`, `coding-agent`, `tui`, `orchestrator`) behind the
-`atilla-core` façade, plus the `atilla-napi` bridge that fronts the conformance
+`pidgin-core` façade, plus the `pidgin-napi` bridge that fronts the conformance
 harness. New functionality slots into this established shape rather than a
 blank repo.
 
@@ -62,7 +62,7 @@ the Rust port through the `vendor/pi` overlay. The honest headline is
 test is a native (Rust addon) module; raw all-pass is a secondary
 **2919/3777**, inflated by unflipped TypeScript that passes without touching any
 Rust. **Native modules: 21/397.** A separate black-box signal runs pi's CLI
-tests, repointed at `target/release/atilla`: **CLI conformance 15/15**.
+tests, repointed at `target/release/pidgin`: **CLI conformance 15/15**.
 
 - **`notes/`** — research reports and design notes on pi's architecture and the
   port, landed via pull requests.
@@ -75,7 +75,7 @@ Build from a checkout with a recent stable Rust toolchain:
 
 ```sh
 git clone https://github.com/zmaril/atilla
-cd atilla
+cd pidgin
 git submodule update --init vendor/pi
 cargo build --release
 ```
@@ -84,19 +84,19 @@ The `git submodule update --init vendor/pi` step pulls in the `vendor/pi`
 overlay, which provides the fixtures the skills tests need — without it, those
 tests fail on a fresh clone.
 
-The binary lands at `target/release/atilla`. To install it onto your `PATH`:
+The binary lands at `target/release/pidgin`. To install it onto your `PATH`:
 
 ```sh
-cargo install --path crates/atilla-cli
+cargo install --path crates/pidgin-cli
 ```
 
 ## Usage
 
 ```sh
-atilla "explain this repo"   # run the agent on a prompt
-atilla list                  # list installed extensions
-atilla --help                # list commands and options
-atilla --version             # print the version
+pidgin "explain this repo"   # run the agent on a prompt
+pidgin list                  # list installed extensions
+pidgin --help                # list commands and options
+pidgin --version             # print the version
 ```
 
 ## Development
@@ -125,9 +125,9 @@ and `cargo test` green before opening a PR.
 
 ## Credits
 
-atilla is a Rust port of [pi](https://github.com/earendil-works/pi) by
+pidgin is a Rust port of [pi](https://github.com/earendil-works/pi) by
 [earendil-works](https://github.com/earendil-works) (Mario Zechner and
-contributors). All credit for the design and behavior atilla mirrors belongs to
+contributors). All credit for the design and behavior pidgin mirrors belongs to
 the pi authors. pi is licensed under the MIT License.
 
 ## License

@@ -1,5 +1,5 @@
 # Standalone throwaway spike. The empty [workspace] table below makes cargo
-# treat this crate as its own workspace root, so it does NOT join atilla's
+# treat this crate as its own workspace root, so it does NOT join pidgin's
 # root workspace (which lists specific crates/* members).
 [workspace]
 

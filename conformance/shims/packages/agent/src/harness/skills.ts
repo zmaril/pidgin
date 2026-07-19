@@ -1,5 +1,5 @@
-// Native shim for packages/agent/src/harness/skills.ts, backed by the atilla
-// Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when the
+// Native shim for packages/agent/src/harness/skills.ts, backed by the pidgin
+// Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when the
 // module is marked `native` in conformance/manifest.json: the original pi file
 // is preserved alongside as `skills.__pi_original__.ts` and this shim takes its
 // place, so pi's tests hit the Rust-backed skill loading + formatting.
@@ -23,7 +23,7 @@
 
 export * from "./skills.__pi_original__.ts";
 
-import { formatSkillInvocation as nativeFormatSkillInvocation } from "atilla-napi";
+import { formatSkillInvocation as nativeFormatSkillInvocation } from "pidgin-napi";
 import { nativeExecutionCore } from "./env/nodejs.ts";
 import { loadSkills as piLoadSkills } from "./skills.__pi_original__.ts";
 import type { SkillDiagnostic } from "./skills.__pi_original__.ts";

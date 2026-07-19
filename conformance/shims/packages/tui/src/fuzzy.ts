@@ -1,11 +1,11 @@
-// Native shim for packages/tui/src/fuzzy.ts, backed by the atilla Rust addon
-// (`atilla-napi`). Installed by conformance/codegen.mjs when the module is
+// Native shim for packages/tui/src/fuzzy.ts, backed by the pidgin Rust addon
+// (`pidgin-napi`). Installed by conformance/codegen.mjs when the module is
 // marked `native` in conformance/manifest.json: the original pi file is
 // preserved alongside as `fuzzy.__pi_original__.ts` and this shim takes its
 // place, so pi's tests import `../src/fuzzy.ts` unchanged and hit Rust.
 //
 // Scope of the native flip: the bespoke fuzzy scorer ported bit-exactly in
-// `crates/atilla-tui` (validated against pi's fuzzy.test.ts). `fuzzyMatch` is
+// `crates/pidgin-tui` (validated against pi's fuzzy.test.ts). `fuzzyMatch` is
 // backed by the Rust `fuzzyMatch`. `fuzzyFilter` takes a `getText` callback
 // that cannot cross the addon boundary, so it is re-implemented here verbatim
 // on top of the native `fuzzyMatch` — every scoring decision still runs through
@@ -13,7 +13,7 @@
 
 export * from "./fuzzy.__pi_original__.ts";
 
-import { fuzzyMatch as nativeFuzzyMatch } from "atilla-napi";
+import { fuzzyMatch as nativeFuzzyMatch } from "pidgin-napi";
 import type { FuzzyMatch } from "./fuzzy.__pi_original__.ts";
 
 export function fuzzyMatch(query: string, text: string): FuzzyMatch {

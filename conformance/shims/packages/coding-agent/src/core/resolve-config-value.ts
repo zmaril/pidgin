@@ -1,5 +1,5 @@
 // Native shim for packages/coding-agent/src/core/resolve-config-value.ts, backed
-// by the atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs
+// by the pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs
 // when the module is marked `native` in conformance/manifest.json: the original
 // pi file is preserved alongside as `resolve-config-value.__pi_original__.ts` and
 // this shim takes its place, so pi's callers (auth-storage, model-registry) and
@@ -7,7 +7,7 @@
 // unchanged and hit Rust.
 //
 // Scope of the native flip: every ported symbol, backed by
-// `atilla_coding::core::resolve_config_value`. The Rust port owns the literal /
+// `pidgin_coding::core::resolve_config_value`. The Rust port owns the literal /
 // `$ENV` template / `!command` parsing, the process-lifetime command result
 // cache, and the subprocess execution (default `sh -c`, pi's Unix path). pi's
 // optional credential-scoped `env` override crosses as a JSON object string; the
@@ -31,7 +31,7 @@ import {
 	resolveConfigValueUncached as nativeResolveConfigValueUncached,
 	resolveHeaders as nativeResolveHeaders,
 	resolveHeadersOrThrow as nativeResolveHeadersOrThrow,
-} from "atilla-napi";
+} from "pidgin-napi";
 
 /** Serialize pi's optional `env` override for the JSON boundary. */
 function envJson(env?: Record<string, string>): string | undefined {

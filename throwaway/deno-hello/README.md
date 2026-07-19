@@ -1,4 +1,4 @@
-# deno-hello — the deno_core "extension plane" shape for atilla (spike)
+# deno-hello — the deno_core "extension plane" shape for pidgin (spike)
 
 Throwaway spike proving that pi-style TypeScript extensions can run on an
 embedded `deno_core` `JsRuntime`, register into a Rust-side registry through
@@ -8,7 +8,7 @@ off-thread rendezvous described in `notes/startup/deep-hooks.md` §5
 
 The `JsRuntime` is `!Send`, so it lives on its own OS thread with its own
 current-thread tokio runtime. The "core hub" thread (a normal multi-thread
-tokio runtime, standing in for atilla's tokio core) talks to it over channels:
+tokio runtime, standing in for pidgin's tokio core) talks to it over channels:
 commands in, JSON results out. Only JSON crosses the Rust <-> JS boundary; JS
 closures (a tool's `execute`, hook handlers) stay inside the runtime, keyed by
 name. This mirrors pi's loader, where VM handles never cross.
@@ -150,7 +150,7 @@ uses jiti to do two things at runtime:
    `@earendil-works/pi-*` (also aliased `@mariozechner/pi-*`) and `typebox`.
    jiti satisfies these two ways: `virtualModules` (the `VIRTUAL_MODULES` map in
    the loader, used by the compiled Bun binary) and `alias` into `node_modules`
-   (development). atilla's `deno_core` loader will need the equivalent: a
+   (development). pidgin's `deno_core` loader will need the equivalent: a
    `ModuleLoader` that maps those bare specifiers to bundled JS
    implementations, because `deno_core` has no bare-specifier resolver of its
    own.

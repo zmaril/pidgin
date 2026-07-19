@@ -1,12 +1,12 @@
-// Native shim for packages/tui/src/keybindings.ts, backed by the atilla Rust
-// addon (`atilla-napi`). Installed by conformance/codegen.mjs when the module is
+// Native shim for packages/tui/src/keybindings.ts, backed by the pidgin Rust
+// addon (`pidgin-napi`). Installed by conformance/codegen.mjs when the module is
 // marked `native` in conformance/manifest.json: the original pi file is
 // preserved alongside as `keybindings.__pi_original__.ts` and this shim takes
 // its place, so pi's tests import `../src/keybindings.ts` unchanged and hit
 // Rust.
 //
 // Scope of the native flip: the `KeybindingsManager` resolution logic ported
-// bit-exactly in `crates/atilla-tui` (validated against pi's keybindings.test.ts)
+// bit-exactly in `crates/pidgin-tui` (validated against pi's keybindings.test.ts)
 // — the default-vs-user binding merge, conflict detection, `matches` (via the
 // native key parser), `getKeys`, and `getResolvedBindings`. This shim
 // re-implements pi's `KeybindingsManager` class, keeping `definitions` /
@@ -19,7 +19,7 @@
 
 export * from "./keybindings.__pi_original__.ts";
 
-import { KeybindingsManagerCore } from "atilla-napi";
+import { KeybindingsManagerCore } from "pidgin-napi";
 import type { KeyId } from "./keys.ts";
 import type {
 	Keybinding,

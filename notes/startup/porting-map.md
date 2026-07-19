@@ -1,13 +1,13 @@
-# pi → atilla Porting Map
+# pi → pidgin Porting Map
 
 > **Pinned upstream commit:** [`3da591ab74ab9ab407e72ed882600b2c851fae21`](https://github.com/earendil-works/pi/commit/3da591ab74ab9ab407e72ed882600b2c851fae21)
 > (`earendil-works/pi`, 2026-07-17 17:13:39 +0200 — "feat(coding-agent): add Hugging Face llama search")
 >
-> This map inventories pi at that exact commit. When re-syncing upstream, bump this hash and diff against it. atilla base at time of writing: `20603e2` (empty 2-crate scaffold).
+> This map inventories pi at that exact commit. When re-syncing upstream, bump this hash and diff against it. pidgin base at time of writing: `20603e2` (empty 2-crate scaffold).
 
 ## Overview
 
-pi is an npm-workspaces monorepo (pure ESM, Node >=22.19.0, TypeScript built with `tsgo`, linted with biome). It contains **five packages** totaling **~122,420 source LOC + ~82,841 test LOC**. atilla is a from-scratch Rust port: the target is a continually-updating Rust mirror exposed via native extensions per language, with pi's own test suite as the conformance bar and pi's TS as the spec.
+pi is an npm-workspaces monorepo (pure ESM, Node >=22.19.0, TypeScript built with `tsgo`, linted with biome). It contains **five packages** totaling **~122,420 source LOC + ~82,841 test LOC**. pidgin is a from-scratch Rust port: the target is a continually-updating Rust mirror exposed via native extensions per language, with pi's own test suite as the conformance bar and pi's TS as the spec.
 
 The internal dependency DAG is a clean chain — `ai` is the leaf everything rests on, `orchestrator` is the root that pulls in everything:
 
@@ -66,7 +66,7 @@ Not ink/blessed — a bespoke renderer. `@xterm/headless` is a test-only harness
 | `src/modes/interactive/*` | 16,663 | The interactive TUI app (depends on `tui`) | High | **After tui** |
 | `src/modes/rpc/*` | 1,726 | Headless RPC entrypoint (`dist/rpc-entry.js`) | Med | Good early headless target |
 | `src/utils/*` | 3,236 | Shared utilities | Low–Med | Early |
-| `src/cli/*` | 1,043 | argv shell, `pi` bin | Med | Maps to atilla-cli |
+| `src/cli/*` | 1,043 | argv shell, `pi` bin | Med | Maps to pidgin-cli |
 | `src/bun` | 55 | `bun build --compile` glue | Low | Skip (Rust binary is native) |
 
 ### orchestrator (port last, tiny)
@@ -93,9 +93,9 @@ Secondary: the `ai` package is largely provider-SDK glue (`@anthropic-ai/sdk`, `
 
 ## Porting ledger
 
-Status legend: `[ ] not started` · `[~] in progress` · `[x] ported` · `[T] passing upstream tests`. Future sessions update the Status column and link the atilla PR/crate as work lands.
+Status legend: `[ ] not started` · `[~] in progress` · `[x] ported` · `[T] passing upstream tests`. Future sessions update the Status column and link the pidgin PR/crate as work lands.
 
-| # | Module | Package | Src LOC | Upstream tests | Coupling | Status | atilla crate / PR |
+| # | Module | Package | Src LOC | Upstream tests | Coupling | Status | pidgin crate / PR |
 |---|---|---|---|---|---|---|---|
 | 1 | ai/utils | ai | 1,428 | packages/ai/test/** | Low | [x] ported | #52, #80 (also #71 compat) |
 | 2 | ai/api (anthropic-messages) — **first slice** | ai | ~part of 9,800 | packages/ai/test/** | Med | [x] ported | native per manifest (first-slice + seam series) |

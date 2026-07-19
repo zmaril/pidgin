@@ -3,23 +3,23 @@
      promoted in-tree binding, and the spike stays as the historical record, so
      the overlap is intentional. -->
 
-# atilla-php — PHP native extension (M0 scaffold)
+# pidgin-php — PHP native extension (M0 scaffold)
 
-The PHP binding for atilla, built in Rust with
+The PHP binding for pidgin, built in Rust with
 [`ext-php-rs`](https://github.com/davidcole1340/ext-php-rs) as a loadable `.so`.
 
 This is milestone **M0**: the native path proven in-tree. It is not a feature —
 it exists to show that Rust compiles an ext-php-rs extension, PHP loads it, and
-a PHP call reaches through the `atilla-core` façade and back. PHP goes first
+a PHP call reaches through the `pidgin-core` façade and back. PHP goes first
 because it is the weirdest host (synchronous, request-scoped, thread-bound); if
 the façade survives PHP, easier hosts follow.
 
 ## What it exposes
 
-- `class Atilla` with a static method `Atilla::version(): string`.
+- `class Pidgin` with a static method `Pidgin::version(): string`.
 
-`Atilla::version()` returns the atilla engine version by calling
-`atilla_core::version()` — a real call through the façade crate, not a string
+`Pidgin::version()` returns the pidgin engine version by calling
+`pidgin_core::version()` — a real call through the façade crate, not a string
 baked into this binding. PHP therefore sees the same authoritative version as
 the Rust core (the workspace version, `0.1.0` today).
 
@@ -39,17 +39,17 @@ schema/api.json + schema/catalog.json
 src/generated.rs  ──uses──▶  src/core_impl.rs   (hand-written engine wiring)
         │  cargo build
         ▼
-libatilla_php.so  ──▶  ./test.sh
+libpidgin_php.so  ──▶  ./test.sh
 ```
 
-- `schema/api.json` is atilla's façade api layer — the source of the PHP
+- `schema/api.json` is pidgin's façade api layer — the source of the PHP
   surface. `schema/catalog.json` is the minimal catalog fluessig-gen requires.
 - `src/generated.rs` is GENERATED and do-not-edit (it carries a do-not-edit
-  banner). It defines the `#[php_class] Atilla`, its methods, the `AtillaCore`
+  banner). It defines the `#[php_class] Pidgin`, its methods, the `PidginCore`
   trait, and the sole `#[php_module]`. Change the schema and rerun `./regen.sh`
   rather than editing it.
 - `src/core_impl.rs` is the hand-written implementation behind the generated
-  `AtillaCore` trait. The generated code routes every PHP-visible op through it,
+  `PidginCore` trait. The generated code routes every PHP-visible op through it,
   so engine wiring stays stable while the PHP surface is regenerated.
 - `src/lib.rs` is module wiring only (`mod generated; mod core_impl;`).
 
@@ -100,29 +100,29 @@ cd bindings/php
 ./test.sh release    # optimized build instead
 ```
 
-`test.sh` cargo-builds the `.so`, reads the real `atilla-core` version from its
+`test.sh` cargo-builds the `.so`, reads the real `pidgin-core` version from its
 Cargo metadata, then loads the extension with
-`php -d extension=<abs-path>/libatilla_php.so` and runs `test.php`, which asserts
-`Atilla::version()` equals that version and exits `0`. The script is
+`php -d extension=<abs-path>/libpidgin_php.so` and runs `test.php`, which asserts
+`Pidgin::version()` equals that version and exits `0`. The script is
 `set -euo pipefail`, so any failure — build, load, mismatch, or non-zero PHP
 exit — fails loudly.
 
 To build only:
 
 ```bash
-cargo build              # -> target/debug/libatilla_php.so
+cargo build              # -> target/debug/libpidgin_php.so
 ```
 
-The Done check in the milestone plan phrases this as `cargo build -p atilla-php`;
+The Done check in the milestone plan phrases this as `cargo build -p pidgin-php`;
 run that from inside `bindings/php` (this crate is its own workspace — see
-below), where `-p atilla-php` selects it.
+below), where `-p pidgin-php` selects it.
 
 ### Naming gotcha
 
-The **extension name** PHP registers is the crate *package* name, `atilla-php`
+The **extension name** PHP registers is the crate *package* name, `pidgin-php`
 (hyphenated) — that is what `extension_loaded()` and `php -m` report. The **`.so`
-file** is `libatilla_php.so` (from `[lib] name = "atilla_php"`, underscored).
-Loading via the full `extension=/abs/path/libatilla_php.so` works directly. To
+file** is `libpidgin_php.so` (from `[lib] name = "pidgin_php"`, underscored).
+Loading via the full `extension=/abs/path/libpidgin_php.so` works directly. To
 load it by short name from `php.ini`, the `.so` must sit on `extension_dir` and
 be referenced by file name.
 
@@ -131,11 +131,11 @@ be referenced by file name.
 This crate carries an **empty `[workspace]` table** in its `Cargo.toml`, so cargo
 treats it as its own single-crate workspace instead of attaching it to the
 workspace rooted at the repository top level. It still depends on the engine via
-a normal path dependency (`atilla-core = { path = "../../crates/atilla-core" }`),
-which resolves fine across the workspace boundary — atilla-core keeps inheriting
+a normal path dependency (`pidgin-core = { path = "../../crates/pidgin-core" }`),
+which resolves fine across the workspace boundary — pidgin-core keeps inheriting
 its version and edition from the root `[workspace.package]`.
 
-Why standalone rather than a member like `crates/atilla-napi`:
+Why standalone rather than a member like `crates/pidgin-napi`:
 
 - ext-php-rs pulls in `bindgen`, which needs **libclang and the PHP dev
   headers** at build time. If this crate were a workspace member, a plain

@@ -1,5 +1,5 @@
 //! deno-hello: a throwaway spike proving the deno_core "extension plane" shape
-//! for atilla.
+//! for pidgin.
 //!
 //! It demonstrates, end to end:
 //!   * pi-style TypeScript extensions (`export default (pi) => {...}`) authored
@@ -24,7 +24,7 @@ use serde::Serialize;
 use tokio::sync::{mpsc, oneshot};
 
 // ---------------------------------------------------------------------------
-// Rust-side stub registry (stands in for atilla's real Tool / Hook registry).
+// Rust-side stub registry (stands in for pidgin's real Tool / Hook registry).
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize)]
@@ -65,7 +65,7 @@ fn op_register_hook(state: &mut OpState, #[string] event: String) {
     list.push(label);
 }
 
-extension!(atilla_ext, ops = [op_register_tool, op_register_hook],);
+extension!(pidgin_ext, ops = [op_register_tool, op_register_hook],);
 
 // ---------------------------------------------------------------------------
 // JS bootstrap: sets up the `pi` object and the JS-side dispatchers. Real JS
@@ -272,7 +272,7 @@ fn js_plane_thread(mut rx: mpsc::UnboundedReceiver<Command>) {
         let registry: SharedRegistry = Rc::new(RefCell::new(Registry::default()));
 
         let mut runtime = JsRuntime::new(RuntimeOptions {
-            extensions: vec![atilla_ext::init()],
+            extensions: vec![pidgin_ext::init()],
             ..Default::default()
         });
         runtime.op_state().borrow_mut().put(registry.clone());

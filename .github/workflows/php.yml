@@ -2,7 +2,7 @@
 # necessarily mirrors ci.yml; Actions YAML has no include mechanism for it.
 #
 # PHP binding workflow. Builds the ext-php-rs cdylib and proves it loads in PHP
-# and returns the real atilla-core version (bindings/php/test.sh). The PHP
+# and returns the real pidgin-core version (bindings/php/test.sh). The PHP
 # binding is a standalone crate outside the root workspace (it needs libclang +
 # PHP dev headers, which the shared `rust` job does not install), so it gets its
 # own job here rather than riding along in ci.yml.
@@ -19,7 +19,7 @@ on:
 
 jobs:
   # Fan-out: only run the heavy build when the PR actually touches the PHP
-  # binding, its workflow, or the atilla-core façade it depends on. A skipped
+  # binding, its workflow, or the pidgin-core façade it depends on. A skipped
   # required check still reports green, so branch protection stays happy.
   changes:
     name: detect changes
@@ -35,7 +35,7 @@ jobs:
           filters: |
             php:
               - 'bindings/php/**'
-              - 'crates/atilla-core/**'
+              - 'crates/pidgin-core/**'
               - '.github/workflows/php.yml'
 
   php:

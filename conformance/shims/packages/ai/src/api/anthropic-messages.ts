@@ -1,12 +1,12 @@
 // Native shim for packages/ai/src/api/anthropic-messages.ts, backed by the
-// atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
+// pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: the original pi
 // file is preserved alongside as `anthropic-messages.__pi_original__.ts` and
 // this shim takes its place, so pi's tests import `../src/api/anthropic-messages.ts`
 // unchanged and hit Rust.
 //
 // Scope of the native flip (Stage 2): the SSE decode + event dispatch of pi's
-// `stream()` is served by the Rust parser (`atilla_ai::api::anthropic`). That is
+// `stream()` is served by the Rust parser (`pidgin_ai::api::anthropic`). That is
 // exactly the path exercised through an injected transport (`options.client`),
 // which is how pi's `anthropic-sse-parsing.test.ts` drives the parser. The
 // request-shaping + auth + real HTTP path (no injected client) is not yet ported,
@@ -22,7 +22,7 @@
 
 export * from "./anthropic-messages.__pi_original__.ts";
 
-import { anthropicParseSseStream } from "atilla-napi";
+import { anthropicParseSseStream } from "pidgin-napi";
 import type {
 	AssistantMessage,
 	AssistantMessageEvent,

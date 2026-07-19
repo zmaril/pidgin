@@ -1,4 +1,4 @@
-# atilla — repo conventions
+# pidgin — repo conventions
 
 Hard-won rules that new sessions keep rediscovering. Read this before touching
 CI-sensitive files, the conformance baseline, or any file governed by
@@ -9,7 +9,7 @@ CI-sensitive files, the conformance baseline, or any file governed by
 Straitjacket runs as its own CI check (`zmaril/straitjacket@v0.2.3`,
 `straitjacket --format text` from the repo root). Only **errors** fail CI;
 warnings do not. CI checks out **without** submodules, so `vendor/pi` is empty
-and only atilla source is scanned. CI scans the **PR merge commit**
+and only pidgin source is scanned. CI scans the **PR merge commit**
 (`refs/pull/N/merge`), not the branch tip — so an error in a file that changed
 only on newer `main` is a merge artifact, not something you introduced.
 
@@ -73,7 +73,7 @@ PR. Trust a fresh creds-stripped regen, not a remembered per-package number.
 
 ## Reading CI / merge-safety
 
-atilla is an Actions-only repo, so CI posts **check-runs**, not legacy commit
+pidgin is an Actions-only repo, so CI posts **check-runs**, not legacy commit
 statuses. The combined-status endpoint always returns `state: pending,
 total_count: 0` — that does **not** mean CI failed or is absent. Gate on the
 **check-runs API for the exact head SHA**: require a non-zero check-run count
@@ -96,13 +96,13 @@ the conformance baseline and ledger:
 - root `conformance.json`
 - `conformance/STEWARD.md` (and root `STEWARD.md`)
 
-**Flip-crew PRs may touch only** additions under `crates/atilla-napi`, shim
+**Flip-crew PRs may touch only** additions under `crates/pidgin-napi`, shim
 files, and manifest **row additions** — never the `conformance.json` baseline
 and never `STEWARD.md`. Baseline regens (creds-stripped, see above) are done by
 that single writer at merge-sequence time. Attribution stays honest: list a test
 file under a native row only when a genuine majority of its cases run native via
 the addon; when in doubt, under-report rather than over-claim.
 
-## atilla-napi lib.rs: keep it a thin module list
+## pidgin-napi lib.rs: keep it a thin module list
 
-Every napi addition (a flip's #[napi] class/functions) goes in its OWN module file crates/atilla-napi/src/<name>.rs with only a `mod <name>;` line added to lib.rs — never inline code in lib.rs. Rationale: Straitjacket enforces a 1500-line file-size ceiling; lib.rs hit 1621 lines and had to be split (autocomplete.rs, #149). Keeping lib.rs a thin mod list keeps it under the ceiling and keeps cross-PR merges to single additive mod lines (trivial keep-both resolution).
+Every napi addition (a flip's #[napi] class/functions) goes in its OWN module file crates/pidgin-napi/src/<name>.rs with only a `mod <name>;` line added to lib.rs — never inline code in lib.rs. Rationale: Straitjacket enforces a 1500-line file-size ceiling; lib.rs hit 1621 lines and had to be split (autocomplete.rs, #149). Keeping lib.rs a thin mod list keeps it under the ceiling and keeps cross-PR merges to single additive mod lines (trivial keep-both resolution).

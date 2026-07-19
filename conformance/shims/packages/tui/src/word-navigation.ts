@@ -1,12 +1,12 @@
-// Native shim for packages/tui/src/word-navigation.ts, backed by the atilla
-// Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when the
+// Native shim for packages/tui/src/word-navigation.ts, backed by the pidgin
+// Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when the
 // module is marked `native` in conformance/manifest.json: the original pi file
 // is preserved alongside as `word-navigation.__pi_original__.ts` and this shim
 // takes its place, so pi's tests import `../src/word-navigation.ts` unchanged
 // and hit Rust.
 //
 // Scope of the native flip: `findWordBackward`/`findWordForward` ported
-// bit-exactly in `crates/atilla-tui` (validated against pi's
+// bit-exactly in `crates/pidgin-tui` (validated against pi's
 // word-navigation.test.ts). Cursors are UTF-16 string indices, as in pi. The
 // native surface covers only the default `Intl.Segmenter` path; when a caller
 // supplies `options.segment` or `options.isAtomicSegment` (JS callbacks that
@@ -19,7 +19,7 @@ export * from "./word-navigation.__pi_original__.ts";
 import {
 	findWordBackward as nativeFindWordBackward,
 	findWordForward as nativeFindWordForward,
-} from "atilla-napi";
+} from "pidgin-napi";
 import {
 	findWordBackward as originalFindWordBackward,
 	findWordForward as originalFindWordForward,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Conformance runner for atilla.
+# Conformance runner for pidgin.
 #
 # Runs the vendored pi (vendor/pi) test suites against the codegen-materialized
 # module tree and records an honest baseline in conformance.json at the repo
@@ -102,23 +102,23 @@ fi
 # A build failure here is non-fatal — it is logged and the run continues; the
 # native shim's import would then throw and surface as test failures.
 #
-# Rebuild when the addon is missing OR any Rust source under crates/atilla-napi
-# or crates/atilla-ai is newer than the built .node. A plain "a .node exists"
+# Rebuild when the addon is missing OR any Rust source under crates/pidgin-napi
+# or crates/pidgin-ai is newer than the built .node. A plain "a .node exists"
 # check skipped the rebuild and could leave a stale addon from an earlier stage
 # that lacks newly-added exports (e.g. FauxCore), making the native faux shim's
-# `import { FauxCore } from "atilla-napi"` throw at load time in CI.
-log "verifying atilla-napi addon (best effort)"
-NODE_ADDON="$(ls "$REPO_ROOT"/crates/atilla-napi/*.node 2>/dev/null | head -n1 || true)"
+# `import { FauxCore } from "pidgin-napi"` throw at load time in CI.
+log "verifying pidgin-napi addon (best effort)"
+NODE_ADDON="$(ls "$REPO_ROOT"/crates/pidgin-napi/*.node 2>/dev/null | head -n1 || true)"
 NAPI_SRC_PATHS=(
-  "$REPO_ROOT/crates/atilla-napi/src"
-  "$REPO_ROOT/crates/atilla-napi/Cargo.toml"
-  "$REPO_ROOT/crates/atilla-ai/src"
-  "$REPO_ROOT/crates/atilla-ai/Cargo.toml"
+  "$REPO_ROOT/crates/pidgin-napi/src"
+  "$REPO_ROOT/crates/pidgin-napi/Cargo.toml"
+  "$REPO_ROOT/crates/pidgin-ai/src"
+  "$REPO_ROOT/crates/pidgin-ai/Cargo.toml"
 )
 if [ -n "$NODE_ADDON" ] && \
   [ -z "$(find "${NAPI_SRC_PATHS[@]}" -newer "$NODE_ADDON" -print -quit 2>/dev/null)" ]; then
   log "napi addon up to date (newer than Rust sources); skipping rebuild"
-elif (cd "$REPO_ROOT/crates/atilla-napi" && npm install && npx napi build --platform) \
+elif (cd "$REPO_ROOT/crates/pidgin-napi" && npm install && npx napi build --platform) \
   >"$OUT/napi-build.log" 2>&1; then
   log "napi addon built"
 else
@@ -126,31 +126,31 @@ else
 fi
 
 # Expose the built addon to the vendored pi tree so native shims can
-# `import ... from "atilla-napi"`. The symlink lands in pi's node_modules
+# `import ... from "pidgin-napi"`. The symlink lands in pi's node_modules
 # (untracked, gitignored) and is harmless when no module is native.
 if [ -d "$PI_ROOT/node_modules" ]; then
-  ln -sfn "$REPO_ROOT/crates/atilla-napi" "$PI_ROOT/node_modules/atilla-napi"
-  log "linked atilla-napi into pi node_modules"
+  ln -sfn "$REPO_ROOT/crates/pidgin-napi" "$PI_ROOT/node_modules/pidgin-napi"
+  log "linked pidgin-napi into pi node_modules"
 fi
 
-# --- atilla binary for black-box CLI conformance ---------------------------
+# --- pidgin binary for black-box CLI conformance ---------------------------
 # The repointed CLI test files (overlaid by codegen from the manifest's
-# cli_repoint list) spawn $ATILLA_BIN instead of pi's own cli.ts, so the four
+# cli_repoint list) spawn $PIDGIN_BIN instead of pi's own cli.ts, so the four
 # files run black-box against the compiled binary. A build failure here is
-# non-fatal: ATILLA_BIN stays empty, the CLI run below is skipped, and the
+# non-fatal: PIDGIN_BIN stays empty, the CLI run below is skipped, and the
 # cli_conformance metric records env-blocked rather than faking a pass.
-log "building atilla binary for CLI conformance (cargo build -p atilla-cli --release)"
-ATILLA_BIN=""
-if (cd "$REPO_ROOT" && cargo build -p atilla-cli --release) >"$OUT/cli-build.log" 2>&1; then
-  ATILLA_BIN="$REPO_ROOT/target/release/atilla"
-  log "atilla binary built: $ATILLA_BIN"
-elif (cd "$REPO_ROOT" && cargo build -p atilla-cli) >>"$OUT/cli-build.log" 2>&1; then
-  ATILLA_BIN="$REPO_ROOT/target/debug/atilla"
-  log "atilla release build failed; using debug binary: $ATILLA_BIN"
+log "building pidgin binary for CLI conformance (cargo build -p pidgin-cli --release)"
+PIDGIN_BIN=""
+if (cd "$REPO_ROOT" && cargo build -p pidgin-cli --release) >"$OUT/cli-build.log" 2>&1; then
+  PIDGIN_BIN="$REPO_ROOT/target/release/pidgin"
+  log "pidgin binary built: $PIDGIN_BIN"
+elif (cd "$REPO_ROOT" && cargo build -p pidgin-cli) >>"$OUT/cli-build.log" 2>&1; then
+  PIDGIN_BIN="$REPO_ROOT/target/debug/pidgin"
+  log "pidgin release build failed; using debug binary: $PIDGIN_BIN"
 else
-  log "atilla binary build failed (non-fatal; see cli-build.log)"
+  log "pidgin binary build failed (non-fatal; see cli-build.log)"
 fi
-export ATILLA_BIN
+export PIDGIN_BIN
 
 # --- codegen: materialize the module tree ----------------------------------
 log "running codegen (materialize module tree)"
@@ -270,14 +270,14 @@ if want tui; then
     add_note "tui: no test files discovered (env-blocked)"
   else
     for f in $tui_files; do
-      printf '# ATILLA-FILE: %s\n' "$f" >>"$TUI_TAP"
+      printf '# PIDGIN-FILE: %s\n' "$f" >>"$TUI_TAP"
       set +e
       (cd "$PI_ROOT/packages/tui" && timeout "$FILE_TIMEOUT" node --test --test-reporter=tap "$f") \
         >>"$TUI_TAP" 2>>"$OUT/tui.human.log"
       frc=$?
       set -e
       if [ "$frc" -eq 124 ]; then
-        printf '# tests 0\n# pass 0\n# fail 0\n# skipped 0\n# ATILLA-TIMEOUT %s\n' "$f" >>"$TUI_TAP"
+        printf '# tests 0\n# pass 0\n# fail 0\n# skipped 0\n# PIDGIN-TIMEOUT %s\n' "$f" >>"$TUI_TAP"
         tui_blocked=$((tui_blocked + 1))
       fi
     done
@@ -297,9 +297,9 @@ fi
 
 # --- black-box CLI conformance ---------------------------------------------
 # Run the four repointed coding-agent CLI test files against the compiled
-# atilla binary ($ATILLA_BIN). This is a SEPARATE signal from the module smoke
+# pidgin binary ($PIDGIN_BIN). This is a SEPARATE signal from the module smoke
 # above: it never feeds by_package or manifest_native_modules. codegen already
-# overlaid the repointed files; here we just spawn vitest with ATILLA_BIN set.
+# overlaid the repointed files; here we just spawn vitest with PIDGIN_BIN set.
 # Skipped (recorded env-blocked) when the binary did not build.
 CLI_REPOINT_FILES=(
   "test/stdout-cleanliness.test.ts"
@@ -323,11 +323,11 @@ write_cli_meta() {
       );
     '
 }
-if [ -z "$ATILLA_BIN" ] || [ ! -x "$ATILLA_BIN" ]; then
-  log "cli conformance: skipped (no atilla binary)"
-  write_cli_meta "env-blocked" "atilla binary not built (see cli-build.log)" "" ""
+if [ -z "$PIDGIN_BIN" ] || [ ! -x "$PIDGIN_BIN" ]; then
+  log "cli conformance: skipped (no pidgin binary)"
+  write_cli_meta "env-blocked" "pidgin binary not built (see cli-build.log)" "" ""
 else
-  log "cli conformance: 4 repointed files against $ATILLA_BIN"
+  log "cli conformance: 4 repointed files against $PIDGIN_BIN"
   cli_reporter="cli.vitest.json"
   cli_human="$OUT/cli.human.log"
   set +e
@@ -338,12 +338,12 @@ else
   set -e
   log "cli conformance: exit=$cli_rc"
   if [ "$cli_rc" -eq 124 ]; then
-    write_cli_meta "env-blocked" "cli suite timed out after ${PKG_TIMEOUT}s" "" "$ATILLA_BIN"
+    write_cli_meta "env-blocked" "cli suite timed out after ${PKG_TIMEOUT}s" "" "$PIDGIN_BIN"
   elif [ ! -s "$OUT/$cli_reporter" ]; then
     cli_tail="$(tail -n 3 "$cli_human" | tr '\n' ' ' | tr -d '"')"
-    write_cli_meta "env-blocked" "no reporter produced: ${cli_tail}" "" "$ATILLA_BIN"
+    write_cli_meta "env-blocked" "no reporter produced: ${cli_tail}" "" "$PIDGIN_BIN"
   else
-    write_cli_meta "ok" "vitest run against atilla binary, exit ${cli_rc}" "$cli_reporter" "$ATILLA_BIN"
+    write_cli_meta "ok" "vitest run against pidgin binary, exit ${cli_rc}" "$cli_reporter" "$PIDGIN_BIN"
   fi
 fi
 

@@ -1,0 +1,11 @@
+[package]
+name = "pidgin-model-catalog"
+description = "Vendored, parsed snapshot of pi's generated LLM model catalog."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }

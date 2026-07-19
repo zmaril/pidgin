@@ -3,7 +3,7 @@
 // prototype.call / build a CommandCore and drive it" shape; each mirrors a
 // distinct pi package-manager operation and is kept separate on purpose.
 // Native shim for packages/coding-agent/src/core/package-manager.ts, backed by
-// the atilla Rust addon (`atilla-napi`, `CommandCore`). Installed by
+// the pidgin Rust addon (`pidgin-napi`, `CommandCore`). Installed by
 // conformance/codegen.mjs when the module is marked `native` in
 // conformance/manifest.json: the original pi file is preserved alongside as
 // `package-manager.__pi_original__.ts` and this shim takes its place, so pi's
@@ -44,7 +44,7 @@
 
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { CommandCore } from "atilla-napi";
+import { CommandCore } from "pidgin-napi";
 import { DefaultPackageManager as PiDefaultPackageManager } from "./package-manager.__pi_original__.ts";
 
 export * from "./package-manager.__pi_original__.ts";

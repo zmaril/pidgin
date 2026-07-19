@@ -130,152 +130,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "atilla-agent"
-version = "0.1.0"
-dependencies = [
- "atilla-ai",
- "ignore",
- "proptest",
- "serde",
- "serde_json",
- "serde_yaml",
-]
-
-[[package]]
-name = "atilla-ai"
-version = "0.1.0"
-dependencies = [
- "atilla-model-catalog",
- "base64",
- "getrandom 0.4.3",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "url",
-]
-
-[[package]]
-name = "atilla-cli"
-version = "0.1.0"
-dependencies = [
- "atilla-coding",
- "atilla-core",
- "atilla-tui",
- "serde_json",
-]
-
-[[package]]
-name = "atilla-coding"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "atilla-agent",
- "atilla-ai",
- "atilla-tui",
- "base64",
- "globset",
- "grep-matcher",
- "grep-regex",
- "ignore",
- "indexmap",
- "nix",
- "regex",
- "semver",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2 0.10.9",
- "similar",
- "tempfile",
- "tokio",
- "unicode-normalization",
-]
-
-[[package]]
-name = "atilla-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "atilla-agent",
- "atilla-ai",
- "atilla-coding",
-]
-
-[[package]]
-name = "atilla-extensions"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "atilla-agent",
- "atilla-ai",
- "atilla-coding",
- "deno_ast",
- "deno_core",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "atilla-model-catalog"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "atilla-napi"
-version = "0.1.0"
-dependencies = [
- "atilla-agent",
- "atilla-ai",
- "atilla-coding",
- "atilla-tui",
- "indexmap",
- "napi",
- "napi-build",
- "napi-derive",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
-name = "atilla-orchestrator"
-version = "0.1.0"
-dependencies = [
- "atilla-agent",
- "atilla-ai",
- "atilla-coding",
- "clap",
- "nix",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "atilla-tui"
-version = "0.1.0"
-dependencies = [
- "base64",
- "core-graphics",
- "crossterm",
- "fancy-regex",
- "icu_segmenter",
- "proptest",
- "serde",
- "serde_json",
- "unicode-segmentation",
- "windows-sys 0.61.2",
-]
-
-[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2220,6 +2074,152 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5"
 dependencies = [
  "siphasher 1.0.3",
+]
+
+[[package]]
+name = "pidgin-agent"
+version = "0.1.0"
+dependencies = [
+ "ignore",
+ "pidgin-ai",
+ "proptest",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+]
+
+[[package]]
+name = "pidgin-ai"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "getrandom 0.4.3",
+ "pidgin-model-catalog",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "url",
+]
+
+[[package]]
+name = "pidgin-cli"
+version = "0.1.0"
+dependencies = [
+ "pidgin-coding",
+ "pidgin-core",
+ "pidgin-tui",
+ "serde_json",
+]
+
+[[package]]
+name = "pidgin-coding"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64",
+ "globset",
+ "grep-matcher",
+ "grep-regex",
+ "ignore",
+ "indexmap",
+ "nix",
+ "pidgin-agent",
+ "pidgin-ai",
+ "pidgin-tui",
+ "regex",
+ "semver",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2 0.10.9",
+ "similar",
+ "tempfile",
+ "tokio",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "pidgin-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "pidgin-agent",
+ "pidgin-ai",
+ "pidgin-coding",
+]
+
+[[package]]
+name = "pidgin-extensions"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "deno_ast",
+ "deno_core",
+ "pidgin-agent",
+ "pidgin-ai",
+ "pidgin-coding",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "pidgin-model-catalog"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "pidgin-napi"
+version = "0.1.0"
+dependencies = [
+ "indexmap",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "pidgin-agent",
+ "pidgin-ai",
+ "pidgin-coding",
+ "pidgin-tui",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "pidgin-orchestrator"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "nix",
+ "pidgin-agent",
+ "pidgin-ai",
+ "pidgin-coding",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "pidgin-tui"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "core-graphics",
+ "crossterm",
+ "fancy-regex",
+ "icu_segmenter",
+ "proptest",
+ "serde",
+ "serde_json",
+ "unicode-segmentation",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
