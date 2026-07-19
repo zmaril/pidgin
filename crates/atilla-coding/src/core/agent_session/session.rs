@@ -21,6 +21,7 @@ use atilla_agent::types::{AgentMessage, AgentTool};
 use atilla_ai::seams::AbortSignal;
 use atilla_ai::{Model, ThinkingLevel};
 
+use crate::core::compaction::Models;
 use crate::core::extensions::events::session::{SessionStartEvent, SessionStartReason};
 use crate::core::extensions::runner::{ExtensionRunner, StubExtensionRunner};
 use crate::core::extensions::types::ToolDefinition;
@@ -84,6 +85,19 @@ pub struct AgentSessionConfig {
     /// Session-start metadata emitted when extensions bind (pi
     /// `sessionStartEvent`); `None` defaults to `{ reason: "startup" }`.
     pub session_start_event: Option<SessionStartEvent>,
+    /// The provider seam compaction summarizes through (pi passes
+    /// `this.agent.streamFn` to `compact`; the ported `core::compaction::compact`
+    /// takes a [`Models`] instead — see [`super::compaction_turn`]).
+    ///
+    /// `Some` is the analog of pi's "custom `streamFn`" (a `streamFn` other than
+    /// `streamSimple`): compaction summarization runs through it and the
+    /// configured-auth gate is bypassed. `None` is the analog of the default
+    /// `streamSimple`: the configured-auth gate applies, and the runtime-driven
+    /// summarization it implies is part of the deferred credential-aware
+    /// `ModelRuntime` streaming surface (never reached by the offline suites,
+    /// which either supply a summarizer or have an extension provide the
+    /// compaction).
+    pub summarization_models: Option<Box<dyn Models>>,
 }
 
 /// The coding-agent turn-runner supervisor around [`atilla_agent::agent::Agent`]
@@ -176,6 +190,24 @@ pub struct AgentSession {
     /// the post-run loop (pi `_lastAssistantMessage`).
     pub(super) last_assistant_message: Arc<Mutex<Option<AgentMessage>>>,
 
+    /// The provider seam compaction summarizes through (pi passes
+    /// `this.agent.streamFn`); see [`AgentSessionConfig::summarization_models`].
+    /// `Some` bypasses the configured-auth gate (pi's custom-`streamFn` branch).
+    pub(super) summarization_models: Option<Box<dyn Models>>,
+    /// Guards context-overflow recovery to a single compact-and-retry attempt (pi
+    /// `_overflowRecoveryAttempted`). Shared with the agent-event handler, which
+    /// clears it on a user `message_start` and on a non-error assistant
+    /// `message_end`; read and set by `check_compaction`.
+    pub(super) overflow_recovery_attempted: Arc<Mutex<bool>>,
+    /// The abort signal for an in-progress manual `compact()` (pi
+    /// `_compactionAbortController`); `Some` only while `compact` runs. Tripped by
+    /// [`AgentSession::abort_compaction`].
+    pub(super) compaction_abort_signal: Arc<Mutex<Option<AbortSignal>>>,
+    /// The abort signal for an in-progress auto-compaction (pi
+    /// `_autoCompactionAbortController`); `Some` only while `run_auto_compaction`
+    /// runs. Tripped by [`AgentSession::abort_compaction`].
+    pub(super) auto_compaction_abort_signal: Arc<Mutex<Option<AbortSignal>>>,
+
     /// The current auto-retry attempt count (pi `_retryAttempt`). Shared with the
     /// agent-event handler, which resets it on a successful assistant response and
     /// reads it to compute `will_retry` for `agent_end`.
@@ -225,6 +257,7 @@ impl AgentSession {
             base_tools_override,
             extension_runner,
             session_start_event,
+            summarization_models,
         } = config;
 
         let extension_runner: Arc<dyn ExtensionRunner> = match extension_runner {
@@ -253,6 +286,10 @@ impl AgentSession {
         let retry_attempt = Arc::new(Mutex::new(0u32));
         let retry_abort_signal = Arc::new(Mutex::new(None));
         let retry_settings = Arc::new(Mutex::new(settings_manager.get_retry_settings()));
+        // The one-shot overflow-recovery guard (pi `_overflowRecoveryAttempted`) is
+        // shared with the handler so it can clear it on user `message_start` and on
+        // a successful assistant `message_end`.
+        let overflow_recovery_attempted = Arc::new(Mutex::new(false));
         // A cheap handle to the same shared agent state so the handler can read the
         // live model (pi `this.model`) when deciding `will_retry`.
         let handler_agent = agent.clone();
@@ -272,6 +309,7 @@ impl AgentSession {
             agent: handler_agent,
             retry_attempt: Arc::clone(&retry_attempt),
             retry_settings: Arc::clone(&retry_settings),
+            overflow_recovery_attempted: Arc::clone(&overflow_recovery_attempted),
         };
         let agent_subscription = agent.subscribe(build_agent_listener(handler));
 
@@ -304,6 +342,10 @@ impl AgentSession {
             retry_attempt,
             retry_abort_signal,
             retry_settings,
+            summarization_models,
+            overflow_recovery_attempted,
+            compaction_abort_signal: Arc::new(Mutex::new(None)),
+            auto_compaction_abort_signal: Arc::new(Mutex::new(None)),
             is_agent_run_active: AtomicBool::new(false),
             is_aborting: AtomicBool::new(false),
         }
@@ -450,6 +492,7 @@ mod tests {
             base_tools_override: None,
             extension_runner: None,
             session_start_event: None,
+            summarization_models: None,
         })
     }
 

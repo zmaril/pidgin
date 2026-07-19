@@ -15,8 +15,10 @@
 //! (`steer`/`follow_up`/`send_user_message`/`send_custom_message`/`clear_queue`/
 //! `pending_message_count`); [`retry`] carries auto-retry with exponential
 //! backoff (`is_retryable_error`/`prepare_retry`/`abort_retry`/`is_retrying` and
-//! the `will_retry` helpers the turn handler calls). The compaction / tree-nav /
-//! stats wiring lands in later PRs.
+//! the `will_retry` helpers the turn handler calls). [`compaction_turn`] carries
+//! the compaction integration (`check_compaction`/`run_auto_compaction`/the manual
+//! `compact`), wired into the turn spine's pre-send and post-run checks. The
+//! tree-nav / stats wiring lands in later PRs.
 //!
 //! # Owning an `AgentSession`
 //!
@@ -51,6 +53,7 @@
 //! that require genuine in-flight concurrent streaming are structurally N/A under
 //! this model and are `#[ignore]`d with that reason rather than weakened.
 
+pub mod compaction_turn;
 pub mod events;
 pub mod queue;
 pub mod retry;
@@ -60,6 +63,7 @@ pub mod turn;
 #[cfg(test)]
 pub(crate) mod test_support;
 
+pub use compaction_turn::*;
 pub use events::*;
 pub use queue::*;
 pub use session::*;
