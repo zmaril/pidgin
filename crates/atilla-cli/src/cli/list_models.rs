@@ -58,7 +58,9 @@ struct Row {
 /// pi's `listModels` (`list-models.ts:29`).
 pub fn list_models(runtime: &ModelRuntime, search_pattern: Option<&str>) {
     if let Some(load_error) = runtime.get_error() {
-        err_line(&format!("Warning: errors loading models.json:\n{load_error}"));
+        err_line(&format!(
+            "Warning: errors loading models.json:\n{load_error}"
+        ));
     }
 
     let models: Vec<Model> = runtime.get_available_snapshot().to_vec();
