@@ -28,7 +28,7 @@ use tokio::sync::{mpsc, oneshot};
 use atilla_coding::core::extensions::discovery::{DiscoveredExtension, ExtensionLanguage};
 
 use crate::api_ops::{self, SharedInventory};
-use crate::dispatch::{self, HookInvocation};
+use crate::dispatch::{self, HookInvocation, StoredInvocation};
 use crate::inventory::Inventory;
 use crate::loader;
 
@@ -80,6 +80,17 @@ enum Command {
         event_json: Value,
         ctx_json: Value,
         reply: oneshot::Sender<Result<HookInvocation, String>>,
+    },
+    /// Invoke a previously-registered JS closure (a tool's `execute`, a
+    /// command's `handler`, a provider's `oauth.getApiKey` / `refreshToken`)
+    /// kept live in the runtime and keyed by (`kind`, `name`), passing the
+    /// positional JSON `args`, returning the shaped invocation envelope. This is
+    /// the shared one-shot invoke-stored-JS-function primitive.
+    InvokeStored {
+        kind: String,
+        name: String,
+        args: Value,
+        reply: oneshot::Sender<Result<StoredInvocation, String>>,
     },
     /// Drain in-flight work and stop the runtime thread.
     Shutdown { reply: oneshot::Sender<()> },
@@ -213,6 +224,38 @@ impl JsPlaneHandle {
             .map_err(|e| anyhow!(e))
     }
 
+    /// Invoke the stored JS closure identified by (`kind`, `name`), passing the
+    /// positional JSON `args`, and await its shaped [`StoredInvocation`].
+    ///
+    /// The shared, one-shot, forward-only closure-invocation primitive: `kind`
+    /// selects the registry map (`"tool"` → a registered tool's `execute`,
+    /// `"command"` → a command's `handler`, `"providerGetApiKey"` /
+    /// `"providerRefreshToken"` → a provider's `oauth.*`), `name` is the registry
+    /// key, and `args` is a JSON array spread as the closure's positional
+    /// arguments. The runtime runs the closure, awaits its Promise if async, and
+    /// returns the plain-data envelope. A closure that throws — or a missing key
+    /// — surfaces as an envelope with `ok == false`; the runtime thread is never
+    /// unwound.
+    pub async fn invoke_stored(
+        &self,
+        kind: impl Into<String>,
+        name: impl Into<String>,
+        args: &Value,
+    ) -> Result<StoredInvocation> {
+        let (reply, rx) = oneshot::channel();
+        self.tx
+            .send(Command::InvokeStored {
+                kind: kind.into(),
+                name: name.into(),
+                args: args.clone(),
+                reply,
+            })
+            .map_err(|_| anyhow!("js plane gone"))?;
+        rx.await
+            .map_err(|_| anyhow!("js plane reply dropped"))?
+            .map_err(|e| anyhow!(e))
+    }
+
     /// Shut the runtime thread down cleanly, waiting for it to join.
     pub async fn shutdown(mut self) {
         let (reply, rx) = oneshot::channel();
@@ -283,6 +326,16 @@ fn js_plane_thread(mut rx: mpsc::UnboundedReceiver<Command>) {
                         &ctx_json,
                     )
                     .await;
+                    let _ = reply.send(res.map_err(|e| e.to_string()));
+                }
+                Command::InvokeStored {
+                    kind,
+                    name,
+                    args,
+                    reply,
+                } => {
+                    let res =
+                        dispatch::invoke_stored_on_runtime(&mut runtime, &kind, &name, &args).await;
                     let _ = reply.send(res.map_err(|e| e.to_string()));
                 }
                 Command::Shutdown { reply } => {

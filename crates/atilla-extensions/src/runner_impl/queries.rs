@@ -13,6 +13,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use serde_json::{json, Value};
 
 use atilla_agent::types::AgentToolResult;
@@ -23,8 +24,9 @@ use atilla_coding::core::extensions::types::ToolDefinition;
 use atilla_coding::core::source_info::{SourceInfo, SourceOrigin, SourceScope};
 
 use crate::inventory::{CommandRecord, ToolRecord};
+use crate::runtime::JsPlaneHandle;
 
-use super::DenoExtensionRunner;
+use super::{block_on_off_ambient, DenoExtensionRunner};
 
 /// The `&str` -> [`HookEvent`] adapter the seam contract calls for: match the raw
 /// event-type string against every [`HookEvent`] by its `as_str` name. Returns
@@ -50,13 +52,14 @@ impl DenoExtensionRunner {
     /// `getAllRegisteredTools` (`runner.ts:447`): every registered tool paired
     /// with its provenance, deduped by tool name (first registration wins).
     pub(crate) fn query_all_registered_tools(&self) -> Vec<RegisteredTool> {
+        let plane = self.inner.plane_arc();
         let mut seen: BTreeSet<String> = BTreeSet::new();
         let mut tools = Vec::new();
         for extension in self.inventories() {
             for record in &extension.inventory.tools {
                 if seen.insert(record.name.clone()) {
                     tools.push(RegisteredTool {
-                        tool: tool_definition(record),
+                        tool: tool_definition(record, Arc::clone(&plane)),
                         source_info: synthetic_source_info(&extension.path),
                     });
                 }
@@ -88,6 +91,7 @@ impl DenoExtensionRunner {
     /// flatten every extension's commands and disambiguate name collisions with
     /// an `:N` occurrence suffix.
     pub(crate) fn query_registered_commands(&self) -> Vec<ResolvedCommand> {
+        let plane = self.inner.plane_arc();
         let mut records: Vec<(&str, &CommandRecord)> = Vec::new();
         let mut counts: BTreeMap<&str, usize> = BTreeMap::new();
         for extension in self.inventories() {
@@ -125,7 +129,7 @@ impl DenoExtensionRunner {
             }
             taken.insert(invocation_name.clone());
             resolved.push(ResolvedCommand {
-                command: registered_command(extension_path, command),
+                command: registered_command(extension_path, command, Arc::clone(&plane)),
                 invocation_name,
             });
         }
@@ -155,12 +159,14 @@ fn synthetic_source_info(path: &str) -> SourceInfo {
 }
 
 /// Lower an inventory [`ToolRecord`] into a [`ToolDefinition`]. The metadata is
-/// carried faithfully; the JS-backed `execute` dispatch is not wired here (no
-/// acceptance path invokes a registered tool through the runner yet), so the
-/// synthesized `execute` returns an error-details result.
-// TODO(unit5): back `execute` with a JS tool-invocation primitive on the plane
-// and map `execution_mode` / `render_shell` from the record's string fields.
-fn tool_definition(record: &ToolRecord) -> ToolDefinition {
+/// carried faithfully; the JS-backed `execute` now dispatches through the shared
+/// one-shot invoke-stored primitive
+/// ([`JsPlaneHandle::invoke_stored`](crate::runtime::JsPlaneHandle::invoke_stored)),
+/// invoking the tool's live `execute` closure (kept in `reg.tools[name]`) with
+/// `[id, args]` and shaping its JSON result back into an [`AgentToolResult`].
+// TODO(unit5): map `execution_mode` / `render_shell` from the record's string
+// fields, and thread the `signal` / `on_update` / `ctx` through the primitive.
+fn tool_definition(record: &ToolRecord, plane: Arc<JsPlaneHandle>) -> ToolDefinition {
     let tool_name = record.name.clone();
     ToolDefinition {
         name: record.name.clone(),
@@ -168,18 +174,29 @@ fn tool_definition(record: &ToolRecord) -> ToolDefinition {
         description: record.description.clone(),
         parameters: record.parameters.clone(),
         execution_mode: None,
-        execute: Arc::new(
-            move |_id, _args, _signal, _on_update, _ctx| AgentToolResult {
-                content: Vec::new(),
-                details: json!({
-                    "error": format!(
-                        "tool '{tool_name}' has no host-backed execute yet (deno runner impl)"
-                    ),
-                }),
-                added_tool_names: None,
-                terminate: None,
-            },
-        ),
+        execute: Arc::new(move |id, args, _signal, _on_update, _ctx| {
+            // Invoke the stored JS `execute` closure with positional `[id, args]`.
+            let call_args = json!([id, args]);
+            let outcome =
+                block_on_off_ambient(plane.invoke_stored("tool", tool_name.clone(), &call_args));
+            match outcome {
+                Ok(invocation) if invocation.ok => {
+                    serde_json::from_value::<AgentToolResult>(invocation.result).unwrap_or_else(
+                        |error| {
+                            tool_error_result(format!(
+                                "tool '{tool_name}' returned an unparseable result: {error}"
+                            ))
+                        },
+                    )
+                }
+                Ok(invocation) => tool_error_result(invocation.error.unwrap_or_else(|| {
+                    format!("tool '{tool_name}' execute threw with no message")
+                })),
+                Err(error) => {
+                    tool_error_result(format!("tool '{tool_name}' invocation failed: {error}"))
+                }
+            }
+        }),
         prepare_arguments: None,
         prompt_snippet: record.prompt_snippet.clone(),
         prompt_guidelines: record.prompt_guidelines.clone(),
@@ -187,18 +204,53 @@ fn tool_definition(record: &ToolRecord) -> ToolDefinition {
     }
 }
 
+/// The error-details [`AgentToolResult`] used when a tool `execute` invocation
+/// fails or returns an unparseable shape (mirrors pi surfacing the failure as a
+/// tool result rather than unwinding the loop).
+fn tool_error_result(message: String) -> AgentToolResult {
+    AgentToolResult {
+        content: Vec::new(),
+        details: json!({ "error": message }),
+        added_tool_names: None,
+        terminate: None,
+    }
+}
+
 /// Build a [`RegisteredCommand`] from an inventory [`CommandRecord`]. The JS
-/// command handler is not wired (no acceptance path runs a registered command
-/// through the runner yet), so the synthesized handler is a no-op.
-// TODO(unit5): back `handler` with a JS command-invocation primitive on the
-// plane, and populate `get_argument_completions`.
-fn registered_command(extension_path: &str, record: &CommandRecord) -> RegisteredCommand {
+/// command handler now dispatches through the shared one-shot invoke-stored
+/// primitive, invoking the command's live `handler` closure (kept in
+/// `reg.commands[name]`) with the raw `[args]` string; a throw surfaces as an
+/// `Err`.
+// TODO(unit5): populate `get_argument_completions`, and thread `ctx` through the
+// primitive once the command context surface crosses the plane.
+fn registered_command(
+    extension_path: &str,
+    record: &CommandRecord,
+    plane: Arc<JsPlaneHandle>,
+) -> RegisteredCommand {
+    let command_name = record.name.clone();
     RegisteredCommand {
         name: record.name.clone(),
         source_info: synthetic_source_info(extension_path),
         description: record.description.clone(),
         get_argument_completions: None,
-        handler: Arc::new(|_args, _ctx| Ok(())),
+        handler: Arc::new(move |args, _ctx| {
+            let call_args = json!([args]);
+            let outcome = block_on_off_ambient(plane.invoke_stored(
+                "command",
+                command_name.clone(),
+                &call_args,
+            ));
+            match outcome {
+                Ok(invocation) if invocation.ok => Ok(()),
+                Ok(invocation) => Err(anyhow!(invocation.error.unwrap_or_else(|| {
+                    format!("command '{command_name}' handler threw with no message")
+                }))),
+                Err(error) => Err(anyhow!(
+                    "command '{command_name}' invocation failed: {error}"
+                )),
+            }
+        }),
     }
 }
 

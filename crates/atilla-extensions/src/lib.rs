@@ -71,6 +71,8 @@ mod inventory;
 #[cfg(feature = "deno")]
 mod loader;
 #[cfg(feature = "deno")]
+mod oauth_login_impl;
+#[cfg(feature = "deno")]
 mod resource_loader_impl;
 #[cfg(feature = "deno")]
 mod runner;
@@ -82,11 +84,14 @@ mod runtime;
 #[cfg(feature = "deno")]
 pub use context::MinimalExtensionContext;
 #[cfg(feature = "deno")]
-pub use dispatch::HookInvocation;
+pub use dispatch::{HookInvocation, StoredInvocation};
 #[cfg(feature = "deno")]
 pub use inventory::{
-    CommandRecord, FlagRecord, HookRecord, Inventory, RendererRecord, ShortcutRecord, ToolRecord,
+    CommandRecord, FlagRecord, HookRecord, Inventory, ProviderRecord, RendererRecord,
+    ShortcutRecord, ToolRecord,
 };
+#[cfg(feature = "deno")]
+pub use oauth_login_impl::DenoExtensionOAuthLogin;
 #[cfg(feature = "deno")]
 pub use resource_loader_impl::{RealExtensionLoader, RealExtensionRuntime};
 #[cfg(feature = "deno")]

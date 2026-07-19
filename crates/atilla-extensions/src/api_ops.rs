@@ -40,7 +40,8 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::inventory::{
-    CommandRecord, FlagRecord, HookRecord, Inventory, RendererRecord, ShortcutRecord, ToolRecord,
+    CommandRecord, FlagRecord, HookRecord, Inventory, ProviderRecord, RendererRecord,
+    ShortcutRecord, ToolRecord,
 };
 
 /// The inventory shared between the ops and the loader, living in the runtime's
@@ -84,6 +85,24 @@ struct FlagInput {
     #[serde(rename = "type")]
     flag_type: String,
     default: Option<Value>,
+}
+
+/// Metadata payload for `pi.registerProvider` (the serializable subset of pi's
+/// `ProviderConfigInput`; the `oauth` / streaming closures are dropped by
+/// `JSON.stringify` and stay live in the JS registry). The JS side flattens the
+/// `oauth`-closure presence into the `has_*` flags before calling the op.
+#[derive(Deserialize)]
+struct ProviderInput {
+    name: String,
+    base_url: Option<String>,
+    api: Option<String>,
+    auth_header: Option<bool>,
+    has_oauth: Option<bool>,
+    has_login: Option<bool>,
+    has_refresh_token: Option<bool>,
+    has_get_api_key: Option<bool>,
+    oauth_name: Option<String>,
+    uses_callback_server: Option<bool>,
 }
 
 /// Borrow the shared inventory out of the op state.
@@ -195,6 +214,44 @@ fn op_register_entry_renderer(state: &mut OpState, #[string] custom_type: String
         .push(RendererRecord { custom_type });
 }
 
+/// `pi.registerProvider(config)` — CAPTURE the provider registration's metadata.
+/// The live `oauth` closures stay in `__atilla.registry.providers`, keyed by
+/// name, for later invocation over the one-shot invoke-stored primitive; this op
+/// records only the serializable shape + closure-presence flags.
+#[op2(fast)]
+fn op_register_provider(state: &mut OpState, #[string] payload: String) {
+    let Ok(input) = serde_json::from_str::<ProviderInput>(&payload) else {
+        return;
+    };
+    let record = ProviderRecord {
+        name: input.name,
+        base_url: input.base_url,
+        api: input.api,
+        auth_header: input.auth_header,
+        has_oauth: input.has_oauth.unwrap_or(false),
+        has_login: input.has_login.unwrap_or(false),
+        has_refresh_token: input.has_refresh_token.unwrap_or(false),
+        has_get_api_key: input.has_get_api_key.unwrap_or(false),
+        oauth_name: input.oauth_name,
+        uses_callback_server: input.uses_callback_server,
+    };
+    let inventory = inventory(state);
+    let mut inventory = inventory.borrow_mut();
+    // pi's registry is keyed by name: a re-register replaces the prior entry.
+    inventory.providers.retain(|p| p.name != record.name);
+    inventory.providers.push(record);
+}
+
+/// `pi.unregisterProvider(name)` — drop the captured provider record (the JS
+/// side removes the live closures from the registry map).
+#[op2(fast)]
+fn op_unregister_provider(state: &mut OpState, #[string] name: String) {
+    inventory(state)
+        .borrow_mut()
+        .providers
+        .retain(|p| p.name != name);
+}
+
 extension!(
     atilla_api_ops,
     ops = [
@@ -206,6 +263,8 @@ extension!(
         op_get_flag,
         op_register_message_renderer,
         op_register_entry_renderer,
+        op_register_provider,
+        op_unregister_provider,
     ],
 );
 
@@ -231,6 +290,10 @@ globalThis.__atilla = {
     shortcuts: new Map(),
     messageRenderers: new Map(),
     entryRenderers: new Map(),
+    // Providers keep their live `oauth` closures (login/refreshToken/getApiKey)
+    // and streaming closures here, keyed by name, for the one-shot invoke-stored
+    // primitive (crate::dispatch::invoke_stored_on_runtime).
+    providers: new Map(),
   },
 };
 
@@ -311,6 +374,39 @@ const pi = {
     ops.op_register_entry_renderer(customType);
   },
 
+  // ---- Provider registration (implemented: capture) --------------------
+  // Mirrors pi's `pi.registerProvider(config)` (provider-composer.ts): the
+  // live `oauth` (login/refreshToken/getApiKey) and streaming closures stay in
+  // the JS registry, keyed by name; only the serializable metadata + closure-
+  // presence flags cross into the Rust Inventory. The kept closures are invoked
+  // later over the one-shot invoke-stored primitive (`__atilla.invokeStored`).
+  registerProvider(config) {
+    if (!config || typeof config !== "object") { return; }
+    const name = config.name ?? "";
+    reg.providers.set(name, config);
+    const oauth = config.oauth;
+    ops.op_register_provider(JSON.stringify({
+      name,
+      base_url: config.baseUrl ?? null,
+      api: config.api ?? null,
+      auth_header: typeof config.authHeader === "boolean" ? config.authHeader : null,
+      has_oauth: !!oauth,
+      has_login: !!(oauth && typeof oauth.login === "function"),
+      has_refresh_token: !!(oauth && typeof oauth.refreshToken === "function"),
+      has_get_api_key: !!(oauth && typeof oauth.getApiKey === "function"),
+      oauth_name: (oauth && typeof oauth.name === "string") ? oauth.name : null,
+      uses_callback_server:
+        (oauth && typeof oauth.usesCallbackServer === "boolean")
+          ? oauth.usesCallbackServer
+          : null,
+    }));
+  },
+
+  unregisterProvider(name) {
+    reg.providers.delete(name);
+    ops.op_unregister_provider(name);
+  },
+
   // ---- Action methods (stubbed; PR-F) ----------------------------------
   sendMessage: unimplemented(undefined),
   sendUserMessage: unimplemented(undefined),
@@ -326,8 +422,6 @@ const pi = {
   setModel: unimplemented(Promise.resolve(false)),
   getThinkingLevel: unimplemented(undefined),
   setThinkingLevel: unimplemented(undefined),
-  registerProvider: unimplemented(undefined),
-  unregisterProvider: unimplemented(undefined),
 
   // Minimal EventBus stub: on/off/emit are no-ops.
   events: { on() {}, off() {}, emit() {}, once() {} },
@@ -406,6 +500,70 @@ globalThis.__atilla.invokeHook = async (event, index, eventJson, ctxJson) => {
       ok: false,
       result: null,
       event: eventObj,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+  }
+};
+
+// ---- Stored-closure INVOKE surface (one-shot primitive) ----------------
+// The shared invoke-stored-JS-function primitive (crate::dispatch::
+// invoke_stored_on_runtime): invoke a closure a registration kept live in the
+// runtime by (kind, name) — a tool's `execute`, a command's `handler`, a
+// provider's `oauth.getApiKey`/`refreshToken` — with a JSON args array spread as
+// positional arguments, returning a plain-data envelope. One-shot, forward-only,
+// JSON-in/out; a thrown or missing closure is isolated into an `ok:false`
+// envelope, never unwinding the runtime. `argsJson` is a JSON array; a non-array
+// is wrapped as a single positional argument.
+globalThis.__atilla.invokeStored = async (kind, name, argsJson) => {
+  let args;
+  try { args = JSON.parse(argsJson); } catch (_e) { args = []; }
+  if (!Array.isArray(args)) { args = [args]; }
+  const fail = (message) =>
+    JSON.stringify({ ok: false, result: null, error: message });
+  try {
+    let result;
+    switch (kind) {
+      case "tool": {
+        const tool = reg.tools.get(name);
+        if (!tool || typeof tool.execute !== "function") {
+          return fail(`no registered tool '${name}' with an execute closure`);
+        }
+        result = await tool.execute(...args);
+        break;
+      }
+      case "command": {
+        const cmd = reg.commands.get(name);
+        if (!cmd || typeof cmd.handler !== "function") {
+          return fail(`no registered command '${name}' with a handler closure`);
+        }
+        result = await cmd.handler(...args);
+        break;
+      }
+      case "providerGetApiKey": {
+        const p = reg.providers.get(name);
+        if (!p || !p.oauth || typeof p.oauth.getApiKey !== "function") {
+          return fail(`no registered provider '${name}' with oauth.getApiKey`);
+        }
+        result = p.oauth.getApiKey(...args);
+        break;
+      }
+      case "providerRefreshToken": {
+        const p = reg.providers.get(name);
+        if (!p || !p.oauth || typeof p.oauth.refreshToken !== "function") {
+          return fail(`no registered provider '${name}' with oauth.refreshToken`);
+        }
+        result = await p.oauth.refreshToken(...args);
+        break;
+      }
+      default:
+        return fail(`unknown invokeStored kind '${kind}'`);
+    }
+    return JSON.stringify({ ok: true, result: result === undefined ? null : result });
+  } catch (err) {
+    return JSON.stringify({
+      ok: false,
+      result: null,
       error: err instanceof Error ? err.message : String(err),
       stack: err instanceof Error ? err.stack : undefined,
     });
