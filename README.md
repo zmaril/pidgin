@@ -104,14 +104,14 @@ workspace, so no provider call can be made; the `ai` crate is codecs, auth
 token handling, and cost math without a transport underneath it. Every path
 that needs a model dead-ends today:
 
-```sh
-atilla --version             # prints the version                    ✅
-atilla --help                # prints pi's full help text            ✅
-atilla --list-models         # prints nothing, exits 0               ⛔
-atilla list                  # "No models available…"                ⛔
-atilla -p "explain this repo"  # "No models available…"              ⛔
-atilla                       # "interactive mode is not yet implemented" ⛔
-```
+| command | works | output |
+| --- | --- | --- |
+| `atilla --version` | yes | the version |
+| `atilla --help` | yes | pi's full help text |
+| `atilla --list-models` | no | nothing, exit 0 |
+| `atilla list` | no | `No models available…` |
+| `atilla -p "explain this repo"` | no | `No models available…` |
+| `atilla` | no | `interactive mode is not yet implemented` |
 
 The help text is pi's, carried over verbatim — the providers, tools, and flags
 it advertises are the port's target surface, not what the binary does now. What
