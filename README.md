@@ -56,13 +56,21 @@ compaction, `SessionManager`), and the `tui` components. **`orchestrator` is the
 remaining in-progress package**, alongside coding-agent's interactive mode and
 the full jiti extension engine.
 
+What is ported is the pure logic of those packages. The I/O layer is not: there
+is no HTTP client in the workspace, and the CLI has no model runtime wired to
+it, so **the `atilla` binary cannot currently run an agent** — see
+[Usage](#usage). Treat the port as a library that passes tests, not a working
+harness.
+
 Correctness is measured by running pi's **own unmodified** test suite against
 the Rust port through the `vendor/pi` overlay. The honest headline is
 **rust-backed passing: 258/3777 (6.8%)** — cases in files whose module under
 test is a native (Rust addon) module; raw all-pass is a secondary
 **2919/3777**, inflated by unflipped TypeScript that passes without touching any
 Rust. **Native modules: 21/397.** A separate black-box signal runs pi's CLI
-tests, repointed at `target/release/atilla`: **CLI conformance 15/15**.
+tests, repointed at `target/release/atilla`: **CLI conformance 15/15** — note
+that these cover metadata and error paths (`--version`, `--help`, unknown-model
+handling), not an agent turn.
 
 - **`notes/`** — research reports and design notes on pi's architecture and the
   port, landed via pull requests.
@@ -74,10 +82,14 @@ tests, repointed at `target/release/atilla`: **CLI conformance 15/15**.
 Build from a checkout with a recent stable Rust toolchain:
 
 ```sh
-git clone https://github.com/zmaril/atilla
+git clone --recurse-submodules https://github.com/zmaril/atilla
 cd atilla
 cargo build --release
 ```
+
+The `vendor/pi` submodule is required: the skills tests load fixtures from it,
+and `cargo test` fails on a clone without it. If you already cloned without
+`--recurse-submodules`, run `git submodule update --init vendor/pi`.
 
 The binary lands at `target/release/atilla`. To install it onto your `PATH`:
 
@@ -87,12 +99,24 @@ cargo install --path crates/atilla-cli
 
 ## Usage
 
+**The binary cannot yet run an agent.** There is no HTTP client in the
+workspace, so no provider call can be made; the `ai` crate is codecs, auth
+token handling, and cost math without a transport underneath it. Every path
+that needs a model dead-ends today:
+
 ```sh
-atilla "explain this repo"   # run the agent on a prompt
-atilla list                  # list installed extensions
-atilla --help                # list commands and options
-atilla --version             # print the version
+atilla --version             # prints the version                    ✅
+atilla --help                # prints pi's full help text            ✅
+atilla --list-models         # prints nothing, exits 0               ⛔
+atilla list                  # "No models available…"                ⛔
+atilla -p "explain this repo"  # "No models available…"              ⛔
+atilla                       # "interactive mode is not yet implemented" ⛔
 ```
+
+The help text is pi's, carried over verbatim — the providers, tools, and flags
+it advertises are the port's target surface, not what the binary does now. What
+works today is the library: the pure-logic tiers (parsing, codecs, config,
+session formats, TUI components, cost accounting) under `cargo test`.
 
 ## Development
 
