@@ -101,7 +101,10 @@ impl DenoExtensionOAuthLogin {
 }
 
 impl ExtensionOAuthLogin for DenoExtensionOAuthLogin {
-    fn login(&self, _callbacks: &dyn OAuthLoginCallbacks) -> Result<OAuthCredential, AuthFlowError> {
+    fn login(
+        &self,
+        _callbacks: &dyn OAuthLoginCallbacks,
+    ) -> Result<OAuthCredential, AuthFlowError> {
         // Documented error-stub: interactive login requires the reentrant
         // callback suspend/resume primitive (a future wave), which the one-shot
         // invoke-stored primitive does not provide. Never a silent no-op.

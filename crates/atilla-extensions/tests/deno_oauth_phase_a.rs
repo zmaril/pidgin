@@ -142,7 +142,10 @@ async fn invoke_stored_runs_a_command_handler() {
     assert!(invocation.ok, "expected ok, got {:?}", invocation.error);
 
     // The handler ran its side effect on the plane.
-    let last = plane.eval("globalThis.__lastGreet").await.expect("read effect");
+    let last = plane
+        .eval("globalThis.__lastGreet")
+        .await
+        .expect("read effect");
     assert_eq!(last, json!("world"));
 }
 
@@ -217,7 +220,10 @@ async fn runner_command_handler_dispatches_through_primitive() {
     let ctx = MinimalExtensionContext::new("/p");
     (command.command.handler)("hello-args", &ctx).expect("handler runs ok");
 
-    let last = plane.eval("globalThis.__lastGreet").await.expect("read effect");
+    let last = plane
+        .eval("globalThis.__lastGreet")
+        .await
+        .expect("read effect");
     assert_eq!(last, json!("hello-args"));
 }
 

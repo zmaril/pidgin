@@ -180,15 +180,14 @@ fn tool_definition(record: &ToolRecord, plane: Arc<JsPlaneHandle>) -> ToolDefini
             let outcome =
                 block_on_off_ambient(plane.invoke_stored("tool", tool_name.clone(), &call_args));
             match outcome {
-                Ok(invocation) if invocation.ok => {
-                    serde_json::from_value::<AgentToolResult>(invocation.result).unwrap_or_else(
-                        |error| {
-                            tool_error_result(format!(
-                                "tool '{tool_name}' returned an unparseable result: {error}"
-                            ))
-                        },
-                    )
-                }
+                Ok(invocation) if invocation.ok => serde_json::from_value::<AgentToolResult>(
+                    invocation.result,
+                )
+                .unwrap_or_else(|error| {
+                    tool_error_result(format!(
+                        "tool '{tool_name}' returned an unparseable result: {error}"
+                    ))
+                }),
                 Ok(invocation) => tool_error_result(invocation.error.unwrap_or_else(|| {
                     format!("tool '{tool_name}' execute threw with no message")
                 })),
