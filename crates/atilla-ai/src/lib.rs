@@ -21,6 +21,7 @@ pub mod seams;
 pub mod types;
 pub mod utils;
 
+pub use api::lazy::lazy_stream;
 pub use compat::{
     get_api_provider, get_api_providers, register_api_provider, register_builtin_api_providers,
     register_faux_provider, reset_api_providers, unregister_api_providers, ApiProvider,
