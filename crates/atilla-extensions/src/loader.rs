@@ -41,6 +41,8 @@
 use deno_core::v8;
 use deno_core::{JsRuntime, ModuleSpecifier, PollEventLoopOptions};
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use crate::api_ops::SharedInventory;
 use crate::inventory::Inventory;
 use crate::runtime::SourceLanguage;
@@ -48,8 +50,15 @@ use crate::runtime::SourceLanguage;
 /// The synthetic module-specifier scheme extensions load under.
 const SPECIFIER_PREFIX: &str = "file:///atilla-extension/";
 
-/// Build a `file://` module specifier from an extension id, sanitizing it to a
-/// URL-safe stem.
+/// Monotonic per-load counter making every extension's module specifier unique.
+///
+/// deno_core keys modules by specifier and rejects loading a second module under
+/// an existing one. Two extensions can legitimately share an id (or the same one
+/// can be reloaded), so the specifier must be unique per load regardless of id.
+static LOAD_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+/// Build a unique `file://` module specifier from an extension id, sanitizing it
+/// to a URL-safe stem and suffixing a monotonic counter for uniqueness.
 fn make_specifier(id: &str) -> Result<ModuleSpecifier, String> {
     let sanitized: String = id
         .chars()
@@ -66,7 +75,8 @@ fn make_specifier(id: &str) -> Result<ModuleSpecifier, String> {
     } else {
         sanitized.as_str()
     };
-    let url = format!("{SPECIFIER_PREFIX}{stem}.ts");
+    let n = LOAD_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let url = format!("{SPECIFIER_PREFIX}{stem}-{n}.ts");
     ModuleSpecifier::parse(&url)
         .map_err(|e| format!("Failed to load extension: bad specifier: {e}"))
 }
@@ -121,9 +131,11 @@ pub async fn load_extension(
         SourceLanguage::JavaScript => source.to_string(),
     };
 
-    // 1. Load + evaluate as an ES module.
+    // 1. Load + evaluate as an ES module. A *side* module (not "main"): a
+    //    JsRuntime allows only one main module for its whole life, but a plane
+    //    loads many extensions, so each is a side module.
     let mod_id = runtime
-        .load_main_es_module_from_code(&specifier, code)
+        .load_side_es_module_from_code(&specifier, code)
         .await
         .map_err(|e| format!("Failed to load extension: {e}"))?;
     let eval = runtime.mod_evaluate(mod_id);
