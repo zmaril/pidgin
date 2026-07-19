@@ -13,21 +13,30 @@
 //!
 //! The re-export barrel below mirrors pi's `index.ts`, limited to the modules
 //! ported so far. Like pi's `index.ts`, it does **not** re-export [`radius`]:
-//! that module is imported directly by the (not-yet-ported) supervisor. The
+//! that module is imported directly by the [`supervisor`]. The
 //! [`credential_store`] module is a Rust-native seam supporting radius (pi reads
 //! the file through `@earendil-works/pi-coding-agent`), so it is likewise not
 //! part of pi's barrel.
 
 pub mod config;
 pub mod credential_store;
+pub mod handler;
 pub mod ipc;
 pub mod radius;
 pub mod rpc_process;
 pub mod storage;
+pub mod supervisor;
 pub mod types;
 
 /// Name of the pi package this crate mirrors.
 pub const PI_PACKAGE: &str = "@earendil-works/pi-orchestrator";
+
+/// A process-wide lock serializing every test that mutates a global environment
+/// variable (`PI_ORCHESTRATOR_DIR`, `RADIUS_API_KEY`, `PI_RADIUS_*`). These vars
+/// steer the storage/config/radius helpers, so tests across modules must not race
+/// on them; a single shared lock serializes them all.
+#[cfg(test)]
+pub(crate) static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 #[cfg(test)]
 mod tests {

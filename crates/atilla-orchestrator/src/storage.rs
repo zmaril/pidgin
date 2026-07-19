@@ -113,11 +113,7 @@ pub fn remove_instance(instance_id: &str) -> io::Result<()> {
 mod tests {
     use super::*;
     use crate::types::InstanceStatus;
-    use std::sync::{Mutex, MutexGuard};
-
-    /// The storage helpers read `PI_ORCHESTRATOR_DIR` from the process env, which
-    /// is global; serialize the tests and point each at a fresh temp directory.
-    static ENV_LOCK: Mutex<()> = Mutex::new(());
+    use std::sync::MutexGuard;
 
     struct StorageEnv {
         _lock: MutexGuard<'static, ()>,
@@ -127,7 +123,7 @@ mod tests {
 
     impl StorageEnv {
         fn new() -> Self {
-            let lock = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+            let lock = crate::ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
             let saved = std::env::var("PI_ORCHESTRATOR_DIR").ok();
             let dir = tempfile::tempdir().unwrap();
             std::env::set_var("PI_ORCHESTRATOR_DIR", dir.path());
