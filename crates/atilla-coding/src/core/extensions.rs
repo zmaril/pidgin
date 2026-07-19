@@ -1,11 +1,28 @@
 //! Mirror of pi-coding-agent's extensions subsystem
 //! (`packages/coding-agent/src/core/extensions`).
 //!
-//! Only the type surface on the exec-tools tool-registry critical path is ported
-//! so far ([`types::ToolDefinition`] and [`types::ExtensionContext`]), plus the
-//! [`loader`] trait seam the resource-loader orchestrator calls; the dynamic
-//! extension engine itself (pi's `jiti` host) is owned by the extension-plane
-//! session and lands later.
+//! Ported so far:
+//! - [`types`] — the tool-registry critical-path types
+//!   ([`types::ToolDefinition`], [`types::ExtensionContext`]).
+//! - [`loader`] — the extension-loader trait seam the resource-loader
+//!   orchestrator calls (the dynamic extension engine itself, pi's `jiti` host,
+//!   is owned by the extension-plane session and lands later).
+//! - [`events`] — the faithful port of pi's 33 hook-event payload and result
+//!   types (the `ExtensionEvent` union), split into a directory module.
+//! - [`hook`] — the [`hook::Hook`] trait, the [`hook::HookEvent`] event-name
+//!   enum, and the [`hook::HookOutcome`] / [`hook::Affinity`] design types.
+//! - [`command`] — the [`command::Command`] trait and the
+//!   [`command::RegisteredCommand`] descriptor.
+//! - [`registry`] — the [`registry::ExtensionHost`] registration surface and the
+//!   [`registry::Registry`] inventory.
+//!
+//! The loader/discovery and the `ExtensionRunner` hook-dispatch machinery land in
+//! later ports. These modules are pure types and traits — no runtime, no
+//! `deno_core`, no JS.
 
+pub mod command;
+pub mod events;
+pub mod hook;
 pub mod loader;
+pub mod registry;
 pub mod types;
