@@ -255,39 +255,46 @@ mod tests {
             .position(|window| window == needle)
     }
 
-    /// Spawn a one-shot server on `127.0.0.1:0`. The handler receives the parsed
-    /// request and the accepted stream, and is responsible for writing the whole
-    /// response. Returns the bound base URL (`http://127.0.0.1:PORT`).
-    fn spawn_server<F>(handler: F) -> String
+    /// Bind a one-shot server on `127.0.0.1:0`, hand the accepted stream to
+    /// `handler` on a background thread, and return the bound base URL
+    /// (`http://127.0.0.1:PORT`). The shared bind/accept core behind the request
+    /// servers below.
+    fn spawn_on_loopback<F>(handler: F) -> String
     where
-        F: FnOnce(Served, &mut TcpStream) + Send + 'static,
+        F: FnOnce(TcpStream) + Send + 'static,
     {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind loopback");
         let addr = listener.local_addr().expect("local addr");
         thread::spawn(move || {
-            if let Ok((mut stream, _)) = listener.accept() {
-                let served = read_request(&mut stream);
-                handler(served, &mut stream);
+            if let Ok((stream, _)) = listener.accept() {
+                handler(stream);
             }
         });
         format!("http://{addr}")
+    }
+
+    /// Spawn a one-shot server whose `handler` receives the parsed request and
+    /// the accepted stream, and is responsible for writing the whole response.
+    fn spawn_server<F>(handler: F) -> String
+    where
+        F: FnOnce(Served, &mut TcpStream) + Send + 'static,
+    {
+        spawn_on_loopback(move |mut stream| {
+            let served = read_request(&mut stream);
+            handler(served, &mut stream);
+        })
     }
 
     /// A server that never reads/responds until after `delay`, then closes —
     /// used to exercise the client timeout path. Accepts the connection so the
     /// failure is a read timeout, not a connect refusal.
     fn spawn_slow_server(delay: Duration) -> String {
-        let listener = TcpListener::bind("127.0.0.1:0").expect("bind loopback");
-        let addr = listener.local_addr().expect("local addr");
-        thread::spawn(move || {
-            if let Ok((mut stream, _)) = listener.accept() {
-                let mut tmp = [0u8; 1024];
-                let _ = stream.read(&mut tmp);
-                thread::sleep(delay);
-                let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nhi");
-            }
-        });
-        format!("http://{addr}")
+        spawn_on_loopback(move |mut stream| {
+            let mut tmp = [0u8; 1024];
+            let _ = stream.read(&mut tmp);
+            thread::sleep(delay);
+            let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nhi");
+        })
     }
 
     fn transport() -> ReqwestTransport {
