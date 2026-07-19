@@ -26,6 +26,11 @@ mod oauth;
 // wrappers live here (crate root) — the thin impls are in `tools`.
 mod tools;
 
+// The package-manager command flow (`CommandCore`): drives the Rust
+// command-flow state machines (`atilla_coding::core::package_manager`) behind a
+// JSON in/out driver loop, backing the native `package-manager.ts` shim.
+mod command_core;
+
 /// `createLsTool(...).execute` default path (`ls.ts`): list a directory through
 /// the native `run_ls` port, returning pi's `AgentToolResult` JSON. See
 /// [`tools::ls_execute`].
