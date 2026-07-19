@@ -5,6 +5,7 @@
 //! `system_prompt` / `slash_commands` shell modules; remaining sibling
 //! submodules land later.
 
+pub mod auth;
 pub mod cache_stats;
 pub mod command_flow;
 pub mod compaction;
@@ -25,9 +26,11 @@ pub mod package_manager;
 pub mod project_trust;
 pub mod prompt_templates;
 pub mod provider_attribution;
+pub mod provider_composer;
 pub mod radius;
 pub mod resolve_config_value;
 pub mod resource_loader;
+pub mod resource_loader_orchestrator;
 pub mod session_cwd;
 pub mod session_manager;
 pub mod settings_manager;

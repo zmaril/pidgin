@@ -775,15 +775,8 @@ impl ResourceLoader {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::test_support::{s, scratch_dir};
+    use crate::core::test_support::{s, scratch_dir, write};
     use std::fs;
-
-    fn write(path: &str, contents: &str) {
-        if let Some(parent) = Path::new(path).parent() {
-            fs::create_dir_all(parent).unwrap();
-        }
-        fs::write(path, contents).unwrap();
-    }
 
     fn meta(source: &str, scope: SourceScope, origin: SourceOrigin) -> PathMetadata {
         PathMetadata {

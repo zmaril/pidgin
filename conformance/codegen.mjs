@@ -20,6 +20,8 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  rmSync,
+  rmdirSync,
   statSync,
   writeFileSync,
 } from "node:fs";
@@ -156,6 +158,110 @@ function writeCliRepoint(row) {
   return genPath;
 }
 
+/**
+ * Overlay net-new, shim-local helper files onto the vendored pi tree.
+ *
+ * A shim under conformance/shims/ normally corresponds 1:1 to a manifest row
+ * (native module) or a cli_repoint entry, and is overlaid by writeNativeShim /
+ * writeCliRepoint above. But a flip may also ship SHARED HELPER files under the
+ * shim tree — e.g. packages/agent/src/_bridge/dispatcher.ts imported by an
+ * overlaid shim — that have NO manifest row and NO pi original to preserve.
+ * Those helpers must still land in vendor/pi so the importing shim resolves at
+ * conformance time.
+ *
+ * Walks every file under conformance/shims/ (nested dirs included) and, for each
+ * that is NOT already accounted for by a manifest row / cli_repoint entry:
+ *   - target absent in vendor/pi  → COPY it in (net-new helper; parents created).
+ *   - target already present      → ABORT. A row-less shim that would overwrite
+ *     a real pi source is silent drift (a shadow with no manifest flip) and must
+ *     be caught, not overlaid.
+ *
+ * No `.__pi_original__.ts` backup is written: there is no original to preserve.
+ * Restoration is stateless — restoreHelpers() re-walks the shim tree and deletes
+ * the mirrored net-new targets — so the copied set need not be persisted.
+ *
+ * @param {Set<string>} handledSrcs pi-relative src paths already overlaid.
+ * @returns {string[]} absolute target paths copied in.
+ */
+function overlayHelpers(handledSrcs) {
+  if (!existsSync(shimsRoot)) return [];
+  const files = [];
+  walk(shimsRoot, files);
+  const copied = [];
+  for (const full of files) {
+    const rel = relative(shimsRoot, full).split("\\").join("/");
+    if (handledSrcs.has(rel)) continue; // manifest-row / cli_repoint shim, already overlaid.
+    const target = join(piRoot, rel);
+    if (existsSync(target)) {
+      throw new Error(
+        `shim ${rel} has no manifest row but its vendor/pi target already exists ` +
+          `(${relative(repoRoot, target)}). A row-less shim must not silently shadow a ` +
+          `real pi source — add a manifest row to flip it, or remove the shim.`,
+      );
+    }
+    mkdirSync(dirname(target), { recursive: true });
+    copyFileSync(full, target);
+    copied.push(target);
+  }
+  return copied;
+}
+
+/** The set of pi-relative src paths accounted for by the manifest. */
+function handledSrcSet(manifest) {
+  const rows = manifest.modules ?? [];
+  const cliRepoint = manifest.cli_repoint ?? [];
+  return new Set([...rows.map((r) => r.src), ...cliRepoint.map((r) => r.src)]);
+}
+
+/** Prune empty ancestor dirs of `dir`, stopping at (and never removing)
+ * vendor/pi/packages. */
+function pruneEmptyDirs(dir) {
+  const stop = join(piRoot, "packages");
+  let cur = dir;
+  while (cur !== stop && cur.startsWith(stop + "/")) {
+    try {
+      if (readdirSync(cur).length !== 0) break;
+      rmdirSync(cur);
+    } catch {
+      break;
+    }
+    cur = dirname(cur);
+  }
+}
+
+/**
+ * Restore the pi tree of net-new helpers overlaid by overlayHelpers().
+ *
+ * Because copied helpers are UNTRACKED in vendor/pi, `git checkout -- packages`
+ * (run by scripts/conformance.sh after this) will not remove them. This re-walks
+ * the shim tree, recomputes the same net-new helper set, and deletes each
+ * mirrored target plus its now-empty parent dirs so `git -C vendor/pi status` is
+ * byte-clean. Stateless and idempotent: safe to run before a run, after it, or
+ * after an interrupted run. A target that has a `.__pi_original__.ts` sibling was
+ * a real overlay (not a net-new helper) and is left to the normal restore path.
+ */
+function restoreHelpers() {
+  if (!existsSync(shimsRoot)) return;
+  const manifest = JSON.parse(readFileSync(join(here, "manifest.json"), "utf8"));
+  const handled = handledSrcSet(manifest);
+  const files = [];
+  walk(shimsRoot, files);
+  for (const full of files) {
+    const rel = relative(shimsRoot, full).split("\\").join("/");
+    if (handled.has(rel)) continue; // manifest-row shim: normal restore handles it.
+    const target = join(piRoot, rel);
+    const originalSibling = join(
+      dirname(target),
+      basename(target).replace(/\.ts$/, ORIGINAL_SUFFIX),
+    );
+    if (existsSync(originalSibling)) continue; // a preserved overlay, not a net-new helper.
+    if (existsSync(target)) {
+      rmSync(target);
+      pruneEmptyDirs(dirname(target));
+    }
+  }
+}
+
 function main() {
   const manifestPath = join(here, "manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
@@ -185,6 +291,11 @@ function main() {
   // compiled atilla binary). Tracked separately from the module counts above.
   for (const row of cliRepoint) writeCliRepoint(row);
 
+  // Overlay net-new, shim-local helper files (no manifest row, no pi original),
+  // e.g. packages/agent/src/_bridge/*.ts imported by an overlaid shim. Runs
+  // AFTER the drift computation above so it never perturbs the missing count.
+  overlayHelpers(handledSrcSet(manifest));
+
   const summary = {
     total: rows.length,
     native,
@@ -207,4 +318,8 @@ function main() {
   }
 }
 
-main();
+if (process.argv.includes("--restore")) {
+  restoreHelpers();
+} else {
+  main();
+}

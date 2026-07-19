@@ -1,0 +1,465 @@
+[
+	{
+		"name": "word ends exactly at width",
+		"line": "hello world test",
+		"maxWidth": 11,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "hello ",
+				"startIndex": 0,
+				"endIndex": 6
+			},
+			{
+				"text": "world test",
+				"startIndex": 6,
+				"endIndex": 16
+			}
+		]
+	},
+	{
+		"name": "keeps whitespace at width boundary",
+		"line": "hello world test",
+		"maxWidth": 12,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "hello world ",
+				"startIndex": 0,
+				"endIndex": 12
+			},
+			{
+				"text": "test",
+				"startIndex": 12,
+				"endIndex": 16
+			}
+		]
+	},
+	{
+		"name": "unbreakable word filling width then space",
+		"line": "aaaaaaaaaaaa aaaa",
+		"maxWidth": 12,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "aaaaaaaaaaaa",
+				"startIndex": 0,
+				"endIndex": 12
+			},
+			{
+				"text": " aaaa",
+				"startIndex": 12,
+				"endIndex": 17
+			}
+		]
+	},
+	{
+		"name": "word fits width but not remaining space",
+		"line": "      aaaaaaaaaaaa",
+		"maxWidth": 12,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "      ",
+				"startIndex": 0,
+				"endIndex": 6
+			},
+			{
+				"text": "aaaaaaaaaaaa",
+				"startIndex": 6,
+				"endIndex": 18
+			}
+		]
+	},
+	{
+		"name": "multi-space + following word together when fit",
+		"line": "Lorem ipsum dolor sit amet,    consectetur",
+		"maxWidth": 30,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "Lorem ipsum dolor sit ",
+				"startIndex": 0,
+				"endIndex": 22
+			},
+			{
+				"text": "amet,    consectetur",
+				"startIndex": 22,
+				"endIndex": 42
+			}
+		]
+	},
+	{
+		"name": "multi-space + following word fill width exactly",
+		"line": "Lorem ipsum dolor sit amet,              consectetur",
+		"maxWidth": 30,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "Lorem ipsum dolor sit ",
+				"startIndex": 0,
+				"endIndex": 22
+			},
+			{
+				"text": "amet,              consectetur",
+				"startIndex": 22,
+				"endIndex": 52
+			}
+		]
+	},
+	{
+		"name": "word + multi-space + word exceeds width",
+		"line": "Lorem ipsum dolor sit amet,               consectetur",
+		"maxWidth": 30,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "Lorem ipsum dolor sit ",
+				"startIndex": 0,
+				"endIndex": 22
+			},
+			{
+				"text": "amet,               ",
+				"startIndex": 22,
+				"endIndex": 42
+			},
+			{
+				"text": "consectetur",
+				"startIndex": 42,
+				"endIndex": 53
+			}
+		]
+	},
+	{
+		"name": "breaks long whitespace at line boundary",
+		"line": "Lorem ipsum dolor sit amet,                         consectetur",
+		"maxWidth": 30,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "Lorem ipsum dolor sit ",
+				"startIndex": 0,
+				"endIndex": 22
+			},
+			{
+				"text": "amet,                         ",
+				"startIndex": 22,
+				"endIndex": 52
+			},
+			{
+				"text": "consectetur",
+				"startIndex": 52,
+				"endIndex": 63
+			}
+		]
+	},
+	{
+		"name": "breaks long whitespace at line boundary 2",
+		"line": "Lorem ipsum dolor sit amet,                          consectetur",
+		"maxWidth": 30,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "Lorem ipsum dolor sit ",
+				"startIndex": 0,
+				"endIndex": 22
+			},
+			{
+				"text": "amet,                         ",
+				"startIndex": 22,
+				"endIndex": 52
+			},
+			{
+				"text": " consectetur",
+				"startIndex": 52,
+				"endIndex": 64
+			}
+		]
+	},
+	{
+		"name": "breaks whitespace spanning full lines",
+		"line": "Lorem ipsum dolor sit amet,                                     consectetur",
+		"maxWidth": 30,
+		"segments": null,
+		"chunks": [
+			{
+				"text": "Lorem ipsum dolor sit ",
+				"startIndex": 0,
+				"endIndex": 22
+			},
+			{
+				"text": "amet,                         ",
+				"startIndex": 22,
+				"endIndex": 52
+			},
+			{
+				"text": "            consectetur",
+				"startIndex": 52,
+				"endIndex": 75
+			}
+		]
+	},
+	{
+		"name": "force-break wide char after word boundary wrap",
+		"line": " aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa你",
+		"maxWidth": 187,
+		"segments": null,
+		"chunks": [
+			{
+				"text": " aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				"startIndex": 0,
+				"endIndex": 187
+			},
+			{
+				"text": "你",
+				"startIndex": 187,
+				"endIndex": 188
+			}
+		]
+	},
+	{
+		"name": "oversized atomic segment across chunks",
+		"line": "A[paste #1 +20 lines]B",
+		"maxWidth": 10,
+		"segments": [
+			{
+				"segment": "A",
+				"index": 0,
+				"input": "A[paste #1 +20 lines]B"
+			},
+			{
+				"segment": "[paste #1 +20 lines]",
+				"index": 1,
+				"input": "A[paste #1 +20 lines]B"
+			},
+			{
+				"segment": "B",
+				"index": 21,
+				"input": "A[paste #1 +20 lines]B"
+			}
+		],
+		"chunks": [
+			{
+				"text": "A",
+				"startIndex": 0,
+				"endIndex": 1
+			},
+			{
+				"text": "[paste #1 ",
+				"startIndex": 1,
+				"endIndex": 11
+			},
+			{
+				"text": "+20 lines]",
+				"startIndex": 11,
+				"endIndex": 21
+			},
+			{
+				"text": "B",
+				"startIndex": 21,
+				"endIndex": 22
+			}
+		]
+	},
+	{
+		"name": "oversized atomic segment at start of line",
+		"line": "[paste #1 +20 lines]B",
+		"maxWidth": 10,
+		"segments": [
+			{
+				"segment": "[paste #1 +20 lines]",
+				"index": 0,
+				"input": "[paste #1 +20 lines]B"
+			},
+			{
+				"segment": "B",
+				"index": 20,
+				"input": "[paste #1 +20 lines]B"
+			}
+		],
+		"chunks": [
+			{
+				"text": "[paste #1 ",
+				"startIndex": 0,
+				"endIndex": 10
+			},
+			{
+				"text": "+20 lines]",
+				"startIndex": 10,
+				"endIndex": 20
+			},
+			{
+				"text": "B",
+				"startIndex": 20,
+				"endIndex": 21
+			}
+		]
+	},
+	{
+		"name": "oversized atomic segment at end of line",
+		"line": "A[paste #1 +20 lines]",
+		"maxWidth": 10,
+		"segments": [
+			{
+				"segment": "A",
+				"index": 0,
+				"input": "A[paste #1 +20 lines]"
+			},
+			{
+				"segment": "[paste #1 +20 lines]",
+				"index": 1,
+				"input": "A[paste #1 +20 lines]"
+			}
+		],
+		"chunks": [
+			{
+				"text": "A",
+				"startIndex": 0,
+				"endIndex": 1
+			},
+			{
+				"text": "[paste #1 ",
+				"startIndex": 1,
+				"endIndex": 11
+			},
+			{
+				"text": "+20 lines]",
+				"startIndex": 11,
+				"endIndex": 21
+			}
+		]
+	},
+	{
+		"name": "consecutive oversized atomic segments",
+		"line": "[paste #1 +20 lines][paste #2 +30 lines]",
+		"maxWidth": 10,
+		"segments": [
+			{
+				"segment": "[paste #1 +20 lines]",
+				"index": 0,
+				"input": "[paste #1 +20 lines][paste #2 +30 lines]"
+			},
+			{
+				"segment": "[paste #2 +30 lines]",
+				"index": 20,
+				"input": "[paste #1 +20 lines][paste #2 +30 lines]"
+			}
+		],
+		"chunks": [
+			{
+				"text": "[paste #1 ",
+				"startIndex": 0,
+				"endIndex": 10
+			},
+			{
+				"text": "+20 lines]",
+				"startIndex": 10,
+				"endIndex": 20
+			},
+			{
+				"text": "[paste #2 ",
+				"startIndex": 20,
+				"endIndex": 30
+			},
+			{
+				"text": "+30 lines]",
+				"startIndex": 30,
+				"endIndex": 40
+			}
+		]
+	},
+	{
+		"name": "wraps normally after oversized atomic segment",
+		"line": "[paste #1 +20 lines] hello world",
+		"maxWidth": 10,
+		"segments": [
+			{
+				"segment": "[paste #1 +20 lines]",
+				"index": 0,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": " ",
+				"index": 20,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "h",
+				"index": 21,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "e",
+				"index": 22,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "l",
+				"index": 23,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "l",
+				"index": 24,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "o",
+				"index": 25,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": " ",
+				"index": 26,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "w",
+				"index": 27,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "o",
+				"index": 28,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "r",
+				"index": 29,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "l",
+				"index": 30,
+				"input": "[paste #1 +20 lines] hello world"
+			},
+			{
+				"segment": "d",
+				"index": 31,
+				"input": "[paste #1 +20 lines] hello world"
+			}
+		],
+		"chunks": [
+			{
+				"text": "[paste #1 ",
+				"startIndex": 0,
+				"endIndex": 10
+			},
+			{
+				"text": "+20 lines]",
+				"startIndex": 10,
+				"endIndex": 20
+			},
+			{
+				"text": " hello ",
+				"startIndex": 20,
+				"endIndex": 27
+			},
+			{
+				"text": "world",
+				"startIndex": 27,
+				"endIndex": 32
+			}
+		]
+	}
+]

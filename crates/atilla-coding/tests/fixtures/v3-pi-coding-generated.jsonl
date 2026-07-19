@@ -1,0 +1,15 @@
+{"type":"session","version":3,"id":"019de8c2-de29-73e9-ae0c-e134db34c447","timestamp":"2026-07-18T00:00:00.000Z","cwd":"/workspace/proj"}
+{"type":"message","id":"5977a6a2","parentId":null,"timestamp":"2026-07-18T00:00:01.000Z","message":{"role":"user","content":[{"type":"text","text":"hello"}],"timestamp":1}}
+{"type":"message","id":"046599c8","parentId":"5977a6a2","timestamp":"2026-07-18T00:00:02.000Z","message":{"role":"assistant","content":[{"type":"text","text":"let me look"},{"type":"toolCall","id":"call_1","name":"read","arguments":{"path":"/a.txt"}}],"api":"anthropic-messages","provider":"anthropic","model":"claude-opus-4-5","usage":{"input":10,"output":5,"cacheRead":0,"cacheWrite":0,"totalTokens":15,"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0,"total":0}},"stopReason":"toolUse","timestamp":2}}
+{"type":"message","id":"5fdd2b1e","parentId":"046599c8","timestamp":"2026-07-18T00:00:03.000Z","message":{"role":"toolResult","toolCallId":"call_1","toolName":"read","content":[{"type":"text","text":"file body"}],"isError":false,"timestamp":3}}
+{"type":"thinking_level_change","id":"0e6d7326","parentId":"5fdd2b1e","timestamp":"2026-07-18T00:00:04.000Z","thinkingLevel":"high"}
+{"type":"model_change","id":"2dce4224","parentId":"0e6d7326","timestamp":"2026-07-18T00:00:05.000Z","provider":"anthropic","modelId":"claude-opus-4-5"}
+{"type":"compaction","id":"a891eef9","parentId":"2dce4224","timestamp":"2026-07-18T00:00:06.000Z","summary":"did stuff","firstKeptEntryId":"5977a6a2","tokensBefore":4096,"details":{"reason":"auto"},"fromHook":true}
+{"type":"compaction","id":"ed107f54","parentId":"a891eef9","timestamp":"2026-07-18T00:00:07.000Z","summary":"min","firstKeptEntryId":"5977a6a2","tokensBefore":10}
+{"type":"custom","customType":"chat_message","data":{"text":"note"},"id":"cfb51c69","parentId":"ed107f54","timestamp":"2026-07-18T00:00:08.000Z"}
+{"type":"custom","customType":"marker","id":"1526c709","parentId":"cfb51c69","timestamp":"2026-07-18T00:00:09.000Z"}
+{"type":"custom_message","customType":"banner","content":"hello world","display":true,"details":{"ok":true},"id":"d11070f6","parentId":"1526c709","timestamp":"2026-07-18T00:00:10.000Z"}
+{"type":"label","id":"3f0c9d18","parentId":"d11070f6","timestamp":"2026-07-18T00:00:11.000Z","targetId":"5977a6a2","label":"checkpoint"}
+{"type":"label","id":"ce1c582a","parentId":"3f0c9d18","timestamp":"2026-07-18T00:00:12.000Z","targetId":"5977a6a2"}
+{"type":"session_info","id":"ffcce0fd","parentId":"ce1c582a","timestamp":"2026-07-18T00:00:13.000Z","name":"my session"}
+{"type":"branch_summary","id":"cde224b5","parentId":"5977a6a2","timestamp":"2026-07-18T00:00:14.000Z","fromId":"5977a6a2","summary":"branch summary","details":{"k":1},"fromHook":false}

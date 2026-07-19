@@ -10,6 +10,7 @@
 pub mod autocomplete;
 pub mod components;
 mod eaw_table;
+pub mod editor;
 pub mod fuzzy;
 pub mod keybindings;
 pub mod keys;
@@ -35,6 +36,7 @@ pub use components::{
     SelectListTruncatePrimaryContext, SettingItem, SettingsList, SettingsListOptions,
     SettingsListTheme, SubmenuDone, SubmenuFactory,
 };
+pub use editor::{word_wrap_line, Cursor, Editor, EditorOptions, EditorTheme, TextChunk};
 pub use fuzzy::{fuzzy_filter, fuzzy_match, FuzzyMatch};
 pub use keybindings::{
     tui_keybindings, KeybindingConflict, KeybindingDefinition, KeybindingsManager,

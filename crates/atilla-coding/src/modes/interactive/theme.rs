@@ -144,6 +144,21 @@ pub enum ThemeError {
     Io(String),
     /// A theme file could not be parsed as JSON.
     Parse(String),
+    /// A hex color string was not a valid `#rrggbb` value. Mirrors pi's
+    /// `hexToRgb` throw ("Invalid hex color").
+    InvalidHexColor(String),
+    /// A resolved color value was neither empty, a 256-index, nor a `#hex`
+    /// literal. Mirrors pi's `fgAnsi`/`bgAnsi` throw ("Invalid color value").
+    InvalidColorValue(String),
+    /// A theme name contained a reserved `/`. Mirrors pi's
+    /// `assertThemeNameIsValid` throw.
+    InvalidThemeName(String),
+    /// A [`Theme::fg`] lookup referenced a foreground key that was not baked
+    /// into the theme. Mirrors pi's "Unknown theme color".
+    UnknownThemeColor(String),
+    /// A [`Theme::bg`] lookup referenced a background key that was not baked
+    /// into the theme. Mirrors pi's "Unknown theme background color".
+    UnknownThemeBg(String),
 }
 
 impl fmt::Display for ThemeError {
@@ -158,6 +173,17 @@ impl fmt::Display for ThemeError {
             ThemeError::ThemeNotFound(name) => write!(f, "Theme not found: {name}"),
             ThemeError::Io(msg) => write!(f, "Failed to read theme: {msg}"),
             ThemeError::Parse(msg) => write!(f, "Failed to parse theme: {msg}"),
+            ThemeError::InvalidHexColor(hex) => write!(f, "Invalid hex color: {hex}"),
+            ThemeError::InvalidColorValue(color) => write!(f, "Invalid color value: {color}"),
+            ThemeError::InvalidThemeName(name) => write!(
+                f,
+                "Invalid theme name \"{name}\": theme names cannot contain \"/\" because it is \
+                 reserved for automatic light/dark theme settings."
+            ),
+            ThemeError::UnknownThemeColor(color) => write!(f, "Unknown theme color: {color}"),
+            ThemeError::UnknownThemeBg(color) => {
+                write!(f, "Unknown theme background color: {color}")
+            }
         }
     }
 }
@@ -375,6 +401,17 @@ pub fn load_theme_json(name: &str, dirs: &ThemeDirs) -> Result<ThemeJson, ThemeE
 pub fn parse_theme_json(content: &str) -> Result<ThemeJson, ThemeError> {
     serde_json::from_str(content).map_err(|e| ThemeError::Parse(e.to_string()))
 }
+
+// ============================================================================
+// Runtime theme loader (ANSI-baked)
+// ============================================================================
+
+pub mod runtime;
+
+pub use runtime::{
+    bg_ansi, create_theme, fg_ansi, hex_to_256, load_theme_from_path, parse_theme_json_content,
+    rgb_to_256, ColorMode, Theme, ThinkingLevel,
+};
 
 // ============================================================================
 // Terminal theme detection (pure subset)

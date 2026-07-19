@@ -68,6 +68,11 @@ log() { printf '[conformance] %s\n' "$*"; }
 # npm install and generated model data (both untracked) survive.
 restore_pi_overlay() {
   find "$PI_ROOT/packages" -name '*.__pi_original__.ts' -delete 2>/dev/null || true
+  # Net-new shim-local helpers (no manifest row, no pi original) are UNTRACKED in
+  # vendor/pi, so the `git checkout` below cannot remove them. Have codegen
+  # recompute the helper set from the shim tree and delete the mirrored targets
+  # (plus now-empty parent dirs) so status stays byte-clean.
+  node "$REPO_ROOT/conformance/codegen.mjs" --restore 2>/dev/null || true
   git -C "$PI_ROOT" checkout -- packages 2>/dev/null || true
 }
 trap restore_pi_overlay EXIT
