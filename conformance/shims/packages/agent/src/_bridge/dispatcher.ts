@@ -267,17 +267,20 @@ export function runAgentLoopNative(
 						);
 					case "beforeToolCall": {
 						const p = payload as BeforeToolCallPayload;
-						return (
-							(await config.beforeToolCall!(
-								{
-									assistantMessage: p.assistantMessage as never,
-									toolCall: p.toolCall as never,
-									args: p.args as never,
-									context: reviveContext(p.context),
-								},
-								mkSignal(p.aborted),
-							)) ?? null
+						// Faithful to pi: the hook may mutate `args` in place and pi
+						// reuses that reference for `execute`. `p.args` is the object
+						// handed to the hook, so echo it back (alongside any
+						// block/reason) — the Rust bridge adopts it for execution.
+						const result = await config.beforeToolCall!(
+							{
+								assistantMessage: p.assistantMessage as never,
+								toolCall: p.toolCall as never,
+								args: p.args as never,
+								context: reviveContext(p.context),
+							},
+							mkSignal(p.aborted),
 						);
+						return { ...(result ?? {}), args: p.args };
 					}
 					case "afterToolCall": {
 						const p = payload as AfterToolCallPayload;

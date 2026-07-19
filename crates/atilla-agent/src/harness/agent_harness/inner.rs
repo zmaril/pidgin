@@ -491,7 +491,7 @@ impl HarnessInner {
                 follow_bridge.get().drain_queued(QueueKind::FollowUp)
             })),
             tool_execution: None,
-            before_tool_call: Some(Arc::new(move |ctx: &BeforeToolCallContext, _signal| {
+            before_tool_call: Some(Arc::new(move |ctx: &mut BeforeToolCallContext, _signal| {
                 before_bridge.get().hook_before_tool_call(ctx)
             })),
             after_tool_call: Some(Arc::new(move |ctx: &AfterToolCallContext, _signal| {

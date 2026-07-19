@@ -604,7 +604,7 @@ impl AgentBridge {
             // null (the loop's own post-hook abort re-check covers aborts).
             let bt_channel = channel.clone();
             let before_tool_call: BeforeToolCall = Arc::new(
-                move |ctx: &BeforeToolCallContext, signal: Option<&AbortSignal>| {
+                move |ctx: &mut BeforeToolCallContext, signal: Option<&AbortSignal>| {
                     let aborted = signal.is_some_and(AbortSignal::is_aborted);
                     match bt_channel.call(
                         "beforeToolCall",
@@ -617,7 +617,17 @@ impl AgentBridge {
                         }),
                     ) {
                         Ok(Value::Null) | Err(_) => None,
-                        Ok(v) => serde_json::from_value::<BeforeToolCallResult>(v).ok(),
+                        Ok(v) => {
+                            // Faithful to pi: the JS hook may mutate the validated
+                            // args in place. The dispatcher echoes the (possibly
+                            // mutated) args back under `args`; adopt them so the
+                            // loop executes with them. `block`/`reason` remain at
+                            // the top level for BeforeToolCallResult.
+                            if let Some(args) = v.get("args") {
+                                ctx.args = args.clone();
+                            }
+                            serde_json::from_value::<BeforeToolCallResult>(v).ok()
+                        }
                     }
                 },
             );

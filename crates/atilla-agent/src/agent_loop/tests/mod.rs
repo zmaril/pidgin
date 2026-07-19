@@ -493,14 +493,11 @@ fn should_not_execute_tool_calls_from_a_length_truncated_message() {
 
 #[test]
 fn before_tool_call_receives_validated_args() {
-    // Adapted port of "should execute mutated beforeToolCall args without
-    // revalidation". pi mutates the `args` object in place inside `beforeToolCall`
-    // and relies on JS reference semantics so `execute` sees the mutation; atilla's
-    // `beforeToolCall` receives `&BeforeToolCallContext` and cannot mutate through
-    // a shared reference, so in-place arg mutation does not cross the boundary.
-    // What the port faithfully preserves — and what this asserts — is that
-    // `beforeToolCall` is invoked with the validated args and that those args flow
-    // to `execute` (validation is not re-run after the hook).
+    // `beforeToolCall` is invoked with the validated args, and (with a no-op hook
+    // that does not mutate them) those same args flow to `execute` — validation is
+    // not re-run after the hook. See `before_tool_call_mutated_args_are_executed`
+    // for the in-place-mutation adoption that mirrors pi's "should execute mutated
+    // beforeToolCall args without revalidation".
     let executed = Arc::new(Mutex::new(Vec::new()));
     let seen_args: Arc<Mutex<Option<Value>>> = Arc::new(Mutex::new(None));
     let context = AgentContext {
@@ -511,7 +508,7 @@ fn before_tool_call_receives_validated_args() {
 
     let mut config = base_config();
     let seen = seen_args.clone();
-    config.before_tool_call = Some(Arc::new(move |ctx: &BeforeToolCallContext, _signal| {
+    config.before_tool_call = Some(Arc::new(move |ctx: &mut BeforeToolCallContext, _signal| {
         *seen.lock().unwrap() = Some(ctx.args.clone());
         None
     }));
@@ -541,6 +538,73 @@ fn before_tool_call_receives_validated_args() {
         Some(json!({ "value": "hello" }))
     );
     assert_eq!(*executed.lock().unwrap(), vec!["hello".to_string()]);
+}
+
+#[test]
+fn before_tool_call_mutated_args_are_executed() {
+    // Port of pi's "should execute mutated beforeToolCall args without
+    // revalidation" (agent-loop.test.ts): `beforeToolCall` rewrites `args.value`
+    // in place and the loop executes the tool with the mutated args — the string
+    // "hello" is replaced with the number 123 (validation is not re-run), and the
+    // tool must observe 123.
+    let executed: Arc<Mutex<Vec<Value>>> = Arc::new(Mutex::new(Vec::new()));
+    let recorded = executed.clone();
+    let tool = AgentTool {
+        name: "echo".into(),
+        description: "Echo tool".into(),
+        parameters: json!({ "type": "object" }),
+        label: "Echo".into(),
+        prepare_arguments: None,
+        execution_mode: None,
+        execute: Arc::new(move |_id, args, _signal, _cb| {
+            let value = args.get("value").cloned().unwrap_or(Value::Null);
+            recorded.lock().unwrap().push(value.clone());
+            AgentToolResult {
+                content: vec![ContentBlock::Text {
+                    text: format!("echoed: {value}"),
+                    text_signature: None,
+                }],
+                details: json!({ "value": value }),
+                added_tool_names: None,
+                terminate: None,
+            }
+        }),
+    };
+
+    let context = AgentContext {
+        system_prompt: "".into(),
+        messages: vec![],
+        tools: Some(vec![tool]),
+    };
+
+    let mut config = base_config();
+    config.before_tool_call = Some(Arc::new(move |ctx: &mut BeforeToolCallContext, _signal| {
+        // Mutate the validated args in place, exactly as pi's case does.
+        ctx.args["value"] = json!(123);
+        None
+    }));
+
+    let stream_fn = stream_fn_from(vec![
+        assistant_message(
+            vec![tool_call_block(
+                "echo",
+                "tool-1",
+                json!({ "value": "hello" }),
+            )],
+            StopReason::ToolUse,
+        ),
+        assistant_message(vec![text_block("done")], StopReason::Stop),
+    ]);
+
+    agent_loop(
+        vec![user_message("echo something")],
+        context,
+        config,
+        None,
+        &stream_fn,
+    );
+
+    assert_eq!(*executed.lock().unwrap(), vec![json!(123)]);
 }
 
 #[test]
