@@ -14,8 +14,6 @@
 //! exit code 1 — the guard the `-p`/`--mode json` black-box cases (which pass
 //! `--model missing-model`) exercise.
 
-use std::rc::Rc;
-
 use atilla_coding::core::auth::auth_guidance::format_no_models_available_message;
 use atilla_coding::core::model_resolver::{
     find_initial_model, resolve_cli_model, FindInitialModelOptions, ModelRuntimeView,
@@ -26,13 +24,8 @@ use atilla_coding::core::session_manager::SessionManager;
 use atilla_coding::core::settings_manager::SettingsManager;
 use atilla_coding::core::skills::get_agent_dir;
 use atilla_coding::modes::print::{
-    builtin_models_registry, provider_stream, run_print_mode, PrintModeOptions, PrintOutputMode,
-    RegistryCompaction,
+    build_harness, builtin_models_registry, run_print_mode, PrintModeOptions, PrintOutputMode,
 };
-use atilla_core::agent::harness::agent_harness::AgentHarness;
-use atilla_core::agent::harness::env::MemoryExecutionEnv;
-use atilla_core::agent::harness::options::AgentHarnessOptions;
-use atilla_core::agent::harness::session::{InMemorySessionStorage, Session};
 use atilla_core::ai::types::Model;
 
 use crate::cli::args::Args;
@@ -140,22 +133,7 @@ pub fn run_print_or_json(parsed: &Args, session_manager: &SessionManager, json: 
     };
 
     // Assemble the agent-session runtime and drive the completion.
-    let registry = builtin_models_registry();
-    let harness = match AgentHarness::new(AgentHarnessOptions {
-        env: Box::new(MemoryExecutionEnv::new(&cwd)),
-        session: Session::new(Rc::new(InMemorySessionStorage::new())),
-        models: Box::new(RegistryCompaction::new(registry.clone())),
-        stream: provider_stream(registry),
-        tools: None,
-        resources: None,
-        system_prompt: None,
-        stream_options: None,
-        model,
-        thinking_level: None,
-        active_tool_names: None,
-        steering_mode: None,
-        follow_up_mode: None,
-    }) {
+    let harness = match build_harness(model, &cwd, builtin_models_registry()) {
         Ok(harness) => harness,
         Err(error) => {
             err_line(&format!("Error: {error}"));

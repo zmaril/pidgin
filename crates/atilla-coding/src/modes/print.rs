@@ -41,7 +41,9 @@ use std::rc::Rc;
 use serde_json::Value;
 
 use atilla_agent::harness::agent_harness::{AgentHarness, AgentHarnessEvent};
-use atilla_agent::harness::options::ProviderStream;
+use atilla_agent::harness::env::MemoryExecutionEnv;
+use atilla_agent::harness::options::{AgentHarnessError, AgentHarnessOptions, ProviderStream};
+use atilla_agent::harness::session::{InMemorySessionStorage, Session};
 use atilla_agent::{CompletionOptions, Models as CompactionModels};
 use atilla_ai::providers::registry::{create_models, Models as AiModels, MutableModels};
 use atilla_ai::seams::AbortSignal;
@@ -129,38 +131,40 @@ pub fn run_print_mode(
     }
 
     if options.mode == PrintOutputMode::Text {
-        match last {
+        let message = match last {
             // A prompt threw (pi's `catch`): print the message, exit 1.
             Some(Err(message)) => {
                 write_stderr(&message);
                 return 1;
             }
-            Some(Ok(message)) => {
-                if message.get("role").and_then(Value::as_str) == Some("assistant") {
-                    let stop_reason = message.get("stopReason").and_then(Value::as_str);
-                    if stop_reason == Some("error") || stop_reason == Some("aborted") {
-                        let error_message = message
-                            .get("errorMessage")
-                            .and_then(Value::as_str)
-                            .map(str::to_string)
-                            .unwrap_or_else(|| {
-                                format!("Request {}", stop_reason.unwrap_or_default())
-                            });
-                        write_stderr(&error_message);
-                        return 1;
-                    }
-                    if let Some(content) = message.get("content").and_then(Value::as_array) {
-                        for block in content {
-                            if block.get("type").and_then(Value::as_str) == Some("text") {
-                                if let Some(text) = block.get("text").and_then(Value::as_str) {
-                                    write_raw_stdout(text);
-                                }
-                            }
-                        }
+            Some(Ok(message)) => message,
+            None => return 0,
+        };
+
+        // Only an assistant message produces text output (pi's `role` check).
+        if message.get("role").and_then(Value::as_str) != Some("assistant") {
+            return 0;
+        }
+
+        let stop_reason = message.get("stopReason").and_then(Value::as_str);
+        if stop_reason == Some("error") || stop_reason == Some("aborted") {
+            let error_message = message
+                .get("errorMessage")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+                .unwrap_or_else(|| format!("Request {}", stop_reason.unwrap_or_default()));
+            write_stderr(&error_message);
+            return 1;
+        }
+
+        if let Some(content) = message.get("content").and_then(Value::as_array) {
+            for block in content {
+                if block.get("type").and_then(Value::as_str) == Some("text") {
+                    if let Some(text) = block.get("text").and_then(Value::as_str) {
+                        write_raw_stdout(text);
                     }
                 }
             }
-            None => {}
         }
     }
 
@@ -224,6 +228,36 @@ impl CompactionModels for RegistryCompaction {
             Err(_) => self.registry.complete_simple(model, context, None, None),
         }
     }
+}
+
+/// Assemble the agent-session harness that print mode drives. `model` is the
+/// resolved model; `cwd` is the execution environment root; `registry` is the
+/// builtin `Models` collection wired into the compaction and provider seams.
+///
+/// The harness carries the conversation in an in-memory session and the
+/// `Provider` seam ([`provider_stream`]); tools, resources, and a system prompt
+/// are not attached (a single-shot completion reaches the provider before any
+/// tool use).
+pub fn build_harness(
+    model: Model,
+    cwd: &str,
+    registry: Rc<AiModels>,
+) -> Result<AgentHarness, AgentHarnessError> {
+    AgentHarness::new(AgentHarnessOptions {
+        env: Box::new(MemoryExecutionEnv::new(cwd)),
+        session: Session::new(Rc::new(InMemorySessionStorage::new())),
+        models: Box::new(RegistryCompaction::new(registry.clone())),
+        stream: provider_stream(registry),
+        tools: None,
+        resources: None,
+        system_prompt: None,
+        stream_options: None,
+        model,
+        thinking_level: None,
+        active_tool_names: None,
+        steering_mode: None,
+        follow_up_mode: None,
+    })
 }
 
 #[cfg(test)]

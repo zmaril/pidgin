@@ -2,40 +2,20 @@
 //!
 //! The offline proof-of-life drives a real completion through the provider seam
 //! with a **registered faux provider** (pi's `registerFauxProvider`, the
-//! provider the conformance suite drives) and no network. It asserts both the
-//! final assistant text the harness produces and that `run_print_mode` exits 0.
-
-use std::rc::Rc;
-use std::sync::{Mutex, MutexGuard, OnceLock};
+//! provider the conformance suite drives) and no network. Both scenarios (faux
+//! completion, real-builtin provider-unavailable) live in one test so the
+//! process-global api registry is mutated serially.
 
 use serde_json::Value;
 
-use atilla_agent::harness::agent_harness::AgentHarness;
-use atilla_agent::harness::env::MemoryExecutionEnv;
-use atilla_agent::harness::options::AgentHarnessOptions;
-use atilla_agent::harness::session::{InMemorySessionStorage, Session};
 use atilla_ai::providers::faux::{
     faux_assistant_message, faux_text, FauxAssistantOptions, RegisterFauxProviderOptions,
 };
 use atilla_ai::{register_faux_provider, reset_api_providers};
 
 use super::{
-    builtin_models_registry, provider_stream, run_print_mode, PrintModeOptions, PrintOutputMode,
-    RegistryCompaction,
+    build_harness, builtin_models_registry, run_print_mode, PrintModeOptions, PrintOutputMode,
 };
-
-/// The process api registry (pi's module-level map) is global, so registry-
-/// touching tests must not run concurrently. Each takes this lock from a cleared
-/// registry.
-fn serialized() -> MutexGuard<'static, ()> {
-    static TEST_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    let guard = TEST_LOCK
-        .get_or_init(|| Mutex::new(()))
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner());
-    reset_api_providers();
-    guard
-}
 
 /// Concatenate the text blocks of an assistant [`Value`] message.
 fn assistant_text(message: &Value) -> String {
@@ -52,102 +32,57 @@ fn assistant_text(message: &Value) -> String {
         .unwrap_or_default()
 }
 
+/// A single canned faux assistant response.
+fn faux_reply(text: &str) -> atilla_ai::providers::faux::FauxResponseStep {
+    faux_assistant_message(vec![faux_text(text)], FauxAssistantOptions::default(), 0).into()
+}
+
+/// A text-mode print options with a single initial message.
+fn text_options(initial: &str) -> PrintModeOptions {
+    PrintModeOptions {
+        mode: PrintOutputMode::Text,
+        messages: Vec::new(),
+        initial_message: Some(initial.to_string()),
+    }
+}
+
 #[test]
-fn faux_provider_completes_offline_through_the_seam() {
-    let _guard = serialized();
+fn print_mode_drives_the_provider_seam() {
+    // The api registry is process-global; start from a clean slate.
+    reset_api_providers();
 
-    // Register a faux provider (offline) and queue a canned assistant response.
+    // --- Offline proof-of-life: a registered faux provider completes. ---
     let registration = register_faux_provider(RegisterFauxProviderOptions::default());
-    registration.set_responses(vec![faux_assistant_message(
-        vec![faux_text("hello from the faux provider")],
-        FauxAssistantOptions::default(),
-        0,
-    )
-    .into()]);
-    let model = registration.get_model(None).expect("faux model");
-    assert_eq!(model.api, "faux");
+    registration.set_responses(vec![
+        faux_reply("hello from the faux provider"),
+        faux_reply("hello from the faux provider"),
+    ]);
+    let faux_model = registration.get_model(None).expect("faux model");
+    assert_eq!(faux_model.api, "faux");
 
-    // Assemble the harness against the provider seam exactly as the CLI does.
-    let registry = builtin_models_registry();
-    let harness = AgentHarness::new(AgentHarnessOptions {
-        env: Box::new(MemoryExecutionEnv::new("/work")),
-        session: Session::new(Rc::new(InMemorySessionStorage::new())),
-        models: Box::new(RegistryCompaction::new(registry.clone())),
-        stream: provider_stream(registry),
-        tools: None,
-        resources: None,
-        system_prompt: None,
-        stream_options: None,
-        model,
-        thinking_level: None,
-        active_tool_names: None,
-        steering_mode: None,
-        follow_up_mode: None,
-    })
-    .expect("harness constructs");
+    let harness =
+        build_harness(faux_model, "/work", builtin_models_registry()).expect("harness constructs");
 
-    // Drive the completion directly to prove the offline text, then confirm
-    // run_print_mode reports success on the same seam.
     let message = harness.prompt("hello", None).expect("prompt completes");
     assert_eq!(message["role"], "assistant");
     assert_eq!(assistant_text(&message), "hello from the faux provider");
 
-    // Queue a fresh response for the run_print_mode drive on the same seam.
-    registration.append_responses(vec![faux_assistant_message(
-        vec![faux_text("hello from the faux provider")],
-        FauxAssistantOptions::default(),
-        0,
-    )
-    .into()]);
-    let options = PrintModeOptions {
-        mode: PrintOutputMode::Text,
-        messages: Vec::new(),
-        initial_message: Some("hello again".to_string()),
-    };
-    let code = run_print_mode(&harness, None, &options);
+    let code = run_print_mode(&harness, None, &text_options("hello again"));
     assert_eq!(code, 0, "faux completion exits 0");
 
     registration.unregister();
-}
 
-#[test]
-fn real_builtin_model_surfaces_provider_unavailable_error() {
-    let _guard = serialized();
-
-    // No faux provider registered: a real builtin model has no native transport,
-    // so the completion must surface a terminal error (exit 1), never a panic
-    // or a network call.
+    // --- Real builtin model: no native transport, so a terminal error. ---
     let registry = builtin_models_registry();
-    let model = registry
+    let real_model = registry
         .get_providers()
         .iter()
         .find_map(|p| p.get_models().into_iter().next())
         .expect("a builtin model exists");
 
-    let harness = AgentHarness::new(AgentHarnessOptions {
-        env: Box::new(MemoryExecutionEnv::new("/work")),
-        session: Session::new(Rc::new(InMemorySessionStorage::new())),
-        models: Box::new(RegistryCompaction::new(registry.clone())),
-        stream: provider_stream(registry),
-        tools: None,
-        resources: None,
-        system_prompt: None,
-        stream_options: None,
-        model,
-        thinking_level: None,
-        active_tool_names: None,
-        steering_mode: None,
-        follow_up_mode: None,
-    })
-    .expect("harness constructs");
+    let harness = build_harness(real_model, "/work", registry).expect("harness constructs");
 
     let message = harness.prompt("hello", None).expect("prompt returns");
     assert_eq!(message["stopReason"], "error");
-
-    let options = PrintModeOptions {
-        mode: PrintOutputMode::Text,
-        messages: Vec::new(),
-        initial_message: Some("hello".to_string()),
-    };
-    assert_eq!(run_print_mode(&harness, None, &options), 1);
+    assert_eq!(run_print_mode(&harness, None, &text_options("hello")), 1);
 }
