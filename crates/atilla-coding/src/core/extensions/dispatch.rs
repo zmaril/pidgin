@@ -23,6 +23,7 @@
 //! | [`ToolResultFold`] | `emitToolResult` (`runner.ts:860`) | merge partial `content`/`details`/`isError` patches |
 //! | [`BeforeAgentStartFold`] | `emitBeforeAgentStart` (`runner.ts:1059`) | chain `systemPrompt`, collect `message`s |
 //! | [`ContextFold`] | `emitContext` (`runner.ts:962`) | replace the message array |
+//! | [`ProjectTrustFold`] | `emitProjectTrustEvent` (`runner.ts:201`) | skip `undecided`; first `yes`/`no` decision wins |
 //!
 //! `before_provider_headers` is not a fold: its handlers mutate the headers
 //! object in place and their return value is ignored (`runner.ts:1028`), so the
@@ -38,8 +39,8 @@ use serde::{Deserialize, Serialize};
 
 use super::events::common::{AgentMessage, CustomMessage, ImageContent, ProviderHeaders};
 use super::events::{
-    BeforeAgentStartEventResult, ContextEventResult, InputEventResult, ToolResultContent,
-    ToolResultEventResult,
+    BeforeAgentStartEventResult, ContextEventResult, InputEventResult, ProjectTrustEventDecision,
+    ProjectTrustEventResult, ToolResultContent, ToolResultEventResult,
 };
 
 use serde_json::Value;
@@ -320,6 +321,45 @@ impl ContextFold {
     }
 }
 
+/// Shaping fold for `emitProjectTrustEvent` (`runner.ts:201`): each handler
+/// returns a `{trusted, remember}` decision, an `undecided` result is skipped and
+/// the fold falls through to the next handler, and the first `yes`/`no` decision
+/// wins and short-circuits the rest. When no handler decides, the fold yields
+/// `None` (pi returns `{ errors }` with no `result`, and the caller applies its
+/// own default).
+#[derive(Debug, Clone, Default)]
+pub struct ProjectTrustFold {
+    decision: Option<ProjectTrustEventResult>,
+}
+
+impl ProjectTrustFold {
+    /// Start an undecided fold.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Fold one handler's result in. Returns `true` when a decisive `yes`/`no`
+    /// was reached and the remaining handlers must be skipped (pi's early
+    /// `return { result, errors }`). An `undecided` result — or no result (the
+    /// JS `undefined` a handler returns) — falls through (`continue`).
+    pub fn apply(&mut self, result: Option<ProjectTrustEventResult>) -> bool {
+        match result {
+            Some(result) if result.trusted != ProjectTrustEventDecision::Undecided => {
+                self.decision = Some(result);
+                true
+            }
+            // `undecided` (pi's `continue`) or no result: fall through.
+            _ => false,
+        }
+    }
+
+    /// Finish into the decisive `{trusted, remember}`, or `None` when no handler
+    /// reached a `yes`/`no` decision.
+    pub fn finish(self) -> Option<ProjectTrustEventResult> {
+        self.decision
+    }
+}
+
 /// Thread one `before_provider_headers` handler's in-place mutation through
 /// (`runner.ts:1028`). The handler receives the current headers as
 /// `event.headers`, mutates them, and its return value is ignored — so the
@@ -549,6 +589,65 @@ mod tests {
         fold.apply(None);
         fold.apply(Some(ContextEventResult { messages: None }));
         assert_eq!(fold.finish(), vec![json!({ "role": "user" })]);
+    }
+
+    // ---- ProjectTrustFold (emitProjectTrustEvent) ----------------------
+
+    fn decision(
+        trusted: ProjectTrustEventDecision,
+        remember: Option<bool>,
+    ) -> ProjectTrustEventResult {
+        ProjectTrustEventResult { trusted, remember }
+    }
+
+    #[test]
+    fn project_trust_no_handler_defaults_to_none() {
+        let fold = ProjectTrustFold::new();
+        assert_eq!(fold.finish(), None);
+    }
+
+    #[test]
+    fn project_trust_skips_undecided_and_no_result() {
+        let mut fold = ProjectTrustFold::new();
+        // Handler returns undefined -> no result.
+        assert!(!fold.apply(None));
+        // Handler returns { trusted: "undecided" } -> falls through.
+        assert!(!fold.apply(Some(decision(
+            ProjectTrustEventDecision::Undecided,
+            Some(true)
+        ))));
+        assert_eq!(fold.finish(), None);
+    }
+
+    #[test]
+    fn project_trust_first_decision_wins_and_short_circuits() {
+        let mut fold = ProjectTrustFold::new();
+        // First decisive handler: { trusted: "no", remember: true } short-circuits.
+        assert!(fold.apply(Some(decision(ProjectTrustEventDecision::No, Some(true)))));
+        // A later decisive handler must not be applied by the runner; even if it
+        // were, the first decision has already been recorded.
+        assert_eq!(
+            fold.finish(),
+            Some(decision(ProjectTrustEventDecision::No, Some(true))),
+        );
+    }
+
+    #[test]
+    fn project_trust_undecided_then_decided_returns_the_decision() {
+        // Mirrors extensions-runner.test.ts: an undecided handler falls through
+        // to a decided one, and the fold yields { trusted: "no", remember: true }.
+        let mut fold = ProjectTrustFold::new();
+        assert!(!fold.apply(Some(decision(
+            ProjectTrustEventDecision::Undecided,
+            Some(true)
+        ))));
+        assert!(fold.apply(Some(decision(ProjectTrustEventDecision::No, Some(true)))));
+        let result = fold.finish().expect("decided");
+        assert_eq!(result, decision(ProjectTrustEventDecision::No, Some(true)));
+        assert_eq!(
+            serde_json::to_value(&result).unwrap(),
+            json!({ "trusted": "no", "remember": true }),
+        );
     }
 
     // ---- headers + ExtensionError --------------------------------------

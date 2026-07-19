@@ -25,7 +25,8 @@ use serde_json::json;
 
 use atilla_coding::core::extensions::dispatch::BeforeAgentStartCombinedResult;
 use atilla_coding::core::extensions::events::{
-    InputEventResult, InputSource, ToolResultEvent, ToolResultEventResult,
+    InputEventResult, InputSource, ProjectTrustEventDecision, ProjectTrustEventResult,
+    ToolResultEvent, ToolResultEventResult,
 };
 use atilla_coding::core::extensions::hook::HookEvent;
 
@@ -464,5 +465,39 @@ async fn context_calls_error_listeners_when_handler_throws() {
     assert_eq!(errors.len(), 1);
     assert!(errors[0].error.contains("Handler error!"));
     assert_eq!(errors[0].event, "context");
+    r.shutdown().await;
+}
+
+// -------------------------------------------------------------------------
+// emitProjectTrustEvent (extensions-runner.test.ts)
+// -------------------------------------------------------------------------
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn project_trust_continues_past_undecided_and_returns_first_decision() {
+    // Mirrors extensions-runner.test.ts "project_trust": an undecided handler
+    // falls through to a decided one, and the emitter yields
+    // { trusted: "no", remember: true } with no errors.
+    let undecided = r#"
+        export default function(pi) {
+            pi.on("project_trust", () => ({ trusted: "undecided", remember: true }));
+        }
+    "#;
+    let decided = r#"
+        export default function(pi) {
+            pi.on("project_trust", () => ({ trusted: "no", remember: true }));
+        }
+    "#;
+    let r = runner_with(&[undecided, decided]).await;
+
+    let result = r.emit_project_trust("/tmp/project").await.unwrap();
+
+    assert_eq!(
+        result,
+        Some(ProjectTrustEventResult {
+            trusted: ProjectTrustEventDecision::No,
+            remember: Some(true),
+        })
+    );
+    assert_eq!(r.errors(), vec![]);
     r.shutdown().await;
 }

@@ -21,11 +21,11 @@ use serde_json::{json, Map, Value};
 
 use atilla_coding::core::extensions::dispatch::{
     next_headers, BeforeAgentStartCombinedResult, BeforeAgentStartFold, ContextFold, InputFold,
-    ToolResultFold,
+    ProjectTrustFold, ToolResultFold,
 };
 use atilla_coding::core::extensions::events::{
     BeforeAgentStartEventResult, ContextEventResult, InputEventResult, InputSource,
-    StreamingBehavior, ToolResultEvent, ToolResultEventResult,
+    ProjectTrustEventResult, StreamingBehavior, ToolResultEvent, ToolResultEventResult,
 };
 use atilla_coding::core::extensions::hook::HookEvent;
 
@@ -224,6 +224,40 @@ impl ExtensionRunner {
             }
             let result: Option<ContextEventResult> = parse_result(&invocation.result);
             fold.apply(result);
+        }
+
+        Ok(fold.finish())
+    }
+
+    /// `emitProjectTrustEvent` (`runner.ts:201`): each handler returns a
+    /// `{trusted, remember}` decision; an `undecided` result is skipped and the
+    /// first `yes`/`no` decision wins and short-circuits the rest. Returns `None`
+    /// when no handler decided (pi's `{ errors }` with no `result`); isolated
+    /// handler throws are recorded and dispatch continues. The accumulated
+    /// [`errors`](ExtensionRunner::errors) mirror pi's returned `errors` array.
+    pub async fn emit_project_trust(&self, cwd: &str) -> Result<Option<ProjectTrustEventResult>> {
+        let sites = self.sites(HookEvent::ProjectTrust);
+        let mut fold = ProjectTrustFold::new();
+        let ctx = self.context.to_json();
+
+        for (index, extension_path) in sites.into_iter().enumerate() {
+            let event_json = json!({
+                "type": "project_trust",
+                "cwd": cwd,
+            });
+
+            let invocation = self
+                .plane()
+                .invoke_hook("project_trust", index, &event_json, &ctx)
+                .await?;
+            if !invocation.ok {
+                self.record_error("project_trust", extension_path, invocation);
+                continue;
+            }
+            let result: Option<ProjectTrustEventResult> = parse_result(&invocation.result);
+            if fold.apply(result) {
+                break;
+            }
         }
 
         Ok(fold.finish())

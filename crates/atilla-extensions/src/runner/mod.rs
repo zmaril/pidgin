@@ -27,15 +27,17 @@
 //!
 //! # Implemented emitters
 //!
-//! The five the acceptance suite (`extensions-runner.test.ts`,
+//! The six the acceptance suite (`extensions-runner.test.ts`,
 //! `extensions-input-event.test.ts`) asserts:
 //! [`emit_input`](ExtensionRunner::emit_input),
 //! [`emit_before_agent_start`](ExtensionRunner::emit_before_agent_start),
 //! [`emit_tool_result`](ExtensionRunner::emit_tool_result),
 //! [`emit_before_provider_headers`](ExtensionRunner::emit_before_provider_headers),
-//! and [`emit_context`](ExtensionRunner::emit_context). The plumbing generalizes
-//! to the other hooks (the JS `invokeHook` surface is event-agnostic); their
-//! dedicated emitters + shaping are deferred until an acceptance test needs them.
+//! [`emit_context`](ExtensionRunner::emit_context), and
+//! [`emit_project_trust`](ExtensionRunner::emit_project_trust). The plumbing
+//! generalizes to the other hooks (the JS `invokeHook` surface is
+//! event-agnostic); their dedicated emitters + shaping are deferred until an
+//! acceptance test needs them.
 
 mod context;
 mod emit;
