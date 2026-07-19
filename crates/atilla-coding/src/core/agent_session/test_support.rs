@@ -25,7 +25,7 @@
 
 // straitjacket-allow-file:duplication
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde_json::{json, Value};
@@ -63,7 +63,7 @@ use crate::core::resource_loader_orchestrator::{
     DefaultResourceLoader, DefaultResourceLoaderOptions,
 };
 use crate::core::session_manager::SessionManager;
-use crate::core::settings_manager::SettingsManager;
+use crate::core::settings_manager::{Settings, SettingsManager};
 use crate::core::source_info::{SourceInfo, SourceOrigin, SourceScope};
 
 use super::events::AgentSessionEvent;
@@ -138,6 +138,41 @@ pub(crate) fn assistant_text(text: &str) -> AssistantMessage {
     faux_assistant_message(vec![text_block(text)], FauxAssistantOptions::default(), 0)
 }
 
+/// An error assistant response (pi's `fauxAssistantMessage("", { stopReason:
+/// "error", errorMessage })`).
+pub(crate) fn assistant_error(error_message: &str) -> AssistantMessage {
+    faux_assistant_message(
+        Vec::new(),
+        FauxAssistantOptions {
+            stop_reason: Some(StopReason::Error),
+            error_message: Some(error_message.to_string()),
+            ..Default::default()
+        },
+        0,
+    )
+}
+
+/// A `{ retry: { enabled, maxRetries, baseDelayMs } }` settings override (pi's
+/// `createHarness({ settings: { retry: {...} } })`). Any component left `None`
+/// falls back to the resolved default.
+pub(crate) fn retry_settings(
+    enabled: bool,
+    max_retries: Option<i64>,
+    base_delay_ms: Option<i64>,
+) -> Settings {
+    let mut retry = serde_json::Map::new();
+    retry.insert("enabled".to_string(), json!(enabled));
+    if let Some(max_retries) = max_retries {
+        retry.insert("maxRetries".to_string(), json!(max_retries));
+    }
+    if let Some(base_delay_ms) = base_delay_ms {
+        retry.insert("baseDelayMs".to_string(), json!(base_delay_ms));
+    }
+    let mut map = serde_json::Map::new();
+    map.insert("retry".to_string(), Value::Object(retry));
+    Settings::from_map(map)
+}
+
 /// A tool-use assistant response (pi's `fauxAssistantMessage(fauxToolCall(...),
 /// { stopReason: "toolUse" })`).
 pub(crate) fn assistant_tool_use(content: Vec<ContentBlock>) -> AssistantMessage {
@@ -182,6 +217,9 @@ pub(crate) struct Harness {
     pub agent: Agent,
     /// The scripted response list and its cursor.
     responses: Arc<Mutex<(Vec<FauxResponse>, usize)>>,
+    /// Total provider stream invocations, including exhausted ones (pi's
+    /// `faux.state.callCount`).
+    call_count: Arc<AtomicUsize>,
     /// Every emitted session event, in order.
     pub events: Arc<Mutex<Vec<AgentSessionEvent>>>,
     _temp_dir: tempfile::TempDir,
@@ -200,6 +238,10 @@ pub(crate) struct HarnessOptions {
     /// [`StubExtensionRunner`].
     #[allow(clippy::type_complexity)]
     pub make_runner: Option<Box<dyn FnOnce(&Agent) -> Box<dyn ExtensionRunner>>>,
+    /// Settings overrides applied before the session is built (pi's
+    /// `createHarness({ settings })` → `settingsManager.applyOverrides`). Used by
+    /// the retry suite to set `retry.baseDelayMs`/`maxRetries`/`enabled`.
+    pub settings: Option<Settings>,
 }
 
 impl Default for HarnessOptions {
@@ -209,6 +251,7 @@ impl Default for HarnessOptions {
             with_model: true,
             with_configured_auth: true,
             make_runner: None,
+            settings: None,
         }
     }
 }
@@ -224,6 +267,11 @@ impl Harness {
     pub fn pending_response_count(&self) -> usize {
         let guard = self.responses.lock().unwrap();
         guard.0.len().saturating_sub(guard.1)
+    }
+
+    /// Total provider stream invocations so far (pi's `faux.state.callCount`).
+    pub fn call_count(&self) -> usize {
+        self.call_count.load(Ordering::SeqCst)
     }
 
     /// The roles of every message currently in agent state.
@@ -363,12 +411,15 @@ pub(crate) fn create_harness(options: HarnessOptions) -> Harness {
     });
 
     let responses: Arc<Mutex<(Vec<FauxResponse>, usize)>> = Arc::new(Mutex::new((Vec::new(), 0)));
+    let call_count = Arc::new(AtomicUsize::new(0));
     let stream_responses = Arc::clone(&responses);
+    let stream_call_count = Arc::clone(&call_count);
     let stream_fn: atilla_agent::types::StreamFn = Arc::new(
         move |_model: &Model,
               context: &Context,
               _options: Option<&StreamOptions>,
               _signal: Option<&AbortSignal>| {
+            stream_call_count.fetch_add(1, Ordering::SeqCst);
             let message = {
                 let mut guard = stream_responses.lock().unwrap();
                 let (list, index) = &mut *guard;
@@ -408,10 +459,15 @@ pub(crate) fn create_harness(options: HarnessOptions) -> Harness {
 
     let extension_runner = options.make_runner.map(|factory| factory(&agent_handle));
 
+    let mut settings_manager = SettingsManager::create(&cwd, &agent_dir);
+    if let Some(overrides) = options.settings {
+        settings_manager.apply_overrides(overrides);
+    }
+
     let session = AgentSession::new(AgentSessionConfig {
         agent,
         session_manager: SessionManager::in_memory(&cwd),
-        settings_manager: SettingsManager::create(&cwd, &agent_dir),
+        settings_manager,
         cwd,
         scoped_models: Vec::new(),
         resource_loader,
@@ -437,6 +493,7 @@ pub(crate) fn create_harness(options: HarnessOptions) -> Harness {
         session,
         agent: agent_handle,
         responses,
+        call_count,
         events,
         _temp_dir: temp_dir,
     }
@@ -500,6 +557,7 @@ pub(crate) struct TestExtensionRunner {
     commands: Vec<String>,
     on_agent_end: Option<AgentEndCallback>,
     agent_end_fired: AtomicBool,
+    event_order: Option<Arc<Mutex<Vec<String>>>>,
 }
 
 impl TestExtensionRunner {
@@ -511,7 +569,17 @@ impl TestExtensionRunner {
             commands: Vec::new(),
             on_agent_end: None,
             agent_end_fired: AtomicBool::new(false),
+            event_order: None,
         }
+    }
+
+    /// Record `extension:message_start:<role>` / `extension:message_end:<role>`
+    /// into `sink` as each message event is dispatched (pi's `pi.on("message_start"
+    /// / "message_end", ...)` order-recording handlers), and report
+    /// `has_handlers("message_start"/"message_end")`.
+    pub fn with_event_order(mut self, sink: Arc<Mutex<Vec<String>>>) -> Self {
+        self.event_order = Some(sink);
+        self
     }
 
     /// Record every `input` event into `sink` and report `has_handlers("input")`.
@@ -566,10 +634,32 @@ impl ExtensionRunner for TestExtensionRunner {
                 }
             }
         }
+        if let (Some(sink), ExtensionDispatchEvent::MessageStart(start)) =
+            (&self.event_order, event)
+        {
+            let role = start
+                .message
+                .get("role")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            sink.lock()
+                .unwrap()
+                .push(format!("extension:message_start:{role}"));
+        }
         self.inner.emit(event)
     }
 
     fn emit_message_end(&self, event: &MessageEndEvent) -> Option<AgentMessage> {
+        if let Some(sink) = &self.event_order {
+            let role = event
+                .message
+                .get("role")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            sink.lock()
+                .unwrap()
+                .push(format!("extension:message_end:{role}"));
+        }
         self.inner.emit_message_end(event)
     }
 
@@ -620,6 +710,7 @@ impl ExtensionRunner for TestExtensionRunner {
 
     fn has_handlers(&self, event_type: &str) -> bool {
         (event_type == "input" && self.input_events.is_some())
+            || (matches!(event_type, "message_start" | "message_end") && self.event_order.is_some())
             || self.inner.has_handlers(event_type)
     }
 

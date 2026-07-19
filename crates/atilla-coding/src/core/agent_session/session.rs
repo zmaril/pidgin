@@ -18,6 +18,7 @@ use std::sync::{Arc, Mutex};
 
 use atilla_agent::agent::{Agent, Subscription};
 use atilla_agent::types::{AgentMessage, AgentTool};
+use atilla_ai::seams::AbortSignal;
 use atilla_ai::{Model, ThinkingLevel};
 
 use crate::core::extensions::events::session::{SessionStartEvent, SessionStartReason};
@@ -26,7 +27,7 @@ use crate::core::extensions::types::ToolDefinition;
 use crate::core::model_runtime::ModelRuntime;
 use crate::core::resource_loader_orchestrator::DefaultResourceLoader;
 use crate::core::session_manager::SessionManager;
-use crate::core::settings_manager::SettingsManager;
+use crate::core::settings_manager::{RetryResolved, SettingsManager};
 
 use super::events::{AgentSessionEvent, AgentSessionEventListener};
 use super::turn::{build_agent_listener, emit_to_listeners, AgentEventHandler};
@@ -175,6 +176,23 @@ pub struct AgentSession {
     /// the post-run loop (pi `_lastAssistantMessage`).
     pub(super) last_assistant_message: Arc<Mutex<Option<AgentMessage>>>,
 
+    /// The current auto-retry attempt count (pi `_retryAttempt`). Shared with the
+    /// agent-event handler, which resets it on a successful assistant response and
+    /// reads it to compute `will_retry` for `agent_end`.
+    pub(super) retry_attempt: Arc<Mutex<u32>>,
+    /// The abort signal for the in-progress retry backoff (pi
+    /// `_retryAbortController`); `Some` only while `_prepare_retry` is sleeping.
+    /// [`AgentSession::is_retrying`] reads it and [`AgentSession::abort_retry`]
+    /// trips it. Held behind a shared handle so the actor-pattern owner can trip
+    /// the backoff from the drive thread.
+    pub(super) retry_abort_signal: Arc<Mutex<Option<AbortSignal>>>,
+    /// A snapshot of the resolved retry settings (pi's `getRetrySettings`). Shared
+    /// with the agent-event handler so its `will_retry` computation reads the same
+    /// `enabled`/`maxRetries` the drive thread does; the `SettingsManager` itself
+    /// is `!Send` and cannot cross into the `Send + Sync` handler closure. Kept in
+    /// sync by [`AgentSession::set_auto_retry_enabled`].
+    pub(super) retry_settings: Arc<Mutex<RetryResolved>>,
+
     /// Whether an agent run or post-run continuation is active (pi
     /// `_isAgentRunActive`). Drives [`AgentSession::is_idle`].
     is_agent_run_active: AtomicBool,
@@ -228,6 +246,16 @@ impl AgentSession {
         // The extension-facing turn index (pi `_turnIndex`) is owned solely by the
         // agent-event handler, so it is created here and moved into the handler.
         let turn_index = Arc::new(Mutex::new(0i64));
+        // Auto-retry state (pi `_retryAttempt`/`_retryAbortController`). The
+        // attempt counter and a settings snapshot are shared with the handler so it
+        // can reset on success and compute `will_retry`; the abort signal lives on
+        // the session only (the backoff sleeps on the drive thread).
+        let retry_attempt = Arc::new(Mutex::new(0u32));
+        let retry_abort_signal = Arc::new(Mutex::new(None));
+        let retry_settings = Arc::new(Mutex::new(settings_manager.get_retry_settings()));
+        // A cheap handle to the same shared agent state so the handler can read the
+        // live model (pi `this.model`) when deciding `will_retry`.
+        let handler_agent = agent.clone();
 
         // pi always subscribes an internal `_handleAgentEvent` handler here for
         // session persistence, extension bridging, and (later) auto-retry /
@@ -241,6 +269,9 @@ impl AgentSession {
             follow_up_messages: Arc::clone(&follow_up_messages),
             last_assistant_message: Arc::clone(&last_assistant_message),
             turn_index,
+            agent: handler_agent,
+            retry_attempt: Arc::clone(&retry_attempt),
+            retry_settings: Arc::clone(&retry_settings),
         };
         let agent_subscription = agent.subscribe(build_agent_listener(handler));
 
@@ -270,6 +301,9 @@ impl AgentSession {
             follow_up_messages,
             pending_next_turn_messages,
             last_assistant_message,
+            retry_attempt,
+            retry_abort_signal,
+            retry_settings,
             is_agent_run_active: AtomicBool::new(false),
             is_aborting: AtomicBool::new(false),
         }
