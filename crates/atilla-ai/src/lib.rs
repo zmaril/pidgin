@@ -28,6 +28,12 @@ pub use compat::{
 };
 pub use cost::{calculate_cost, calculate_cost_with};
 pub use env_api_keys::{find_env_keys, get_api_key_env_vars, get_env_api_key, AMBIENT_SENTINEL};
+pub use providers::composer::{
+    adapt_oauth, compose_api_key_auth, compose_model_provider, compose_oauth_auth,
+    config_context_env, with_configured_auth, ComposeAuthError, ComposeModelProviderInput,
+    ComposedProvider, ConfigValueError, ConfigValueResolver, ExtensionAuthConfig,
+    ExtensionOAuthConfig, ProviderAuthConfig,
+};
 pub use providers::{
     builtin_models, builtin_providers, clamp_thinking_level, create_models, create_provider,
     get_supported_thinking_levels, models_are_equal, radius_provider, ApiRouting,

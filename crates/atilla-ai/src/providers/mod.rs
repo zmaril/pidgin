@@ -7,11 +7,18 @@
 //! wire providers implement the same seam as their HTTP/streaming paths land.
 
 pub mod builtins;
+pub mod composer;
 pub mod faux;
 pub mod registry;
 
 pub use builtins::{
     builtin_models, builtin_providers, catalog_model_to_ai, provider_from_catalog, radius_provider,
+};
+pub use composer::{
+    adapt_oauth, compose_api_key_auth, compose_model_provider, compose_oauth_auth,
+    config_context_env, with_configured_auth, ComposeAuthError, ComposeModelProviderInput,
+    ComposedProvider, ConfigValueError, ConfigValueResolver, ExtensionAuthConfig,
+    ExtensionOAuthConfig, ProviderAuthConfig,
 };
 pub use registry::{
     clamp_thinking_level, create_models, create_provider, get_supported_thinking_levels,
