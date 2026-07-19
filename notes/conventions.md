@@ -1,7 +1,8 @@
 # atilla — repo conventions
 
 Hard-won rules that new sessions keep rediscovering. Read this before touching
-CI-sensitive files, the conformance baseline, or anything the steward owns.
+CI-sensitive files, the conformance baseline, or any file governed by
+`STEWARD.md`.
 
 ## Straitjacket (custom lint, pinned `v0.2.3`)
 
@@ -32,13 +33,13 @@ only on newer `main` is a merge artifact, not something you introduced.
   a ZWJ sequence becomes `"\u{1F469}\u{200D}\u{1F4BB}"`. Do **not** rely on an
   allow marker for emoji.
 
-Verify locally by building straitjacket from source at tag `v0.2.3` (not
+Verify locally by building Straitjacket from source at tag `v0.2.3` (not
 `main`, which carries extra rules), scoped to changed paths and excluding
 `vendor/`.
 
 ## codespell
 
-A **separate** CI check, independent of straitjacket. It flags real
+A **separate** CI check, independent of Straitjacket. It flags real
 dictionary-word typos in code, strings, and comments. Fix by **renaming the
 offending source token** — do not reach for `.codespellrc` ignores (the action's
 ignore input has proven unreliable).
@@ -86,9 +87,10 @@ workflow runs — this is GitHub's anti-recursion behavior. If you push with tha
 token and see no checks appear, that is expected; a maintainer push or a manual
 re-trigger is needed to get checks to run.
 
-## Steward ownership
+## Baseline ownership (`STEWARD.md`)
 
-The steward is the **single writer** for the conformance baseline and ledger:
+A single designated writer — the `STEWARD.md` role — is the **only** writer for
+the conformance baseline and ledger:
 
 - `conformance/manifest.json`
 - root `conformance.json`
@@ -97,6 +99,6 @@ The steward is the **single writer** for the conformance baseline and ledger:
 **Flip-crew PRs may touch only** additions under `crates/atilla-napi`, shim
 files, and manifest **row additions** — never the `conformance.json` baseline
 and never `STEWARD.md`. Baseline regens (creds-stripped, see above) are done by
-the steward at merge-sequence time. Attribution stays honest: list a test file
-under a native row only when a genuine majority of its cases run native via the
-addon; when in doubt, under-report rather than over-claim.
+that single writer at merge-sequence time. Attribution stays honest: list a test
+file under a native row only when a genuine majority of its cases run native via
+the addon; when in doubt, under-report rather than over-claim.
