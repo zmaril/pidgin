@@ -5,28 +5,39 @@
 // `agent-loop.__pi_original__.ts` and this shim takes its place, so pi's tests
 // import `../src/agent-loop.ts` unchanged.
 //
-// Scope of the native flip (bridge slice 1): ONLY the single-text-turn shape of
-// `agentLoop` is served by Rust — the run whose config carries just `model` +
-// `convertToLlm`, a `streamFn`, no tools, and none of the loop hooks. That is
-// the exact surface the slice-1 bridge supports (`streamFn` + `convertToLlm`
-// wired through the TSFN; no tool.execute, steering, prepare, or api-key seams
-// yet — see crates/atilla-napi/src/agent_bridge.rs::run and _bridge/dispatcher).
-// For that shape the loop runs on a dedicated Rust thread and calls the test's
-// live JS closures back mid-run; the assembled `AgentMessage[]` and the
-// `agent_start … agent_end` event sequence are Rust-produced.
+// Scope of the native flip (bridge slices 1–2): the single-text-turn shape AND
+// tool-using runs the eager Rust loop reproduces faithfully. Slice 1 served the
+// run whose config carries just `model` + `convertToLlm` + a `streamFn` with no
+// tools and no hooks. Slice 2 adds tool support — the loop drives the test's
+// live JS `tool.execute` (and `prepareArguments`) through the bridge, forwarding
+// each `onUpdate` back via `emitToolUpdate` (see crates/atilla-napi/src/
+// agent_bridge.rs and _bridge/dispatcher). For those shapes the loop runs on a
+// dedicated Rust thread and calls the test's live JS closures back mid-run; the
+// assembled `AgentMessage[]` and the `agent_start … agent_end` event sequence
+// are Rust-produced.
+//
+// The ONE thing the eager loop cannot reproduce is *observable* concurrent tool
+// execution: it runs deferred tool calls serially in source order (see the
+// agent_loop.rs module docs). That intent is always signalled statically in pi's
+// tests, so `canRouteNative` still rejects it — a `config.toolExecution:
+// "parallel"` opt-in or any tool `executionMode:"parallel"` delegates to the
+// original (cases 525/896/1192). Default- and sequential-mode tool runs, which
+// the loop reproduces exactly, are admitted.
 //
 // Everything else falls through to pi's original, unchanged:
-//   - `agentLoop` calls that carry tools or any loop hook (the conservative
-//     routing predicate below rejects them — see canRouteNative), and
+//   - `agentLoop` calls that carry an unsupported loop hook, or opt into parallel
+//     execution (the conservative predicate below rejects them — see
+//     canRouteNative), and
 //   - every other export (`agentLoopContinue`, `runAgentLoop`,
 //     `runAgentLoopContinue`, the `AgentEventSink` type) is re-exported from the
 //     preserved original untouched.
-// Conservative by construction: if the call is not provably the supported shape,
+// Conservative by construction: if the call is not provably a supported shape,
 // it uses the original. It is impossible to route an unsupported case to native.
 //
-// As slices 2-3 land tool.execute + the remaining hooks and agent-loop crosses
-// into majority-native, the predicate widens and the manifest row's `tests[]`
-// gains test/agent-loop.test.ts (kept empty here so the metric under-reports).
+// Native after slice 2 = 8/20 (2 carried from slice 1 + 6 new: the tool cases
+// 239, 310, 445, 726, 809, 1140). 8/20 is below majority, so the manifest row's
+// `tests[]` stays empty (the metric under-reports) until slice 3 lands the
+// remaining loop hooks and crosses majority.
 
 import { EventStream } from "@earendil-works/pi-ai/compat";
 import { agentLoop as originalAgentLoop } from "./agent-loop.__pi_original__.ts";
@@ -36,16 +47,19 @@ import type {
 	AgentEvent,
 	AgentLoopConfig,
 	AgentMessage,
+	AgentTool,
 	StreamFn,
 } from "./types.ts";
 
 export * from "./agent-loop.__pi_original__.ts";
 
-// The config keys the slice-1 bridge does NOT support. Any one of them present
-// (defined) forces the original path — the Rust `run` config wires none of these
-// (agent_bridge.rs sets transform_context / get_api_key / should_stop_after_turn
-// / prepare_next_turn / get_steering_messages / get_follow_up_messages /
-// tool_execution / before_tool_call / after_tool_call all to None).
+// The loop-hook config keys the bridge does NOT support yet. Any one of them
+// present (defined) forces the original path — the Rust `run` config wires none
+// of these (agent_bridge.rs sets transform_context / get_api_key /
+// should_stop_after_turn / prepare_next_turn / get_steering_messages /
+// get_follow_up_messages / before_tool_call / after_tool_call to None). Note:
+// `toolExecution` is NOT in this list as of slice 2 — it is supported except for
+// the `"parallel"` opt-in, which the parallelism guard below rejects.
 const UNSUPPORTED_CONFIG_KEYS = [
 	"transformContext",
 	"getApiKey",
@@ -55,23 +69,28 @@ const UNSUPPORTED_CONFIG_KEYS = [
 	"getFollowUpMessages",
 	"beforeToolCall",
 	"afterToolCall",
-	"toolExecution",
 ] as const;
 
 /**
- * Whether this `agentLoop` call is the exact single-text-turn shape the slice-1
- * bridge supports. Purely a static inspection of the call's config/context —
- * it never inspects what `streamFn` will produce — so it is conservative:
+ * Whether this `agentLoop` call is a shape the slice-1/2 bridge reproduces
+ * faithfully. Purely a static inspection of the call's config/context — it never
+ * inspects what `streamFn` will produce — so it is conservative:
  *
  *  - a real `streamFn` and a real `convertToLlm` must be present (the two seams
- *    the bridge wires),
+ *    the bridge always wires),
  *  - at least one prompt to run,
- *  - NO tools available (an empty/absent `context.tools`) — with no tool registry
- *    the run cannot enter tool execution, which the bridge does not support, and
- *  - NONE of the unsupported hook / tool-execution config keys are defined.
+ *  - NONE of the still-unsupported loop-hook config keys are defined, and
+ *  - "no observable parallelism": the eager loop runs deferred tool calls
+ *    serially in source order, so any case that asserts real concurrency must be
+ *    delegated. That intent is always statically signalled, so we reject:
+ *      · `config.toolExecution === "parallel"` (an explicit parallel opt-in), and
+ *      · any registered tool with `executionMode === "parallel"`.
+ *    Default- and sequential-mode tool runs (which the loop reproduces exactly)
+ *    are admitted; the `prepareArguments` seam is shipped, so tools that declare
+ *    it are supported.
  *
  * When any condition fails the call is delegated to pi's original loop. There is
- * no path by which a tools/hooks/steering case reaches the native bridge.
+ * no path by which an unsupported-hook or parallel-observing case reaches native.
  */
 function canRouteNative(
 	prompts: AgentMessage[],
@@ -82,10 +101,16 @@ function canRouteNative(
 	if (typeof streamFn !== "function") return false;
 	if (typeof config.convertToLlm !== "function") return false;
 	if (!Array.isArray(prompts) || prompts.length === 0) return false;
-	if (Array.isArray(context.tools) && context.tools.length > 0) return false;
 	for (const key of UNSUPPORTED_CONFIG_KEYS) {
 		if ((config as Record<string, unknown>)[key] !== undefined) return false;
 	}
+	// No observable parallelism: reject explicit parallel opt-in or any tool that
+	// asks to run concurrently — the eager loop cannot reproduce real concurrency.
+	if ((config as { toolExecution?: unknown }).toolExecution === "parallel") {
+		return false;
+	}
+	const tools: AgentTool<any>[] = Array.isArray(context.tools) ? context.tools : [];
+	if (tools.some((tool) => tool.executionMode === "parallel")) return false;
 	return true;
 }
 
