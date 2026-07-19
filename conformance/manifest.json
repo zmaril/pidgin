@@ -297,17 +297,26 @@
     {
       "package": "ai",
       "src": "packages/ai/src/auth/oauth/anthropic.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/anthropic-oauth.test.ts"
+      ]
     },
     {
       "package": "ai",
       "src": "packages/ai/src/auth/oauth/device-code.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/oauth-device-code.test.ts"
+      ]
     },
     {
       "package": "ai",
       "src": "packages/ai/src/auth/oauth/github-copilot.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/github-copilot-oauth.test.ts"
+      ]
     },
     {
       "package": "ai",
@@ -322,7 +331,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/auth/oauth/openai-codex.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/openai-codex-oauth.test.ts"
+      ]
     },
     {
       "package": "ai",
@@ -337,7 +349,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/auth/oauth/xai.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/xai-oauth.test.ts"
+      ]
     },
     {
       "package": "ai",

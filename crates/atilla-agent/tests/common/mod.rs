@@ -1,3 +1,9 @@
+// straitjacket-allow-file:duplication — these `createUserMessage` /
+// `createAssistantMessage` helpers faithfully mirror pi's
+// `test/harness/session-test-utils.ts`. The AgentMessage JSON shape (all-zero
+// usage/cost block) structurally matches the parallel ported builders in
+// `compaction.rs` and `agent_harness` (both already marked), which keep their
+// own local copies by design; the clone is intentional parallel scaffolding.
 //! Shared test helpers, mirroring `test/harness/session-test-utils.ts`.
 //!
 //! Included by several test binaries; each uses a different subset, so unused

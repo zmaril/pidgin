@@ -20,6 +20,10 @@ mod faux;
 // driving the Rust agent loop while live JS closures fire mid-run. Additive.
 mod agent_bridge;
 
+// The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
+// Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
+mod oauth;
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `atillaNativeVersion`.
