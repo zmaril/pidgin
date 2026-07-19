@@ -16,6 +16,11 @@ use serde_json::Value;
 // provider's deterministic streaming and cache accounting from JS. Additive.
 mod faux;
 
+// TUI renderer surface (`TuiCore`): drives pi's differential render path
+// (`TUI::doRender`) natively. The JS shim feeds pre-rendered lines in and drains
+// the write stream out; overlays/focus/input stay in pi's TS. Additive.
+mod tui;
+
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
 mod oauth;
