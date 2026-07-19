@@ -1,23 +1,33 @@
 [package]
 name = "atilla-orchestrator"
-description = "Rust mirror of @earendil-works/pi-orchestrator — the multi-instance orchestrator (scaffold)."
+description = "Rust mirror of @earendil-works/pi-orchestrator — the multi-instance orchestrator."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 
+# Mirrors pi's `orchestrator` binary (packages/orchestrator/src/cli.ts). Named
+# following the atilla CLI convention (cf. atilla-cli's `[[bin]]`).
+[[bin]]
+name = "atilla-orchestrator"
+path = "src/main.rs"
+
 [dependencies]
 atilla-agent = { path = "../atilla-agent" }
 atilla-ai = { path = "../atilla-ai" }
+clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1", features = [
     "rt",
+    "rt-multi-thread",
     "macros",
     "process",
     "io-util",
+    "io-std",
     "sync",
     "net",
+    "signal",
 ] }
 
 [target.'cfg(unix)'.dependencies]

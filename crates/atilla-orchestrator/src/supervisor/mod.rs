@@ -56,7 +56,9 @@ use atilla_agent::harness::session::uuidv7;
 use crate::ipc::protocol::{
     AgentSessionEvent, RpcCommand, RpcExtensionUIRequest, RpcExtensionUIResponse, RpcResponse,
 };
-use crate::radius::{RadiusClock, RadiusError, RadiusPresence, RadiusPresenceCoordinator};
+use crate::radius::{
+    RadiusClock, RadiusError, RadiusPresence, RadiusPresenceCoordinator, StartOutcome,
+};
 use crate::rpc_process::{
     create_rpc_process_instance, RpcProcessError, RpcProcessInstance, RpcProcessOptions,
     Unsubscribe,
@@ -510,6 +512,39 @@ impl OrchestratorSupervisor {
     /// Replace a live instance's record and persist it (pi's `updateInstance`).
     pub fn update_instance(&self, instance: InstanceRecord) {
         self.lock_instances().update_instance(instance);
+    }
+
+    // -- radius presence (pi's module `radiusPresence`, owned here) ----------
+
+    /// Whether radius presence is enabled (pi's `serve.ts` `isRadiusEnabled()`).
+    ///
+    /// pi's `serve.ts` reaches the module-global `radiusPresence`; this port owns
+    /// it inside the supervisor, so the serve entrypoint queries it through here.
+    pub fn is_radius_enabled(&self) -> bool {
+        self.inner
+            .radius
+            .lock()
+            .expect("radius poisoned")
+            .is_enabled()
+    }
+
+    /// Register the machine and prime its heartbeat (pi's `radiusPresence.start()`).
+    pub fn start_radius_presence(
+        &self,
+        label: Option<String>,
+    ) -> Result<Option<StartOutcome>, SupervisorError> {
+        Ok(self
+            .inner
+            .radius
+            .lock()
+            .expect("radius poisoned")
+            .start(label)?)
+    }
+
+    /// Disconnect the machine and clear heartbeat state (pi's `radiusPresence.stop()`).
+    pub fn stop_radius_presence(&self) -> Result<(), SupervisorError> {
+        self.inner.radius.lock().expect("radius poisoned").stop()?;
+        Ok(())
     }
 
     // -- read paths ---------------------------------------------------------
