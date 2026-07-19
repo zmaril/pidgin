@@ -21,6 +21,11 @@
 //! - [`dispatch`] — the pure result-shaping folds (chain / merge / short-circuit
 //!   / replace) that mirror pi's `ExtensionRunner.emit*` shaping, factored out of
 //!   the JS runtime so they are unit-testable in the default (V8-free) build.
+//! - [`runner`] — the [`runner::ExtensionRunner`] trait seam `AgentSession`
+//!   consumes (pi's `runner.ts` façade), plus the net-new types, the four
+//!   `bindCore` host traits, and the always-compiled no-op
+//!   [`runner::StubExtensionRunner`]. PR0 = trait + stub only; the deno-backed
+//!   impl lives in `atilla-extensions`.
 //!
 //! The JS-execution plane (running each discovered entrypoint on the embedded
 //! `deno_core` runtime) and the live `ExtensionRunner` that drives the hooks over
@@ -36,4 +41,5 @@ pub mod events;
 pub mod hook;
 pub mod loader;
 pub mod registry;
+pub mod runner;
 pub mod types;
