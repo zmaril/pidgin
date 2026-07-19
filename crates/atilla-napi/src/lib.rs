@@ -16,6 +16,10 @@ use serde_json::Value;
 // provider's deterministic streaming and cache accounting from JS. Additive.
 mod faux;
 
+// Bridge slice 1: the first Rust→JS blocking callback bridge (`AgentBridge`),
+// driving the Rust agent loop while live JS closures fire mid-run. Additive.
+mod agent_bridge;
+
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
 mod oauth;
