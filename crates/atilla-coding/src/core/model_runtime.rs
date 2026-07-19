@@ -19,59 +19,73 @@
 //! credential-aware `getAuth`/`checkAuth`/`getAvailable`, `login`/`logout`,
 //! streaming (`stream`/`streamSimple`/`complete`/`completeSimple` via
 //! `lazyStream`), and a network `refresh` that drives each provider's
-//! `refreshModels` and persists results to the [`ModelsStore`]. atilla's landed
-//! seams do not carry that surface — atilla-ai's [`Models`] collection is the
-//! synchronous provider-view (`get_models`/`get_provider`/`set_provider`), with
-//! no credential-aware availability, streaming completion, or async refresh, and
-//! [`RegistryProvider`]'s auth is the pared-down [`ProviderAuth`] rather than
-//! pi's composable `auth.apiKey`/`auth.oauth` handlers (see
-//! [`provider_composer`](super::provider_composer)).
+//! `refreshModels` and persists results to the [`ModelsStore`]. The
+//! credential-aware read/refresh half is wired against atilla-ai's landed [`Models`]
+//! runtime methods, which resolve the **env-key / override auth subset** through
+//! the injected auth context. The models.json-configured-key and OAuth read paths
+//! through the rich composed `auth.apiKey`/`auth.oauth` handlers stay deferred
+//! inside atilla-ai (its own residual deferral): the [`RegistryProvider`] the
+//! runtime stores carries the pared-down [`ProviderAuth`] env-key descriptor, not
+//! the rich composed handlers (see [`provider_composer`](super::provider_composer)).
 //!
-//! This port therefore covers the credential-blind, synchronously computable
-//! runtime surface:
+//! This port therefore covers:
 //!
 //! - config load + `reload_config`, radius-builtin reset;
-//! - the provider-composition lifecycle: `builtins`/native/extension layering
-//!   via [`compose_model_provider`], the `recompose_provider` fast paths, and
-//!   `rebuild_providers`;
-//! - the model snapshot (`all` / `available`), where "available" is derived
-//!   from the **synchronously determinable** configured-auth set: runtime
-//!   overrides, stored credentials ([`CredentialStore::list`]), and
+//! - the provider-composition lifecycle: `builtins`/native/extension layering via
+//!   the credential-blind [`compose_model_provider`] plus the AUTH-layer composer
+//!   (`compose_rich_provider`) that composes the rich [`ProviderAuth`](atilla_ai::auth::ProviderAuth)
+//!   handlers and delegates `filterModels`, the `recompose_provider` fast paths,
+//!   and `rebuild_providers`;
+//! - the model snapshot (`all` / `available`), where "available" is derived from
+//!   the **synchronously determinable** configured-auth set: runtime overrides,
+//!   stored credentials ([`CredentialStore::list`]), and
 //!   [`configured_request_auth_status`] over `models.json` / extension config;
-//! - error aggregation (`get_error`): config error plus per-provider
-//!   composition errors;
+//! - the **env-based auth-check map** (`snapshot.auth`) from [`Models::check_auth`],
+//!   backing [`ModelRuntime::is_using_oauth`] and the environment fallback of
+//!   `get_provider_auth_status`;
+//! - **auth resolution / availability**: `get_auth_for_provider` /
+//!   `get_auth_for_model` / `check_auth` / `get_available` over the env-key subset;
+//! - **live refresh**: `refresh` drives each refreshable provider's `refreshModels`
+//!   via [`Models::refresh`] under the runtime's network policy;
+//! - error aggregation (`get_error`): config error plus per-provider composition
+//!   errors;
 //! - the registration lifecycle (`register_provider` / `register_native_provider`
 //!   / `unregister_provider`) and the registered-provider accessors;
 //! - `get_provider_auth_status` and `get_compatibility_request_config`.
 //!
-//! The following are **deferred** (they require pi-ai's rich `Provider` /
-//! streaming surface, not on atilla main — see the port report):
+//! The following are **deferred**:
 //!
-//! - **auth resolution**: `get_auth`, `check_auth`, `get_available(provider)`
-//!   (the async, credential-aware, per-provider scoped read), and the
-//!   `snapshot.auth` env-based auth-check map that backs `is_using_oauth` and the
-//!   environment fallback of `get_provider_auth_status`;
+//! - the models.json-configured-key and OAuth **rich-handler read paths** (the
+//!   auth values resolve to the ambient/keyless result; atilla-ai's own residual
+//!   deferral, not re-portable here without modifying that crate);
 //! - **streaming**: `stream`/`stream_simple`/`complete`/`complete_simple`,
 //!   `prepare_request`, header transforms;
 //! - **login/logout** and the credential-mutation refresh side effects;
-//! - **live refresh**: the network `refresh` that fetches each provider's
-//!   `refreshModels` and persists to the [`ModelsStore`] (the store is wired and
-//!   held for that future path; `refresh` here recomputes the snapshot only);
+//! - **catalog persistence**: `refresh` drives `refreshModels` but does not yet
+//!   persist the fetched catalogs to the [`ModelsStore`] (the store is wired and
+//!   held for that path);
 //! - the per-config **parametrized radius provider** (pi's
 //!   `radiusProvider({ id, name, gateway })`): atilla-ai's [`radius_provider`]
 //!   is not parametrizable, so a `oauth: "radius"` config provider is composed
 //!   as a config-only provider rather than rebuilt as a gateway provider.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::Path;
 use std::sync::Arc;
 
-use atilla_ai::auth::{CredentialInfo, CredentialStore};
-use atilla_ai::providers::registry::{
-    create_provider, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
-    RegistryProvider,
+use atilla_ai::auth::{
+    env_api_key_auth, ApiKeyAuth, AuthCheck, AuthResolutionOverrides, AuthResult, AuthType,
+    Credential, CredentialInfo, CredentialStore, DefaultAuthContext, ModelsError, ProviderHeaders,
 };
-use atilla_ai::{builtin_providers, create_models, Model};
+use atilla_ai::compose_model_provider as compose_rich_provider;
+use atilla_ai::providers::composer::{ComposeAuthError, ComposeModelProviderInput};
+use atilla_ai::providers::registry::{
+    create_provider, ApiRouting, CreateProviderOptions, FilterModels, Models, MutableModels,
+    ProviderAuth, RefreshOptions, RegistryProvider,
+};
+use atilla_ai::providers::ConfigValueResolver;
+use atilla_ai::seams::storage::SystemEnv;
+use atilla_ai::{builtin_providers, Model};
 use indexmap::{IndexMap, IndexSet};
 
 use super::auth::auth_storage::AuthStorage;
@@ -79,9 +93,10 @@ use super::auth::runtime_credentials::RuntimeCredentials;
 use super::model_config::ModelConfig;
 use super::models_store::{FileModelsStore, InMemoryCodingAgentModelsStore, ModelsStore};
 use super::provider_composer::{
-    compose_model_provider, configured_request_auth_status, resolve_compatibility_request_config,
+    compose_model_provider, configured_request_auth_status, extension_auth_config,
+    provider_auth_config, resolve_compatibility_request_config, resolve_configured_model_headers,
     validate_extension_provider, AuthSource, AuthStatus, CompatibilityRequestConfig, ComposeError,
-    ComposedProvider, ProviderConfigInput,
+    ComposedProvider, ConfigValueResolverAdapter, ProviderConfigInput,
 };
 use super::skills::get_agent_dir;
 
@@ -130,6 +145,10 @@ struct ModelRuntimeSnapshot {
     available: Vec<Model>,
     configured_providers: BTreeSet<String>,
     stored_providers: BTreeSet<String>,
+    /// The env-based auth-check map, pi's `snapshot.auth` (`model-runtime.ts:104`),
+    /// populated from [`Models::check_auth`]. Backs [`ModelRuntime::is_using_oauth`]
+    /// and the environment fallback of [`ModelRuntime::get_provider_auth_status`].
+    auth: BTreeMap<String, AuthCheck>,
 }
 
 /// The configured pi-ai model collection used by coding-agent and SDK consumers
@@ -147,6 +166,10 @@ pub struct ModelRuntime {
     config: ModelConfig,
     models: Models,
     snapshot: ModelRuntimeSnapshot,
+    /// The config-value resolution seam threaded into the AUTH-layer composer
+    /// (`compose_rich_provider`) so `$ENV` / `!command` / literal keys resolve
+    /// through pi's ported resolver.
+    resolver: Arc<dyn ConfigValueResolver>,
 }
 
 impl ModelRuntime {
@@ -200,8 +223,9 @@ impl ModelRuntime {
             models_path,
             allow_model_network,
             config,
-            models: create_models(),
+            models: Models::with_auth_context(Arc::new(DefaultAuthContext::new(SystemEnv::new()))),
             snapshot: ModelRuntimeSnapshot::default(),
+            resolver: Arc::new(ConfigValueResolverAdapter),
         };
         runtime.configure_radius_providers();
         runtime.rebuild_providers();
@@ -259,20 +283,30 @@ impl ModelRuntime {
             self.composition_errors.shift_remove(provider_id);
             return;
         }
-        match compose_model_provider(
+        // The credential-blind half layers models and resolves identity; the
+        // AUTH half (atilla-ai) then composes the rich `ProviderAuth` handlers.
+        // Both halves surface composition errors into `composition_errors`, and
+        // both fall back to the untouched base provider on failure — mirroring
+        // pi's single `composeModelProvider` try/catch (`model-runtime.ts:212-219`).
+        let composed = compose_model_provider(
             provider_id,
             base.as_deref(),
             &self.config,
             extension.as_ref(),
-        ) {
-            Ok(composed) => {
-                let provider = composed_into_provider(composed, base.as_ref());
+        )
+        .map_err(|error| error.0)
+        .and_then(|blind| {
+            self.composed_into_provider(provider_id, blind, base.as_ref())
+                .map_err(|error| error.0)
+        });
+        match composed {
+            Ok(provider) => {
                 self.models.set_provider(provider);
                 self.composition_errors.shift_remove(provider_id);
             }
-            Err(error) => {
+            Err(message) => {
                 self.composition_errors
-                    .insert(provider_id.to_string(), error.0);
+                    .insert(provider_id.to_string(), message);
                 match base {
                     Some(base) => self.models.set_provider_arc(base),
                     None => self.models.delete_provider(provider_id),
@@ -333,10 +367,23 @@ impl ModelRuntime {
             .into_iter()
             .filter(|model| configured.contains(&model.provider))
             .collect();
+        // Populate the env-based auth-check map (pi's `runAvailabilityRefresh`
+        // `checks`, `model-runtime.ts:238-249`): each provider's side-effect-free
+        // `checkAuth` over the injected auth context. This backs the environment
+        // fallback of `get_provider_auth_status` and `is_using_oauth` without
+        // changing the offline `configured_providers` set (the models.json-key
+        // path stays resolved by `compute_configured_providers`).
+        let mut auth: BTreeMap<String, AuthCheck> = BTreeMap::new();
+        for provider in self.models.get_providers() {
+            if let Ok(Some(check)) = self.models.check_auth(provider.id()) {
+                auth.insert(provider.id().to_string(), check);
+            }
+        }
         self.snapshot = ModelRuntimeSnapshot {
             available,
             configured_providers: configured,
             stored_providers: stored,
+            auth,
         };
     }
 
@@ -436,11 +483,26 @@ impl ModelRuntime {
         self.credentials.list().unwrap_or_default()
     }
 
-    /// A provider's configured-auth status (pi's `getProviderAuthStatus`).
+    /// Whether a provider resolves to an OAuth credential (pi's `isUsingOAuth`,
+    /// `model-runtime.ts:360`): `snapshot.auth.get(id)?.type === "oauth"`.
     ///
-    /// The env-based `checkAuth` fallback pi consults last is deferred; a
-    /// provider with no runtime/stored/config-resolvable key reads as
-    /// unconfigured.
+    /// The env-key/ambient auth subset atilla-ai's [`Models::check_auth`] resolves
+    /// only ever reports [`AuthType::ApiKey`]; the OAuth read path (stored-credential
+    /// ownership) stays deferred with the rest of the OAuth surface, so this is
+    /// `false` today. The comparison is kept verbatim so it lights up for free when
+    /// that path lands.
+    pub fn is_using_oauth(&self, provider_id: &str) -> bool {
+        self.snapshot
+            .auth
+            .get(provider_id)
+            .map(|check| check.check_type == AuthType::Oauth)
+            .unwrap_or(false)
+    }
+
+    /// A provider's configured-auth status (pi's `getProviderAuthStatus`,
+    /// `model-runtime.ts:416-426`). After the runtime / stored / models.json
+    /// checks, the env-based `checkAuth` map is consulted last, marking a provider
+    /// whose ambient env key resolves as `source: environment`.
     pub fn get_provider_auth_status(&self, provider_id: &str) -> AuthStatus {
         if self.credentials.has_runtime_api_key(provider_id) {
             return AuthStatus {
@@ -462,10 +524,87 @@ impl ModelRuntime {
         ) {
             return status;
         }
+        if let Some(check) = self.snapshot.auth.get(provider_id) {
+            return AuthStatus {
+                configured: true,
+                source: Some(AuthSource::Environment),
+                label: check.source.clone(),
+            };
+        }
         AuthStatus {
             configured: false,
             source: None,
             label: None,
+        }
+    }
+
+    /// Resolve provider-scoped auth by provider id, pi's `getAuth(providerId, ...)`
+    /// overload (`model-runtime.ts:368`). Delegates to [`Models::get_auth_for_provider`],
+    /// which resolves the env-key/override subset through the injected auth context.
+    /// `Ok(None)` for an unknown or unconfigured provider.
+    pub fn get_auth_for_provider(
+        &self,
+        provider_id: &str,
+        overrides: Option<&AuthResolutionOverrides>,
+    ) -> Result<Option<AuthResult>, ModelsError> {
+        self.models.get_auth_for_provider(provider_id, overrides)
+    }
+
+    /// Resolve auth for a model, pi's `getAuth(model, ...)` overload
+    /// (`model-runtime.ts:375-389`): resolve the owning provider's auth, then merge
+    /// the model's configured request headers (`resolveConfiguredModelHeaders` over
+    /// the resolved + override env) into the result. `Ok(None)` for an unknown or
+    /// unconfigured provider.
+    pub fn get_auth_for_model(
+        &self,
+        model: &Model,
+        overrides: Option<&AuthResolutionOverrides>,
+    ) -> Result<Option<AuthResult>, ModelsError> {
+        let Some(mut resolution) = self.models.get_auth_for_model(model, overrides)? else {
+            return Ok(None);
+        };
+        // `{ ...(resolution.env ?? {}), ...(overrides.env ?? {}) }`.
+        let mut env: HashMap<String, String> = HashMap::new();
+        for (key, value) in resolution.env.iter().flatten() {
+            env.insert(key.clone(), value.clone());
+        }
+        if let Some(overrides) = overrides {
+            for (key, value) in overrides.env.iter().flatten() {
+                env.insert(key.clone(), value.clone());
+            }
+        }
+        let env = if env.is_empty() { None } else { Some(&env) };
+        let configured = resolve_configured_model_headers(
+            model,
+            self.config.get_provider(&model.provider),
+            self.extension_providers.get(&model.provider),
+            env,
+        )
+        .map_err(|error| {
+            ModelsError::auth(format!(
+                "Failed to resolve configured headers for provider {}",
+                model.provider
+            ))
+            .with_cause(error.0)
+        })?;
+        resolution.auth.headers = merge_model_headers(resolution.auth.headers.take(), configured);
+        Ok(Some(resolution))
+    }
+
+    /// A provider's side-effect-free auth check, pi's `checkAuth`
+    /// (`model-runtime.ts:303`). `Ok(None)` for an unknown or unconfigured provider.
+    pub fn check_auth(&self, provider_id: &str) -> Result<Option<AuthCheck>, ModelsError> {
+        self.models.check_auth(provider_id)
+    }
+
+    /// The available models, pi's `getAvailable` (`model-runtime.ts:307`). Without a
+    /// provider id it returns the cached snapshot (the offline configured-auth set);
+    /// scoped to a provider it resolves live through [`Models::get_available`], gated
+    /// by the provider's env-key/ambient auth and narrowed by its `filterModels`.
+    pub fn get_available(&self, provider_id: Option<&str>) -> Result<Vec<Model>, ModelsError> {
+        match provider_id {
+            Some(id) => self.models.get_available(Some(id)),
+            None => Ok(self.snapshot.available.clone()),
         }
     }
 
@@ -490,9 +629,17 @@ impl ModelRuntime {
         self.rebuild_providers();
     }
 
-    /// Recompute the model + availability snapshot (pi's `refresh`, reduced to
-    /// its offline snapshot recomputation; the network model refresh is deferred).
+    /// Live-refresh dynamic providers and recompute the snapshot (pi's `refresh`,
+    /// `model-runtime.ts:513-531`). [`Models::refresh`] drives each refreshable
+    /// provider's `refreshModels` with the resolved credential and the runtime's
+    /// network policy; the snapshot recomputation then repopulates the env-based
+    /// auth-check map. Persisting refreshed catalogs to the [`ModelsStore`] remains
+    /// deferred (the store is wired and held for that path).
     pub fn refresh(&mut self) {
+        self.models.refresh(&RefreshOptions {
+            allow_network: self.allow_model_network,
+            force: false,
+        });
         self.update_snapshot();
     }
 
@@ -561,6 +708,110 @@ impl ModelRuntime {
     pub fn allow_model_network(&self) -> bool {
         self.allow_model_network
     }
+
+    /// Build a [`RegistryProvider`] from the credential-blind [`ComposedProvider`],
+    /// composing the rich [`ProviderAuth`](atilla_ai::auth::ProviderAuth) handlers
+    /// through the AUTH-layer composer (pi's `composeModelProvider` auth half,
+    /// `provider-composer.ts:412-499`).
+    ///
+    /// The AUTH composer validates that at least one auth method is configured
+    /// (throwing pi's verbatim `"Provider {id}: no authentication method
+    /// configured."`) and, when the base provider declares one, delegates the
+    /// credential-specific `filterModels` to it (`provider-composer.ts:493-495`).
+    /// The [`RegistryProvider`] the runtime stores carries the pared-down
+    /// [`ProviderAuth`](atilla_ai::providers::registry::ProviderAuth) env-key
+    /// descriptor (the resolution path [`Models::get_auth_for_provider`] reads); the
+    /// rich composed handlers gate configuration and would drive the eager stream,
+    /// but the models.json-configured-key and OAuth read paths through them stay
+    /// deferred inside atilla-ai (see the module docs).
+    fn composed_into_provider(
+        &self,
+        provider_id: &str,
+        composed: ComposedProvider,
+        base: Option<&Arc<RegistryProvider>>,
+    ) -> Result<RegistryProvider, ComposeAuthError> {
+        let name = composed.name.clone();
+        let base_url = composed.base_url.clone();
+        let headers = composed.headers.clone();
+        let models = composed.into_models();
+
+        // pi's `base?.auth.apiKey`: the builtin's env-key handler, rebuilt from the
+        // pared-down descriptor. `base?.auth.oauth` is absent (the RegistryProvider
+        // carries no OAuth handler), so it is `None`.
+        let base_api_key: Option<Box<dyn ApiKeyAuth>> = base.map(|base| {
+            let auth = base.auth();
+            let vars: Vec<&str> = auth.api_key_env_vars.iter().map(String::as_str).collect();
+            Box::new(env_api_key_auth(auth.name.clone(), &vars)) as Box<dyn ApiKeyAuth>
+        });
+
+        let rich = compose_rich_provider(ComposeModelProviderInput {
+            provider_id: provider_id.to_string(),
+            base: base.cloned(),
+            base_api_key,
+            base_oauth: None,
+            config: self
+                .config
+                .get_provider(provider_id)
+                .map(provider_auth_config),
+            extension: self
+                .extension_providers
+                .get(provider_id)
+                .map(extension_auth_config),
+            models,
+            name: name.clone(),
+            base_url: base_url.clone(),
+            headers: headers.clone(),
+            resolver: self.resolver.clone(),
+        })?;
+
+        let auth: ProviderAuth = base.map(|base| base.auth().clone()).unwrap_or_default();
+        // pi's `filterModels: base?.filterModels ? (models, cred) =>
+        // base.filterModels!(models, cred) : undefined` — delegate to the base
+        // provider's filter when it declares one, else no filter.
+        let filter_models: Option<FilterModels> =
+            base.filter(|base| base.has_filter()).map(|base| {
+                let base = base.clone();
+                Arc::new(move |models: &[Model], credential: Option<&Credential>| {
+                    base.filter_models(models.to_vec(), credential)
+                }) as FilterModels
+            });
+        let mut provider = create_provider(CreateProviderOptions {
+            id: rich.id.clone(),
+            name: Some(name),
+            base_url,
+            headers,
+            auth,
+            models: rich.get_models().to_vec(),
+            fetch_models: None,
+            api: ApiRouting::Unimplemented,
+        });
+        if let Some(filter_models) = filter_models {
+            provider = provider.with_filter_models(filter_models);
+        }
+        Ok(provider)
+    }
+}
+
+/// Merge configured request headers onto a resolved [`ModelAuth`]'s headers, pi's
+/// `mergeHeaders` (`models.ts:202`): the override wins, replacing any base entry
+/// whose name matches case-insensitively while keeping the override's own casing.
+/// `None`/`None` yields `None`.
+fn merge_model_headers(
+    base: Option<ProviderHeaders>,
+    override_headers: Option<BTreeMap<String, String>>,
+) -> Option<ProviderHeaders> {
+    if base.is_none() && override_headers.is_none() {
+        return None;
+    }
+    let mut merged = base.unwrap_or_default();
+    if let Some(override_headers) = override_headers {
+        for (name, value) in override_headers {
+            let lower = name.to_lowercase();
+            merged.retain(|existing, _| existing.to_lowercase() != lower);
+            merged.insert(name, Some(value));
+        }
+    }
+    Some(merged)
 }
 
 /// The default `models-store.json` path: alongside `models.json`
@@ -570,32 +821,6 @@ fn default_models_store_path(models_path: &str) -> String {
         Some(dir) => dir.join("models-store.json").to_string_lossy().into_owned(),
         None => "models-store.json".to_string(),
     }
-}
-
-/// Build a [`RegistryProvider`] from a [`ComposedProvider`], carrying the base
-/// provider's [`ProviderAuth`] when present so env-var auth metadata survives
-/// composition. Streaming routes via [`ApiRouting::Unimplemented`] (composed
-/// providers carry no backend; streaming is deferred).
-fn composed_into_provider(
-    composed: ComposedProvider,
-    base: Option<&Arc<RegistryProvider>>,
-) -> RegistryProvider {
-    let auth: ProviderAuth = base.map(|base| base.auth().clone()).unwrap_or_default();
-    let id = composed.id.clone();
-    let name = composed.name.clone();
-    let base_url = composed.base_url.clone();
-    let headers = composed.headers.clone();
-    let models = composed.into_models();
-    create_provider(CreateProviderOptions {
-        id,
-        name: Some(name),
-        base_url,
-        headers,
-        auth,
-        models,
-        fetch_models: None,
-        api: ApiRouting::Unimplemented,
-    })
 }
 
 /// Merge a re-registration over the previous extension config (pi's

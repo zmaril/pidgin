@@ -1,3 +1,4 @@
+// straitjacket-allow-file:duplication - test resolver mirrors the ported ConfigValueResolver adapter surface
 //! Tests for the provider-composer AUTH layer.
 //!
 //! Assertions are translated from pi's `model-runtime-auth-options.test.ts`

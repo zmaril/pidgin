@@ -19,6 +19,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use atilla_ai::auth::AuthResolutionOverrides;
 use atilla_ai::get_supported_thinking_levels;
 use atilla_ai::providers::registry::{
     create_provider, ApiRouting, CreateProviderOptions, ProviderAuth, RegistryProvider,
@@ -29,7 +30,7 @@ use tempfile::{tempdir, TempDir};
 
 use super::*;
 use crate::core::auth::auth_storage::AuthStorage;
-use crate::core::model_registry::ModelRegistry;
+use crate::core::model_registry::{ModelRegistry, ResolvedRequestAuth};
 use crate::core::provider_composer::{AuthSource, ExtensionModelConfig};
 
 /// Serializes tests that mutate process-global environment variables and the
@@ -1085,4 +1086,192 @@ fn disabled_models_path_builds_builtin_only_runtime() {
     assert_eq!(runtime.get_error(), None);
     assert!(runtime.get_model("anthropic", "claude-haiku-4-5").is_some());
     assert!(!runtime.allow_model_network());
+}
+
+// ===========================================================================
+// credential resolution / env-based auth (flipped seams (a)-(d))
+// ===========================================================================
+
+fn native_model(provider: &str, base_url: &str, model_id: &str) -> Model {
+    Model {
+        id: model_id.to_string(),
+        name: model_id.to_string(),
+        api: "openai-completions".to_string(),
+        provider: provider.to_string(),
+        base_url: base_url.to_string(),
+        reasoning: false,
+        thinking_level_map: None,
+        input: vec![Modality::Text],
+        cost: zero_cost(),
+        context_window: 1000,
+        max_tokens: 100,
+        headers: None,
+        compat: None,
+    }
+}
+
+/// A native provider carrying a specific [`ProviderAuth`] descriptor, so the
+/// stored [`RegistryProvider`]'s env-key resolution path can be exercised (the
+/// models.json-configured-key path through the rich composed handlers stays
+/// deferred inside atilla-ai).
+fn native_provider_with_auth(id: &str, auth: ProviderAuth) -> RegistryProvider {
+    create_provider(CreateProviderOptions {
+        id: id.to_string(),
+        name: Some("Extension Native".to_string()),
+        base_url: Some("https://native.test/v1".to_string()),
+        headers: None,
+        auth,
+        models: vec![native_model(id, "https://native.test/v1", "native")],
+        fetch_models: None,
+        api: ApiRouting::Unimplemented,
+    })
+}
+
+// model-registry.test.ts (getApiKeyAndHeaders / getProviderAuth) — the env-key
+// slice reachable through the landed Models runtime methods: getAuth resolves the
+// ambient env key, getApiKeyAndHeaders projects it, and an explicit override wins.
+#[test]
+fn get_api_key_and_headers_resolves_env_key() {
+    let _guard = ENV_TEST_LOCK.lock().unwrap();
+    std::env::set_var("ATILLA_RT_APIKEY_98765", "resolved-secret");
+
+    let mut fx = fixture(json!({}));
+    fx.registry
+        .register_native_provider(native_provider_with_auth(
+            "env-native",
+            ProviderAuth::env_api_key("Env key", &["ATILLA_RT_APIKEY_98765"]),
+        ))
+        .unwrap();
+    let model = fx.registry.find("env-native", "native").unwrap();
+
+    // getApiKeyAndHeaders resolves the ambient env key.
+    match fx.registry.get_api_key_and_headers(&model) {
+        ResolvedRequestAuth::Ok { api_key, .. } => {
+            assert_eq!(api_key.as_deref(), Some("resolved-secret"));
+        }
+        other => panic!("expected resolved auth, got {other:?}"),
+    }
+
+    // getAuth (provider form) resolves the same key, labelled with the env-var name.
+    let auth = fx
+        .runtime()
+        .get_auth_for_provider("env-native", None)
+        .unwrap()
+        .unwrap();
+    assert_eq!(auth.auth.api_key.as_deref(), Some("resolved-secret"));
+    assert_eq!(auth.source.as_deref(), Some("ATILLA_RT_APIKEY_98765"));
+
+    // getApiKeyForProvider is the convenience projection.
+    assert_eq!(
+        fx.registry
+            .get_api_key_for_provider("env-native")
+            .as_deref(),
+        Some("resolved-secret")
+    );
+
+    // An explicit api-key override wins (pi resolve.ts:49).
+    let overrides = AuthResolutionOverrides {
+        api_key: Some("explicit-key".to_string()),
+        env: None,
+    };
+    assert_eq!(
+        fx.runtime()
+            .get_auth_for_provider("env-native", Some(&overrides))
+            .unwrap()
+            .unwrap()
+            .auth
+            .api_key
+            .as_deref(),
+        Some("explicit-key")
+    );
+
+    std::env::remove_var("ATILLA_RT_APIKEY_98765");
+}
+
+// model-registry.test.ts (env-based checkAuth availability) — a provider whose
+// ambient env key resolves reports through checkAuth and the environment fallback
+// of getProviderAuthStatus; clearing the key makes it unconfigured again.
+#[test]
+fn env_check_auth_drives_provider_auth_status() {
+    let _guard = ENV_TEST_LOCK.lock().unwrap();
+    std::env::set_var("ATILLA_RT_ENVCHK_98765", "env-value");
+
+    let mut fx = fixture(json!({}));
+    // Register while the env var is set so the snapshot's checkAuth map captures it.
+    fx.registry
+        .register_native_provider(native_provider_with_auth(
+            "env-status",
+            ProviderAuth::env_api_key("Env key", &["ATILLA_RT_ENVCHK_98765"]),
+        ))
+        .unwrap();
+
+    // checkAuth resolves the env-var source.
+    let check = fx.runtime().check_auth("env-status").unwrap().unwrap();
+    assert_eq!(check.source.as_deref(), Some("ATILLA_RT_ENVCHK_98765"));
+
+    // getProviderAuthStatus falls back to the environment check (no runtime /
+    // stored / models.json-configured key on this native provider).
+    let status = fx.runtime().get_provider_auth_status("env-status");
+    assert!(status.configured);
+    assert_eq!(status.source, Some(AuthSource::Environment));
+    assert_eq!(status.label.as_deref(), Some("ATILLA_RT_ENVCHK_98765"));
+
+    // The env-key subset never resolves to OAuth.
+    assert!(!fx.runtime().is_using_oauth("env-status"));
+
+    // Clearing the key and refreshing drops it from the env-check map.
+    std::env::remove_var("ATILLA_RT_ENVCHK_98765");
+    fx.runtime().check_auth("env-status").unwrap();
+    fx.registry.runtime_mut().refresh();
+    assert!(fx.runtime().check_auth("env-status").unwrap().is_none());
+    assert!(
+        !fx.runtime()
+            .get_provider_auth_status("env-status")
+            .configured
+    );
+}
+
+// provider-composer.ts:493-495 — filterModels delegates to the base provider, so
+// getAvailable narrows the composed provider's catalog to the filtered subset.
+#[test]
+fn filter_models_narrows_get_available() {
+    // A native base whose filterModels keeps only its "keep" model, composed under
+    // a models.json headers overlay so the bridged provider delegates to it.
+    let mut fx = fixture(json!({
+        "filtered-native": { "headers": { "x-proxy": "on" } },
+    }));
+    let native = create_provider(CreateProviderOptions {
+        id: "filtered-native".to_string(),
+        name: Some("Filtered Native".to_string()),
+        base_url: Some("https://filtered.test/v1".to_string()),
+        headers: None,
+        auth: ProviderAuth::default(),
+        models: vec![
+            native_model("filtered-native", "https://filtered.test/v1", "keep"),
+            native_model("filtered-native", "https://filtered.test/v1", "drop"),
+        ],
+        fetch_models: None,
+        api: ApiRouting::Unimplemented,
+    })
+    .with_filter_models(Arc::new(|catalog: &[Model], _credential| {
+        catalog.iter().filter(|m| m.id == "keep").cloned().collect()
+    }));
+    fx.registry.register_native_provider(native).unwrap();
+
+    // The full catalog keeps both models (getModels applies no filter).
+    let all: Vec<String> = models_for(&fx.registry, "filtered-native")
+        .iter()
+        .map(|m| m.id.clone())
+        .collect();
+    assert_eq!(all, vec!["keep".to_string(), "drop".to_string()]);
+
+    // getAvailable applies the delegated filter, keeping only "keep".
+    let available: Vec<String> = fx
+        .runtime()
+        .get_available(Some("filtered-native"))
+        .unwrap()
+        .into_iter()
+        .map(|m| m.id)
+        .collect();
+    assert_eq!(available, vec!["keep".to_string()]);
 }

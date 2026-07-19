@@ -11,16 +11,18 @@
 //! # Scope of this slice
 //!
 //! The credential-resolving facade methods — `getApiKeyAndHeaders`,
-//! `getProviderAuth`, `getApiKeyForProvider`, and `isUsingOAuth` — are
-//! **deferred**: they call `ModelRuntime::get_auth` / `check_auth`, which are
-//! part of the deferred credential-aware auth surface (see
-//! [`model_runtime`](super::model_runtime) and the port report). The
-//! `ResolvedRequestAuth` shape they return is retained here so the surface is
-//! ready to wire once that path lands. The composition/registration/lookup and
-//! auth-*status* methods are fully delegated.
+//! `getProviderAuth`, `getApiKeyForProvider`, and `isUsingOAuth` — delegate to
+//! [`ModelRuntime`]'s `get_auth_for_*` / `check_auth`, which resolve the
+//! env-key/override auth subset through the injected auth context. The
+//! models.json-configured-key and OAuth read paths through the rich composed
+//! handlers stay deferred inside atilla-ai (see [`model_runtime`](super::model_runtime)),
+//! so those resolve to the ambient/keyless result today. The
+//! composition/registration/lookup and auth-*status* methods are fully delegated.
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
+use atilla_ai::auth::{AuthResult, ModelsError, ProviderHeaders};
 use atilla_ai::providers::registry::RegistryProvider;
 use atilla_ai::Model;
 
@@ -91,9 +93,71 @@ impl ModelRegistry {
         self.runtime.get_models(None)
     }
 
-    /// The available-model snapshot (pi's `getAvailable`).
+    /// The available-model snapshot (pi's `getAvailable`, `model-registry.ts:40`,
+    /// which reads `runtime.getAvailableSnapshot()`).
     pub fn get_available(&self) -> Vec<Model> {
         self.runtime.get_available_snapshot().to_vec()
+    }
+
+    /// The resolved request auth for a model (pi's `getApiKeyAndHeaders`,
+    /// `model-registry.ts:52-89`). On a resolved auth it returns the api key plus
+    /// the non-null request headers; on an unconfigured provider it falls back to
+    /// the compatibility request config (failing when `authHeader` is set); a
+    /// resolution error becomes an [`Err`](ResolvedRequestAuth::Err), translating
+    /// the `"authHeader requires a resolved API key"` throw into
+    /// `No API key found for "<provider>"`.
+    pub fn get_api_key_and_headers(&self, model: &Model) -> ResolvedRequestAuth {
+        match self.runtime.get_auth_for_model(model, None) {
+            Ok(Some(resolution)) => ResolvedRequestAuth::Ok {
+                api_key: resolution.auth.api_key,
+                headers: non_null_headers(resolution.auth.headers),
+                env: resolution.env,
+            },
+            Ok(None) => {
+                let compatibility = self.runtime.get_compatibility_request_config(model);
+                if compatibility.auth_header {
+                    return ResolvedRequestAuth::Err {
+                        error: format!("No API key found for \"{}\"", model.provider),
+                    };
+                }
+                ResolvedRequestAuth::Ok {
+                    api_key: None,
+                    headers: compatibility.headers,
+                    env: None,
+                }
+            }
+            Err(error) => {
+                let message = error.cause.unwrap_or(error.message);
+                let error = if message == "authHeader requires a resolved API key" {
+                    format!("No API key found for \"{}\"", model.provider)
+                } else {
+                    message
+                };
+                ResolvedRequestAuth::Err { error }
+            }
+        }
+    }
+
+    /// A provider's resolved auth (pi's `getProviderAuth`, `model-registry.ts:101`):
+    /// `runtime.getAuth(provider)`.
+    pub fn get_provider_auth(&self, provider: &str) -> Result<Option<AuthResult>, ModelsError> {
+        self.runtime.get_auth_for_provider(provider, None)
+    }
+
+    /// A provider's resolved api key (pi's `getApiKeyForProvider`,
+    /// `model-registry.ts:104-110`): the resolved auth's api key, swallowing errors.
+    pub fn get_api_key_for_provider(&self, provider: &str) -> Option<String> {
+        self.runtime
+            .get_auth_for_provider(provider, None)
+            .ok()
+            .flatten()
+            .and_then(|resolution| resolution.auth.api_key)
+    }
+
+    /// Whether a model's provider resolves to an OAuth credential (pi's
+    /// `isUsingOAuth`, `model-registry.ts:112`).
+    pub fn is_using_oauth(&self, model: &Model) -> bool {
+        self.runtime.is_using_oauth(&model.provider)
     }
 
     /// A model by provider + id (pi's `find`).
@@ -167,4 +231,17 @@ impl ModelRegistry {
     pub fn get_registered_provider_ids(&self) -> Vec<String> {
         self.runtime.get_registered_provider_ids()
     }
+}
+
+/// Drop the null-valued entries of a resolved [`ProviderHeaders`] into a plain
+/// header map, pi's `Object.entries(...).filter(entry[1] !== null)`
+/// (`model-registry.ts:60-66`). A present-but-empty header map still yields
+/// `Some` (pi returns `{}` rather than `undefined`).
+fn non_null_headers(headers: Option<ProviderHeaders>) -> Option<BTreeMap<String, String>> {
+    headers.map(|headers| {
+        headers
+            .into_iter()
+            .filter_map(|(key, value)| value.map(|value| (key, value)))
+            .collect()
+    })
 }
