@@ -1,0 +1,26 @@
+{
+  "fluessig": {
+    "format": 1,
+    "emitter": "0.0.0",
+    "compiler": "1.14.0"
+  },
+  "source": "atilla.tsp",
+  "models": [],
+  "unions": [],
+  "interfaces": [
+    {
+      "name": "Atilla",
+      "doc": null,
+      "ops": [
+        {
+          "name": "version",
+          "doc": "The atilla engine version, as reported by the atilla-core facade.",
+          "shape": "unary",
+          "readonly": true,
+          "params": [],
+          "returns": "string"
+        }
+      ]
+    }
+  ]
+}

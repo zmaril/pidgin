@@ -17,6 +17,11 @@ crate-type = ["cdylib"]
 ext-php-rs = "=0.13.1"
 # The façade crate is the only atilla dependency a binding is allowed to reach.
 atilla-core = { path = "../../crates/atilla-core" }
+# The generated binding routes fallible ops through `anyhow::Result`.
+anyhow = "1"
+# The shared streaming contract (Poll/PollStream) the generated binding imports.
+# Pinned to the merged fluessig#58 (PHP-header fix) on `main`. See regen.sh / README.md.
+fluessig-runtime = { git = "https://github.com/zmaril/fluessig", rev = "fb70926e037bed3a374445f8f19b62868cd66ba3" }
 
 # Standalone workspace: this empty table makes cargo treat this crate as its own
 # workspace rather than attaching it to the workspace rooted at the repository
