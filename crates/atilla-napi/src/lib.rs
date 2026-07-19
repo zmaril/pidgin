@@ -20,6 +20,40 @@ mod faux;
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
 mod oauth;
 
+// Exec-tool bindings (`lsToolExecute`, `writeToolExecute`, `bashToolExecute`)
+// backing the native ls/write/bash conformance shims' default (local) path.
+// Additive; the async run layer is driven via `block_on`. The `#[napi]` export
+// wrappers live here (crate root) — the thin impls are in `tools`.
+mod tools;
+
+/// `createLsTool(...).execute` default path (`ls.ts`): list a directory through
+/// the native `run_ls` port, returning pi's `AgentToolResult` JSON. See
+/// [`tools::ls_execute`].
+///
+/// Exported to JavaScript as `lsToolExecute`.
+#[napi(js_name = "lsToolExecute")]
+pub fn ls_tool_execute(cwd: String, input_json: String) -> napi::Result<String> {
+    tools::ls_execute(cwd, input_json)
+}
+
+/// `createWriteTool(...).execute` default path (`write.ts`): write a file through
+/// the native `run_write` port and mutation queue. See [`tools::write_execute`].
+///
+/// Exported to JavaScript as `writeToolExecute`.
+#[napi(js_name = "writeToolExecute")]
+pub fn write_tool_execute(cwd: String, input_json: String) -> napi::Result<String> {
+    tools::write_execute(cwd, input_json)
+}
+
+/// `createBashTool(...).execute` default path (`bash.ts`): run a command through
+/// the native `BashTool` local-shell path. See [`tools::bash_execute`].
+///
+/// Exported to JavaScript as `bashToolExecute`.
+#[napi(js_name = "bashToolExecute")]
+pub fn bash_tool_execute(cwd: String, input_json: String) -> napi::Result<String> {
+    tools::bash_execute(cwd, input_json)
+}
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `atillaNativeVersion`.
