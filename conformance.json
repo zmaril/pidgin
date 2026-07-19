@@ -1,11 +1,11 @@
 {
   "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
   "generated_by": "scripts/conformance.sh",
-  "manifest_native_modules": 21,
+  "manifest_native_modules": 38,
   "rust_backed": {
-    "passing": 258,
+    "passing": 518,
     "total": 3777,
-    "percent": 6.8
+    "percent": 13.7
   },
   "total": 3777,
   "passing": 2919,
@@ -13,35 +13,35 @@
   "skipped": 785,
   "by_package": {
     "agent": {
-      "rust_backed_passing": 0,
-      "rust_backed_percent": 0,
+      "rust_backed_passing": 35,
+      "rust_backed_percent": 19.4,
       "total": 180,
       "passing": 180,
       "failing": 0,
       "skipped": 0,
-      "native": 0,
+      "native": 5,
       "status": "ok",
       "note": "vitest run, exit 0"
     },
     "ai": {
-      "rust_backed_passing": 26,
-      "rust_backed_percent": 2,
+      "rust_backed_passing": 62,
+      "rust_backed_percent": 4.8,
       "total": 1294,
       "passing": 556,
       "failing": 0,
       "skipped": 738,
-      "native": 2,
+      "native": 7,
       "status": "ok",
       "note": "vitest run, exit 0"
     },
     "coding-agent": {
-      "rust_backed_passing": 45,
-      "rust_backed_percent": 2.8,
+      "rust_backed_passing": 161,
+      "rust_backed_percent": 9.9,
       "total": 1625,
       "passing": 1505,
       "failing": 73,
       "skipped": 47,
-      "native": 12,
+      "native": 15,
       "status": "ok",
       "note": "vitest run, exit 1"
     },
@@ -57,13 +57,13 @@
       "note": "no tests"
     },
     "tui": {
-      "rust_backed_passing": 187,
-      "rust_backed_percent": 27.6,
+      "rust_backed_passing": 260,
+      "rust_backed_percent": 38.3,
       "total": 678,
       "passing": 678,
       "failing": 0,
       "skipped": 0,
-      "native": 7,
+      "native": 11,
       "status": "ok",
       "note": "node:test per file, 0 file timeout(s)"
     }
