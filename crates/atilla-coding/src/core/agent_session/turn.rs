@@ -20,7 +20,9 @@
 //! Branches that belong to later PRs of the AgentSession port are stubbed to
 //! their minimal safe default with a plain `// unit5:` note pointing at the PR
 //! that lands them: the `/`-command shortcut and skill/prompt-template expansion
-//! (PR7), the pre-send compaction check (PR6), and auto-retry (PR5).
+//! (PR7) and the pre-send compaction check (PR6). Auto-retry (the retryable-error
+//! branch of `handle_post_agent_run`, the `will_retry` computation, and the
+//! success reset) lands in the sibling [`super::retry`] module.
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/agent-session.ts`.
 
@@ -62,7 +64,7 @@ use super::session::AgentSession;
 /// is non-optional and defaults to this placeholder (see `agent.rs` `DEFAULT_MODEL`
 /// and [`crate::core::auth::auth_guidance`]'s `UNKNOWN_PROVIDER`), so the session
 /// treats the placeholder as "no model selected".
-const UNKNOWN_MODEL_SENTINEL: &str = "unknown";
+pub(super) const UNKNOWN_MODEL_SENTINEL: &str = "unknown";
 
 /// The error pi's `prompt` throws — a preflight failure (no model / no auth /
 /// streaming guard) or an error surfaced by the wrapped [`Agent`](atilla_agent::agent::Agent).
@@ -196,6 +198,15 @@ pub(super) struct AgentEventHandler {
     pub last_assistant_message: Arc<Mutex<Option<AgentMessage>>>,
     /// The extension-facing turn index (pi `_turnIndex`).
     pub turn_index: Arc<Mutex<i64>>,
+    /// A cheap handle to the same shared agent, for the live model the
+    /// `will_retry` computation reads (pi `this.model`).
+    pub agent: atilla_agent::agent::Agent,
+    /// The shared auto-retry attempt count (pi `_retryAttempt`). Reset on a
+    /// successful assistant response; read for `will_retry`.
+    pub retry_attempt: Arc<Mutex<u32>>,
+    /// The shared snapshot of resolved retry settings (pi's `getRetrySettings`),
+    /// read for `will_retry`.
+    pub retry_settings: Arc<Mutex<crate::core::settings_manager::RetryResolved>>,
 }
 
 impl AgentEventHandler {
@@ -217,9 +228,13 @@ impl AgentEventHandler {
         // 2. Emit to extensions first.
         self.emit_extension_event(event);
 
-        // 3. Notify all listeners. `will_retry` is folded into agent_end; auto-retry
-        //    lands in PR5, so it is `false` here (pi `_willRetryAfterAgentEnd`, L647).
-        let session_event = AgentSessionEvent::from_agent_event(event.clone(), false);
+        // 3. Notify all listeners. `will_retry` is folded into agent_end (pi
+        //    `_willRetryAfterAgentEnd`, L647); every other event ignores it.
+        let will_retry = match event {
+            AgentEvent::AgentEnd { messages } => self.will_retry_after_agent_end(messages),
+            _ => false,
+        };
+        let session_event = AgentSessionEvent::from_agent_event(event.clone(), will_retry);
         emit_to_listeners(&self.listeners, &session_event);
 
         // 4. Session persistence on message_end (pi L604).
@@ -414,8 +429,47 @@ impl AgentEventHandler {
         if message_role(message) == Some("assistant") {
             *self.last_assistant_message.lock().unwrap() = Some(message.clone());
             // unit5: the stopReason-gated _overflowRecoveryAttempted reset (PR6)
-            // and the auto_retry_end success reset (PR5) land with those PRs.
+            // lands with compaction.
+
+            // Reset the retry counter immediately on a successful assistant
+            // response so it does not accumulate across LLM calls within a turn
+            // (pi L631-642). Emitting the terminal `auto_retry_end{success:true}`
+            // here — during the successful message_end — is what lets the next
+            // `agent_end`'s `will_retry` read a cleared counter.
+            let stop_reason = message.get("stopReason").and_then(Value::as_str);
+            let mut attempt = self.retry_attempt.lock().unwrap();
+            if stop_reason != Some("error") && *attempt > 0 {
+                let completed = *attempt;
+                *attempt = 0;
+                drop(attempt);
+                emit_to_listeners(
+                    &self.listeners,
+                    &AgentSessionEvent::AutoRetryEnd {
+                        success: true,
+                        attempt: completed,
+                        final_error: None,
+                    },
+                );
+            }
         }
+    }
+
+    /// Whether a retryable error at `agent_end` will trigger another attempt (pi's
+    /// `_willRetryAfterAgentEnd`, L647): retry must be enabled and under budget, and
+    /// the last assistant message in the run must be retryable.
+    fn will_retry_after_agent_end(&self, messages: &[AgentMessage]) -> bool {
+        let settings = *self.retry_settings.lock().unwrap();
+        let attempt = *self.retry_attempt.lock().unwrap();
+        if !settings.enabled || i64::from(attempt) >= settings.max_retries {
+            return false;
+        }
+        let context_window = super::retry::agent_context_window(&self.agent);
+        for message in messages.iter().rev() {
+            if message_role(message) == Some("assistant") {
+                return super::retry::message_is_retryable(message, context_window);
+            }
+        }
+        false
     }
 }
 
@@ -658,14 +712,36 @@ impl AgentSession {
     /// continuations. The retry (PR5) and compaction (PR6) branches default to no
     /// continuation.
     fn handle_post_agent_run(&self) -> bool {
-        let message = self.last_assistant_message.lock().unwrap().take();
-        if message.is_none() {
+        let Some(message) = self.last_assistant_message.lock().unwrap().take() else {
             return false;
+        };
+
+        // Retryable error: back off and continue the loop for another attempt (pi
+        // L1070). `prepare_retry` may decline (retry disabled, budget exhausted, or
+        // the backoff aborted), in which case fall through.
+        if self.is_retryable_error(&message) && self.prepare_retry(&message) {
+            return true;
         }
 
-        // unit5: the retryable-error branch (pi L1070, PR5) and the auto-compaction
-        // branch (pi L1084, PR6) land with those PRs; their safe default is no
-        // continuation.
+        // A terminal error after at least one attempt: emit the final failure and
+        // reset the counter (pi L1074).
+        let stop_reason = message.get("stopReason").and_then(Value::as_str);
+        let attempt = *self.retry_attempt.lock().unwrap();
+        if stop_reason == Some("error") && attempt > 0 {
+            let final_error = message
+                .get("errorMessage")
+                .and_then(Value::as_str)
+                .map(str::to_string);
+            self.emit(&AgentSessionEvent::AutoRetryEnd {
+                success: false,
+                attempt,
+                final_error,
+            });
+            *self.retry_attempt.lock().unwrap() = 0;
+        }
+
+        // unit5: the auto-compaction branch (pi L1084, PR6) lands with compaction;
+        // its safe default is no continuation.
 
         // The agent loop drains both queues before emitting agent_end; anything
         // queued during agent_end handlers needs a continuation (pi L1090).
