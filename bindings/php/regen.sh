@@ -4,13 +4,13 @@
 # Pipeline: schema/api.json + schema/catalog.json  --fluessig-gen-->  src/generated.rs
 # The generated file is do-not-edit; change the schema and rerun this script.
 #
-# fluessig is pinned to rev b6cad5fa8bc59a7f9c4984b1464e8c1d84796466
-# (zmaril/fluessig#58, the PHP-header fix). Keep this in sync with the
+# fluessig is pinned to rev fb70926e037bed3a374445f8f19b62868cd66ba3
+# (the merged fluessig#58 PHP-header fix on `main`). Keep this in sync with the
 # `fluessig-runtime` rev in Cargo.toml — the generated code and the runtime
 # crate must come from the same fluessig revision.
 set -euo pipefail
 
-pinned_rev="b6cad5fa8bc59a7f9c4984b1464e8c1d84796466"
+pinned_rev="fb70926e037bed3a374445f8f19b62868cd66ba3"
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

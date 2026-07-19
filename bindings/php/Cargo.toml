@@ -20,9 +20,8 @@ atilla-core = { path = "../../crates/atilla-core" }
 # The generated binding routes fallible ops through `anyhow::Result`.
 anyhow = "1"
 # The shared streaming contract (Poll/PollStream) the generated binding imports.
-# Pinned to zmaril/fluessig#58 (the PHP-header fix); bump to the merged `main`
-# SHA once that PR lands. See regen.sh / README.md.
-fluessig-runtime = { git = "https://github.com/zmaril/fluessig", rev = "b6cad5fa8bc59a7f9c4984b1464e8c1d84796466" }
+# Pinned to the merged fluessig#58 (PHP-header fix) on `main`. See regen.sh / README.md.
+fluessig-runtime = { git = "https://github.com/zmaril/fluessig", rev = "fb70926e037bed3a374445f8f19b62868cd66ba3" }
 
 # Standalone workspace: this empty table makes cargo treat this crate as its own
 # workspace rather than attaching it to the workspace rooted at the repository

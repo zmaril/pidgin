@@ -57,10 +57,10 @@ libatilla_php.so  ──▶  ./test.sh
 `$FLUESSIG_DIR` (default: the sibling `../../../fluessig`), builds
 `fluessig-gen`, and rewrites `src/generated.rs`.
 
-fluessig is pinned to `zmaril/fluessig#58` rev `b6cad5f` (the PHP-header fix).
-That rev must match the `fluessig-runtime` rev in `Cargo.toml` — the generated
-code and the runtime crate must come from the same fluessig revision. Bump both
-to the merged `main` SHA once that PR lands.
+fluessig is pinned to the merged `zmaril/fluessig#58` on `main`, rev
+`fb70926` (the PHP-header fix). That rev must match the `fluessig-runtime` rev
+in `Cargo.toml` — the generated code and the runtime crate must come from the
+same fluessig revision.
 
 ## Toolchain (verified)
 
