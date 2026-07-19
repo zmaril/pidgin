@@ -976,6 +976,7 @@ fn native_provider(id: &str, base_url: &str, model_id: &str) -> RegistryProvider
         auth: ProviderAuth::default(),
         models: vec![model],
         fetch_models: None,
+        filter_models: None,
         api: ApiRouting::Unimplemented,
     })
 }

@@ -594,6 +594,7 @@ fn composed_into_provider(
         auth,
         models,
         fetch_models: None,
+        filter_models: None,
         api: ApiRouting::Unimplemented,
     })
 }
