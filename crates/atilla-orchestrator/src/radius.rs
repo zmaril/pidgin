@@ -15,9 +15,12 @@
 //!
 //! - **HTTP** goes through atilla-ai's injected [`HttpTransport`] seam (the same
 //!   transport pi's `fetch` stubs map onto), not a bundled HTTP client.
-//! - **Credentials** are read through atilla-ai's [`CredentialStore`] seam; the
-//!   production wiring is [`crate::credential_store::FileCredentialStore`] over
-//!   `~/.pi/agent/auth.json` (pi's `readStoredCredential`).
+//! - **Credentials** are read on demand from the coding-agent's `auth.json`
+//!   through [`atilla_coding::core::auth::read_stored_credential`] (pi's
+//!   `readStoredCredential`), defaulting to `<agent_dir>/auth.json`
+//!   (`~/.pi/agent/auth.json`, overridable via `PI_CODING_AGENT_DIR`). Like pi,
+//!   this is a module-level file read rather than an injected seam; tests point
+//!   `PI_CODING_AGENT_DIR` at a temp agent directory instead of the real one.
 //! - **Time** (the `createdAt`/`lastSeenAt` ISO stamps) comes from an injected
 //!   [`RadiusClock`].
 //! - **The backoff / 404 state machine is pure** ([`HeartbeatBackoff`] +
@@ -48,7 +51,7 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
-use atilla_ai::auth::{Credential, CredentialStore};
+use atilla_ai::auth::Credential;
 use atilla_ai::seams::http::{HttpRequest, HttpResponse, HttpTransport};
 
 use crate::config::{get_orchestrator_dir, get_socket_path, VERSION};
@@ -213,22 +216,23 @@ fn origin_of(url: &str) -> String {
 // Credential resolution (exported functions)
 // ===========================================================================
 
-/// The stored radius OAuth credential, if the store holds an OAuth entry for the
-/// radius provider (pi's `getStoredRadiusCredential`). Any read failure is
-/// treated as "not configured", matching pi's swallow-and-`undefined`.
-fn stored_radius_credential(
-    store: &dyn CredentialStore,
-) -> Option<atilla_ai::auth::OAuthCredential> {
-    match store.read(RADIUS_PROVIDER) {
-        Ok(Some(Credential::OAuth(oauth))) => Some(oauth),
+/// The stored radius OAuth credential, if the coding-agent's `auth.json` holds an
+/// OAuth entry for the radius provider (pi's `getStoredRadiusCredential`). The
+/// read is a one-off lookup via [`atilla_coding::core::auth::read_stored_credential`]
+/// (pi's `readStoredCredential`), defaulting to `<agent_dir>/auth.json`; any
+/// missing/unreadable/malformed file yields `None`, matching pi's
+/// swallow-and-`undefined`.
+fn stored_radius_credential() -> Option<atilla_ai::auth::OAuthCredential> {
+    match atilla_coding::core::auth::read_stored_credential(RADIUS_PROVIDER, None) {
+        Some(Credential::OAuth(oauth)) => Some(oauth),
         _ => None,
     }
 }
 
 /// The radius access token (`getRadiusAccessToken`): the stored OAuth access
 /// token if present and non-empty, else `RADIUS_API_KEY`, else an error.
-pub fn get_radius_access_token(store: &dyn CredentialStore) -> Result<String, RadiusError> {
-    if let Some(oauth) = stored_radius_credential(store) {
+pub fn get_radius_access_token() -> Result<String, RadiusError> {
+    if let Some(oauth) = stored_radius_credential() {
         if !oauth.access.is_empty() {
             return Ok(oauth.access);
         }
@@ -241,8 +245,8 @@ pub fn get_radius_access_token(store: &dyn CredentialStore) -> Result<String, Ra
 
 /// Whether radius presence is enabled (`isRadiusEnabled`): a stored access token
 /// or `RADIUS_API_KEY` is present.
-pub fn is_radius_enabled(store: &dyn CredentialStore) -> bool {
-    stored_radius_credential(store)
+pub fn is_radius_enabled() -> bool {
+    stored_radius_credential()
         .map(|oauth| !oauth.access.is_empty())
         .unwrap_or(false)
         || non_empty_env("RADIUS_API_KEY").is_some()
@@ -474,7 +478,6 @@ type JitterFn = Box<dyn Fn() -> f64 + Send + Sync>;
 /// I/O behind the injected seams (see the module docs).
 pub struct RadiusPresence {
     http: Box<dyn HttpTransport>,
-    credentials: Box<dyn CredentialStore>,
     clock: Box<dyn RadiusClock>,
     jitter: JitterFn,
     coordinator: Option<Box<dyn RadiusPresenceCoordinator>>,
@@ -484,15 +487,12 @@ pub struct RadiusPresence {
 }
 
 impl RadiusPresence {
-    /// Build a presence over the injected transport, credential store, and clock.
-    pub fn new(
-        http: Box<dyn HttpTransport>,
-        credentials: Box<dyn CredentialStore>,
-        clock: Box<dyn RadiusClock>,
-    ) -> Self {
+    /// Build a presence over the injected transport and clock. Credentials are
+    /// read on demand from the coding-agent's `auth.json` (pi's
+    /// `readStoredCredential`), not injected, mirroring pi's `RadiusPresence`.
+    pub fn new(http: Box<dyn HttpTransport>, clock: Box<dyn RadiusClock>) -> Self {
         Self {
             http,
-            credentials,
             clock,
             jitter: Box::new(default_jitter),
             coordinator: None,
@@ -525,7 +525,7 @@ impl RadiusPresence {
     }
 
     fn enabled(&self) -> bool {
-        is_radius_enabled(self.credentials.as_ref())
+        is_radius_enabled()
     }
 
     fn jitter(&self) -> f64 {
@@ -901,7 +901,7 @@ impl RadiusPresence {
     /// Perform an authenticated POST against the orchestrator base URL (pi's
     /// shared `fetch` body in `post` / `maybePost`).
     fn request(&self, path: &str, body: &Value) -> Result<HttpResponse, RadiusError> {
-        let token = get_radius_access_token(self.credentials.as_ref())?;
+        let token = get_radius_access_token()?;
         let url = resolve_url(&get_radius_orchestrator_base_url(), path);
         let serialized = serde_json::to_string(body).map_err(RadiusError::Decode)?;
         let request = HttpRequest::post(url, serialized)
@@ -941,7 +941,6 @@ fn default_jitter() -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use atilla_ai::auth::{InMemoryCredentialStore, OAuthCredential};
     use atilla_ai::seams::http::{HttpResponse, ScriptedTransport};
     use std::sync::MutexGuard;
 
@@ -1027,44 +1026,58 @@ mod tests {
         }
     }
 
-    fn oauth_store(access: &str) -> InMemoryCredentialStore {
-        let store = InMemoryCredentialStore::new();
-        let mut set = |_current: Option<Credential>| {
-            Ok(Some(Credential::OAuth(OAuthCredential {
-                refresh: "refresh".into(),
-                access: access.to_string(),
-                expires: 0,
-                extra: serde_json::Map::new(),
-            })))
-        };
-        store.modify(RADIUS_PROVIDER, &mut set).unwrap();
-        store
+    /// Point `PI_CODING_AGENT_DIR` at a fresh temp agent directory so credential
+    /// reads hit a controlled `auth.json` (or none) instead of the developer's
+    /// real `~/.pi/agent`. With `access` set, seeds a radius OAuth credential;
+    /// otherwise leaves the directory empty (radius disabled unless
+    /// `RADIUS_API_KEY` is set). The caller must hold a [`RadiusEnvGuard`] that
+    /// includes `"PI_CODING_AGENT_DIR"`, and must keep the returned `TempDir`
+    /// alive for the duration of the test.
+    fn seed_agent_dir(access: Option<&str>) -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        std::env::set_var("PI_CODING_AGENT_DIR", dir.path());
+        if let Some(access) = access {
+            let auth = json!({
+                "radius": {
+                    "type": "oauth",
+                    "refresh": "refresh",
+                    "access": access,
+                    "expires": 0,
+                }
+            });
+            std::fs::write(
+                dir.path().join("auth.json"),
+                serde_json::to_string(&auth).unwrap(),
+            )
+            .unwrap();
+        }
+        dir
     }
 
     #[test]
     fn enabled_and_token_from_stored_oauth() {
-        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY"]);
-        let store = oauth_store("access-token");
-        assert!(is_radius_enabled(&store));
-        assert_eq!(get_radius_access_token(&store).unwrap(), "access-token");
+        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY", "PI_CODING_AGENT_DIR"]);
+        let _agent = seed_agent_dir(Some("access-token"));
+        assert!(is_radius_enabled());
+        assert_eq!(get_radius_access_token().unwrap(), "access-token");
     }
 
     #[test]
     fn enabled_and_token_fall_back_to_env_api_key() {
-        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY"]);
+        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY", "PI_CODING_AGENT_DIR"]);
+        let _agent = seed_agent_dir(None);
         std::env::set_var("RADIUS_API_KEY", "env-key");
-        let store = InMemoryCredentialStore::new();
-        assert!(is_radius_enabled(&store));
-        assert_eq!(get_radius_access_token(&store).unwrap(), "env-key");
+        assert!(is_radius_enabled());
+        assert_eq!(get_radius_access_token().unwrap(), "env-key");
     }
 
     #[test]
     fn disabled_without_credential_or_env() {
-        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY"]);
-        let store = InMemoryCredentialStore::new();
-        assert!(!is_radius_enabled(&store));
+        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY", "PI_CODING_AGENT_DIR"]);
+        let _agent = seed_agent_dir(None);
+        assert!(!is_radius_enabled());
         assert!(matches!(
-            get_radius_access_token(&store),
+            get_radius_access_token(),
             Err(RadiusError::MissingCredentials)
         ));
     }
@@ -1115,13 +1128,12 @@ mod tests {
         }
     }
 
-    fn presence(transport: ScriptedTransport, access: &str) -> RadiusPresence {
-        RadiusPresence::new(
-            Box::new(transport),
-            Box::new(oauth_store(access)),
-            Box::new(FixedClock),
-        )
-        .with_jitter(|| 0.0)
+    /// A presence over the given transport and a fixed clock, with deterministic
+    /// (zero) jitter. Radius enablement/token come from the ambient
+    /// `PI_CODING_AGENT_DIR` / `RADIUS_API_KEY` env the test has set up (see
+    /// [`seed_agent_dir`]).
+    fn presence(transport: ScriptedTransport) -> RadiusPresence {
+        RadiusPresence::new(Box::new(transport), Box::new(FixedClock)).with_jitter(|| 0.0)
     }
 
     #[test]
@@ -1130,11 +1142,13 @@ mod tests {
             "RADIUS_API_KEY",
             "PI_RADIUS_URL",
             "PI_RADIUS_ORCHESTRATOR_URL",
+            "PI_CODING_AGENT_DIR",
         ]);
+        let _agent = seed_agent_dir(Some("tok"));
         let transport = ScriptedTransport::new();
         transport.push_ok(r#"{"id":"pi-77","heartbeatIntervalMs":20000,"expiresInMs":60000}"#);
 
-        let mut presence = presence(transport.clone(), "tok");
+        let mut presence = presence(transport.clone());
         presence.machine = Some(machine_record());
 
         let registration = presence.register_pi(instance_record("i1")).unwrap();
@@ -1174,13 +1188,18 @@ mod tests {
 
     #[test]
     fn register_pi_without_machine_errors() {
-        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY", "PI_ORCHESTRATOR_DIR"]);
+        let _guard = RadiusEnvGuard::new(&[
+            "RADIUS_API_KEY",
+            "PI_ORCHESTRATOR_DIR",
+            "PI_CODING_AGENT_DIR",
+        ]);
+        let _agent = seed_agent_dir(Some("tok"));
         // Point machine storage at an empty temp dir so load_machine returns None.
         let dir = tempfile::tempdir().unwrap();
         std::env::set_var("PI_ORCHESTRATOR_DIR", dir.path());
 
         let transport = ScriptedTransport::new();
-        let mut presence = presence(transport, "tok");
+        let mut presence = presence(transport);
         assert!(matches!(
             presence.register_pi(instance_record("i1")),
             Err(RadiusError::NoMachine)
@@ -1189,13 +1208,11 @@ mod tests {
 
     #[test]
     fn register_pi_disabled_returns_instance_unchanged() {
-        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY"]);
+        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY", "PI_CODING_AGENT_DIR"]);
+        // Empty agent dir + no RADIUS_API_KEY -> radius disabled.
+        let _agent = seed_agent_dir(None);
         let transport = ScriptedTransport::new();
-        let mut presence = RadiusPresence::new(
-            Box::new(transport.clone()),
-            Box::new(InMemoryCredentialStore::new()),
-            Box::new(FixedClock),
-        );
+        let mut presence = RadiusPresence::new(Box::new(transport.clone()), Box::new(FixedClock));
         let registration = presence.register_pi(instance_record("i1")).unwrap();
         assert_eq!(registration.instance.radius_pi_id, None);
         assert_eq!(registration.heartbeat_interval_ms, None);
@@ -1208,10 +1225,12 @@ mod tests {
             "RADIUS_API_KEY",
             "PI_RADIUS_URL",
             "PI_RADIUS_ORCHESTRATOR_URL",
+            "PI_CODING_AGENT_DIR",
         ]);
+        let _agent = seed_agent_dir(Some("tok"));
         let transport = ScriptedTransport::new();
         transport.push_ok("{}");
-        let mut presence = presence(transport.clone(), "tok");
+        let mut presence = presence(transport.clone());
         presence.machine = Some(machine_record());
         presence.machine_backoff.interval_ms = 15_000;
 
@@ -1235,14 +1254,16 @@ mod tests {
             "RADIUS_API_KEY",
             "PI_RADIUS_URL",
             "PI_RADIUS_ORCHESTRATOR_URL",
+            "PI_CODING_AGENT_DIR",
         ]);
+        let _agent = seed_agent_dir(Some("tok"));
         let transport = ScriptedTransport::new();
         transport.push_response(Ok(HttpResponse {
             status: 500,
             headers: Default::default(),
             body: "boom".to_string(),
         }));
-        let mut presence = presence(transport, "tok");
+        let mut presence = presence(transport);
         presence.machine = Some(machine_record());
         presence.machine_backoff.interval_ms = 15_000;
 
@@ -1259,7 +1280,9 @@ mod tests {
             "PI_RADIUS_URL",
             "PI_RADIUS_ORCHESTRATOR_URL",
             "PI_ORCHESTRATOR_DIR",
+            "PI_CODING_AGENT_DIR",
         ]);
+        let _agent = seed_agent_dir(Some("tok"));
         let dir = tempfile::tempdir().unwrap();
         std::env::set_var("PI_ORCHESTRATOR_DIR", dir.path());
 
@@ -1277,7 +1300,7 @@ mod tests {
         transport.push_response(not_found());
         transport.push_ok(r#"{"id":"machine-2","heartbeatIntervalMs":25000,"expiresInMs":60000}"#);
 
-        let mut presence = presence(transport.clone(), "tok");
+        let mut presence = presence(transport.clone());
         presence.machine = Some(machine_record());
         presence.machine_backoff.interval_ms = 15_000;
 
@@ -1311,12 +1334,14 @@ mod tests {
             "RADIUS_API_KEY",
             "PI_RADIUS_URL",
             "PI_RADIUS_ORCHESTRATOR_URL",
+            "PI_CODING_AGENT_DIR",
         ]);
+        let _agent = seed_agent_dir(Some("tok"));
         let transport = ScriptedTransport::new();
         transport.push_ok(r#"{"id":"pi-9","heartbeatIntervalMs":18000,"expiresInMs":60000}"#);
         transport.push_ok("{}");
 
-        let mut presence = presence(transport.clone(), "tok");
+        let mut presence = presence(transport.clone());
         presence.machine = Some(machine_record());
         presence.register_pi(instance_record("i1")).unwrap();
 
@@ -1331,9 +1356,10 @@ mod tests {
 
     #[test]
     fn pi_heartbeat_unknown_instance_stops() {
-        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY"]);
+        let _guard = RadiusEnvGuard::new(&["RADIUS_API_KEY", "PI_CODING_AGENT_DIR"]);
+        let _agent = seed_agent_dir(Some("tok"));
         let transport = ScriptedTransport::new();
-        let mut presence = presence(transport, "tok");
+        let mut presence = presence(transport);
         assert_eq!(presence.heartbeat_pi("missing"), HeartbeatStep::Stop);
     }
 }

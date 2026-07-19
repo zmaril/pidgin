@@ -16,12 +16,12 @@
 //! The re-export barrel below mirrors pi's `index.ts`, which re-exports every
 //! module **except** `radius` and `cli`. [`radius`] is imported directly by the
 //! [`supervisor`] (not re-exported), matching pi; the CLI is the binary, not a
-//! library module. The [`credential_store`] module is a Rust-native seam
-//! supporting radius (pi reads the file through `@earendil-works/pi-coding-agent`),
-//! so it is likewise not part of pi's barrel.
+//! library module. Radius reads stored credentials through atilla-coding's
+//! [`read_stored_credential`](atilla_coding::core::auth::read_stored_credential)
+//! (pi reads the file through `@earendil-works/pi-coding-agent`), so there is no
+//! local credential module in this crate's barrel.
 
 pub mod config;
-pub mod credential_store;
 pub mod handler;
 pub mod ipc;
 pub mod radius;
