@@ -1224,7 +1224,11 @@ fn env_check_auth_drives_provider_auth_status() {
     fx.runtime().check_auth("env-status").unwrap();
     fx.registry.runtime_mut().refresh();
     assert!(fx.runtime().check_auth("env-status").unwrap().is_none());
-    assert!(!fx.runtime().get_provider_auth_status("env-status").configured);
+    assert!(
+        !fx.runtime()
+            .get_provider_auth_status("env-status")
+            .configured
+    );
 }
 
 // provider-composer.ts:493-495 — filterModels delegates to the base provider, so

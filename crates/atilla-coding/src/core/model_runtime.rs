@@ -749,7 +749,10 @@ impl ModelRuntime {
             base: base.cloned(),
             base_api_key,
             base_oauth: None,
-            config: self.config.get_provider(provider_id).map(provider_auth_config),
+            config: self
+                .config
+                .get_provider(provider_id)
+                .map(provider_auth_config),
             extension: self
                 .extension_providers
                 .get(provider_id)
@@ -765,12 +768,13 @@ impl ModelRuntime {
         // pi's `filterModels: base?.filterModels ? (models, cred) =>
         // base.filterModels!(models, cred) : undefined` — delegate to the base
         // provider's filter when it declares one, else no filter.
-        let filter_models: Option<FilterModels> = base.filter(|base| base.has_filter()).map(|base| {
-            let base = base.clone();
-            Arc::new(move |models: &[Model], credential: Option<&Credential>| {
-                base.filter_models(models.to_vec(), credential)
-            }) as FilterModels
-        });
+        let filter_models: Option<FilterModels> =
+            base.filter(|base| base.has_filter()).map(|base| {
+                let base = base.clone();
+                Arc::new(move |models: &[Model], credential: Option<&Credential>| {
+                    base.filter_models(models.to_vec(), credential)
+                }) as FilterModels
+            });
         let mut provider = create_provider(CreateProviderOptions {
             id: rich.id.clone(),
             name: Some(name),
