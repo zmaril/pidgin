@@ -2035,7 +2035,11 @@
     {
       "package": "tui",
       "src": "packages/tui/src/tui.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/tui-render.test.ts",
+        "test/tui-shrink.test.ts"
+      ]
     },
     {
       "package": "tui",
