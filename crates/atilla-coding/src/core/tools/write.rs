@@ -330,6 +330,25 @@ mod tests {
         }
     }
 
+    /// The boxed-future return type the fake [`WriteOperations`] impls share.
+    type BoxWriteFuture<'a> = Pin<Box<dyn Future<Output = Result<(), String>> + 'a>>;
+
+    /// The terminal filesystem write both queue backends perform once their
+    /// scripted preamble completes — pi's real `writeFile`, boxed. Sharing this
+    /// keeps the `write_file` impls free of duplicated write-and-map-err tails.
+    fn write_through<'a>(absolute_path: &'a str, content: &'a str) -> BoxWriteFuture<'a> {
+        Box::pin(async move {
+            tokio::fs::write(absolute_path, content)
+                .await
+                .map_err(|e| e.to_string())
+        })
+    }
+
+    /// The no-op `mkdir` shared by fake backends that never create directories.
+    fn noop_mkdir<'a>() -> BoxWriteFuture<'a> {
+        Box::pin(async { Ok(()) })
+    }
+
     /// A [`WriteOperations`] whose `write_file` sleeps and records occupancy, so
     /// two writes to the same path can be proven to serialize (pi's "serializes
     /// operations for the same file" via an injected delayed backend).
@@ -343,23 +362,18 @@ mod tests {
             &'a self,
             absolute_path: &'a str,
             content: &'a str,
-        ) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>> {
+        ) -> BoxWriteFuture<'a> {
             Box::pin(async move {
                 let now = self.active.fetch_add(1, Ordering::SeqCst) + 1;
                 self.max_active.fetch_max(now, Ordering::SeqCst);
                 tokio::time::sleep(Duration::from_millis(30)).await;
                 self.active.fetch_sub(1, Ordering::SeqCst);
-                tokio::fs::write(absolute_path, content)
-                    .await
-                    .map_err(|e| e.to_string())
+                write_through(absolute_path, content).await
             })
         }
 
-        fn mkdir<'a>(
-            &'a self,
-            _dir: &'a str,
-        ) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>> {
-            Box::pin(async { Ok(()) })
+        fn mkdir<'a>(&'a self, _dir: &'a str) -> BoxWriteFuture<'a> {
+            noop_mkdir()
         }
     }
 
@@ -419,14 +433,12 @@ mod tests {
             &'a self,
             absolute_path: &'a str,
             content: &'a str,
-        ) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>> {
+        ) -> BoxWriteFuture<'a> {
             Box::pin(async move {
                 if content == "first\n" {
                     self.first_started.resolve();
                     self.finish_first.wait().await;
-                    tokio::fs::write(absolute_path, content)
-                        .await
-                        .map_err(|e| e.to_string())?;
+                    write_through(absolute_path, content).await?;
                     self.settled.store(true, Ordering::SeqCst);
                     return Ok(());
                 }
@@ -437,17 +449,12 @@ mod tests {
                     );
                     self.second_started.resolve();
                 }
-                tokio::fs::write(absolute_path, content)
-                    .await
-                    .map_err(|e| e.to_string())
+                write_through(absolute_path, content).await
             })
         }
 
-        fn mkdir<'a>(
-            &'a self,
-            _dir: &'a str,
-        ) -> Pin<Box<dyn Future<Output = Result<(), String>> + 'a>> {
-            Box::pin(async { Ok(()) })
+        fn mkdir<'a>(&'a self, _dir: &'a str) -> BoxWriteFuture<'a> {
+            noop_mkdir()
         }
     }
 

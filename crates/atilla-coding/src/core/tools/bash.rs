@@ -814,14 +814,27 @@ mod tests {
         }
     }
 
+    /// Drive the fake backend end-to-end: build a [`BashTool`] over a [`FakeOps`]
+    /// that emits `chunks` then returns `exit_code`, and run `execute("noop", …)`
+    /// with no timeout, signal, or update sink. Centralizes the tool-construction
+    /// and `execute` boilerplate the scripted-chunk tests would otherwise repeat.
+    async fn run_fake(
+        chunks: Vec<(u64, Vec<u8>)>,
+        exit_code: Option<i32>,
+    ) -> Result<BashToolResult, String> {
+        BashTool::new("/tmp", FakeOps { chunks, exit_code })
+            .execute("noop", None, None, None)
+            .await
+    }
+
     #[tokio::test]
     async fn fake_accumulates_output_and_zero_exit() {
-        let ops = FakeOps {
-            chunks: vec![(0, b"hello ".to_vec()), (0, b"world\n".to_vec())],
-            exit_code: Some(0),
-        };
-        let tool = BashTool::new("/tmp", ops);
-        let result = tool.execute("noop", None, None, None).await.unwrap();
+        let result = run_fake(
+            vec![(0, b"hello ".to_vec()), (0, b"world\n".to_vec())],
+            Some(0),
+        )
+        .await
+        .unwrap();
         // The accumulator preserves the trailing newline, matching pi.
         assert_eq!(result.content, "hello world\n");
         assert!(result.details.is_none());
@@ -829,12 +842,9 @@ mod tests {
 
     #[tokio::test]
     async fn fake_maps_nonzero_exit_to_message() {
-        let ops = FakeOps {
-            chunks: vec![(0, b"some output\n".to_vec())],
-            exit_code: Some(7),
-        };
-        let tool = BashTool::new("/tmp", ops);
-        let err = tool.execute("noop", None, None, None).await.unwrap_err();
+        let err = run_fake(vec![(0, b"some output\n".to_vec())], Some(7))
+            .await
+            .unwrap_err();
         // Output keeps its trailing newline; the status is appended after "\n\n".
         assert_eq!(err, "some output\n\n\nCommand exited with code 7");
     }
@@ -842,12 +852,9 @@ mod tests {
     #[tokio::test]
     async fn fake_signalled_exit_is_success() {
         // exitCode == null is treated as success (pi's `!== 0 && !== null`).
-        let ops = FakeOps {
-            chunks: vec![(0, b"partial".to_vec())],
-            exit_code: None,
-        };
-        let tool = BashTool::new("/tmp", ops);
-        let result = tool.execute("noop", None, None, None).await.unwrap();
+        let result = run_fake(vec![(0, b"partial".to_vec())], None)
+            .await
+            .unwrap();
         assert_eq!(result.content, "partial");
     }
 
@@ -855,12 +862,9 @@ mod tests {
     async fn fake_truncation_footer_matches_pi() {
         // 2001 lines exceeds the 2000-line default -> truncated by lines.
         let data = "x\n".repeat(2001);
-        let ops = FakeOps {
-            chunks: vec![(0, data.into_bytes())],
-            exit_code: Some(0),
-        };
-        let tool = BashTool::new("/tmp", ops);
-        let result = tool.execute("noop", None, None, None).await.unwrap();
+        let result = run_fake(vec![(0, data.into_bytes())], Some(0))
+            .await
+            .unwrap();
 
         let details = result.details.expect("truncated output has details");
         let path = details
@@ -943,12 +947,12 @@ mod tests {
         // the streaming decoder must coalesce across `on_data` boundaries.
         let euro = "\u{20AC}\n".as_bytes().to_vec();
         assert_eq!(euro, vec![0xE2, 0x82, 0xAC, 0x0A]);
-        let ops = FakeOps {
-            chunks: vec![(0, euro[0..1].to_vec()), (0, euro[1..].to_vec())],
-            exit_code: Some(0),
-        };
-        let tool = BashTool::new("/tmp", ops);
-        let result = tool.execute("noop", None, None, None).await.unwrap();
+        let result = run_fake(
+            vec![(0, euro[0..1].to_vec()), (0, euro[1..].to_vec())],
+            Some(0),
+        )
+        .await
+        .unwrap();
         // Materialized output is the intact euro sign (pi asserts the trimmed
         // `getTextOutput` equals "€").
         assert_eq!(get_text_output(&result.content).trim(), "\u{20AC}");
