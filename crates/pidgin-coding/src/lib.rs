@@ -9,6 +9,7 @@ pub mod bun;
 pub mod cli;
 pub mod core;
 pub mod extensions;
+pub mod migrations;
 pub mod modes;
 pub mod utils;
 
