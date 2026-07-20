@@ -12,13 +12,15 @@
 //! components) is PR-4C; the load-bearing region for this slice is the chat
 //! message list.
 //!
-//! The turn flow bypasses `AgentSession` (not yet ported) and drives
-//! [`run_agent_loop`](pidgin_agent::agent_loop::run_agent_loop) directly with the
-//! faux provider, entirely offline. Per the locked `!Send` seam, turn execution
-//! runs on a worker thread ([`TurnDriver`]); the editor's submit handler pushes
-//! the user bubble and forwards the prompt to the worker, and the run loop drains
-//! the worker's [`AgentEvent`] stream each frame and routes it to the chat region
-//! via [`ChatState`].
+//! The turn flow drives a **real** [`AgentSession`](crate::core::agent_session)
+//! running offline (echo): a typed prompt calls `AgentSession::prompt`, whose real
+//! `AgentSessionEvent`s flow back to the message UI, with the assistant reply
+//! echoing the last user message. Per the locked `!Send` seam (both the `Tui` and
+//! the `AgentSession` are `!Send`), turn execution runs on a worker thread
+//! ([`TurnDriver`]) that owns the session; the editor's submit handler pushes the
+//! user bubble and forwards the prompt to the worker, and the run loop drains the
+//! worker's cloned [`AgentSessionEvent`] stream each frame and routes it to the
+//! chat region via [`ChatState`].
 //!
 //! The core (`run_events`) is generic over the output sink and driven by supplied
 //! [`ShellEvent`]s, so it runs headless in CI over an in-memory sink; the live
@@ -31,7 +33,6 @@ use std::rc::Rc;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
 
-use pidgin_agent::types::AgentEvent;
 use pidgin_tui::{
     mount_focused_editor, Editor, EditorOptions, EditorTheme, InputListenerResult, ProcessTerminal,
     RenderError, RunLoop, SelectListTheme, SharedLines, Terminal, TerminalInput, Tui,
@@ -45,6 +46,7 @@ use super::theme::{
     ThemeControllerUi, ThemeSource, ThinkingLevel,
 };
 use super::turn::{TurnCommand, TurnDriver};
+use crate::core::agent_session::AgentSessionEvent;
 use crate::core::settings_manager::{SettingsManager, SettingsManagerCreateOptions};
 
 /// The default 256-color interactive theme, embedded so the shell needs no theme
@@ -63,15 +65,17 @@ const NEGOTIATION_FRAGMENT_TIMEOUT_MS: u64 = 150;
 const DOUBLE_PRESS_WINDOW: Duration = Duration::from_millis(1000);
 
 /// An event the interactive shell processes. Unlike the run loop's `LoopEvent`
-/// this also carries [`ShellEvent::Agent`], the `Send` turn-worker output the
+/// this also carries [`ShellEvent::Session`], the `Send` turn-worker output the
 /// main thread drains and routes.
 pub enum ShellEvent {
     /// A raw byte chunk read from stdin.
     Bytes(Vec<u8>),
     /// A terminal resize to `(columns, rows)`.
     Resize(usize, usize),
-    /// A core agent event forwarded from the turn worker.
-    Agent(AgentEvent),
+    /// A session event forwarded (cloned) from the turn worker's `AgentSession`.
+    /// Boxed: `AgentSessionEvent` is large relative to the other variants, so
+    /// boxing keeps `ShellEvent` small (clippy `large_enum_variant`).
+    Session(Box<AgentSessionEvent>),
     /// An explicit shutdown request.
     Shutdown,
 }
@@ -154,7 +158,7 @@ impl<W: Write> InteractiveShell<W> {
         // (1) header — placeholder chrome (PR-4C).
         let header = SharedLines::new();
         header.set(vec![
-            "pidgin interactive shell (offline faux turn)".to_string(),
+            "pidgin interactive shell (offline echo)".to_string(),
             "type a message and press Enter; Ctrl-C twice / Esc twice / Ctrl-D to exit".to_string(),
             String::new(),
         ]);
@@ -190,11 +194,11 @@ impl<W: Write> InteractiveShell<W> {
 
         // The turn worker (offline faux) and the event channel it forwards to.
         let (evt_tx, evt_rx) = std::sync::mpsc::channel::<ShellEvent>();
-        let turn = TurnDriver::spawn(evt_tx.clone());
+        let turn = TurnDriver::spawn(evt_tx.clone(), cwd.clone());
 
         // (7) editor — the focused prompt. Submit pushes the user bubble and
         // forwards the prompt to the worker (pi's `setupEditorSubmitHandler` ->
-        // `session.prompt`, here `-> run_agent_loop` on the worker).
+        // `session.prompt`, here `-> AgentSession::prompt` on the worker).
         let mut editor = Editor::new(editor_theme(), EditorOptions::default());
         editor.set_terminal_rows(rows);
         let submit_state = Rc::clone(&chat_state);
@@ -335,7 +339,7 @@ impl<W: Write> InteractiveShell<W> {
         match event {
             ShellEvent::Bytes(bytes) => self.run_loop.feed_bytes(&bytes),
             ShellEvent::Resize(columns, rows) => self.run_loop.resize(columns, rows),
-            ShellEvent::Agent(event) => {
+            ShellEvent::Session(event) => {
                 self.chat_state.borrow_mut().handle_event(&event);
                 self.render()
             }
@@ -413,8 +417,8 @@ impl InteractiveShell<std::io::Stdout> {
             match event {
                 Some(ShellEvent::Bytes(bytes)) => self.run_loop.feed_bytes(&bytes)?,
                 Some(ShellEvent::Resize(columns, rows)) => self.run_loop.resize(columns, rows)?,
-                Some(ShellEvent::Agent(agent_event)) => {
-                    self.chat_state.borrow_mut().handle_event(&agent_event);
+                Some(ShellEvent::Session(session_event)) => {
+                    self.chat_state.borrow_mut().handle_event(&session_event);
                     self.render()?;
                 }
                 Some(ShellEvent::Shutdown) => break,

@@ -1,27 +1,29 @@
-//! Agent-event -> chat-region routing (Unit 4, PR-4B, offline faux-turn slice).
+//! Session-event -> chat-region routing (Unit 5, offline-echo slice).
 //!
 //! This is the Rust analog of the message-list half of pi's `handleEvent` switch
 //! (`modes/interactive/interactive-mode.ts:2816-3110`) — the pure dispatch table
-//! that turns each emitted agent event into a small mutation of one render
-//! region. It deliberately covers only the **core** [`AgentEvent`] variants the
-//! offline faux turn produces (message + tool + turn lifecycle); the compaction /
-//! retry / thinking-level / queue branches pi also handles arrive with the typed
-//! `AgentSessionEvent` seam (Unit 5) and are out of scope here.
+//! that turns each emitted [`AgentSessionEvent`] into a small mutation of one
+//! render region. It covers the nine **core** variants the offline-echo turn
+//! produces (message + tool + turn lifecycle) plus `AgentSettled` (which keys the
+//! idle status); the other session-specific variants (compaction / retry /
+//! thinking-level / queue / entry / info) are not surfaced by this slice and fall
+//! through to a no-op.
 //!
 //! The routing runs entirely on the main (render) thread: [`ChatState`] owns the
 //! chat entries, the in-flight streaming assistant bubble, the live tool panels,
-//! and the (placeholder) status line. Only `Send` data (`AgentEvent`) crosses the
-//! thread boundary from the turn worker; the components stay here.
+//! and the (placeholder) status line. Only `Send` data ([`AgentSessionEvent`],
+//! cloned) crosses the thread boundary from the turn worker; the components stay
+//! here.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use pidgin_agent::types::AgentEvent;
 use pidgin_ai::types::{AssistantMessage as AiAssistantMessage, ContentBlock};
 use pidgin_tui::renderer::Component;
 use serde_json::Value;
 
+use crate::core::agent_session::AgentSessionEvent;
 use crate::modes::interactive::components::{
     AssistantMessage, IdleStatus, ToolExecution, ToolExecutionOptions, ToolExecutionResult,
     UserMessage, WorkingStatusIndicator,
@@ -139,43 +141,52 @@ impl ChatState {
             .push(Rc::new(RefCell::new(user)) as SharedComponent);
     }
 
-    /// Route one core [`AgentEvent`] to the chat region, mirroring the
+    /// Route one [`AgentSessionEvent`] to the chat region, mirroring the
     /// message-list branches of pi's `handleEvent`.
-    pub fn handle_event(&mut self, event: &AgentEvent) {
+    pub fn handle_event(&mut self, event: &AgentSessionEvent) {
         match event {
             // Turn lifecycle -> status region (PR-4C chrome): a working spinner
-            // while a turn runs, restored to the idle placeholder on turn end.
-            AgentEvent::AgentStart | AgentEvent::TurnStart => {
+            // while a turn runs, restored to the idle placeholder once the run
+            // fully settles.
+            AgentSessionEvent::AgentStart | AgentSessionEvent::TurnStart => {
                 self.pending_tools.clear();
                 self.set_working();
             }
-            AgentEvent::TurnEnd { .. } => {}
-            AgentEvent::AgentEnd { .. } => {
+            AgentSessionEvent::TurnEnd { .. } => {}
+            // `agent_end` may be followed by a retry / queued continuation, so it
+            // only tears down the in-flight turn state; the idle status is keyed
+            // off `AgentSettled` (the true-settle signal) instead, which is correct
+            // for live auto-retries later. `will_retry` is ignored here.
+            AgentSessionEvent::AgentEnd { .. } => {
                 self.streaming = None;
                 self.pending_tools.clear();
-                self.set_idle();
             }
+            AgentSessionEvent::AgentSettled => self.set_idle(),
             // Message list.
-            AgentEvent::MessageStart { message } => self.on_message_start(message),
-            AgentEvent::MessageUpdate { message, .. } => self.on_message_update(message),
-            AgentEvent::MessageEnd { message } => self.on_message_end(message),
+            AgentSessionEvent::MessageStart { message } => self.on_message_start(message),
+            AgentSessionEvent::MessageUpdate { message, .. } => self.on_message_update(message),
+            AgentSessionEvent::MessageEnd { message } => self.on_message_end(message),
             // Tool panels.
-            AgentEvent::ToolExecutionStart {
+            AgentSessionEvent::ToolExecutionStart {
                 tool_call_id,
                 tool_name,
                 args,
             } => self.on_tool_start(tool_call_id, tool_name, args),
-            AgentEvent::ToolExecutionUpdate {
+            AgentSessionEvent::ToolExecutionUpdate {
                 tool_call_id,
                 partial_result,
                 ..
             } => self.on_tool_update(tool_call_id, partial_result),
-            AgentEvent::ToolExecutionEnd {
+            AgentSessionEvent::ToolExecutionEnd {
                 tool_call_id,
                 result,
                 is_error,
                 ..
             } => self.on_tool_end(tool_call_id, result, *is_error),
+            // Session-specific variants (queue / compaction / entry / info /
+            // thinking-level / auto-retry) are not surfaced by this slice's
+            // message-list router.
+            _ => {}
         }
     }
 
