@@ -18,7 +18,7 @@
 
 use serde_json::{json, Value};
 
-use super::driver::{stream, stream_simple};
+use super::driver::{stream, stream_simple, stream_streaming};
 use super::request::AnthropicOptions;
 use super::simple_options::SimpleStreamOptions;
 use crate::seams::http::{HttpRequest, HttpResponse, ScriptedTransport};
@@ -27,6 +27,7 @@ use crate::types::{
     AnthropicMessagesCompat, AssistantMessageEvent, CacheRetention, ContentBlock, Context, Model,
     StopReason, ThinkingLevel,
 };
+use crate::utils::sse::AssistantEventReader;
 
 /// Build a `Model<AnthropicMessagesCompat>` from overrides, matching the neutral
 /// test model pi's `anthropic-eager-tool-input-compat` fixtures use
@@ -702,4 +703,210 @@ fn stream_simple_budget_reasoning_sets_budget_tokens() {
     assert_eq!(body["thinking"]["type"], json!("enabled"));
     // Default medium budget is 8192, fits inside the model cap.
     assert_eq!(body["thinking"]["budget_tokens"], json!(8192));
+}
+
+// ---------------------------------------------------------------------------
+// Incremental streaming: stream_streaming over the shared AssistantEventReader
+// ---------------------------------------------------------------------------
+
+/// Drain a finished reader's terminal message (`Ok` or `Err`).
+fn reader_message(reader: &AssistantEventReader<'_>) -> crate::types::AssistantMessage {
+    match reader.result() {
+        Some(Ok(message)) | Some(Err(message)) => message.clone(),
+        None => panic!("reader did not finalize"),
+    }
+}
+
+#[test]
+fn stream_streaming_matches_buffered_stream_byte_for_byte() {
+    // Equivalence: over the default one-chunk `send_streaming` (ScriptedTransport
+    // implements only `send`), the incremental path yields the EXACT same events
+    // and final message as the buffered `stream()` -- proving the single decoder
+    // is the one source of truth.
+    let model = make_model(json!({}));
+    let context = context_with_tools(vec![]);
+    let options = api_key_options("test-key");
+
+    let buffered_transport = ScriptedTransport::new();
+    buffered_transport.push_ok(hello_sse_body());
+    let buffered = stream(&buffered_transport, &model, &context, &options, 0);
+
+    let streaming_transport = ScriptedTransport::new();
+    streaming_transport.push_ok(hello_sse_body());
+    let mut reader = stream_streaming(&streaming_transport, &model, &context, &options, 0);
+    let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+    let message = reader_message(&reader);
+
+    assert_eq!(events, buffered.events);
+    assert_eq!(message, buffered.message);
+    assert!(matches!(
+        events.first(),
+        Some(AssistantMessageEvent::Start { .. })
+    ));
+    assert!(matches!(
+        events.last(),
+        Some(AssistantMessageEvent::Done { .. })
+    ));
+}
+
+#[test]
+fn stream_streaming_non_2xx_yields_single_error_with_body_diagnostic() {
+    // A non-2xx create carries the API's JSON error body through
+    // `format_api_error`; the streaming path surfaces it as the single terminal
+    // error, with no `start` and no panic -- mirroring the buffered error path.
+    let transport = ScriptedTransport::new();
+    transport.push_response(Ok(HttpResponse {
+        status: 400,
+        headers: Default::default(),
+        body: json!({
+            "type": "error",
+            "error": {
+                "type": "invalid_request_error",
+                "message": "anthropic-version: header is required"
+            }
+        })
+        .to_string(),
+    }));
+
+    let model = make_model(json!({}));
+    let context = context_with_tools(vec![]);
+    let options = api_key_options("test-key");
+
+    let mut reader = stream_streaming(&transport, &model, &context, &options, 0);
+    let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+    assert_eq!(events.len(), 1);
+    assert!(matches!(events[0], AssistantMessageEvent::Error { .. }));
+    let message = reader_message(&reader);
+    assert_eq!(message.stop_reason, StopReason::Error);
+    assert_eq!(
+        message.error_message.as_deref(),
+        Some("400 anthropic-version: header is required")
+    );
+}
+
+/// Native-http, loopback-server timing: a delayed chunked SSE server serving the
+/// `hello_sse_body()` frames one write at a time proves events arrive
+/// incrementally through the anthropic driver (non-zero inter-event spread),
+/// versus the buffered path's all-at-once delivery.
+#[cfg(feature = "native-http")]
+mod streaming_native {
+    use super::*;
+    use crate::seams::ReqwestTransport;
+    use crate::types::ContentBlock;
+    use std::io::{Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::thread;
+    use std::time::{Duration, Instant};
+
+    /// Split an SSE body into frame-aligned pieces (each ends with the blank-line
+    /// delimiter, the trailing frame without one) so each chunked write carries a
+    /// complete frame.
+    fn split_sse_frames(body: &str) -> Vec<String> {
+        let mut pieces = Vec::new();
+        let mut rest = body;
+        while let Some(idx) = rest.find("\n\n") {
+            pieces.push(rest[..idx + 2].to_string());
+            rest = &rest[idx + 2..];
+        }
+        if !rest.is_empty() {
+            pieces.push(rest.to_string());
+        }
+        pieces
+    }
+
+    /// Read past the request head so the client can proceed to read the response.
+    fn drain_request_head(stream: &mut TcpStream) {
+        let mut buf = Vec::new();
+        let mut tmp = [0u8; 1024];
+        loop {
+            if buf.windows(4).any(|w| w == b"\r\n\r\n") {
+                break;
+            }
+            match stream.read(&mut tmp) {
+                Ok(0) | Err(_) => break,
+                Ok(n) => buf.extend_from_slice(&tmp[..n]),
+            }
+        }
+    }
+
+    /// Spawn a one-shot loopback server that writes the `hello_sse_body()` frames
+    /// as separate `Transfer-Encoding: chunked` writes, sleeping `delay` between
+    /// them so the frames arrive with real inter-write timing.
+    fn spawn_hello_sse_server(delay: Duration) -> String {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind loopback");
+        let addr = listener.local_addr().expect("local addr");
+        let pieces = split_sse_frames(&hello_sse_body());
+        thread::spawn(move || {
+            if let Ok((mut stream, _)) = listener.accept() {
+                drain_request_head(&mut stream);
+                stream
+                    .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n")
+                    .unwrap();
+                for piece in pieces {
+                    let chunk = format!("{:X}\r\n{piece}\r\n", piece.len());
+                    stream.write_all(chunk.as_bytes()).unwrap();
+                    stream.flush().unwrap();
+                    thread::sleep(delay);
+                }
+                stream.write_all(b"0\r\n\r\n").unwrap();
+                stream.flush().unwrap();
+            }
+        });
+        format!("http://{addr}")
+    }
+
+    #[test]
+    fn stream_streaming_delivers_events_incrementally_over_native_http() {
+        let delay = Duration::from_millis(15);
+        let url = spawn_hello_sse_server(delay);
+
+        let transport = ReqwestTransport::builder().no_proxy().build();
+        let model = make_model(json!({ "baseUrl": url }));
+        let context = context_with_tools(vec![]);
+        let options = api_key_options("test-key");
+
+        let mut reader = stream_streaming(&transport, &model, &context, &options, 0);
+        let start = Instant::now();
+        let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
+        for event in reader.by_ref() {
+            stamped.push((start.elapsed(), event));
+        }
+
+        let events: Vec<AssistantMessageEvent> = stamped.iter().map(|(_, e)| e.clone()).collect();
+
+        // Same logical hello exchange as the buffered path.
+        assert!(matches!(
+            events.first(),
+            Some(AssistantMessageEvent::Start { .. })
+        ));
+        assert!(matches!(
+            events.last(),
+            Some(AssistantMessageEvent::Done { .. })
+        ));
+        let text_deltas = events
+            .iter()
+            .filter(|e| matches!(e, AssistantMessageEvent::TextDelta { .. }))
+            .count();
+        assert_eq!(text_deltas, 1);
+
+        // Incrementality: the events span real wall-clock time (they did NOT all
+        // arrive at once), proving the driver pulls chunk-by-chunk. Bounded well
+        // below the ~5*delay total so CI can never hang or flake.
+        let spread = stamped.last().unwrap().0 - stamped.first().unwrap().0;
+        assert!(
+            spread >= delay,
+            "expected non-zero inter-event spread >= {delay:?}, got {spread:?}",
+        );
+
+        let message = reader_message(&reader);
+        assert_eq!(message.stop_reason, StopReason::Stop);
+        assert_eq!(
+            message.content,
+            vec![ContentBlock::Text {
+                text: "Hello".to_string(),
+                text_signature: None,
+            }]
+        );
+    }
 }
