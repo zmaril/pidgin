@@ -25,6 +25,12 @@ use crate::types::{
     SessionAffinityFormat, ThinkingLevelMap,
 };
 
+/// The transport-driving request assembler + stream driver (pi's `createClient` /
+/// `stream`), kept in a sibling module so this file stays within the straitjacket
+/// line ceiling while faithfully mirroring the openai-completions and anthropic
+/// `driver.rs` split.
+pub mod driver;
+
 /// pi's `OPENAI_TOOL_CALL_PROVIDERS` — the providers whose composite
 /// `call_id|item_id` tool-call ids are normalized (`openai-responses.ts:28`).
 pub const OPENAI_TOOL_CALL_PROVIDERS: [&str; 3] = ["openai", "openai-codex", "opencode"];
@@ -126,7 +132,7 @@ pub fn get_compat(model: &OpenAIResponsesModel) -> ResolvedResponsesCompat {
 
 /// Resolve cache retention, defaulting to `short` (pi's `resolveCacheRetention`;
 /// the `PI_CACHE_RETENTION` env fallback is out of scope at this boundary).
-fn resolve_cache_retention(cache_retention: Option<CacheRetention>) -> CacheRetention {
+pub(crate) fn resolve_cache_retention(cache_retention: Option<CacheRetention>) -> CacheRetention {
     cache_retention.unwrap_or(CacheRetention::Short)
 }
 

@@ -38,6 +38,7 @@ use crate::providers::mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_AP
 use crate::providers::openai_completions_backend::{
     OpenAICompletionsBackend, OPENAI_COMPLETIONS_API,
 };
+use crate::providers::openai_responses_backend::{OpenAIResponsesBackend, OPENAI_RESPONSES_API};
 use crate::providers::registry::{
     create_provider, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
     RefreshContext, RegistryProvider, StreamBackendRef,
@@ -239,7 +240,9 @@ pub fn provider_from_catalog(id: &str) -> RegistryProvider {
 /// gains a live backend — a single-api provider becomes [`ApiRouting::Single`],
 /// a multi-api provider gains the entry in its [`ApiRouting::ByApi`] map — with
 /// no change to [`provider_from_catalog_with_transport`] or the assembly in
-/// [`api_routing_for`]. Today only `anthropic-messages` is registered.
+/// [`api_routing_for`]. Registered today: `anthropic-messages`,
+/// `openai-completions`, `google-generative-ai`, `mistral`, and
+/// `openai-responses`.
 fn backend_for_api(
     api: &str,
     transport: &Arc<dyn HttpTransport>,
@@ -262,9 +265,13 @@ fn backend_for_api(
             transport.clone(),
             clock.clone(),
         ))),
+        OPENAI_RESPONSES_API => Some(Arc::new(OpenAIResponsesBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ))),
         // Follow-up (port): register the remaining ported dialects
-        // (openai_responses, google_vertex, bedrock, azure) here as their
-        // transport-aware `Provider` adapters land.
+        // (google_vertex, bedrock, azure) here as their transport-aware
+        // `Provider` adapters land.
         _ => None,
     }
 }
@@ -709,16 +716,17 @@ mod tests {
         assert_eq!(scripted.requests().len(), 1);
     }
 
-    // (b) A non-anthropic builtin whose dialects have no registered backend still
-    // resolves to Unimplemented: its stream yields the "no API implementation"
-    // error. `openai` carries only openai-completions/openai-responses, neither
-    // registered.
+    // (b) A builtin whose single dialect has no registered backend still resolves
+    // to Unimplemented: its stream yields the "no API implementation" error.
+    // `azure-openai-responses` carries only the still-unported
+    // `azure-openai-responses` dialect (the exemplar retargeted off
+    // `openai`/`openai-responses`, which are now registered).
     #[test]
-    fn openai_resolves_unimplemented_and_errors_on_stream() {
-        let apis = catalog_provider_apis("openai");
+    fn azure_openai_responses_resolves_unimplemented_and_errors_on_stream() {
+        let apis = catalog_provider_apis("azure-openai-responses");
         assert!(
-            !apis.contains(ANTHROPIC_MESSAGES_API),
-            "openai must not carry the one registered dialect"
+            !apis.contains(OPENAI_RESPONSES_API) && !apis.contains(ANTHROPIC_MESSAGES_API),
+            "azure-openai-responses must not carry a registered dialect"
         );
         let (_scripted, transport) = scripted_hellos(0);
         assert!(
@@ -730,12 +738,16 @@ mod tests {
         );
 
         let (scripted, transport) = scripted_hellos(0);
-        let provider = provider_from_catalog_with_transport("openai", &transport, &fake_clock());
+        let provider = provider_from_catalog_with_transport(
+            "azure-openai-responses",
+            &transport,
+            &fake_clock(),
+        );
         let model = provider
             .get_models()
             .into_iter()
             .next()
-            .expect("openai lists models");
+            .expect("azure-openai-responses lists models");
         let result = provider.stream(&model, &user_context(), None, None);
 
         assert_eq!(result.message.stop_reason, StopReason::Error);
@@ -755,9 +767,9 @@ mod tests {
     fn multi_api_assembles_byapi_over_registered_only() {
         let mut apis = BTreeSet::new();
         apis.insert(ANTHROPIC_MESSAGES_API.to_string());
-        // `openai-responses` has no ported adapter yet, so it stands in as the
-        // still-unregistered dialect the ByApi assembly must omit.
-        apis.insert("openai-responses".to_string());
+        // `azure-openai-responses` has no ported adapter yet, so it stands in as
+        // the still-unregistered dialect the ByApi assembly must omit.
+        apis.insert("azure-openai-responses".to_string());
 
         let (scripted, transport) = scripted_hellos(1);
         let routing = api_routing_for(&apis, &transport, &fake_clock());
@@ -767,7 +779,7 @@ mod tests {
         };
         assert!(map.contains_key(ANTHROPIC_MESSAGES_API));
         assert!(
-            !map.contains_key("openai-responses"),
+            !map.contains_key("azure-openai-responses"),
             "an unregistered api name must be omitted from the ByApi map"
         );
 
@@ -796,11 +808,12 @@ mod tests {
     }
 
     // (c/ii) The real multi-api `opencode` provider: its anthropic-messages models
-    // stream through the assembled ByApi backend, and its openai-completions leg is
-    // now a registered backend in the map (the end-to-end completions drive is
-    // covered by `openai_completions_backend`'s own OpenAI-shaped SSE fixtures),
-    // as is its google-generative-ai leg, while a model of a still-not-ported
-    // dialect (openai-responses) takes the "no API implementation" path.
+    // stream through the assembled ByApi backend, and each of its other legs —
+    // openai-completions, google-generative-ai, and (newly) openai-responses — is a
+    // registered backend in the map. A synthetic model of a still-not-ported
+    // dialect (`azure-openai-responses`, which opencode does not carry) still takes
+    // the "no API implementation" path, exercising the ByApi Unimplemented
+    // fallback.
     #[test]
     fn opencode_byapi_binds_registered_dialects_and_leaves_others_unimplemented() {
         let apis = catalog_provider_apis("opencode");
@@ -808,8 +821,8 @@ mod tests {
         assert!(apis.contains(OPENAI_COMPLETIONS_API));
         assert!(apis.contains(GOOGLE_GENERATIVE_AI_API));
         assert!(
-            apis.contains("openai-responses"),
-            "opencode carries a still-unregistered dialect"
+            apis.contains(OPENAI_RESPONSES_API),
+            "opencode carries the newly-registered openai-responses dialect"
         );
         assert!(apis.len() > 1, "opencode is a mixed-dialect provider");
 
@@ -823,15 +836,15 @@ mod tests {
         assert!(map.contains_key(ANTHROPIC_MESSAGES_API));
         assert!(
             map.contains_key(OPENAI_COMPLETIONS_API),
-            "the newly-registered openai-completions leg must be bound in the ByApi map"
+            "the openai-completions leg must be bound in the ByApi map"
         );
         assert!(
             map.contains_key(GOOGLE_GENERATIVE_AI_API),
-            "the newly-registered google-generative-ai leg must be bound in the ByApi map"
+            "the google-generative-ai leg must be bound in the ByApi map"
         );
         assert!(
-            !map.contains_key("openai-responses"),
-            "a still-unregistered dialect must be omitted from the ByApi map"
+            map.contains_key(OPENAI_RESPONSES_API),
+            "the newly-registered openai-responses leg must be bound in the ByApi map"
         );
 
         let (scripted, transport) = scripted_hellos(1);
@@ -847,8 +860,10 @@ mod tests {
         assert_eq!(ok.message.stop_reason, StopReason::Stop);
         assert_eq!(scripted.requests().len(), 1);
 
-        // A model of a still-not-ported dialect errors with no further request.
-        let other_model = model_with_api(&provider, "openai-responses");
+        // A synthetic model of a still-not-ported dialect (one opencode does not
+        // carry) errors with no further request.
+        let mut other_model = anthropic_model.clone();
+        other_model.api = "azure-openai-responses".to_string();
         let err = provider.stream(&other_model, &user_context(), None, None);
         assert_eq!(err.message.stop_reason, StopReason::Error);
         assert!(err

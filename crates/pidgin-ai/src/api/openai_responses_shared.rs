@@ -32,6 +32,7 @@
 //! the `encodeTextSignatureV1` / `shortHash` utilities they depend on.
 
 use std::collections::HashMap;
+use std::ops::ControlFlow;
 
 use serde::Serialize;
 use serde_json::{json, Map, Value};
@@ -43,6 +44,7 @@ use crate::types::{
     StopReason, Usage, UsageCost,
 };
 use crate::utils::json_parse::parse_streaming_json;
+use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
 
 // =============================================================================
 // Utilities
@@ -732,60 +734,61 @@ fn u64_field(value: &Value, key: &str) -> u64 {
     value.get(key).and_then(Value::as_u64).unwrap_or(0)
 }
 
-/// Process a slice of decoded `ResponseStreamEvent` values for `model`, returning
-/// the [`StreamOutcome`]. Ports pi's `processResponsesStream` under an eager,
-/// throw-free design.
+/// Process a slice of *already-decoded* `ResponseStreamEvent` values for `model`,
+/// returning the [`StreamOutcome`]. Ports pi's `processResponsesStream` under an
+/// eager, throw-free design.
+///
+/// This is the decoded-events boundary (the napi shim and the existing unit
+/// tests feed a `Vec<Value>`); it drives the SAME [`OpenAIResponsesSseDecoder`]
+/// the incremental driver runs — one source of truth — so its events and final
+/// message are byte-identical to [`parse_responses_sse_stream`] and the
+/// chunk-by-chunk [`AssistantEventReader`] path.
 pub fn process_responses_stream(
     events_json: &[Value],
     model: &OpenAIResponsesModel,
     options: &ResponsesStreamOptions,
     timestamp: i64,
 ) -> StreamOutcome {
-    let mut output = AssistantMessage {
-        role: AssistantRole::Assistant,
-        content: Vec::new(),
-        api: model.api.clone(),
-        provider: model.provider.clone(),
-        model: model.id.clone(),
-        response_model: None,
-        response_id: None,
-        diagnostics: None,
-        usage: zero_usage(),
-        stop_reason: StopReason::Stop,
-        error_message: None,
-        timestamp,
-    };
+    let mut decoder = OpenAIResponsesSseDecoder::new(model.clone(), options.clone(), timestamp);
     let mut events: Vec<AssistantMessageEvent> = Vec::new();
 
     // Mirrors pi's `stream()`: the `start` event precedes the dispatch loop.
-    events.push(AssistantMessageEvent::Start {
-        partial: output.clone(),
-    });
+    decoder.ensure_started(&mut events);
 
-    let terminal_error = run_dispatch(events_json, model, options, &mut output, &mut events);
-
-    match terminal_error {
-        None => {
-            if matches!(output.stop_reason, StopReason::Aborted | StopReason::Error) {
-                let message = output
-                    .error_message
-                    .clone()
-                    .unwrap_or_else(|| "An unknown error occurred".to_string());
-                finish_with_error(&mut output, &mut events, message);
-            } else {
-                events.push(AssistantMessageEvent::Done {
-                    reason: output.stop_reason,
-                    message: output.clone(),
-                });
-            }
+    for event in events_json {
+        if decoder.push_value(event, &mut events).is_break() {
+            break;
         }
-        Some(message) => finish_with_error(&mut output, &mut events, message),
     }
 
-    StreamOutcome {
-        events,
-        message: output,
-    }
+    let message = decoder.finalize(&mut events);
+    StreamOutcome { events, message }
+}
+
+/// Process a whole OpenAI Responses SSE body for `model`, returning the
+/// [`StreamOutcome`]. This is the buffered driver's whole-body parser, rewired
+/// onto the SAME [`OpenAIResponsesSseDecoder`] the incremental driver uses (via a
+/// one-chunk [`AssistantEventReader`]), so feeding the whole body is byte-identical
+/// to feeding the reader chunk-by-chunk.
+pub fn parse_responses_sse_stream(
+    body: &str,
+    model: &OpenAIResponsesModel,
+    options: &ResponsesStreamOptions,
+    timestamp: i64,
+) -> StreamOutcome {
+    let decoder = OpenAIResponsesSseDecoder::new(model.clone(), options.clone(), timestamp);
+    let mut reader = AssistantEventReader::new(
+        Box::new(std::iter::once(Ok(body.as_bytes().to_vec()))),
+        Box::new(decoder),
+    );
+    let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+    let message = match reader.result() {
+        Some(Ok(message)) | Some(Err(message)) => message.clone(),
+        // The reader always finalizes once drained (EOF is bounded), so a
+        // fully-collected reader has a terminal result.
+        None => unreachable!("AssistantEventReader finalizes before iteration ends"),
+    };
+    StreamOutcome { events, message }
 }
 
 fn finish_with_error(
@@ -801,136 +804,306 @@ fn finish_with_error(
     });
 }
 
-/// Run the Responses named-event dispatch. Returns `Some(message)` when the
-/// stream terminates with a hard error (an `error` event, a `response.failed`,
-/// or a stream that ends before a terminal response event) — the points where
-/// pi's `processResponsesStream` throws.
-fn run_dispatch(
-    events_json: &[Value],
+/// The mutable accumulation state pi's `processResponsesStream` threads through
+/// its dispatch loop (`slots`, the reasoning content-index map, and whether a
+/// terminal response event was seen). Held by [`OpenAIResponsesSseDecoder`] so
+/// the buffered and incremental paths share one dispatch.
+#[derive(Debug, Default)]
+struct DispatchState {
+    slots: HashMap<i64, Slot>,
+    /// reasoning content-index by item id, for encrypted_content backfill.
+    reasoning_index_by_id: HashMap<String, usize>,
+    saw_terminal: bool,
+}
+
+/// Dispatch ONE decoded Responses event, mutating `output`/`state` and pushing
+/// any assistant events. Returns `Some(message)` when the event is a hard
+/// terminal error (an `error` event or a `response.failed`) — the points where
+/// pi's `processResponsesStream` throws. The "stream ended before a terminal
+/// response event" throw is a stream-end concern and lives in the decoder's
+/// `finalize`, keyed on [`DispatchState::saw_terminal`].
+fn dispatch_event(
+    event: &Value,
     model: &OpenAIResponsesModel,
     options: &ResponsesStreamOptions,
     output: &mut AssistantMessage,
+    state: &mut DispatchState,
     events: &mut Vec<AssistantMessageEvent>,
 ) -> Option<String> {
-    let mut saw_terminal = false;
-    let mut slots: HashMap<i64, Slot> = HashMap::new();
-    // reasoning content-index by item id, for encrypted_content backfill.
-    let mut reasoning_index_by_id: HashMap<String, usize> = HashMap::new();
+    let event_type = event.get("type").and_then(Value::as_str).unwrap_or("");
+    let output_index = event
+        .get("output_index")
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
 
-    for event in events_json {
-        let event_type = event.get("type").and_then(Value::as_str).unwrap_or("");
-        let output_index = event
-            .get("output_index")
-            .and_then(Value::as_i64)
-            .unwrap_or(0);
-
-        match event_type {
-            "response.created" => {
-                if let Some(id) = event
-                    .get("response")
-                    .and_then(|r| r.get("id"))
-                    .and_then(Value::as_str)
-                {
-                    output.response_id = Some(id.to_string());
+    match event_type {
+        "response.created" => {
+            if let Some(id) = event
+                .get("response")
+                .and_then(|r| r.get("id"))
+                .and_then(Value::as_str)
+            {
+                output.response_id = Some(id.to_string());
+            }
+        }
+        "response.output_item.added" => {
+            if let Some(item) = event.get("item") {
+                create_slot(output_index, item, output, &mut state.slots, events);
+            }
+        }
+        "response.reasoning_summary_text.delta" | "response.reasoning_text.delta" => {
+            let delta = event.get("delta").and_then(Value::as_str).unwrap_or("");
+            append_thinking(output_index, delta, output, &state.slots, events);
+        }
+        "response.reasoning_summary_part.done" => {
+            append_thinking(output_index, "\n\n", output, &state.slots, events);
+        }
+        "response.output_text.delta" | "response.refusal.delta" => {
+            let delta = event.get("delta").and_then(Value::as_str).unwrap_or("");
+            append_text(output_index, delta, output, &state.slots, events);
+        }
+        "response.function_call_arguments.delta" => {
+            let delta = event.get("delta").and_then(Value::as_str).unwrap_or("");
+            if let Some(slot) = state.slots.get_mut(&output_index) {
+                if slot.kind == SlotKind::ToolCall {
+                    slot.partial_json.push_str(delta);
+                    let parsed = parse_streaming_json(Some(&slot.partial_json));
+                    set_tool_arguments(output, slot.content_index, parsed);
+                    events.push(AssistantMessageEvent::ToolcallDelta {
+                        content_index: slot.content_index as u32,
+                        delta: delta.to_string(),
+                        partial: output.clone(),
+                    });
                 }
             }
-            "response.output_item.added" => {
-                if let Some(item) = event.get("item") {
-                    create_slot(output_index, item, output, &mut slots, events);
-                }
-            }
-            "response.reasoning_summary_text.delta" | "response.reasoning_text.delta" => {
-                let delta = event.get("delta").and_then(Value::as_str).unwrap_or("");
-                append_thinking(output_index, delta, output, &slots, events);
-            }
-            "response.reasoning_summary_part.done" => {
-                append_thinking(output_index, "\n\n", output, &slots, events);
-            }
-            "response.output_text.delta" | "response.refusal.delta" => {
-                let delta = event.get("delta").and_then(Value::as_str).unwrap_or("");
-                append_text(output_index, delta, output, &slots, events);
-            }
-            "response.function_call_arguments.delta" => {
-                let delta = event.get("delta").and_then(Value::as_str).unwrap_or("");
-                if let Some(slot) = slots.get_mut(&output_index) {
-                    if slot.kind == SlotKind::ToolCall {
-                        slot.partial_json.push_str(delta);
-                        let parsed = parse_streaming_json(Some(&slot.partial_json));
-                        set_tool_arguments(output, slot.content_index, parsed);
-                        events.push(AssistantMessageEvent::ToolcallDelta {
-                            content_index: slot.content_index as u32,
-                            delta: delta.to_string(),
-                            partial: output.clone(),
-                        });
-                    }
-                }
-            }
-            "response.function_call_arguments.done" => {
-                let arguments = event
-                    .get("arguments")
-                    .and_then(Value::as_str)
-                    .unwrap_or("")
-                    .to_string();
-                if let Some(slot) = slots.get_mut(&output_index) {
-                    if slot.kind == SlotKind::ToolCall {
-                        let previous = slot.partial_json.clone();
-                        slot.partial_json = arguments.clone();
-                        let parsed = parse_streaming_json(Some(&slot.partial_json));
-                        set_tool_arguments(output, slot.content_index, parsed);
-                        let content_index = slot.content_index;
-                        if let Some(delta) = arguments.strip_prefix(&previous) {
-                            if !delta.is_empty() {
-                                events.push(AssistantMessageEvent::ToolcallDelta {
-                                    content_index: content_index as u32,
-                                    delta: delta.to_string(),
-                                    partial: output.clone(),
-                                });
-                            }
+        }
+        "response.function_call_arguments.done" => {
+            let arguments = event
+                .get("arguments")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
+            if let Some(slot) = state.slots.get_mut(&output_index) {
+                if slot.kind == SlotKind::ToolCall {
+                    let previous = slot.partial_json.clone();
+                    slot.partial_json = arguments.clone();
+                    let parsed = parse_streaming_json(Some(&slot.partial_json));
+                    set_tool_arguments(output, slot.content_index, parsed);
+                    let content_index = slot.content_index;
+                    if let Some(delta) = arguments.strip_prefix(&previous) {
+                        if !delta.is_empty() {
+                            events.push(AssistantMessageEvent::ToolcallDelta {
+                                content_index: content_index as u32,
+                                delta: delta.to_string(),
+                                partial: output.clone(),
+                            });
                         }
                     }
                 }
             }
-            "response.output_item.done" => {
-                let item = event.get("item").cloned().unwrap_or(Value::Null);
-                // getOrCreateSlot
-                if !slots.contains_key(&output_index) {
-                    create_slot(output_index, &item, output, &mut slots, events);
-                }
-                finalize_output_item(
-                    output_index,
-                    &item,
+        }
+        "response.output_item.done" => {
+            let item = event.get("item").cloned().unwrap_or(Value::Null);
+            // getOrCreateSlot
+            if !state.slots.contains_key(&output_index) {
+                create_slot(output_index, &item, output, &mut state.slots, events);
+            }
+            finalize_output_item(
+                output_index,
+                &item,
+                output,
+                &mut state.slots,
+                &mut state.reasoning_index_by_id,
+                events,
+            );
+        }
+        "response.completed" | "response.incomplete" => {
+            if let Some(response) = event.get("response") {
+                finalize_response(
+                    response,
+                    model,
+                    options,
                     output,
-                    &mut slots,
-                    &mut reasoning_index_by_id,
-                    events,
+                    &state.reasoning_index_by_id,
                 );
             }
-            "response.completed" | "response.incomplete" => {
-                if let Some(response) = event.get("response") {
-                    finalize_response(response, model, options, output, &reasoning_index_by_id);
-                }
-                saw_terminal = true;
-            }
-            "error" => {
-                let code = event.get("code").and_then(Value::as_str).unwrap_or("");
-                let message = event.get("message").and_then(Value::as_str).unwrap_or("");
-                return Some(format!("Error Code {code}: {message}"));
-            }
-            "response.failed" => {
-                // pi sets `sawTerminalResponseEvent` here before throwing; the
-                // eager port returns the error message immediately, so the flag
-                // would be dead. The early return is the terminal signal.
-                return Some(response_failed_message(event.get("response")));
-            }
-            _ => {}
+            state.saw_terminal = true;
         }
-    }
-
-    if !saw_terminal {
-        return Some("OpenAI Responses stream ended before a terminal response event".to_string());
+        "error" => {
+            let code = event.get("code").and_then(Value::as_str).unwrap_or("");
+            let message = event.get("message").and_then(Value::as_str).unwrap_or("");
+            return Some(format!("Error Code {code}: {message}"));
+        }
+        "response.failed" => {
+            // pi sets `sawTerminalResponseEvent` here before throwing; the eager
+            // port returns the error message immediately, so the flag would be
+            // dead. The early return is the terminal signal.
+            return Some(response_failed_message(event.get("response")));
+        }
+        _ => {}
     }
 
     None
+}
+
+/// The incremental OpenAI Responses SSE decoder: the single source of truth for
+/// turning wire frames (or already-decoded event values) into assistant events
+/// and the accumulated message.
+///
+/// It carries exactly the accumulation state pi's `processResponsesStream` kept
+/// (the output message, the per-`output_index` slots, and the terminal
+/// bookkeeping) and drives it through the shared [`SseEventDecoder`] seam. The
+/// buffered [`process_responses_stream`] (decoded-events boundary) and
+/// [`parse_responses_sse_stream`] (whole-body boundary) both run this ONE
+/// decoder, so their events and final message are byte-identical to the driver's
+/// chunk-by-chunk [`AssistantEventReader`].
+pub(crate) struct OpenAIResponsesSseDecoder {
+    model: OpenAIResponsesModel,
+    options: ResponsesStreamOptions,
+    output: AssistantMessage,
+    state: DispatchState,
+    /// pi emits the `start` event before the dispatch loop; here it is emitted
+    /// lazily on the first `on_frame`/`finish` so it is always the first event
+    /// exactly once, whatever the chunk cadence.
+    started: bool,
+    /// Set when an event triggered pi's `processResponsesStream` throw (an
+    /// `error` event or a `response.failed`); `finalize` turns it into the
+    /// terminal `error` event.
+    terminal_error: Option<String>,
+}
+
+impl OpenAIResponsesSseDecoder {
+    /// A fresh decoder for `model`, seeding the empty output shell pi builds
+    /// before streaming. `timestamp` is pi's `Date.now()` message timestamp.
+    pub(crate) fn new(
+        model: OpenAIResponsesModel,
+        options: ResponsesStreamOptions,
+        timestamp: i64,
+    ) -> Self {
+        let output = AssistantMessage {
+            role: AssistantRole::Assistant,
+            content: Vec::new(),
+            api: model.api.clone(),
+            provider: model.provider.clone(),
+            model: model.id.clone(),
+            response_model: None,
+            response_id: None,
+            diagnostics: None,
+            usage: zero_usage(),
+            stop_reason: StopReason::Stop,
+            error_message: None,
+            timestamp,
+        };
+        Self {
+            model,
+            options,
+            output,
+            state: DispatchState::default(),
+            started: false,
+            terminal_error: None,
+        }
+    }
+
+    /// Emit pi's initial `start` event exactly once, before any dispatched event.
+    fn ensure_started(&mut self, out: &mut Vec<AssistantMessageEvent>) {
+        if !self.started {
+            self.started = true;
+            out.push(AssistantMessageEvent::Start {
+                partial: self.output.clone(),
+            });
+        }
+    }
+
+    /// Dispatch one already-decoded event value — the shared entry point for the
+    /// decoded-events boundary ([`process_responses_stream`]) and the SSE
+    /// [`on_frame`](SseEventDecoder::on_frame). Returns [`ControlFlow::Break`] on
+    /// a hard terminal error, whose message `finalize` turns into the terminal
+    /// `error` event.
+    fn push_value(
+        &mut self,
+        event: &Value,
+        out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        if let Some(message) = dispatch_event(
+            event,
+            &self.model,
+            &self.options,
+            &mut self.output,
+            &mut self.state,
+            out,
+        ) {
+            self.terminal_error = Some(message.clone());
+            return ControlFlow::Break(message);
+        }
+        ControlFlow::Continue(())
+    }
+
+    /// The terminal selection shared by every boundary: a frame-level throw wins,
+    /// then the missing-terminal-event guard, then pi's `aborted`/`error`
+    /// stop-reason re-throw, otherwise a `done` event. Returns the final message.
+    fn finalize(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        self.ensure_started(out);
+
+        let terminal_error = if self.terminal_error.is_some() {
+            self.terminal_error.clone()
+        } else if !self.state.saw_terminal {
+            Some("OpenAI Responses stream ended before a terminal response event".to_string())
+        } else {
+            None
+        };
+
+        match terminal_error {
+            None => {
+                if matches!(
+                    self.output.stop_reason,
+                    StopReason::Aborted | StopReason::Error
+                ) {
+                    let message = self
+                        .output
+                        .error_message
+                        .clone()
+                        .unwrap_or_else(|| "An unknown error occurred".to_string());
+                    finish_with_error(&mut self.output, out, message);
+                } else {
+                    out.push(AssistantMessageEvent::Done {
+                        reason: self.output.stop_reason,
+                        message: self.output.clone(),
+                    });
+                }
+            }
+            Some(message) => finish_with_error(&mut self.output, out, message),
+        }
+
+        self.output.clone()
+    }
+}
+
+impl SseEventDecoder for OpenAIResponsesSseDecoder {
+    fn on_frame(
+        &mut self,
+        frame: &ServerSentEvent,
+        out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        self.ensure_started(out);
+
+        // The Responses stream carries one JSON `ResponseStreamEvent` per frame
+        // (the `event:` name mirrors the payload's `type`). A keep-alive/comment
+        // frame or the spec-absent `[DONE]` sentinel carries no event body and is
+        // skipped, matching the OpenAI SDK decoder's `JSON.parse` gate.
+        let data = frame.data.trim();
+        if data.is_empty() || data == "[DONE]" {
+            return ControlFlow::Continue(());
+        }
+        let event: Value = match serde_json::from_str(data) {
+            Ok(value) => value,
+            Err(_) => return ControlFlow::Continue(()),
+        };
+        self.push_value(&event, out)
+    }
+
+    fn finish(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        self.finalize(out)
+    }
 }
 
 fn response_failed_message(response: Option<&Value>) -> String {
