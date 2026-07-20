@@ -31,7 +31,10 @@ use pidgin_ai::{
 };
 
 use super::*;
-use crate::types::{AgentToolResult, AgentToolUpdateCallback, PrepareNextTurnContext};
+use crate::types::{
+    AfterToolCallContext, AgentToolResult, AgentToolUpdateCallback, BeforeToolCallContext,
+    PrepareNextTurnContext,
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -960,4 +963,139 @@ fn abort_from_subscriber_yields_aborted_message() {
         agent.error_message().as_deref(),
         Some("Request was aborted")
     );
+}
+
+// ---------------------------------------------------------------------------
+// Post-construction hook installation
+// ---------------------------------------------------------------------------
+
+#[test]
+fn installs_tool_call_hooks_after_construction() {
+    // A caller holding a pre-built agent installs the tool-call hooks after the
+    // fact (pi's `AgentSession._installAgentToolHooks` reassigns
+    // `agent.beforeToolCall` / `agent.afterToolCall`, `agent-session.ts:449-490`).
+    let tool = tool_with("noop", |_, _, _, _| ok_result("ok", Some(true)));
+
+    let before_calls = Arc::new(AtomicUsize::new(0));
+    let after_calls = Arc::new(AtomicUsize::new(0));
+
+    let agent = Agent::new(AgentOptions {
+        initial_state: Some(InitialAgentState {
+            tools: Some(vec![tool]),
+            ..Default::default()
+        }),
+        stream_fn: Some(stream_fn_once(assistant_tool_use(vec![tool_call_block(
+            "noop",
+            "tool-1",
+            json!({}),
+        )]))),
+        ..Default::default()
+    });
+
+    // Hooks are absent at construction time, then installed post-hoc.
+    let before = before_calls.clone();
+    agent.set_before_tool_call(Some(Arc::new(
+        move |_ctx: &mut BeforeToolCallContext, _signal| {
+            before.fetch_add(1, Ordering::SeqCst);
+            None
+        },
+    )));
+    let after = after_calls.clone();
+    agent.set_after_tool_call(Some(Arc::new(
+        move |_ctx: &AfterToolCallContext, _signal| {
+            after.fetch_add(1, Ordering::SeqCst);
+            None
+        },
+    )));
+
+    agent.prompt_text("start", Vec::new()).unwrap();
+
+    assert_eq!(before_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(after_calls.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn replaces_and_clears_tool_call_hook_after_construction() {
+    // Setting a new closure replaces the previous one; `None` clears it. Each run
+    // reads the current value (the field is re-read per run, matching pi).
+    let tool = tool_with("noop", |_, _, _, _| ok_result("ok", Some(true)));
+
+    let first_calls = Arc::new(AtomicUsize::new(0));
+    let second_calls = Arc::new(AtomicUsize::new(0));
+
+    let first = first_calls.clone();
+    let agent = Agent::new(AgentOptions {
+        initial_state: Some(InitialAgentState {
+            tools: Some(vec![tool]),
+            ..Default::default()
+        }),
+        before_tool_call: Some(Arc::new(
+            move |_ctx: &mut BeforeToolCallContext, _signal| {
+                first.fetch_add(1, Ordering::SeqCst);
+                None
+            },
+        )),
+        stream_fn: Some(stream_fn_from(vec![
+            assistant_tool_use(vec![tool_call_block("noop", "tool-1", json!({}))]),
+            assistant_tool_use(vec![tool_call_block("noop", "tool-2", json!({}))]),
+            assistant_tool_use(vec![tool_call_block("noop", "tool-3", json!({}))]),
+        ])),
+        ..Default::default()
+    });
+
+    // Constructor-provided hook fires on the first run (constructor path faithful).
+    agent.prompt_text("first", Vec::new()).unwrap();
+    assert_eq!(first_calls.load(Ordering::SeqCst), 1);
+
+    // Replace with a different closure; the new one fires, the old one does not.
+    let second = second_calls.clone();
+    agent.set_before_tool_call(Some(Arc::new(
+        move |_ctx: &mut BeforeToolCallContext, _signal| {
+            second.fetch_add(1, Ordering::SeqCst);
+            None
+        },
+    )));
+    agent.prompt_text("second", Vec::new()).unwrap();
+    assert_eq!(first_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(second_calls.load(Ordering::SeqCst), 1);
+
+    // Clearing it leaves no hook installed; a subsequent run fires neither.
+    agent.set_before_tool_call(None);
+    agent.prompt_text("third", Vec::new()).unwrap();
+    assert_eq!(first_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(second_calls.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn installs_prepare_next_turn_with_context_after_construction() {
+    // The context-aware next-turn hook is likewise installable post-construction.
+    let tool = tool_with("noop", |_, _, _, _| ok_result("ok", None));
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let seen = calls.clone();
+
+    let agent = Agent::new(AgentOptions {
+        initial_state: Some(InitialAgentState {
+            tools: Some(vec![tool]),
+            ..Default::default()
+        }),
+        stream_fn: Some(stream_fn_from(vec![
+            assistant_tool_use(vec![tool_call_block("noop", "tool-1", json!({}))]),
+            assistant_text("done"),
+        ])),
+        ..Default::default()
+    });
+
+    agent.set_prepare_next_turn_with_context(Some(Arc::new(
+        move |ctx: &PrepareNextTurnContext, signal| {
+            assert!(signal.is_some());
+            assert!(!ctx.new_messages.is_empty());
+            seen.fetch_add(1, Ordering::SeqCst);
+            None
+        },
+    )));
+
+    agent.prompt_text("start", Vec::new()).unwrap();
+
+    assert!(calls.load(Ordering::SeqCst) >= 1);
 }
