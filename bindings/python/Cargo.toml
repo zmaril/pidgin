@@ -23,7 +23,7 @@ live = ["pidgin-ai/native-http"]
 
 [dependencies]
 # abi3-py39: build one wheel that loads on CPython 3.9+ without linking libpython.
-pyo3 = { version = "0.23", features = ["extension-module", "abi3-py39"] }
+pyo3 = { version = "0.29", features = ["extension-module", "abi3-py39"] }
 
 # Engine crates via path deps (this crate is a standalone workspace; the path
 # deps resolve fine across the workspace boundary, exactly like bindings/php).
