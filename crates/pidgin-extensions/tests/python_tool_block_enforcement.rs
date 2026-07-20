@@ -159,7 +159,9 @@ fn python_tool_call_guardrail_blocks_execution_end_to_end() {
     )
     .expect("build faux session with python runner");
 
-    session.prompt("please clean up", None, None).expect("prompt");
+    session
+        .prompt("please clean up", None, None)
+        .expect("prompt");
 
     // 1. The tool never executed: the guardrail blocked it before `execute`.
     assert!(

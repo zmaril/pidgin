@@ -140,7 +140,14 @@ impl std::error::Error for OfflineEchoError {}
 /// not be wired into a live model path.
 pub fn build_offline_echo_session(cwd: String) -> Result<AgentSession, OfflineEchoError> {
     let session_manager = SessionManager::in_memory(&cwd);
-    build_offline_session(cwd, echo_stream_fn(), session_manager, None, Vec::new(), None)
+    build_offline_session(
+        cwd,
+        echo_stream_fn(),
+        session_manager,
+        None,
+        Vec::new(),
+        None,
+    )
 }
 
 /// The default faux [`StreamFn`] shared by [`build_offline_echo_session`] and
