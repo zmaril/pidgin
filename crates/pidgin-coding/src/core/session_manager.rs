@@ -635,7 +635,7 @@ pub fn build_session_context(entries: &[SessionEntry], leaf_id: Option<&str>) ->
 /// A best-effort `Date.toISOString()`-shaped timestamp for entries created at
 /// runtime. Only the shape matters to this slice; the exact value is not
 /// asserted anywhere.
-fn now_iso() -> String {
+pub(crate) fn now_iso() -> String {
     let millis = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)

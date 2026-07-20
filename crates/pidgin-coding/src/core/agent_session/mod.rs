@@ -21,8 +21,10 @@
 //! [`tree`] carries session-tree navigation (`navigate_tree`), branch
 //! summarization through the compaction seam, the `session_before_tree` /
 //! `session_tree` extension dispatch, and the fork-selector accessor
-//! (`get_user_messages_for_forking`). The stats / export wiring lands in a later
-//! PR.
+//! (`get_user_messages_for_forking`). [`stats`] carries the session-statistics and
+//! context-window usage surface (`get_session_stats`/`get_context_usage`, plus the
+//! [`SessionStats`]/[`ContextUsage`] result types); [`export`] carries transcript
+//! export (`export_to_html`/`export_to_jsonl`).
 //!
 //! # Owning an `AgentSession`
 //!
@@ -60,6 +62,7 @@
 pub mod bash;
 pub mod compaction_turn;
 pub mod events;
+pub mod export;
 pub mod extension_turn;
 pub mod host;
 pub mod model;
@@ -68,6 +71,7 @@ pub mod queue;
 pub mod retry;
 pub mod runtime;
 pub mod session;
+pub mod stats;
 pub mod tool_hooks;
 pub mod tree;
 pub mod turn;
@@ -78,11 +82,13 @@ pub(crate) mod test_support;
 pub use bash::*;
 pub use compaction_turn::*;
 pub use events::*;
+pub use export::*;
 pub use host::*;
 pub use model::*;
 pub use offline_echo::*;
 pub use queue::*;
 pub use runtime::*;
 pub use session::*;
+pub use stats::*;
 pub use tree::*;
 pub use turn::*;
