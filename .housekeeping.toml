@@ -17,6 +17,7 @@ allow = [
     "bindings/php/test.sh",
     "bindings/php/regen.sh",
     "crates/pidgin-tui/vectors/gen/gen_eaw_table.sh",
+    "bindings/php/demo/serve.sh",
 ]
 
 [stray-todos]

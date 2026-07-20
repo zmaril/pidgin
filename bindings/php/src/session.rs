@@ -1,3 +1,4 @@
+// straitjacket-allow-file:duplication  (JSON-extraction helpers intentionally mirror pi print/compaction)
 //! Hand-authored `Pidgin\Session` surface: a stateful, multi-turn agent session
 //! runnable from PHP.
 //!

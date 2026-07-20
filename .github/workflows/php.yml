@@ -74,6 +74,10 @@ jobs:
           php-config --version
           php -i | grep -i 'thread safety' || true
 
+      - name: generate wired module
+        working-directory: bindings/php
+        run: cargo build --lib
+
       - name: fmt
         working-directory: bindings/php
         run: cargo fmt --check
