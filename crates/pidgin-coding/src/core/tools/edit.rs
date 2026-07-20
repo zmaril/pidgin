@@ -7,16 +7,36 @@
 //! ending detect/normalize/restore, edit application, diff + patch generation)
 //! over already-read file content.
 //!
-//! Deferred: the filesystem read/write, the per-file mutation queue, the abort
-//! plumbing, and all TUI rendering. Those need an execution environment and the
-//! interactive theme layer, so the tool's `execute` shell is not ported here.
+//! Deferred: the filesystem read/write, the per-file mutation queue, and the
+//! abort plumbing. Those need an execution environment, so the tool's `execute`
+//! shell is not ported here (it lives in `definitions.rs`).
+//!
+//! The TUI render hooks ([`edit_render_call`]/[`edit_render_result`]) are ported
+//! here as **stateless** functions: pi's renderers thread a mutable
+//! `EditCallRenderComponent` (async file-read preview, `previewPending`,
+//! `settledError`) through `context.state`/`context.lastComponent`. That state
+//! is intentionally omitted (see [`ToolRenderContext`]), so the call render is
+//! the pending header (no async diff preview) and the result render shows the
+//! result's own `details.diff`.
 
 use serde_json::{Map, Value};
 
+use pidgin_agent::types::AgentToolResult;
+use pidgin_ai::ContentBlock;
+use pidgin_tui::renderer::{Component, Container};
+use pidgin_tui::widgets::box_widget::BoxWidget;
+use pidgin_tui::widgets::text::BgFn;
+use pidgin_tui::{Spacer, Text};
+
+use crate::core::extensions::types::{ToolRenderContext, ToolRenderResultOptions};
+use crate::modes::interactive::theme::runtime::Theme;
+
+use super::diff_render::render_diff;
 use super::edit_diff::{
     apply_edits_to_normalized_content, detect_line_ending, generate_diff_string,
     generate_unified_patch, normalize_to_lf, restore_line_endings, strip_bom, Edit,
 };
+use super::render_utils::{render_tool_path, str_json};
 
 /// Coerce raw tool input into the canonical `{ path, edits }` shape.
 ///
@@ -154,6 +174,119 @@ pub fn compute_edit_result(
             path
         ),
     })
+}
+
+// ---------------------------------------------------------------------------
+// TUI render hooks (pi's `renderCall` / `renderResult`, `edit.ts:363` / `:377`)
+// ---------------------------------------------------------------------------
+
+/// Local `theme.fg` wrapper falling back to unstyled text on an unknown color
+/// key (pi's `theme.fg` is infallible; the ported [`Theme::fg`] returns a
+/// `Result`).
+fn fg(theme: &Theme, color: &str, text: &str) -> String {
+    theme.fg(color, text).unwrap_or_else(|_| text.to_string())
+}
+
+/// A `theme.bg(color, …)` background function over an owned ANSI escape, so the
+/// resulting [`BgFn`] is `'static` (pi's `(text) => theme.bg(color, text)`).
+fn bg_fn(theme: &Theme, color: &str) -> BgFn {
+    let ansi = theme.get_bg_ansi(color).unwrap_or_default();
+    Box::new(move |text: &str| format!("{ansi}{text}\x1b[49m"))
+}
+
+/// The path argument for display: `file_path` unless nullish, else `path`,
+/// coerced through pi's `str` (mirrors `str(args?.file_path ?? args?.path)`).
+fn edit_path_arg(args: &Value) -> Option<String> {
+    let raw = match args.get("file_path") {
+        Some(v) if !v.is_null() => Some(v),
+        _ => args.get("path"),
+    };
+    str_json(raw)
+}
+
+/// Format the edit call header line (pi's `formatEditCall`).
+fn format_edit_call(args: &Value, theme: &Theme, cwd: &str) -> String {
+    let path_display = render_tool_path(edit_path_arg(args).as_deref(), theme, cwd, None);
+    format!(
+        "{} {}",
+        fg(theme, "toolTitle", &theme.bold("edit")),
+        path_display
+    )
+}
+
+/// Custom rendering for the edit tool call (pi's `renderCall`, `edit.ts:363`).
+///
+/// Stateless port: pi computes an async diff preview into a stateful call
+/// component; without that state this renders only the pending header
+/// (`toolPendingBg`), which is the synchronous portion of pi's output.
+pub fn edit_render_call(
+    args: &Value,
+    theme: &Theme,
+    context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    let mut boxed = BoxWidget::new(1, 1, Some(bg_fn(theme, "toolPendingBg")));
+    boxed.add_child(Box::new(Text::new(
+        &format_edit_call(args, theme, context.cwd),
+        0,
+        0,
+        None,
+    )));
+    Box::new(boxed)
+}
+
+/// The displayable text of a tool result's text blocks, joined by newlines
+/// (pi's `result.content.filter(text).map(c.text || "").join("\n")`).
+fn result_text(result: &AgentToolResult) -> String {
+    result
+        .content
+        .iter()
+        .filter_map(|c| match c {
+            ContentBlock::Text { text, .. } => Some(text.as_str()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Format the edit result body (pi's `formatEditResult`), stateless: the call
+/// component's async preview is unavailable, so `preview` is treated as absent.
+/// Returns `None` when there is nothing to render (pi's `undefined`).
+fn format_edit_result(result: &AgentToolResult, theme: &Theme, is_error: bool) -> Option<String> {
+    if is_error {
+        let error_text = result_text(result);
+        if error_text.is_empty() {
+            return None;
+        }
+        return Some(fg(theme, "error", &error_text));
+    }
+
+    let result_diff = result.details.get("diff").and_then(Value::as_str);
+    match result_diff {
+        Some(diff) if !diff.is_empty() => Some(render_diff(diff, theme)),
+        _ => None,
+    }
+}
+
+/// Custom rendering for the edit tool result (pi's `renderResult`,
+/// `edit.ts:377`).
+///
+/// Stateless port: pi also reconciles the call component's preview/error state
+/// as a side effect; that state is omitted here, leaving the returned
+/// container — a spacer plus the formatted body (diff panel or error text), or
+/// empty when there is nothing to show.
+pub fn edit_render_result(
+    result: &AgentToolResult,
+    _options: &ToolRenderResultOptions,
+    theme: &Theme,
+    context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    let mut component = Container::new();
+    let Some(output) = format_edit_result(result, theme, context.is_error) else {
+        return Box::new(component);
+    };
+    component.add_child(Box::new(Spacer::new(1)));
+    component.add_child(Box::new(Text::new(&output, 1, 0, None)));
+    Box::new(component)
 }
 
 #[cfg(test)]
@@ -340,5 +473,155 @@ mod tests {
             result.final_content,
             "\u{FEFF}first\r\nSECOND\r\nthird\r\nFOURTH\r\n"
         );
+    }
+}
+
+#[cfg(test)]
+mod render_tests {
+    use super::*;
+    use crate::modes::interactive::theme::{create_theme, parse_theme_json, ColorMode};
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    /// The 256-color dark theme, loaded the same way the interactive vector
+    /// tests build it.
+    fn dark_theme() -> Theme {
+        let path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/modes/interactive/theme/dark.json");
+        let content = std::fs::read_to_string(&path).expect("read dark.json");
+        let json = parse_theme_json(&content).expect("parse dark.json");
+        create_theme(&json, Some(ColorMode::Color256), None).expect("create dark theme")
+    }
+
+    fn sample_args() -> Value {
+        json!({ "path": "src/main.rs", "edits": [{ "oldText": "a", "newText": "b" }] })
+    }
+
+    fn ctx<'a>(args: &'a Value, is_error: bool) -> ToolRenderContext<'a> {
+        ToolRenderContext {
+            args,
+            cwd: "/home/zack/proj",
+            execution_started: true,
+            args_complete: true,
+            is_partial: false,
+            expanded: false,
+            show_images: false,
+            is_error,
+        }
+    }
+
+    fn text_result(text: &str, details: Value) -> AgentToolResult {
+        AgentToolResult {
+            content: vec![ContentBlock::Text {
+                text: text.to_string(),
+                text_signature: None,
+            }],
+            details,
+            added_tool_names: None,
+            terminate: None,
+        }
+    }
+
+    #[test]
+    fn render_call_pending_header_byte_exact() {
+        let theme = dark_theme();
+        let args = sample_args();
+        let call = edit_render_call(&args, &theme, &ctx(&args, false));
+
+        assert_eq!(
+            call.render(40),
+            vec![
+                "\u{1b}[48;5;17m                                        \u{1b}[49m",
+                "\u{1b}[48;5;17m \u{1b}[38;5;188m\u{1b}[1medit\u{1b}[22m\u{1b}[39m \u{1b}[38;5;109msrc/main.rs\u{1b}[39m                       \u{1b}[49m",
+                "\u{1b}[48;5;17m                                        \u{1b}[49m",
+            ]
+        );
+        assert_eq!(
+            call.render(80),
+            vec![
+                "\u{1b}[48;5;17m                                                                                \u{1b}[49m",
+                "\u{1b}[48;5;17m \u{1b}[38;5;188m\u{1b}[1medit\u{1b}[22m\u{1b}[39m \u{1b}[38;5;109msrc/main.rs\u{1b}[39m                                                               \u{1b}[49m",
+                "\u{1b}[48;5;17m                                                                                \u{1b}[49m",
+            ]
+        );
+    }
+
+    #[test]
+    fn render_result_diff_panel_byte_exact() {
+        let theme = dark_theme();
+        let args = sample_args();
+        let opts = ToolRenderResultOptions {
+            expanded: false,
+            is_partial: false,
+        };
+        let result = text_result(
+            "Successfully replaced 1 block(s) in src/main.rs.",
+            json!({ "diff": " 1 unchanged\n-2 old line\n+2 new line" }),
+        );
+        let comp = edit_render_result(&result, &opts, &theme, &ctx(&args, false));
+
+        assert_eq!(
+            comp.render(40),
+            vec![
+                "".to_string(),
+                " \u{1b}[38;5;244m 1 unchanged\u{1b}[39m                           ".to_string(),
+                " \u{1b}[38;5;167m-2 old line\u{1b}[39m                            ".to_string(),
+                " \u{1b}[38;5;143m+2 new line\u{1b}[39m                            ".to_string(),
+            ]
+        );
+        assert_eq!(
+            comp.render(80),
+            vec![
+                "".to_string(),
+                " \u{1b}[38;5;244m 1 unchanged\u{1b}[39m                                                                   ".to_string(),
+                " \u{1b}[38;5;167m-2 old line\u{1b}[39m                                                                    ".to_string(),
+                " \u{1b}[38;5;143m+2 new line\u{1b}[39m                                                                    ".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn render_result_error_text_byte_exact() {
+        let theme = dark_theme();
+        let args = sample_args();
+        let opts = ToolRenderResultOptions {
+            expanded: false,
+            is_partial: false,
+        };
+        let err = text_result("Could not edit file: x.", json!({}));
+        let comp = edit_render_result(&err, &opts, &theme, &ctx(&args, true));
+
+        assert_eq!(
+            comp.render(80),
+            vec![
+                "".to_string(),
+                " \u{1b}[38;5;167mCould not edit file: x.\u{1b}[39m                                                        ".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn render_result_no_diff_no_error_is_empty() {
+        let theme = dark_theme();
+        let args = sample_args();
+        let opts = ToolRenderResultOptions {
+            expanded: false,
+            is_partial: false,
+        };
+        // Success with no `details.diff` → nothing to render (empty container).
+        let result = text_result("done", Value::Null);
+        let comp = edit_render_result(&result, &opts, &theme, &ctx(&args, false));
+        assert!(comp.render(80).is_empty());
+    }
+
+    #[test]
+    fn render_call_invalid_path_arg_shows_invalid_marker() {
+        let theme = dark_theme();
+        // A numeric `path` is a wrong-type arg → pi's `str` returns null →
+        // `[invalid arg]`.
+        let args = json!({ "path": 42 });
+        let call = edit_render_call(&args, &theme, &ctx(&args, false));
+        let joined = call.render(80).join("\n");
+        assert!(joined.contains("[invalid arg]"), "got: {joined:?}");
     }
 }

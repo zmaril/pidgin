@@ -554,6 +554,8 @@ fn tool_definition(
         prompt_snippet: record.prompt_snippet.clone(),
         prompt_guidelines: record.prompt_guidelines.clone(),
         render_shell: None,
+        render_call: None,
+        render_result: None,
     }
 }
 

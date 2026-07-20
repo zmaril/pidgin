@@ -195,6 +195,21 @@ impl Container {
     }
 }
 
+/// `Container` is itself a `Component` (pi's `class Container implements
+/// Component`, `tui.ts:256`), so it can be returned as a `Box<dyn Component>`
+/// from tool renderers. The trait methods delegate to the inherent ones (an
+/// inherent method wins over a same-named trait method in call resolution, so
+/// these are not recursive).
+impl Component for Container {
+    fn render(&self, width: usize) -> Vec<String> {
+        Container::render(self, width)
+    }
+
+    fn invalidate(&mut self) {
+        Container::invalidate(self)
+    }
+}
+
 /// `true` if `line` looks like a terminal image placement (Kitty graphics or
 /// iTerm2 inline image). Ported verbatim from `terminal-image.ts::isImageLine`.
 pub fn is_image_line(line: &str) -> bool {

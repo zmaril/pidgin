@@ -10,6 +10,7 @@
 
 pub mod bash;
 pub mod definitions;
+pub mod diff_render;
 pub mod edit;
 pub mod edit_diff;
 pub mod file_mutation_queue;

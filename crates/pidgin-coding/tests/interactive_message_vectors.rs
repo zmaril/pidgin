@@ -172,6 +172,8 @@ fn tool_def(render_shell: RenderShell) -> ToolDefinition {
         prompt_snippet: None,
         prompt_guidelines: None,
         render_shell: Some(render_shell),
+        render_call: None,
+        render_result: None,
     }
 }
 
