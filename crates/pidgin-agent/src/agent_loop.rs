@@ -61,14 +61,15 @@ use serde_json::{json, Value};
 use pidgin_ai::seams::clock::{Clock, SystemClock};
 use pidgin_ai::seams::provider::AbortSignal;
 use pidgin_ai::{
-    AssistantMessage, ContentBlock, Context, Message, StopReason, ToolResultMessage, ToolResultRole,
+    AssistantMessage, AssistantMessageEvent, ContentBlock, Context, Message, StopReason,
+    ToolResultMessage, ToolResultRole,
 };
 
 use crate::types::{
     AfterToolCallContext, AgentContext, AgentEvent, AgentLoopConfig, AgentMessage, AgentTool,
     AgentToolCall, AgentToolResult, AgentToolUpdateCallback, BeforeToolCallContext,
-    PrepareNextTurnContext, ShouldStopAfterTurnContext, StreamFn, ThinkingLevel, ToolCallType,
-    ToolExecutionMode,
+    IncrementalStreamFn, PrepareNextTurnContext, ShouldStopAfterTurnContext, StreamFn,
+    ThinkingLevel, ToolCallType, ToolExecutionMode,
 };
 
 /// Consumer of [`AgentEvent`]s emitted by the loop — the eager analog of pi's
@@ -174,6 +175,46 @@ pub fn run_agent_loop(
     signal: Option<&AbortSignal>,
     stream_fn: &StreamFn,
 ) -> Vec<AgentMessage> {
+    run_agent_loop_impl(prompts, context, config, emit, signal, stream_fn, None)
+}
+
+/// Incremental variant of [`run_agent_loop`]: identical to it, but when
+/// `incremental_stream_fn` is `Some`, each turn DRIVES the provider one event at
+/// a time through that closure (real inter-event timing) instead of iterating an
+/// already-materialized [`StreamResult`]. Passing `None` is byte-identical to
+/// [`run_agent_loop`]. Additive — existing callers keep using [`run_agent_loop`].
+pub fn run_agent_loop_incremental(
+    prompts: Vec<AgentMessage>,
+    context: AgentContext,
+    config: AgentLoopConfig,
+    emit: &AgentEventSink,
+    signal: Option<&AbortSignal>,
+    stream_fn: &StreamFn,
+    incremental_stream_fn: Option<&IncrementalStreamFn>,
+) -> Vec<AgentMessage> {
+    run_agent_loop_impl(
+        prompts,
+        context,
+        config,
+        emit,
+        signal,
+        stream_fn,
+        incremental_stream_fn,
+    )
+}
+
+/// Shared body of [`run_agent_loop`] and [`run_agent_loop_incremental`]. The
+/// only difference is the optional incremental stream fn threaded into
+/// [`run_loop`].
+fn run_agent_loop_impl(
+    prompts: Vec<AgentMessage>,
+    context: AgentContext,
+    config: AgentLoopConfig,
+    emit: &AgentEventSink,
+    signal: Option<&AbortSignal>,
+    stream_fn: &StreamFn,
+    incremental_stream_fn: Option<&IncrementalStreamFn>,
+) -> Vec<AgentMessage> {
     // const newMessages = [...prompts];
     let mut new_messages: Vec<AgentMessage> = prompts.clone();
     // const currentContext = { ...context, messages: [...context.messages, ...prompts] };
@@ -204,6 +245,7 @@ pub fn run_agent_loop(
         signal,
         emit,
         stream_fn,
+        incremental_stream_fn,
     );
     new_messages
 }
@@ -234,6 +276,7 @@ pub fn run_agent_loop_continue(
         signal,
         emit,
         stream_fn,
+        None,
     );
     Ok(new_messages)
 }
@@ -263,6 +306,7 @@ fn run_loop(
     signal: Option<&AbortSignal>,
     emit: &AgentEventSink,
     stream_fn: &StreamFn,
+    incremental_stream_fn: Option<&IncrementalStreamFn>,
 ) {
     let mut current_context = initial_context;
     let mut config = initial_config;
@@ -304,8 +348,14 @@ fn run_loop(
             }
 
             // Stream assistant response.
-            let message =
-                stream_assistant_response(&mut current_context, &config, signal, emit, stream_fn);
+            let message = stream_assistant_response(
+                &mut current_context,
+                &config,
+                signal,
+                emit,
+                stream_fn,
+                incremental_stream_fn,
+            );
             new_messages.push(to_agent_message(&message));
 
             if matches!(message.stop_reason, StopReason::Error | StopReason::Aborted) {
@@ -437,6 +487,7 @@ fn stream_assistant_response(
     signal: Option<&AbortSignal>,
     emit: &AgentEventSink,
     stream_fn: &StreamFn,
+    incremental_stream_fn: Option<&IncrementalStreamFn>,
 ) -> AssistantMessage {
     // Apply context transform if configured (AgentMessage[] → AgentMessage[]).
     let messages: Vec<AgentMessage> = if let Some(transform) = &config.transform_context {
@@ -462,6 +513,52 @@ fn stream_assistant_response(
         let _resolved_api_key = get_api_key(&config.model.provider);
     }
 
+    let mut partial_message: Option<AssistantMessage> = None;
+    let mut added_partial = false;
+
+    // Incremental path: DRIVE the provider one event at a time. Each event is
+    // pushed through `sink` as it is pulled, so downstream subscribers observe
+    // real inter-event timing. The per-event dispatch bodies are the SAME shared
+    // `handle_stream_event`/`emit_terminal_fallthrough` the buffered path runs;
+    // the only difference is where the events come from.
+    if let Some(incremental) = incremental_stream_fn {
+        let mut terminal: Option<AssistantMessage> = None;
+        let result = {
+            let mut sink = |event: &AssistantMessageEvent| {
+                if terminal.is_some() {
+                    return;
+                }
+                if let Some(final_message) = handle_stream_event(
+                    context,
+                    emit,
+                    event,
+                    event_terminal_message(event),
+                    &mut partial_message,
+                    &mut added_partial,
+                ) {
+                    terminal = Some(final_message);
+                }
+            };
+            incremental(
+                &config.model,
+                &llm_context,
+                Some(&config.stream_options),
+                signal,
+                &mut sink,
+            )
+        };
+        if let Some(final_message) = terminal {
+            return final_message;
+        }
+        // Stream ended without a terminal event (pi's post-loop fallthrough); the
+        // terminal message is the driver's returned `StreamResult.message`.
+        let final_message = result.message.clone();
+        emit_terminal_fallthrough(context, emit, &final_message, added_partial);
+        return final_message;
+    }
+
+    // Buffered path (unchanged behavior): the provider hands back a fully
+    // materialized `StreamResult` and the loop iterates its events.
     let response = stream_fn(
         &config.model,
         &llm_context,
@@ -469,88 +566,130 @@ fn stream_assistant_response(
         signal,
     );
 
-    let mut partial_message: Option<AssistantMessage> = None;
-    let mut added_partial = false;
-
-    for event in response.events {
-        match &event {
-            pidgin_ai::AssistantMessageEvent::Start { partial } => {
-                partial_message = Some(partial.clone());
-                context.messages.push(to_agent_message(partial));
-                added_partial = true;
-                dispatch(
-                    emit,
-                    AgentEvent::MessageStart {
-                        message: to_agent_message(partial),
-                    },
-                );
-            }
-            pidgin_ai::AssistantMessageEvent::Done { .. }
-            | pidgin_ai::AssistantMessageEvent::Error { .. } => {
-                let final_message = response.message.clone();
-                if added_partial {
-                    let last = context.messages.len() - 1;
-                    context.messages[last] = to_agent_message(&final_message);
-                } else {
-                    context.messages.push(to_agent_message(&final_message));
-                }
-                if !added_partial {
-                    dispatch(
-                        emit,
-                        AgentEvent::MessageStart {
-                            message: to_agent_message(&final_message),
-                        },
-                    );
-                }
-                dispatch(
-                    emit,
-                    AgentEvent::MessageEnd {
-                        message: to_agent_message(&final_message),
-                    },
-                );
-                return final_message;
-            }
-            // Non-terminal delta events: text/thinking/toolcall start/delta/end.
-            _ => {
-                if partial_message.is_some() {
-                    if let Some(partial) = event_partial(&event) {
-                        partial_message = Some(partial.clone());
-                        let last = context.messages.len() - 1;
-                        context.messages[last] = to_agent_message(partial);
-                        dispatch(
-                            emit,
-                            AgentEvent::MessageUpdate {
-                                assistant_message_event: Box::new(event.clone()),
-                                message: to_agent_message(partial),
-                            },
-                        );
-                    }
-                }
-            }
+    for event in &response.events {
+        if let Some(final_message) = handle_stream_event(
+            context,
+            emit,
+            event,
+            &response.message,
+            &mut partial_message,
+            &mut added_partial,
+        ) {
+            return final_message;
         }
     }
 
     // Stream ended without a terminal event (pi's post-loop fallthrough).
     let final_message = response.message.clone();
+    emit_terminal_fallthrough(context, emit, &final_message, added_partial);
+    final_message
+}
+
+/// The per-event dispatch body shared by the buffered and incremental streaming
+/// paths in [`stream_assistant_response`] (pi's `agent-loop.ts:301-370` match).
+///
+/// Mutates `context.messages`, `partial_message`, and `added_partial` in place
+/// and emits the matching UI [`AgentEvent`]. `terminal_message` is only consumed
+/// on a terminal (`done`/`error`) event; the buffered path passes the
+/// `StreamResult.message`, and the incremental path passes the terminal event's
+/// own carried message (which is byte-identical to it, both produced by the same
+/// decoder `finish`). Returns `Some(final_message)` exactly when a terminal event
+/// is handled, signalling the caller to return it.
+fn handle_stream_event(
+    context: &mut AgentContext,
+    emit: &AgentEventSink,
+    event: &AssistantMessageEvent,
+    terminal_message: &AssistantMessage,
+    partial_message: &mut Option<AssistantMessage>,
+    added_partial: &mut bool,
+) -> Option<AssistantMessage> {
+    match event {
+        pidgin_ai::AssistantMessageEvent::Start { partial } => {
+            *partial_message = Some(partial.clone());
+            context.messages.push(to_agent_message(partial));
+            *added_partial = true;
+            dispatch(
+                emit,
+                AgentEvent::MessageStart {
+                    message: to_agent_message(partial),
+                },
+            );
+            None
+        }
+        pidgin_ai::AssistantMessageEvent::Done { .. }
+        | pidgin_ai::AssistantMessageEvent::Error { .. } => {
+            let final_message = terminal_message.clone();
+            if *added_partial {
+                let last = context.messages.len() - 1;
+                context.messages[last] = to_agent_message(&final_message);
+            } else {
+                context.messages.push(to_agent_message(&final_message));
+            }
+            if !*added_partial {
+                dispatch(
+                    emit,
+                    AgentEvent::MessageStart {
+                        message: to_agent_message(&final_message),
+                    },
+                );
+            }
+            dispatch(
+                emit,
+                AgentEvent::MessageEnd {
+                    message: to_agent_message(&final_message),
+                },
+            );
+            Some(final_message)
+        }
+        // Non-terminal delta events: text/thinking/toolcall start/delta/end.
+        _ => {
+            if partial_message.is_some() {
+                if let Some(partial) = event_partial(event) {
+                    *partial_message = Some(partial.clone());
+                    let last = context.messages.len() - 1;
+                    context.messages[last] = to_agent_message(partial);
+                    dispatch(
+                        emit,
+                        AgentEvent::MessageUpdate {
+                            assistant_message_event: Box::new(event.clone()),
+                            message: to_agent_message(partial),
+                        },
+                    );
+                }
+            }
+            None
+        }
+    }
+}
+
+/// The post-loop fallthrough shared by both streaming paths: reached when the
+/// stream ended without a terminal event (pi's `agent-loop.ts:372-...`). Records
+/// the final message into `context.messages` and emits `MessageStart` (only when
+/// no partial was ever added) plus `MessageEnd`.
+fn emit_terminal_fallthrough(
+    context: &mut AgentContext,
+    emit: &AgentEventSink,
+    final_message: &AssistantMessage,
+    added_partial: bool,
+) {
     if added_partial {
         let last = context.messages.len() - 1;
-        context.messages[last] = to_agent_message(&final_message);
+        context.messages[last] = to_agent_message(final_message);
     } else {
-        context.messages.push(to_agent_message(&final_message));
+        context.messages.push(to_agent_message(final_message));
         dispatch(
             emit,
             AgentEvent::MessageStart {
-                message: to_agent_message(&final_message),
+                message: to_agent_message(final_message),
             },
         );
     }
     dispatch(
         emit,
         AgentEvent::MessageEnd {
-            message: to_agent_message(&final_message),
+            message: to_agent_message(final_message),
         },
     );
-    final_message
 }
 
 // ---------------------------------------------------------------------------
@@ -1251,6 +1390,32 @@ fn event_partial(event: &pidgin_ai::AssistantMessageEvent) -> Option<&AssistantM
         | E::ToolcallDelta { partial, .. }
         | E::ToolcallEnd { partial, .. } => Some(partial),
         E::Done { .. } | E::Error { .. } => None,
+    }
+}
+
+/// The [`AssistantMessage`] carried by any event: the terminal message for
+/// `done`/`error`, the running partial otherwise.
+///
+/// Used by [`stream_assistant_response`]'s incremental sink to feed
+/// [`handle_stream_event`] a `terminal_message` for every event. On a terminal
+/// event this is the same message the buffered path reads from
+/// `StreamResult.message` (both come from the decoder's `finish`); on a
+/// non-terminal event the value is passed through but never consumed.
+fn event_terminal_message(event: &pidgin_ai::AssistantMessageEvent) -> &AssistantMessage {
+    use pidgin_ai::AssistantMessageEvent as E;
+    match event {
+        E::Done { message, .. } => message,
+        E::Error { error, .. } => error,
+        E::Start { partial }
+        | E::TextStart { partial, .. }
+        | E::TextDelta { partial, .. }
+        | E::TextEnd { partial, .. }
+        | E::ThinkingStart { partial, .. }
+        | E::ThinkingDelta { partial, .. }
+        | E::ThinkingEnd { partial, .. }
+        | E::ToolcallStart { partial, .. }
+        | E::ToolcallDelta { partial, .. }
+        | E::ToolcallEnd { partial, .. } => partial,
     }
 }
 

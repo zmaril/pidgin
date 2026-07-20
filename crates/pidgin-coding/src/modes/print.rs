@@ -46,14 +46,15 @@ use serde_json::Value;
 use pidgin_agent::harness::agent_harness::{AgentHarness, AgentHarnessEvent};
 use pidgin_agent::harness::env::MemoryExecutionEnv;
 use pidgin_agent::harness::options::{
-    AgentHarnessError, AgentHarnessOptions, ProviderStream, SystemPromptSource,
+    AgentHarnessError, AgentHarnessOptions, IncrementalProviderStream, ProviderStream,
+    SystemPromptSource,
 };
 use pidgin_agent::harness::session::{InMemorySessionStorage, Session};
 use pidgin_agent::types::AgentTool;
 use pidgin_agent::{CompletionOptions, Models as CompactionModels};
 use pidgin_ai::providers::registry::{create_models, Models as AiModels, MutableModels};
-use pidgin_ai::seams::AbortSignal;
-use pidgin_ai::types::{AssistantMessage, Context, Model};
+use pidgin_ai::seams::{AbortSignal, StreamResult};
+use pidgin_ai::types::{AssistantMessage, AssistantMessageEvent, Context, Model};
 
 use crate::core::system_prompt::{build_system_prompt, BuildSystemPromptOptions};
 use crate::core::tools::index::{create_coding_tool_definitions, ToolsOptions};
@@ -242,6 +243,53 @@ pub fn provider_stream(registry: Rc<AiModels>) -> ProviderStream {
     )
 }
 
+/// Build the harness's optional incremental [`IncrementalProviderStream`] seam.
+///
+/// Routing mirrors [`provider_stream`] (compat first, builtin registry second)
+/// but DRIVES the real-provider branch one event at a time so a `-p --mode json`
+/// turn prints tokens as they arrive rather than all at once:
+///
+/// - Faux/process-api models still complete offline through `compat::stream`
+///   (the compat lane has no incremental surface yet), so its events are simply
+///   replayed to `sink`.
+/// - A real builtin model routes through
+///   [`Models::stream_incremental`](AiModels::stream_incremental), whose returned
+///   [`AssistantEventReader`](pidgin_ai::utils::sse::AssistantEventReader) is
+///   pulled here, pushing each event to `sink` as it decodes. The reader borrows
+///   the registry only for the duration of this call.
+pub fn provider_stream_incremental(registry: Rc<AiModels>) -> IncrementalProviderStream {
+    Rc::new(move |req, sink: &mut dyn FnMut(&AssistantMessageEvent)| {
+        // Faux/process-api path: buffered compat, replayed to the sink.
+        if let Ok(result) = pidgin_ai::compat::stream(req.model, req.context, None, req.signal) {
+            for event in &result.events {
+                sink(event);
+            }
+            return result;
+        }
+
+        // Real-provider path: pull the reader so each event carries real
+        // inter-event timing, forwarding to the sink as it arrives.
+        let mut reader = registry.stream_incremental(req.model, req.context, None, req.signal);
+        for event in reader.by_ref() {
+            sink(&event);
+        }
+        let terminal = reader.result().map(|result| match result {
+            Ok(message) | Err(message) => message.clone(),
+        });
+        match terminal {
+            // Events already delivered through `sink`; the terminal message is
+            // the reader's resolved outcome.
+            Some(message) => StreamResult {
+                events: Vec::new(),
+                message,
+            },
+            // Unreachable: the reader always finalizes before iteration ends.
+            // Fall back to the buffered stream rather than panic.
+            None => registry.stream(req.model, req.context, None, req.signal),
+        }
+    })
+}
+
 /// The compaction/branch-summary [`Models`](CompactionModels) bridge the harness
 /// needs. Compaction is not reached by a single-shot text turn, but the harness
 /// requires the seam; it routes through the same provider dispatch as
@@ -343,7 +391,8 @@ pub fn build_harness(
         env: Box::new(MemoryExecutionEnv::new(cwd)),
         session: Session::new(Rc::new(InMemorySessionStorage::new())),
         models: Box::new(RegistryCompaction::new(registry.clone())),
-        stream: provider_stream(registry),
+        stream: provider_stream(registry.clone()),
+        stream_incremental: Some(provider_stream_incremental(registry)),
         tools: Some(tools),
         resources: None,
         system_prompt: Some(SystemPromptSource::Static(system_prompt)),

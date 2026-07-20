@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use pidgin_ai::seams::{AbortSignal, StreamResult};
-use pidgin_ai::{Context, Model};
+use pidgin_ai::{AssistantMessageEvent, Context, Model};
 
 use crate::harness::compaction::Models;
 use crate::harness::env::ExecutionEnv;
@@ -334,6 +334,25 @@ pub struct ProviderStreamRequest<'a> {
 /// `FauxProvider`.
 pub type ProviderStream = Rc<dyn for<'a> Fn(ProviderStreamRequest<'a>) -> StreamResult>;
 
+/// The optional incremental sibling of [`ProviderStream`]: it DRIVES the
+/// provider one event at a time, invoking `sink` per pulled event so the turn
+/// streams tokens with real inter-event timing instead of materializing the full
+/// [`StreamResult`] up front. It internally drives a borrowed
+/// [`AssistantEventReader`](pidgin_ai::utils::sse::AssistantEventReader) (the
+/// borrow never escapes the closure) and returns the terminal [`StreamResult`]
+/// (its `message` is final; its `events` may be empty, having been delivered
+/// through `sink`).
+///
+/// Same single-threaded `Rc` interior as [`ProviderStream`]. When a harness is
+/// built without one, each turn falls back to the buffered [`ProviderStream`]
+/// with unchanged behavior.
+pub type IncrementalProviderStream = Rc<
+    dyn for<'a> Fn(
+        ProviderStreamRequest<'a>,
+        &mut dyn FnMut(&AssistantMessageEvent),
+    ) -> StreamResult,
+>;
+
 /// AgentHarness construction options. Mirrors pi's `AgentHarnessOptions`
 /// (specialized to the crate's concrete [`Skill`](crate::harness::skills::Skill)/
 /// [`PromptTemplate`](crate::harness::prompt_templates::PromptTemplate)/
@@ -355,6 +374,11 @@ pub struct AgentHarnessOptions {
     /// separate because pidgin-ai does not (yet) wrap `streamSimple`, and the
     /// compaction [`Models`] trait ports only `completeSimple`.
     pub stream: ProviderStream,
+    /// Optional incremental provider-streaming seam. When set, each turn DRIVES
+    /// the provider one event at a time through it (real token-by-token timing);
+    /// when `None`, turns use the buffered [`stream`](Self::stream) path with
+    /// unchanged behavior. Additive: existing harnesses leave it `None`.
+    pub stream_incremental: Option<IncrementalProviderStream>,
     /// Tools available to the model. Defaults to none.
     pub tools: Option<Vec<AgentTool>>,
     /// Concrete resources available to explicit invocation methods and

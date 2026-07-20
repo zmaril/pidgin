@@ -49,7 +49,7 @@ use crate::harness::types::{BranchSummaryEntry, SessionTreeEntry};
 use crate::types::{
     AfterToolCallContext, AfterToolCallResult, AgentContext, AgentEvent, AgentLoopConfig,
     AgentLoopTurnUpdate, AgentMessage, BeforeToolCallContext, BeforeToolCallResult,
-    PrepareNextTurnContext, QueueMode, StreamFn, ThinkingLevel,
+    IncrementalStreamFn, PrepareNextTurnContext, QueueMode, StreamFn, ThinkingLevel,
 };
 
 // ---------------------------------------------------------------------------
@@ -451,6 +451,22 @@ impl HarnessInner {
         })
     }
 
+    /// Build the optional [`IncrementalStreamFn`] the loop drives per event.
+    ///
+    /// Returns `None` when the harness was built without an incremental provider
+    /// seam, so the loop transparently uses the buffered [`make_stream_fn`] path
+    /// with unchanged behavior. When present, it forwards each pulled event to
+    /// the loop's `sink` through [`do_stream_incremental`](Self::do_stream_incremental).
+    pub(super) fn make_incremental_stream_fn(self: &Rc<Self>) -> Option<IncrementalStreamFn> {
+        self.stream_incremental.as_ref()?;
+        let bridge = SendSync(self.clone());
+        Some(Arc::new(move |model, context, _options, signal, sink| {
+            bridge
+                .get()
+                .do_stream_incremental(model, context, signal, sink)
+        }))
+    }
+
     pub(super) fn make_loop_config(self: &Rc<Self>) -> AgentLoopConfig {
         let turn_state = self
             .active_turn_state
@@ -633,6 +649,49 @@ impl HarnessInner {
         context: &Context,
         signal: Option<&AbortSignal>,
     ) -> StreamResult {
+        let stream = self.stream.clone();
+        self.stream_with(model, context, signal, move |request| stream(request))
+    }
+
+    /// Incremental sibling of [`do_stream`](Self::do_stream): assembles the SAME
+    /// [`ProviderStreamRequest`] through the shared
+    /// [`stream_with`](Self::stream_with) prologue, then drives the harness's
+    /// [`stream_incremental`](HarnessInner::stream_incremental) seam with `sink`
+    /// so each event is delivered as it is pulled. Falls back to the buffered
+    /// [`stream`](HarnessInner::stream) seam when no incremental seam is
+    /// configured (unreachable via [`make_incremental_stream_fn`], which returns
+    /// `None` in that case).
+    pub(super) fn do_stream_incremental(
+        &self,
+        model: &Model,
+        context: &Context,
+        signal: Option<&AbortSignal>,
+        sink: &mut dyn FnMut(&pidgin_ai::AssistantMessageEvent),
+    ) -> StreamResult {
+        self.stream_with(model, context, signal, move |request| {
+            match self.stream_incremental.as_ref() {
+                Some(incremental) => incremental(request, sink),
+                None => (self.stream)(request),
+            }
+        })
+    }
+
+    /// The shared provider-streaming prologue of [`do_stream`](Self::do_stream)
+    /// and [`do_stream_incremental`](Self::do_stream_incremental): the suppress
+    /// short-circuit, the turn-state snapshot, the `before_provider_request`
+    /// patch, and the `onPayload`/`onResponse` hook closures. It assembles the
+    /// [`ProviderStreamRequest`] once and hands it to `dispatch`, which routes it
+    /// to either the buffered or the incremental seam.
+    fn stream_with<F>(
+        &self,
+        model: &Model,
+        context: &Context,
+        signal: Option<&AbortSignal>,
+        dispatch: F,
+    ) -> StreamResult
+    where
+        F: for<'a> FnOnce(ProviderStreamRequest<'a>) -> StreamResult,
+    {
         // A hook/session error recorded before streaming means pi never reaches
         // `models.streamSimple`; short-circuit with a terminal aborted message so
         // the loop winds down and no provider response is consumed.
@@ -684,8 +743,7 @@ impl HarnessInner {
             );
         };
 
-        let stream = self.stream.clone();
-        stream(ProviderStreamRequest {
+        dispatch(ProviderStreamRequest {
             model,
             context,
             session_id: &session_id,

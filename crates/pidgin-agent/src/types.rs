@@ -75,6 +75,36 @@ pub type StreamFn = Arc<
         + Sync,
 >;
 
+/// Optional incremental sibling of [`StreamFn`] used by the agent loop to DRIVE
+/// the provider one event at a time.
+///
+/// [`StreamFn`] hands back an already-materialized [`StreamResult`] (its
+/// `events` `Vec` is fully built before the loop iterates it), so a `-p --mode
+/// json` turn prints every token at once. This closure instead PULLS the
+/// provider incrementally: it drives a borrowed
+/// [`AssistantEventReader`](pidgin_ai::utils::sse::AssistantEventReader)
+/// internally (the borrow never escapes the closure) and invokes `sink` once per
+/// event as it arrives, so downstream subscribers observe real inter-event
+/// timing. The returned [`StreamResult`] is the terminal: its `message` is the
+/// final [`AssistantMessage`], and its `events` MAY be empty because each event
+/// was already delivered through `sink`.
+///
+/// Mirrors [`StreamFn`]'s argument shape (`Arc<... + Send + Sync>`) plus the
+/// trailing `sink`. The same "must not panic; encode failures as a terminal
+/// `error`" contract holds. It is optional: when absent the loop uses the
+/// buffered [`StreamFn`] path with unchanged behavior.
+pub type IncrementalStreamFn = Arc<
+    dyn Fn(
+            &Model,
+            &Context,
+            Option<&StreamOptions>,
+            Option<&AbortSignal>,
+            &mut dyn FnMut(&AssistantMessageEvent),
+        ) -> StreamResult
+        + Send
+        + Sync,
+>;
+
 // ---------------------------------------------------------------------------
 // Execution / queue modes (`types.ts:39`, `types.ts:48`)
 // ---------------------------------------------------------------------------
