@@ -361,6 +361,36 @@ mod tests {
         })
     }
 
+    /// The SSE frames the chunked-streaming tests serve, each written as its own
+    /// `Transfer-Encoding: chunked` write so chunk boundaries fall between frames.
+    const SSE_PIECES: [&str; 5] = [
+        "event: message_start\n",
+        "data: {\"a\":1}\n\n",
+        "event: content_block_delta\n",
+        "data: {\"b\":2}\n\n",
+        "event: message_stop\n\n",
+    ];
+
+    /// Spawn a one-shot loopback server that writes [`SSE_PIECES`] as separate
+    /// chunked writes, sleeping `delay` between them (so the frames arrive with
+    /// real inter-write timing), then terminates the chunked body. Shared by the
+    /// buffered-reassembly and the incremental-streaming tests.
+    fn spawn_chunked_sse_server(delay: Duration) -> String {
+        spawn_server(move |_served, stream| {
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n")
+                .unwrap();
+            for piece in SSE_PIECES {
+                let chunk = format!("{:X}\r\n{piece}\r\n", piece.len());
+                stream.write_all(chunk.as_bytes()).unwrap();
+                stream.flush().unwrap();
+                thread::sleep(delay);
+            }
+            stream.write_all(b"0\r\n\r\n").unwrap();
+            stream.flush().unwrap();
+        })
+    }
+
     /// A server that never reads/responds until after `delay`, then closes —
     /// used to exercise the client timeout path. Accepts the connection so the
     /// failure is a read timeout, not a connect refusal.
@@ -480,35 +510,16 @@ mod tests {
     #[test]
     fn chunked_multi_write_body_is_fully_reassembled() {
         // Server writes an SSE-shaped body across several TCP writes with a tiny
-        // sleep between them, using Transfer-Encoding: chunked. The transport
-        // must return the full concatenated body regardless of chunk boundaries.
-        let pieces = [
-            "event: message_start\n",
-            "data: {\"a\":1}\n\n",
-            "event: content_block_delta\n",
-            "data: {\"b\":2}\n\n",
-            "event: message_stop\n\n",
-        ];
-        let url = spawn_server(move |_served, stream| {
-            stream
-                .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n")
-                .unwrap();
-            for piece in pieces {
-                let chunk = format!("{:X}\r\n{piece}\r\n", piece.len());
-                stream.write_all(chunk.as_bytes()).unwrap();
-                stream.flush().unwrap();
-                thread::sleep(Duration::from_millis(5));
-            }
-            stream.write_all(b"0\r\n\r\n").unwrap();
-            stream.flush().unwrap();
-        });
+        // sleep between them, using Transfer-Encoding: chunked. The buffered
+        // `send` must return the full concatenated body regardless of boundaries.
+        let url = spawn_chunked_sse_server(Duration::from_millis(5));
 
         let response = transport()
             .send(&HttpRequest::get(format!("{url}/sse")))
             .unwrap();
 
         assert_eq!(response.status, 200);
-        assert_eq!(response.body, pieces.concat());
+        assert_eq!(response.body, SSE_PIECES.concat());
     }
 
     #[test]
@@ -519,26 +530,7 @@ mod tests {
         // drive `send_streaming` and observe the body arriving across MULTIPLE
         // iterator steps with real wall-clock spread -- proving incremental
         // delivery rather than the one-chunk buffered default.
-        let pieces = [
-            "event: message_start\n",
-            "data: {\"a\":1}\n\n",
-            "event: content_block_delta\n",
-            "data: {\"b\":2}\n\n",
-            "event: message_stop\n\n",
-        ];
-        let url = spawn_server(move |_served, stream| {
-            stream
-                .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n")
-                .unwrap();
-            for piece in pieces {
-                let chunk = format!("{:X}\r\n{piece}\r\n", piece.len());
-                stream.write_all(chunk.as_bytes()).unwrap();
-                stream.flush().unwrap();
-                thread::sleep(Duration::from_millis(10));
-            }
-            stream.write_all(b"0\r\n\r\n").unwrap();
-            stream.flush().unwrap();
-        });
+        let url = spawn_chunked_sse_server(Duration::from_millis(10));
 
         let transport = transport();
         let stream = transport
@@ -562,7 +554,7 @@ mod tests {
         }
 
         // (a) Correctness: the reassembled bytes equal the full body.
-        assert_eq!(assembled, pieces.concat().as_bytes());
+        assert_eq!(assembled, SSE_PIECES.concat().as_bytes());
 
         // (b) Incremental delivery: more than one chunk arrived, and the spread
         // between the first and last arrival is non-zero (the server's inter-
