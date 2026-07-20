@@ -61,7 +61,10 @@ use pidgin_ai::ContentBlock;
 use crate::core::extensions::types::{RenderShell, ToolDefinition, ToolDefinitionExecute};
 
 use super::bash::{create_bash_tool, BashToolOptions, BashUpdate, OnUpdate};
-use super::edit::{compute_edit_result, prepare_edit_arguments, validate_edit_input};
+use super::edit::{
+    compute_edit_result, edit_render_call, edit_render_result, prepare_edit_arguments,
+    validate_edit_input,
+};
 use super::file_mutation_queue::with_file_mutation_queue;
 use super::find::run_find;
 use super::grep::{run_grep, GrepParams};
@@ -297,6 +300,8 @@ pub fn create_read_tool_definition(
         prompt_snippet: Some("Read file contents".to_string()),
         prompt_guidelines: Some(vec!["Use read to examine files instead of cat or sed.".to_string()]),
         render_shell: None,
+        render_call: None,
+        render_result: None,
     }
 }
 
@@ -352,6 +357,8 @@ pub fn create_grep_tool_definition(
         prompt_snippet: Some("Search file contents for patterns (respects .gitignore)".to_string()),
         prompt_guidelines: None,
         render_shell: None,
+        render_call: None,
+        render_result: None,
     }
 }
 
@@ -396,6 +403,8 @@ pub fn create_find_tool_definition(
         prompt_snippet: Some("Find files by glob pattern (respects .gitignore)".to_string()),
         prompt_guidelines: None,
         render_shell: None,
+        render_call: None,
+        render_result: None,
     }
 }
 
@@ -444,6 +453,8 @@ pub fn create_ls_tool_definition(
         prompt_snippet: Some("List directory contents".to_string()),
         prompt_guidelines: None,
         render_shell: None,
+        render_call: None,
+        render_result: None,
     }
 }
 
@@ -493,6 +504,8 @@ pub fn create_write_tool_definition(
         prompt_snippet: Some("Create or overwrite files".to_string()),
         prompt_guidelines: Some(vec!["Use write only for new files or complete rewrites.".to_string()]),
         render_shell: None,
+        render_call: None,
+        render_result: None,
     }
 }
 
@@ -584,6 +597,8 @@ pub fn create_edit_tool_definition(
             "Keep edits[].oldText as small as possible while still being unique in the file. Do not pad with large unchanged regions.".to_string(),
         ]),
         render_shell: Some(RenderShell::SelfRender),
+        render_call: Some(Arc::new(edit_render_call)),
+        render_result: Some(Arc::new(edit_render_result)),
     }
 }
 
@@ -647,6 +662,8 @@ pub fn create_bash_tool_definition(
         prompt_snippet: Some("Execute bash commands (ls, grep, find, etc.)".to_string()),
         prompt_guidelines: None,
         render_shell: None,
+        render_call: None,
+        render_result: None,
     }
 }
 

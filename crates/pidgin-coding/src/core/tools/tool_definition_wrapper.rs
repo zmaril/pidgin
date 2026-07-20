@@ -68,6 +68,8 @@ pub fn wrap_tool_definition(
         prompt_snippet: _,
         prompt_guidelines: _,
         render_shell: _,
+        render_call: _,
+        render_result: _,
     } = definition;
 
     let definition_execute: ToolDefinitionExecute = execute;
@@ -142,6 +144,8 @@ pub fn create_tool_definition_from_agent_tool(tool: AgentTool) -> ToolDefinition
         prompt_snippet: None,
         prompt_guidelines: None,
         render_shell: None,
+        render_call: None,
+        render_result: None,
     }
 }
 
@@ -200,6 +204,8 @@ mod tests {
             prompt_snippet: Some("snippet".into()),
             prompt_guidelines: Some(vec!["guideline".into()]),
             render_shell: None,
+            render_call: None,
+            render_result: None,
         }
     }
 
