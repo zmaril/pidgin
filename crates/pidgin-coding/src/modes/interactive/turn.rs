@@ -1,39 +1,33 @@
-//! The turn worker (Unit 4, PR-4B) — the session-actor that owns turn execution
-//! off the render thread, offline, bypassing `AgentSession`.
+//! The turn worker (Unit 5) — the session-actor that owns a **real**
+//! [`AgentSession`] and runs turns off the render thread, offline (echo).
 //!
 //! Per the locked interactive-shell seam, the `Tui` and its components are
-//! `!Send` (they are `Rc<RefCell<..>>` graphs), so turn execution runs on a
-//! dedicated worker thread and communicates only via channels of `Send` data:
+//! `!Send` (they are `Rc<RefCell<..>>` graphs) and so is [`AgentSession`], so turn
+//! execution runs on a dedicated worker thread and communicates only via channels
+//! of `Send` data:
 //!
 //! - a **command** channel (main -> worker): [`TurnCommand::Prompt`] carries the
 //!   submitted prompt text;
-//! - an **event** channel (worker -> main): each [`AgentEvent`] the loop emits is
-//!   forwarded verbatim, wrapped as [`ShellEvent::Agent`], for the run loop to
-//!   drain and route.
+//! - an **event** channel (worker -> main): each [`AgentSessionEvent`] the session
+//!   emits is cloned and forwarded, wrapped as [`ShellEvent::Session`], for the run
+//!   loop to drain and route.
 //!
-//! The worker drives [`run_agent_loop`] directly with the **faux provider**'s
-//! `StreamFn`, producing a canned assistant turn with real streaming deltas — no
-//! network, no API key, deterministic. The forwarding sink is the exact
-//! `Arc<dyn Fn(AgentEvent) + Send + Sync>` shape the loop already takes, so the
-//! only glue is `move |ev| { let _ = evt_tx.send(ShellEvent::Agent(ev)); }`.
+//! The worker owns the [`AgentSession`] for its whole lifetime (it is `!Send`, so
+//! it never crosses the thread boundary): at startup it builds an **offline echo**
+//! session ([`build_offline_echo_session`]) and `subscribe`s a forwarding
+//! listener; then each [`TurnCommand::Prompt`] calls [`AgentSession::prompt`],
+//! which runs the whole turn synchronously and emits its events through the
+//! listener. No network, no API key (the offline runtime's faux-auth preflight is
+//! pre-seeded), deterministic — the assistant reply echoes the last user message.
 
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 
-use pidgin_agent::agent_loop::{run_agent_loop, AgentEventSink};
-use pidgin_agent::types::{
-    AgentContext, AgentEvent, AgentLoopConfig, AgentMessage, ConvertToLlm, StreamFn,
-};
-use pidgin_ai::providers::faux::{
-    faux_assistant_message, faux_text, FauxAssistantOptions, FauxProvider, FauxResponseStep,
-    RegisterFauxProviderOptions,
-};
-use pidgin_ai::seams::Provider;
-use pidgin_ai::{Message, StreamOptions};
-use serde_json::{json, Value};
+use pidgin_ai::providers::faux::{faux_assistant_message, faux_text, FauxAssistantOptions};
 
 use super::app::ShellEvent;
+use crate::core::agent_session::{build_offline_echo_session, AgentSessionEvent, OfflineEchoError};
 
 /// A command sent from the main thread to the turn worker.
 pub enum TurnCommand {
@@ -51,13 +45,15 @@ pub struct TurnDriver {
 }
 
 impl TurnDriver {
-    /// Spawn the turn worker. Each emitted [`AgentEvent`] is forwarded over
-    /// `evt_tx` (wrapped as [`ShellEvent::Agent`]) to the run loop.
-    pub fn spawn(evt_tx: Sender<ShellEvent>) -> Self {
+    /// Spawn the turn worker over `cwd`. The worker builds a real offline-echo
+    /// [`AgentSession`] rooted at `cwd` and forwards each emitted
+    /// [`AgentSessionEvent`] over `evt_tx` (wrapped as [`ShellEvent::Session`]) to
+    /// the run loop.
+    pub fn spawn(evt_tx: Sender<ShellEvent>, cwd: String) -> Self {
         let (cmd_tx, cmd_rx) = std::sync::mpsc::channel::<TurnCommand>();
         let handle = thread::Builder::new()
             .name("pidgin-interactive-turn".to_string())
-            .spawn(move || worker_loop(&cmd_rx, &evt_tx))
+            .spawn(move || worker_loop(&cmd_rx, &evt_tx, cwd))
             .expect("spawn interactive turn worker thread");
         Self {
             cmd_tx,
@@ -96,125 +92,91 @@ impl Drop for TurnDriver {
     }
 }
 
-/// The worker loop: run one faux turn per `Prompt`, exit on `Shutdown` or when
-/// the command channel closes.
-fn worker_loop(cmd_rx: &Receiver<TurnCommand>, evt_tx: &Sender<ShellEvent>) {
+/// The worker loop: own a real offline-echo [`AgentSession`] and run one turn per
+/// `Prompt`, exiting on `Shutdown` or when the command channel closes.
+///
+/// The [`AgentSession`] is constructed here, on the worker thread, and never
+/// crosses the thread boundary (it is `!Send`); only cloned [`AgentSessionEvent`]s
+/// flow back over `evt_tx`. If the session cannot be built (a faux-provider
+/// registration failure — see [`OfflineEchoError`]), the error is surfaced to the
+/// user as an assistant bubble and the worker drains commands without running
+/// turns rather than panicking.
+fn worker_loop(cmd_rx: &Receiver<TurnCommand>, evt_tx: &Sender<ShellEvent>, cwd: String) {
+    let session = match build_offline_echo_session(cwd) {
+        Ok(session) => session,
+        Err(error) => {
+            forward_start_error(evt_tx, &error);
+            drain_until_shutdown(cmd_rx);
+            return;
+        }
+    };
+
+    // Forward every session event to the render loop. The listener takes `&event`,
+    // so it must clone before sending: only `Send` data crosses the boundary.
+    let _unsubscribe = session.subscribe(Arc::new({
+        let evt_tx = evt_tx.clone();
+        move |event: &AgentSessionEvent| {
+            let _ = evt_tx.send(ShellEvent::Session(Box::new(event.clone())));
+        }
+    }));
+
     while let Ok(cmd) = cmd_rx.recv() {
         match cmd {
-            TurnCommand::Prompt(text) => run_faux_turn(&text, evt_tx),
+            // `prompt` runs the whole turn synchronously, emitting its events via
+            // the subscriber above. A `PromptError` (e.g. a preflight rejection) is
+            // ignored here: it is offline-deterministic and covered by the session's
+            // own tests.
+            TurnCommand::Prompt(text) => {
+                let _ = session.prompt(&text, None, None);
+            }
             TurnCommand::Shutdown => break,
         }
     }
 }
 
-/// Drive one canned assistant turn through [`run_agent_loop`] with the faux
-/// provider, forwarding every emitted event to the run loop.
-pub fn run_faux_turn(prompt: &str, evt_tx: &Sender<ShellEvent>) {
-    let provider = Arc::new(FauxProvider::new(RegisterFauxProviderOptions::default()));
-    provider.set_responses(faux_responses(prompt));
-    let model = provider
-        .get_model(None)
-        .expect("faux provider has a default model");
-
-    // A StreamFn backed by the faux provider: each call pops the next queued
-    // response and replays it through the deterministic delta path (Start +
-    // text deltas + Done), which the agent loop turns into
-    // message_start/message_update/message_end events.
-    let stream_fn: StreamFn = {
-        let provider = Arc::clone(&provider);
-        Arc::new(move |model, context, options, signal| {
-            provider.stream(model, context, options, signal)
-        })
-    };
-
-    let context = AgentContext {
-        system_prompt: "You are the offline faux assistant.".to_string(),
-        messages: Vec::new(),
-        tools: Some(Vec::new()),
-    };
-    let config = AgentLoopConfig {
-        stream_options: StreamOptions::default(),
-        reasoning: None,
-        model,
-        convert_to_llm: identity_converter(),
-        transform_context: None,
-        get_api_key: None,
-        should_stop_after_turn: None,
-        prepare_next_turn: None,
-        get_steering_messages: None,
-        get_follow_up_messages: None,
-        tool_execution: None,
-        before_tool_call: None,
-        after_tool_call: None,
-    };
-
-    // The forwarding sink: only `Send` data (AgentEvent) crosses the boundary.
-    let sink: AgentEventSink = {
-        let evt_tx = evt_tx.clone();
-        Arc::new(move |event: AgentEvent| {
-            let _ = evt_tx.send(ShellEvent::Agent(event));
-        })
-    };
-
-    run_agent_loop(
-        vec![user_message(prompt)],
-        context,
-        config,
-        &sink,
-        None,
-        &stream_fn,
-    );
+/// Drain the command channel until `Shutdown` or close, running no turns. Used
+/// after a session-build failure so the worker thread still exits cleanly on
+/// shutdown instead of dropping the channel early.
+fn drain_until_shutdown(cmd_rx: &Receiver<TurnCommand>) {
+    while let Ok(cmd) = cmd_rx.recv() {
+        if matches!(cmd, TurnCommand::Shutdown) {
+            break;
+        }
+    }
 }
 
-/// The canned assistant turn the faux provider streams for `prompt`: a single
-/// markdown reply that echoes the prompt. Deterministic; no network. Kept as a
-/// plain-text turn so it streams cleanly through the delta path (tool-panel
-/// routing is exercised by the router unit tests instead).
-pub fn faux_responses(prompt: &str) -> Vec<FauxResponseStep> {
-    let reply = format!(
-        "Hello from the offline faux assistant.\n\n\
-         You said: {prompt}\n\n\
-         This turn streamed in with no network and no API key."
-    );
-    let message =
-        faux_assistant_message(vec![faux_text(reply)], FauxAssistantOptions::default(), 0);
-    vec![FauxResponseStep::from(message)]
+/// Surface a session-build failure to the user as a finished assistant message,
+/// forwarded as [`AgentSessionEvent`]s so it flows through the same router path a
+/// real turn does (a `message_start` + `message_end` pair renders one bubble).
+fn forward_start_error(evt_tx: &Sender<ShellEvent>, error: &OfflineEchoError) {
+    let text = format!("Failed to start the offline session: {error}");
+    let message = faux_assistant_message(vec![faux_text(text)], FauxAssistantOptions::default(), 0);
+    let value = serde_json::to_value(message).expect("assistant message serializes");
+    let _ = evt_tx.send(ShellEvent::Session(Box::new(
+        AgentSessionEvent::MessageStart {
+            message: value.clone(),
+        },
+    )));
+    let _ = evt_tx.send(ShellEvent::Session(Box::new(
+        AgentSessionEvent::MessageEnd { message: value },
+    )));
 }
 
-/// Run a faux turn synchronously and collect the core [`AgentEvent`]s it emits,
-/// in order. Deterministic (no worker thread, no wall-clock timing) — the entry
-/// point headless tests use to feed a faux turn into the shell's router.
-pub fn collect_faux_turn(prompt: &str) -> Vec<AgentEvent> {
-    let (tx, rx) = std::sync::mpsc::channel::<ShellEvent>();
-    run_faux_turn(prompt, &tx);
-    drop(tx);
-    rx.into_iter()
-        .filter_map(|event| match event {
-            ShellEvent::Agent(agent_event) => Some(agent_event),
-            _ => None,
-        })
-        .collect()
-}
+/// Drive a real offline-echo [`AgentSession`] synchronously and collect the
+/// [`AgentSessionEvent`]s it emits for `prompt`, in order. Deterministic (no
+/// worker thread, no wall-clock timing) — the entry point headless tests use to
+/// feed a real turn's events into the shell's router. Panics only if the offline
+/// session cannot be built, which is a test-environment failure.
+pub fn collect_offline_echo_turn(prompt: &str, cwd: String) -> Vec<AgentSessionEvent> {
+    use std::sync::Mutex;
 
-/// A user [`AgentMessage`] value, matching the agent loop's message shape.
-fn user_message(text: &str) -> AgentMessage {
-    json!({ "role": "user", "content": text, "timestamp": 0 })
-}
-
-/// The identity converter: passes through only `user`/`assistant`/`toolResult`
-/// messages, mirroring the agent-loop test suite's default converter.
-fn identity_converter() -> ConvertToLlm {
-    Arc::new(|messages: &[AgentMessage]| {
-        messages
-            .iter()
-            .filter_map(|m| {
-                let role = m.get("role").and_then(Value::as_str)?;
-                if matches!(role, "user" | "assistant" | "toolResult") {
-                    serde_json::from_value::<Message>(m.clone()).ok()
-                } else {
-                    None
-                }
-            })
-            .collect()
-    })
+    let session = build_offline_echo_session(cwd).expect("build offline echo session");
+    let events: Arc<Mutex<Vec<AgentSessionEvent>>> = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&events);
+    let _unsubscribe = session.subscribe(Arc::new(move |event: &AgentSessionEvent| {
+        sink.lock().unwrap().push(event.clone());
+    }));
+    let _ = session.prompt(prompt, None, None);
+    let collected = events.lock().unwrap().clone();
+    collected
 }
