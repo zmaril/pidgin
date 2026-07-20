@@ -55,6 +55,8 @@
 
 pub mod compaction_turn;
 pub mod events;
+pub mod extension_turn;
+pub mod host;
 pub mod queue;
 pub mod retry;
 pub mod session;
@@ -65,6 +67,7 @@ pub(crate) mod test_support;
 
 pub use compaction_turn::*;
 pub use events::*;
+pub use host::*;
 pub use queue::*;
 pub use session::*;
 pub use turn::*;
