@@ -67,6 +67,7 @@ pub mod queue;
 pub mod retry;
 pub mod runtime;
 pub mod session;
+pub mod tool_hooks;
 pub mod tree;
 pub mod turn;
 
