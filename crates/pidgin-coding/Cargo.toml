@@ -27,6 +27,12 @@ pidgin-ai = { path = "../pidgin-ai" }
 pidgin-tui = { path = "../pidgin-tui" }
 base64 = "0.22"
 globset = "0.4"
+# Photon (pi's WASM image lib) has no native-Rust equivalent that is not itself
+# WASM/Node-coupled; the `image` crate is the standard pure-Rust decode/resize/
+# encode library and provides the decode + Lanczos3 downscale + PNG/JPEG encode
+# + EXIF-orientation pixel transform that pi actually uses. Minimal features
+# (PNG + JPEG codecs only); default features (extra codecs, rayon) are disabled.
+image = { version = "=0.25.10", default-features = false, features = ["png", "jpeg"] }
 grep-matcher = "0.1"
 grep-regex = "0.1"
 ignore = "0.4"
