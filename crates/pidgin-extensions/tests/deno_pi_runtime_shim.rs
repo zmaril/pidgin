@@ -86,8 +86,15 @@ async fn vendored_hello_tool_loads_through_the_pi_runtime_shims() {
     //    PURE: it takes no ctx/host and returns a content envelope built from its
     //    `name` param. So the invocation runs to completion with `ok == true` and
     //    the tool's own returned content.
+    //
+    //    A tool's args array maps to pi's `execute(toolCallId, params, …)`
+    //    positionally: slot 0 is the tool-call id, slot 1 is the `params` object.
+    //    (See the canonical `invoke_stored("tool", "echo", &json!(["call-1", {…}]))`
+    //    in deno_oauth_phase_a.rs.) hello.ts reads `params.name`, so the greeted
+    //    name must live in slot 1 — a bare `[{ "name": "world" }]` would land in
+    //    slot 0 and leave `params` undefined.
     let outcome = plane
-        .invoke_stored("tool", "hello", &json!([{ "name": "world" }]))
+        .invoke_stored("tool", "hello", &json!(["call-hello", { "name": "world" }]))
         .await
         .expect("the hello tool dispatches through the plane and returns an envelope");
     assert!(
