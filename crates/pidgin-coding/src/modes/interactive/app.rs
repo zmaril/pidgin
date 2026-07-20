@@ -39,8 +39,13 @@ use pidgin_tui::{
 
 use super::components::{FooterComponent, FooterData, IdleStatus};
 use super::routing::{ChatRegion, ChatState, StatusRegion, StatusSlot, StatusView};
-use super::theme::{create_theme, parse_theme_json, ColorMode, Theme};
+use super::theme::{
+    create_theme, parse_theme_json, ActiveTheme, ColorMode, InteractiveThemeController, RgbColor,
+    TerminalAutoThemeDetector, TerminalBackgroundThemeDetector, TerminalTheme, Theme,
+    ThemeControllerUi, ThemeSource, ThinkingLevel,
+};
 use super::turn::{TurnCommand, TurnDriver};
+use crate::core::settings_manager::{SettingsManager, SettingsManagerCreateOptions};
 
 /// The default 256-color interactive theme, embedded so the shell needs no theme
 /// file on disk. Byte-identical to pi's `dark.json` (the PR-4A vector source).
@@ -71,11 +76,59 @@ pub enum ShellEvent {
     Shutdown,
 }
 
+/// `Tui<ProcessTerminal<W>>` as the theme controller's UI surface.
+///
+/// The `invalidate` / `request_render` / `set_terminal_color_scheme_notifications`
+/// half is fully live. The terminal-query half (`query_terminal_background_color`
+/// / `query_terminal_color_scheme`) reports `None` here: the synchronous OSC 11 /
+/// DSR pump lives on [`RunLoop`] and needs its `LoopEvent` receiver, which the
+/// shell's own [`ShellEvent`] channel does not expose. Returning `None` makes the
+/// detectors fall back to the environment (`COLORFGBG`), exactly as they do on a
+/// real query timeout.
+///
+/// PR follow-up: bridge the shell pump so `apply_from_settings` can issue live
+/// OSC 11 / DSR queries (prereq C's [`RunLoop::query_terminal_background_color`] /
+/// [`RunLoop::query_terminal_color_scheme`]).
+impl<W: Write> TerminalBackgroundThemeDetector for Tui<ProcessTerminal<W>> {
+    fn query_terminal_background_color(&mut self, _timeout: Duration) -> Option<RgbColor> {
+        None
+    }
+}
+
+impl<W: Write> TerminalAutoThemeDetector for Tui<ProcessTerminal<W>> {
+    fn query_terminal_color_scheme(&mut self, _timeout: Duration) -> Option<TerminalTheme> {
+        None
+    }
+}
+
+impl<W: Write> ThemeControllerUi for Tui<ProcessTerminal<W>> {
+    fn invalidate(&mut self) {
+        Tui::invalidate(self);
+    }
+    fn request_render(&mut self) {
+        self.request_render(true);
+    }
+    fn set_terminal_color_scheme_notifications(&mut self, enabled: bool) {
+        Tui::set_terminal_color_scheme_notifications(self, enabled);
+    }
+}
+
 /// The interactive shell: the composed container tree, the shared chat-region
-/// state, and the offline turn worker, over a `Tui<ProcessTerminal<W>>`.
+/// state, the shared active theme, the theme controller, and the offline turn
+/// worker, over a `Tui<ProcessTerminal<W>>`.
 pub struct InteractiveShell<W: Write> {
     run_loop: RunLoop<W>,
     chat_state: Rc<RefCell<ChatState>>,
+    /// The shared active theme. All themed components are built from this handle
+    /// at construction; a live post-construction swap does not yet reach them (see
+    /// [`InteractiveShell::new`]).
+    #[allow(dead_code)]
+    active: Rc<ActiveTheme>,
+    /// Drives startup theme application and (once wired) live preview / set / auto
+    /// sync.
+    controller: InteractiveThemeController,
+    /// Whether [`InteractiveShell::apply_startup_theme`] has run.
+    theme_applied: bool,
     #[allow(dead_code)]
     turn: TurnDriver,
     evt_tx: Sender<ShellEvent>,
@@ -87,10 +140,14 @@ impl<W: Write> InteractiveShell<W> {
     /// the editor submit handler to the turn worker.
     pub fn new(terminal: ProcessTerminal<W>) -> Self {
         let rows = terminal.rows();
-        let theme = default_theme();
         let cwd = std::env::current_dir()
             .map(|p| p.display().to_string())
             .unwrap_or_else(|_| ".".to_string());
+
+        // The shared active theme every themed component is built from. Seeded
+        // with the embedded dark theme; the controller's `init` (below) resolves
+        // the startup name from settings against the terminal environment.
+        let active = Rc::new(ActiveTheme::new(default_theme()));
 
         let mut tui = Tui::new(terminal, true);
 
@@ -127,7 +184,7 @@ impl<W: Write> InteractiveShell<W> {
         let chat_state = Rc::new(RefCell::new(ChatState::new(
             Rc::clone(&entries),
             status_slot,
-            theme.clone(),
+            active.current().clone(),
             cwd.clone(),
         )));
 
@@ -159,8 +216,42 @@ impl<W: Write> InteractiveShell<W> {
         // stats and git branch / session name arrive with the unported
         // `AgentSession`, so those are zeroed / `None` here; cwd is live and the
         // full layout (pwd line + stats line + model) renders even zeroed.
-        let footer = FooterComponent::new(footer_data(cwd), theme.clone());
+        let footer = FooterComponent::new(footer_data(cwd), active.current().clone());
         tui.add_child(Box::new(footer));
+
+        // The theme controller (pi's `InteractiveThemeController`, constructed at
+        // `interactive-mode.ts:482`). Its `on_changed` mirrors pi's
+        // `updateEditorBorderColor`: recolor the editor border from the *current*
+        // theme (thinking level "off", not in bash mode — the offline shell tracks
+        // neither yet). `show_error` is a documented no-op: the shell has no error
+        // surface wired (header/status are placeholder chrome), so a theme-load
+        // failure is swallowed here; the exact error wording is still exercised by
+        // the controller's unit tests.
+        let settings = Rc::new(RefCell::new(SettingsManager::in_memory(
+            Default::default(),
+            SettingsManagerCreateOptions::default(),
+        )));
+        let on_changed = {
+            let active = Rc::clone(&active);
+            let editor = Rc::clone(&editor);
+            Box::new(move || {
+                let theme = active.current().clone();
+                editor
+                    .borrow_mut()
+                    .set_border_color(Box::new(move |t: &str| {
+                        theme
+                            .get_thinking_border_color(ThinkingLevel::Off, t)
+                            .unwrap_or_else(|_| t.to_string())
+                    }));
+            }) as Box<dyn Fn()>
+        };
+        let controller = InteractiveThemeController::new(
+            Rc::clone(&settings),
+            Rc::clone(&active),
+            theme_source(),
+            Box::new(|_message: &str| { /* no error surface wired yet */ }),
+            on_changed,
+        );
 
         let mut run_loop = RunLoop::new(tui);
         install_exit_policy(&mut run_loop);
@@ -168,10 +259,40 @@ impl<W: Write> InteractiveShell<W> {
         Self {
             run_loop,
             chat_state,
+            active,
+            controller,
+            theme_applied: false,
             turn,
             evt_tx,
             evt_rx,
         }
+    }
+
+    /// Apply the saved / auto / detected theme once, at startup (pi awaits
+    /// `themeController.applyFromSettings()` after `ui.start()`,
+    /// `interactive-mode.ts:722`). Idempotent: only the first call runs.
+    ///
+    /// **Escape-hatch note.** This swaps the shared [`ActiveTheme`] and recolors
+    /// the editor border (via the controller's `on_changed`), which is live. The
+    /// chat message / footer / status components, however, snapshot the theme by
+    /// value at construction (each bakes `theme.fg` / `theme.bg` into `'static`
+    /// closures, diverging from pi's live `theme` Proxy reads), so a theme swapped
+    /// in here after they are built does not reach them. Converting those
+    /// components to read through the [`ActiveTheme`] handle is a PR follow-up (see
+    /// the PR body); the controller and its startup application are landed and
+    /// exercised in full.
+    fn apply_startup_theme(&mut self) {
+        if self.theme_applied {
+            return;
+        }
+        self.theme_applied = true;
+        self.controller.apply_from_settings(self.run_loop.tui_mut());
+        // pi's `updateEditorBorderColor` (this shell's `on_changed`) ends with
+        // `ui.requestRender()`. A `'static` `on_changed` closure cannot hold the
+        // `Tui`, so the shell requests the post-application render here, standing in
+        // for that call so the startup-applied theme (and recolored editor border)
+        // reach the first frame.
+        self.run_loop.tui_mut().request_render(true);
     }
 
     /// Shared access to the renderer (e.g. to inspect rendered output in tests).
@@ -194,6 +315,7 @@ impl<W: Write> InteractiveShell<W> {
     {
         let exit = self.run_loop.exit_flag();
         self.run_loop.start()?;
+        self.apply_startup_theme();
         for event in events {
             if exit.get() {
                 break;
@@ -243,6 +365,7 @@ impl InteractiveShell<std::io::Stdout> {
     /// it lands with the real chrome in a later unit.
     pub fn run(&mut self) -> Result<(), RenderError> {
         self.run_loop.start()?;
+        self.apply_startup_theme();
 
         // Stdin reader thread (pi's `process.stdin.on("data")`): forward each raw
         // chunk as a `ShellEvent::Bytes`; stdin EOF becomes a `Shutdown`.
@@ -348,6 +471,19 @@ impl InteractiveShell<std::io::Stdout> {
 fn default_theme() -> Theme {
     let theme_json = parse_theme_json(DARK_THEME_JSON).expect("embedded dark.json parses");
     create_theme(&theme_json, Some(ColorMode::Color256), None).expect("create dark theme")
+}
+
+/// The theme-source the controller threads into `ActiveTheme` loads: no custom
+/// themes directory (only the built-in `dark`/`light` are reachable in the
+/// offline shell), the 256-color mode the shell renders in, and the process
+/// environment for `COLORFGBG`-based terminal detection (pi's module theme
+/// functions read this from global config / `process.env`).
+fn theme_source() -> ThemeSource {
+    ThemeSource {
+        dirs: Default::default(),
+        mode: Some(ColorMode::Color256),
+        env: std::env::vars().collect(),
+    }
 }
 
 /// Assemble the footer's [`FooterData`] from what the offline shell has today: a

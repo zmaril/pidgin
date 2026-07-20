@@ -423,6 +423,14 @@ pub mod active;
 pub use active::{ActiveTheme, SetThemeResult, ThemeSource};
 
 // ============================================================================
+// Interactive theme controller (interactive layer)
+// ============================================================================
+
+pub mod controller;
+
+pub use controller::{InteractiveThemeController, ThemeControllerUi, ThemeResult};
+
+// ============================================================================
 // Terminal theme detection (pure subset)
 // ============================================================================
 
