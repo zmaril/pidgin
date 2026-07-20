@@ -2056,7 +2056,10 @@
     {
       "package": "tui",
       "src": "packages/tui/src/terminal-image.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/terminal-image.test.ts"
+      ]
     },
     {
       "package": "tui",
