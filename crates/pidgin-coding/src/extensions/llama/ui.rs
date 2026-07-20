@@ -38,13 +38,18 @@
 //!   stale-query guards). Wiring the literal 500 ms timer needs the same ambient
 //!   loop the mount seam provides and lands with it.
 //!
-//! ## Mount seam — deferred
+//! ## Mount seam
 //!
 //! pi's `showLlamaUi` mounts the view via `ctx.ui.custom(...)` and reports errors
-//! via `ctx.ui.notify(...)`. The Rust [`ExtensionContext`] is an opaque marker
-//! trait and that `ctx.ui` capability is not yet defined, so [`show_llama_ui`] is
-//! a documented stub (see its body). The [`LlamaView`] itself is fully
-//! implemented and testable against the [`LlamaUi`] trait without it.
+//! via `ctx.ui.notify(...)`. The Rust [`ExtensionContext`] now carries that
+//! narrowed `ctx.ui` capability (`custom` + `notify`), so [`show_llama_ui`] is a
+//! faithful port: it builds a [`CustomFactory`](crate::core::extensions::types::CustomFactory)
+//! that constructs the [`LlamaView`] and hands it to the host as a detached
+//! overlay whose `run` future the host drives to completion. The interactive host
+//! ([`TuiExtensionUi`](crate::modes::interactive::extension_ui::TuiExtensionUi))
+//! mounts the view as a focused overlay and drives `run` by manual poll
+//! interleaved with pumping terminal input into the view — the sync-shell analog
+//! of pi's event loop resolving the dialog promises on keypress.
 
 // straitjacket-allow-file:duplication — faithful line-for-line mirror of pi's
 // `ui.ts`; the frame/dialog composition and the HuggingFaceSearch state machine
@@ -68,7 +73,6 @@ use pidgin_tui::renderer::{Component, Container};
 use pidgin_tui::widgets::{Spacer, Text};
 use pidgin_tui::width::{truncate_to_width, visible_width};
 
-use crate::core::extensions::types::ExtensionContext;
 use crate::modes::interactive::components::{key_hint, DynamicBorder};
 use crate::modes::interactive::theme::Theme;
 
@@ -946,6 +950,24 @@ impl LlamaView {
     pub fn invalidate(&self) {}
 }
 
+/// [`LlamaView`] as a renderable overlay [`Component`] (pi's `LlamaView`
+/// implements `Component`). The view is interior-mutable, so the trait's
+/// `&mut self` `handle_input` delegates to the inherent `&self` handler; the
+/// mount seam ([`show_llama_ui`]) delivers keyboard input through the registered
+/// input closure rather than this trait method (the mounted `component` is a
+/// shared `Rc<dyn Component>`), but the impl is kept faithful for direct mounts.
+impl Component for LlamaView {
+    fn render(&self, width: usize) -> Vec<String> {
+        LlamaView::render(self, width)
+    }
+    fn handle_input(&mut self, data: &str) {
+        LlamaView::handle_input(self, data);
+    }
+    fn invalidate(&mut self) {
+        LlamaView::invalidate(self);
+    }
+}
+
 impl LlamaUi for LlamaView {
     async fn show_models(
         &self,
@@ -1316,29 +1338,6 @@ where
             }
         }
     }
-}
-
-// ---------------------------------------------------------------------------
-// showLlamaUi — mount seam stub
-// ---------------------------------------------------------------------------
-
-/// `showLlamaUi(ctx, run)` — mount the [`LlamaView`] and drive `run(view)` (pi's
-/// `showLlamaUi`).
-///
-/// **Deferred.** pi mounts via `ctx.ui.custom(...)` and reports errors via
-/// `ctx.ui.notify(...)`. The Rust [`ExtensionContext`] is an opaque marker trait
-/// and that `ctx.ui` capability is not yet defined (see the module docs). This is
-/// a stub for the extension-framework lane to wire once `ctx.ui.custom`/`notify`
-/// exist: it must construct a [`LlamaView`], mount it as a focused overlay,
-/// `await run(&view)`, and unmount + surface any error via `notify`.
-pub fn show_llama_ui<C: ExtensionContext>(_ctx: &C) {
-    // PR follow-up: wire to `ctx.ui.custom`/`ctx.ui.notify` when the
-    // extension-framework lane defines the `ctx.ui` capability. The `LlamaView`
-    // (above) is already complete and testable against `LlamaUi`.
-    unimplemented!(
-        "showLlamaUi requires the ctx.ui.custom/notify mount seam (deferred to the \
-         extension-framework lane); LlamaView is fully implemented and testable"
-    )
 }
 
 #[cfg(test)]

@@ -34,6 +34,9 @@
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/extensions/types.ts`.
 
+use std::future::Future;
+use std::pin::Pin;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -41,6 +44,7 @@ use serde_json::Value;
 
 use pidgin_agent::types::{AgentToolResult, AgentToolUpdateCallback, ToolExecutionMode};
 use pidgin_ai::seams::AbortSignal;
+use pidgin_tui::keybindings::KeybindingsManager;
 use pidgin_tui::renderer::Component;
 
 use crate::modes::interactive::theme::runtime::Theme;
@@ -60,7 +64,146 @@ use crate::modes::interactive::theme::runtime::Theme;
 /// [`ToolDefinition::execute`]. The port therefore models `ExtensionContext` as
 /// an opaque marker trait — any host type may implement it — and defers the
 /// capability surface to the full extension port.
-pub trait ExtensionContext {}
+///
+/// # `ctx.ui` slice
+///
+/// The one capability member ported so far is [`ui`](ExtensionContext::ui), pi's
+/// `ctx.ui`, narrowed to the **detached-custom + notify** subset needed by the
+/// `/llama` mount seam (pi's `ctx.ui.custom(...)` / `ctx.ui.notify(...)`,
+/// `extensions/llama/ui.ts:480`, `extensions/llama/index.ts:174`). It is a
+/// **defaulted** method returning a no-op surface ([`NoopExtensionUi`]), so every
+/// existing `impl ExtensionContext` (the tool-registry stubs plus the Python /
+/// Deno command contexts) compiles unchanged — only a host that actually mounts
+/// a TUI overlay overrides it. The extension-plane owner signed off on this
+/// shared trait shape.
+pub trait ExtensionContext {
+    /// pi's `ctx.ui`, narrowed to the detached-custom + notify subset.
+    ///
+    /// DEFAULT = no-op surface, so every existing impl/bound compiles unchanged.
+    /// A TUI host overrides this to return its live overlay-mounting surface.
+    fn ui(&self) -> &dyn ExtensionUi {
+        static NOOP: NoopExtensionUi = NoopExtensionUi;
+        &NOOP
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ctx.ui surface (detached-custom + notify slice of pi's `ExtensionUi`)
+// ---------------------------------------------------------------------------
+
+/// The narrowed `ctx.ui` surface: the two members the llama mount seam drives
+/// (pi's `ExtensionUi.custom` / `ExtensionUi.notify`).
+///
+/// # Detached-only scoping (do not widen)
+///
+/// [`custom`](ExtensionUi::custom) is deliberately **monomorphic**,
+/// **void-returning**, and **run-to-completion** (`FnOnce`): it mounts a
+/// Rust-native, built-in view detached from the caller and drives its `run`
+/// future to `done()`. pi's TypeScript `ctx.ui.custom<T>(...)` is generic and can
+/// return a value to a re-entrant JS-authored view; that reentrant case stays
+/// **parked / unrepresentable** here on purpose — modelling it would require a
+/// `<T>` and a returned value the sync Rust shell cannot faithfully drive. Keep
+/// `custom` scoped to detached Rust-native built-ins only.
+pub trait ExtensionUi {
+    /// pi's `ctx.ui.custom(factory)`: mount a detached custom view built by
+    /// `factory` and drive its `run` future to completion. Returns
+    /// [`UiError::Unavailable`] when no interactive surface is mounted (the
+    /// no-op default), or [`UiError::Failed`] when the view's `run` resolves with
+    /// an error.
+    fn custom(&self, factory: CustomFactory<'_>) -> Result<(), UiError>;
+    /// pi's `ctx.ui.notify(message, level)`: surface a transient notification.
+    fn notify(&self, message: &str, level: NotifyLevel);
+}
+
+/// The one-shot builder handed to [`ExtensionUi::custom`] (pi's
+/// `(tui, theme, keybindings, done) => Component` custom-factory callback,
+/// re-shaped as a `FnOnce` over a [`CustomHost`]). Called exactly once by the
+/// host with a live [`CustomHost`]; it returns the mounted [`CustomMount`].
+pub type CustomFactory<'f> = Box<dyn FnOnce(&dyn CustomHost) -> CustomMount + 'f>;
+
+/// The mounted view produced by a [`CustomFactory`]: the renderable component and
+/// the future that drives it (pi's returned `Component` plus the `run(...).then`
+/// completion promise, unified into one value).
+pub struct CustomMount {
+    /// The component the host mounts as a focused overlay.
+    pub component: Rc<dyn Component>,
+    /// The driver future the host polls to completion. `Ok(())` means the view
+    /// finished normally (pi's `done()`); `Err(msg)` means it failed and the host
+    /// should `notify` the message at [`NotifyLevel::Error`] then unmount (pi's
+    /// `notify(error); done()`).
+    pub run: Pin<Box<dyn Future<Output = Result<(), String>>>>,
+}
+
+/// The live surface a [`CustomFactory`] reads while constructing its view (pi's
+/// `tui` / `theme` / `keybindings` custom-factory arguments).
+///
+/// Additively extensible: accessors are added here as views need them (the
+/// [`LlamaView`](crate::extensions::llama::LlamaView) ctor needs
+/// theme/keybindings/request-render). Extending `CustomHost` never changes the
+/// [`ExtensionUi`] / [`ExtensionContext`] signatures.
+pub trait CustomHost {
+    /// The active theme (pi's `theme` factory argument).
+    fn theme(&self) -> &Theme;
+    /// The keybindings manager (pi's `keybindings` factory argument).
+    fn keybindings(&self) -> &KeybindingsManager;
+    /// Request a re-render of the mounted view (pi's `tui.requestRender()`).
+    fn request_render(&self);
+    /// Register the mounted view's keyboard-input sink.
+    ///
+    /// pi delivers input straight to the mounted component's `handleInput`. The
+    /// Rust [`CustomMount::component`] is a shared `Rc<dyn Component>` used for
+    /// rendering, and [`Component::handle_input`] takes `&mut self`, so a view
+    /// with **interior-mutable** input (its `handle_input` takes `&self`)
+    /// registers that `&self` input closure here. The host pumps each raw input
+    /// chunk into it — via the overlay focus dispatch — so input reaches the view
+    /// exactly as pi's event loop delivers it.
+    fn set_input_handler(&self, handler: Rc<dyn Fn(&str)>);
+}
+
+/// The severity of an [`ExtensionUi::notify`] message (pi's notify level union
+/// `"info" | "warning" | "error"`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NotifyLevel {
+    /// An informational message (pi's default level).
+    Info,
+    /// A warning message.
+    Warning,
+    /// An error message.
+    Error,
+}
+
+/// Why [`ExtensionUi::custom`] could not mount / complete.
+#[derive(Debug)]
+pub enum UiError {
+    /// No interactive surface is available to mount on (the no-op default, and
+    /// pi's non-TUI guard `ctx.mode !== "tui"`).
+    Unavailable,
+    /// The mounted view's `run` future resolved with an error message.
+    Failed(String),
+}
+
+impl std::fmt::Display for UiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UiError::Unavailable => f.write_str("no interactive UI surface available"),
+            UiError::Failed(message) => write!(f, "{message}"),
+        }
+    }
+}
+
+impl std::error::Error for UiError {}
+
+/// The no-op [`ExtensionUi`] returned by [`ExtensionContext::ui`]'s default: no
+/// surface to mount on, so `custom` reports [`UiError::Unavailable`] and `notify`
+/// is a sink. Keeps every non-TUI `impl ExtensionContext` working unchanged.
+pub struct NoopExtensionUi;
+
+impl ExtensionUi for NoopExtensionUi {
+    fn custom(&self, _factory: CustomFactory<'_>) -> Result<(), UiError> {
+        Err(UiError::Unavailable)
+    }
+    fn notify(&self, _message: &str, _level: NotifyLevel) {}
+}
 
 // ---------------------------------------------------------------------------
 // Render shell (`types.ts:456`)
