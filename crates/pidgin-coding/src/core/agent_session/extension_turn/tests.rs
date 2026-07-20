@@ -17,10 +17,12 @@ use std::sync::{Arc, Mutex};
 
 use serde_json::{json, Value};
 
+use pidgin_ai::providers::faux::faux_tool_call;
 use pidgin_ai::Context;
 
 use crate::core::agent_session::test_support::{
-    assistant_text, create_harness, message_text, HarnessOptions, TestExtensionRunner,
+    assistant_text, assistant_texts, assistant_tool_use, create_harness, echo_tool, message_text,
+    HarnessOptions, TestExtensionRunner,
 };
 use crate::core::extensions::dispatch::BeforeAgentStartCombinedResult;
 use crate::core::extensions::events::selection::InputEventResult;
@@ -37,6 +39,20 @@ fn context_user_text(context: &Context) -> String {
         .and_then(|list| {
             list.iter()
                 .find(|message| message.get("role").and_then(Value::as_str) == Some("user"))
+        })
+        .map(message_text)
+        .unwrap_or_default()
+}
+
+/// The joined text of the first `toolResult` message the provider received (pi's
+/// test helper that reads the tool-result content the follow-up turn sees).
+fn context_tool_result_text(context: &Context) -> String {
+    let messages = serde_json::to_value(&context.messages).unwrap_or(Value::Null);
+    messages
+        .as_array()
+        .and_then(|list| {
+            list.iter()
+                .find(|message| message.get("role").and_then(Value::as_str) == Some("toolResult"))
         })
         .map(message_text)
         .unwrap_or_default()
@@ -438,13 +454,149 @@ fn message_end_replacement_is_applied_to_state_and_persistence() {
 // ported in `super::super::model::tests`.
 // ---------------------------------------------------------------------------
 
-#[test]
-#[ignore = "unit5: runtime tool-hooks slice — agent tool_call hooks (_installAgentToolHooks) are not installed by the extension-turn slice, so tool_call blocking is unreachable"]
-fn allows_extension_tool_call_handlers_to_block_tool_execution() {}
+// ---------------------------------------------------------------------------
+// Agent tool-call / tool-result hooks (`_installAgentToolHooks`), ported from
+// `agent-session-model-extension.test.ts:116/158`.
+// ---------------------------------------------------------------------------
 
 #[test]
-#[ignore = "unit5: runtime tool-hooks slice — agent tool_result hooks (_installAgentToolHooks) are not installed by the extension-turn slice, so tool_result modification is unreachable"]
-fn allows_extension_tool_result_handlers_to_modify_tool_results() {}
+fn allows_extension_tool_call_handlers_to_block_tool_execution() {
+    let tool_runs = Arc::new(Mutex::new(Vec::new()));
+    let harness = create_harness(HarnessOptions {
+        tools: vec![echo_tool(Arc::clone(&tool_runs))],
+        make_runner: Some(Box::new(|_agent| {
+            Box::new(TestExtensionRunner::new().with_tool_call_block("Blocked by test"))
+        })),
+        ..Default::default()
+    });
+    harness.set_responses(vec![
+        FauxResponse::Message(Box::new(assistant_tool_use(vec![faux_tool_call(
+            "echo",
+            json!({ "text": "hello" }),
+            Some("call-1".to_string()),
+        )]))),
+        FauxResponse::Fn(Box::new(|context: &Context| {
+            assistant_text(&context_tool_result_text(context))
+        })),
+    ]);
+
+    harness.session.prompt("hi", None, None).unwrap();
+
+    // The tool never executed (the hook blocked it before `execute`).
+    assert!(
+        tool_runs.lock().unwrap().is_empty(),
+        "blocked tool must not execute, got {:?}",
+        tool_runs.lock().unwrap()
+    );
+    // The block reason surfaced as the tool-result text the follow-up turn echoed.
+    assert!(
+        assistant_texts(&harness)
+            .iter()
+            .any(|text| text.contains("Blocked by test")),
+        "missing block reason in assistant texts, got {:?}",
+        assistant_texts(&harness)
+    );
+    // The blocked call became an error tool-result message.
+    assert!(
+        harness.session.messages().iter().any(|message| {
+            message.get("role").and_then(Value::as_str) == Some("toolResult")
+                && message.get("isError").and_then(Value::as_bool) == Some(true)
+        }),
+        "expected an error tool-result message"
+    );
+}
+
+#[test]
+fn allows_extension_tool_result_handlers_to_modify_tool_results() {
+    let tool_runs = Arc::new(Mutex::new(Vec::new()));
+    let harness = create_harness(HarnessOptions {
+        tools: vec![echo_tool(Arc::clone(&tool_runs))],
+        make_runner: Some(Box::new(|_agent| {
+            Box::new(TestExtensionRunner::new().with_tool_result_override(
+                vec![json!({ "type": "text", "text": "patched result" })],
+                json!({ "patched": true }),
+            ))
+        })),
+        ..Default::default()
+    });
+    harness.set_responses(vec![
+        FauxResponse::Message(Box::new(assistant_tool_use(vec![faux_tool_call(
+            "echo",
+            json!({ "text": "hello" }),
+            Some("call-1".to_string()),
+        )]))),
+        FauxResponse::Fn(Box::new(|context: &Context| {
+            assistant_text(&context_tool_result_text(context))
+        })),
+    ]);
+
+    harness.session.prompt("hi", None, None).unwrap();
+
+    // The tool executed normally; the hook replaced its result afterward.
+    assert_eq!(*tool_runs.lock().unwrap(), vec!["hello".to_string()]);
+    // The patched content surfaced as the tool-result text the follow-up echoed.
+    assert!(
+        assistant_texts(&harness)
+            .iter()
+            .any(|text| text.contains("patched result")),
+        "missing patched result in assistant texts, got {:?}",
+        assistant_texts(&harness)
+    );
+    // The tool-result message carries the replacement details.
+    assert!(
+        harness.session.messages().iter().any(|message| {
+            message.get("role").and_then(Value::as_str) == Some("toolResult")
+                && message
+                    .get("details")
+                    .and_then(|details| details.get("patched"))
+                    .and_then(Value::as_bool)
+                    == Some(true)
+        }),
+        "expected a tool-result message with patched details"
+    );
+}
+
+#[test]
+fn runs_tools_normally_when_no_tool_hook_handlers_are_registered() {
+    // Passthrough: with the default stub runner (`has_handlers` false), the
+    // installed hooks are no-ops and the tool executes with its original result.
+    let tool_runs = Arc::new(Mutex::new(Vec::new()));
+    let harness = create_harness(HarnessOptions {
+        tools: vec![echo_tool(Arc::clone(&tool_runs))],
+        ..Default::default()
+    });
+    harness.set_responses(vec![
+        FauxResponse::Message(Box::new(assistant_tool_use(vec![faux_tool_call(
+            "echo",
+            json!({ "text": "hello" }),
+            Some("call-1".to_string()),
+        )]))),
+        FauxResponse::Fn(Box::new(|context: &Context| {
+            assistant_text(&context_tool_result_text(context))
+        })),
+    ]);
+
+    harness.session.prompt("hi", None, None).unwrap();
+
+    // The tool ran with its original arguments.
+    assert_eq!(*tool_runs.lock().unwrap(), vec!["hello".to_string()]);
+    // The original (unmodified) result surfaced.
+    assert!(
+        assistant_texts(&harness)
+            .iter()
+            .any(|text| text.contains("echo:hello")),
+        "missing original tool result, got {:?}",
+        assistant_texts(&harness)
+    );
+    // No error tool-result message was produced.
+    assert!(
+        !harness.session.messages().iter().any(|message| {
+            message.get("role").and_then(Value::as_str) == Some("toolResult")
+                && message.get("isError").and_then(Value::as_bool) == Some(true)
+        }),
+        "unexpected error tool-result message"
+    );
+}
 
 #[test]
 #[ignore = "unit5: out of the ExtensionRunner seam — pi's `context` hook is driven from sdk.ts (the provider-request path), not AgentSession; not part of this trait"]

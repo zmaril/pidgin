@@ -767,6 +767,14 @@ pub(crate) struct TestExtensionRunner {
     /// A sink recording each dispatched `thinking_level_select` event as
     /// `"<previousLevel>-><level>"` (pi's `pi.on("thinking_level_select", ...)`).
     thinking_events: Option<Arc<Mutex<Vec<String>>>>,
+    /// A `tool_call` result returned from every `emit_tool_call` (pi's
+    /// `pi.on("tool_call", () => ({ block, reason }))`). Also reports
+    /// `has_handlers("tool_call")`.
+    tool_call_result: Option<ToolCallEventResult>,
+    /// A `tool_result` override returned from every `emit_tool_result` (pi's
+    /// `pi.on("tool_result", () => ({ content, details }))`). Also reports
+    /// `has_handlers("tool_result")`.
+    tool_result_override: Option<ToolResultEventResult>,
 }
 
 /// A `session_before_compact` handler for [`TestExtensionRunner`] (pi's
@@ -799,7 +807,32 @@ impl TestExtensionRunner {
             bind_core_flag: None,
             model_events: None,
             thinking_events: None,
+            tool_call_result: None,
+            tool_result_override: None,
         }
+    }
+
+    /// Register a `tool_call` handler that blocks execution with `reason` (pi's
+    /// `pi.on("tool_call", () => ({ block: true, reason }))`). Also reports
+    /// `has_handlers("tool_call")`.
+    pub fn with_tool_call_block(mut self, reason: &str) -> Self {
+        self.tool_call_result = Some(ToolCallEventResult {
+            block: Some(true),
+            reason: Some(reason.to_string()),
+        });
+        self
+    }
+
+    /// Register a `tool_result` handler that replaces the result `content` and
+    /// `details` (pi's `pi.on("tool_result", () => ({ content, details }))`). Also
+    /// reports `has_handlers("tool_result")`.
+    pub fn with_tool_result_override(mut self, content: Vec<Value>, details: Value) -> Self {
+        self.tool_result_override = Some(ToolResultEventResult {
+            content: Some(content),
+            details: Some(details),
+            is_error: None,
+        });
+        self
     }
 
     /// Record every dispatched `model_select` event into `sink` as
@@ -1076,10 +1109,16 @@ impl ExtensionRunner for TestExtensionRunner {
     }
 
     fn emit_tool_call(&self, event: &ToolCallEvent) -> Option<ToolCallEventResult> {
+        if let Some(result) = &self.tool_call_result {
+            return Some(result.clone());
+        }
         self.inner.emit_tool_call(event)
     }
 
     fn emit_tool_result(&self, event: &ToolResultEvent) -> Option<ToolResultEventResult> {
+        if let Some(result) = &self.tool_result_override {
+            return Some(result.clone());
+        }
         self.inner.emit_tool_result(event)
     }
 
@@ -1090,6 +1129,8 @@ impl ExtensionRunner for TestExtensionRunner {
             || (event_type == "session_before_compact" && self.before_compact.is_some())
             || (event_type == "session_before_tree" && self.before_tree.is_some())
             || (event_type == "before_agent_start" && self.before_agent_start.is_some())
+            || (event_type == "tool_call" && self.tool_call_result.is_some())
+            || (event_type == "tool_result" && self.tool_result_override.is_some())
             || self.inner.has_handlers(event_type)
     }
 

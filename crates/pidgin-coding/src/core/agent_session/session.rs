@@ -368,8 +368,19 @@ impl AgentSession {
         };
         let agent_subscription = agent.subscribe(build_agent_listener(handler));
 
-        // unit5: pi's constructor also calls `_installAgentToolHooks`,
-        // `_installAgentNextTurnRefresh`, and `_buildRuntime`; those land with the
+        // pi's constructor installs the agent tool-call / tool-result bridges and
+        // the next-turn context refresh right after subscribing its handler (its
+        // `_installAgentToolHooks` / `_installAgentNextTurnRefresh`,
+        // `agent-session.ts:375-376`). Wire them here against the same `agent` and
+        // `Arc` handles, before the agent is moved into `Self`.
+        super::tool_hooks::install_agent_tool_hooks(&agent, &extension_runner);
+        super::tool_hooks::install_agent_next_turn_refresh(
+            &agent,
+            &base_system_prompt,
+            &system_prompt_override,
+        );
+
+        // unit5: pi's constructor also calls `_buildRuntime`; that lands with the
         // runtime PR.
 
         Self {
