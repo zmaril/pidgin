@@ -2042,7 +2042,10 @@
     {
       "package": "tui",
       "src": "packages/tui/src/terminal-colors.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/terminal-colors.test.ts"
+      ]
     },
     {
       "package": "tui",
