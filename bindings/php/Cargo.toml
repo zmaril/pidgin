@@ -20,8 +20,9 @@ pidgin-core = { path = "../../crates/pidgin-core" }
 # The generated binding routes fallible ops through `anyhow::Result`.
 anyhow = "1"
 # The shared streaming contract (Poll/PollStream) the generated binding imports.
-# Pinned to the merged fluessig#58 (PHP-header fix) on `main`. See regen.sh / README.md.
-fluessig-runtime = { git = "https://github.com/zmaril/fluessig", rev = "fb70926e037bed3a374445f8f19b62868cd66ba3" }
+# Pinned to fluessig `main` (node backend + per-op name pins); shared whole-repo
+# pin with crates/pidgin-napi. See regen.sh / README.md.
+fluessig-runtime = { git = "https://github.com/zmaril/fluessig", rev = "48340b16cac5a7c6658748ac5403352425811aeb" }
 # Used by the hand-authored `Pidgin\Session` surface to extract assistant text
 # from the harness's `serde_json::Value` turn result.
 serde_json = "1"

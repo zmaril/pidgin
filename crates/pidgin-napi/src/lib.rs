@@ -158,13 +158,22 @@ pub mod agent;
 // dead code in the lib-test target.
 pub mod agent_session;
 
-/// Returns the crate version. Proves the native addon builds and loads.
-///
-/// Exported to JavaScript as `pidginNativeVersion`.
-#[napi(js_name = "pidginNativeVersion")]
-pub fn pidgin_native_version() -> String {
-    env!("CARGO_PKG_VERSION").to_string()
-}
+// The fluessig-generated napi surface (`crate::generated`) + its hand-written
+// engine seam (`crate::core_impl`). The `version/core` export
+// (`pidginNativeVersion`) is generated from `schema/api.json` and routes through
+// the `PidginCore` trait — do not add hand-written `#[napi]` exports here that a
+// schema op can describe; edit the schema and rerun `regen.sh` instead.
+//
+// `pub mod` so the generated free `#[napi]` functions register as crate-reachable
+// (matching the other flipped modules); `#[allow(dead_code, unused_imports)]`
+// because fluessig's node prelude imports the shared streaming/async contract
+// (`Poll`/`PollStream`/`AsyncTask`/…) and emits an `err` helper unconditionally,
+// both unused on a stream-less, infallible-only surface like this first slice.
+// See the report / notes: fluessig's node banner should carry
+// `#![allow(unused_imports)]` (as its PHP banner already does).
+mod core_impl;
+#[allow(dead_code, unused_imports)]
+pub mod generated;
 
 /// Parse an Anthropic Messages SSE body into the uniform assistant-message event
 /// stream and final message, backed by
