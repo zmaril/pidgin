@@ -224,6 +224,127 @@ fn turn_driver_runs_a_real_echo_turn_over_the_worker_channel() {
     assert!(settled, "worker turn should emit AgentSettled");
 }
 
+/// Drain the worker channel until an `AgentSettled` (or a generous bound) and
+/// report whether an assistant `MessageEnd` echoing `prompt` was seen. Used by the
+/// `/new` rebind test to prove events still flow after each session swap.
+fn drain_turn_echoes(rx: &std::sync::mpsc::Receiver<ShellEvent>, prompt: &str) -> bool {
+    use std::sync::mpsc::RecvTimeoutError;
+    use std::time::Duration;
+
+    let mut echoed = false;
+    loop {
+        match rx.recv_timeout(Duration::from_secs(10)) {
+            Ok(ShellEvent::Session(event)) => match *event {
+                AgentSessionEvent::MessageEnd { message } => {
+                    if message.get("role").and_then(Value::as_str) == Some("assistant")
+                        && strip_ansi(&serde_json::to_string(&message).unwrap()).contains(prompt)
+                    {
+                        echoed = true;
+                    }
+                }
+                AgentSessionEvent::AgentSettled => break,
+                _ => {}
+            },
+            Ok(_) => {}
+            Err(RecvTimeoutError::Timeout | RecvTimeoutError::Disconnected) => break,
+        }
+    }
+    echoed
+}
+
+/// The `/new` lifecycle over the real worker + runtime: a first prompt echoes on
+/// the initial session, then `TurnCommand::NewSession` swaps in a fresh session via
+/// `AgentSessionRuntime`, and a second prompt still echoes — proving the rebind
+/// seam re-subscribed the forwarder onto the new current session (events keep
+/// flowing across the swap).
+#[test]
+fn new_session_command_rebinds_the_forwarder_and_events_keep_flowing() {
+    use pidgin_coding::modes::interactive::turn::{TurnCommand, TurnDriver};
+
+    let (_dir, cwd) = temp_cwd();
+    let (tx, rx) = std::sync::mpsc::channel::<ShellEvent>();
+    let driver = TurnDriver::spawn(tx, cwd);
+    let sender = driver.sender();
+
+    // (1) A turn on the initial session echoes.
+    let before = "echo before new";
+    driver.prompt(before.to_string());
+    assert!(
+        drain_turn_echoes(&rx, before),
+        "the first turn should echo on the initial session"
+    );
+
+    // (2) Swap to a brand-new session, then run another turn. If the rebind hook
+    // did not re-subscribe onto the new session, no events would arrive and the
+    // echo assertion below would fail (a timeout).
+    sender
+        .send(TurnCommand::NewSession)
+        .expect("worker accepts /new");
+    let after = "echo after new";
+    driver.prompt(after.to_string());
+    assert!(
+        drain_turn_echoes(&rx, after),
+        "a turn after /new should still echo — the forwarder must have rebound onto the fresh session"
+    );
+
+    driver.shutdown();
+}
+
+/// The `/resume` dispatch arm over the real worker: resuming a path that is a
+/// non-empty but invalid session file leaves the current session untouched and
+/// surfaces the runtime error as an assistant-bubble notice (never a panic). The
+/// happy-path resume/fork of a valid persisted session is deferred with the
+/// interactive session-selector slice (the worker's session manager is in-memory,
+/// so there is no persisted file to select), and is covered directly by the
+/// runtime's own `switch_session` / `fork` tests.
+#[test]
+fn resume_command_surfaces_a_runtime_error_as_a_notice() {
+    use std::sync::mpsc::RecvTimeoutError;
+    use std::time::Duration;
+
+    use pidgin_coding::modes::interactive::turn::{TurnCommand, TurnDriver};
+
+    let (dir, cwd) = temp_cwd();
+    // A non-empty file that is not a valid pi session: `SessionManager::open`
+    // rejects it, so `switch_session` returns an error the worker must surface.
+    let bad_path = dir.path().join("not-a-session.jsonl");
+    std::fs::write(&bad_path, b"this is not a valid pi session file\n").unwrap();
+
+    let (tx, rx) = std::sync::mpsc::channel::<ShellEvent>();
+    let driver = TurnDriver::spawn(tx, cwd);
+    let sender = driver.sender();
+
+    sender
+        .send(TurnCommand::Resume(bad_path.display().to_string()))
+        .expect("worker accepts /resume");
+
+    // The worker forwards the failure as an assistant message (a `MessageEnd`
+    // carrying the notice text), routed through the same path a real turn uses.
+    let mut noticed = false;
+    loop {
+        match rx.recv_timeout(Duration::from_secs(10)) {
+            Ok(ShellEvent::Session(event)) => {
+                if let AgentSessionEvent::MessageEnd { message } = *event {
+                    if strip_ansi(&serde_json::to_string(&message).unwrap())
+                        .contains("Could not resume session")
+                    {
+                        noticed = true;
+                        break;
+                    }
+                }
+            }
+            Ok(_) => {}
+            Err(RecvTimeoutError::Timeout | RecvTimeoutError::Disconnected) => break,
+        }
+    }
+    driver.shutdown();
+
+    assert!(
+        noticed,
+        "a /resume of a missing path should surface a 'Could not resume session' notice"
+    );
+}
+
 /// The events a real offline-echo turn emits, driven through the router: the
 /// echoed assistant bubble renders and the run settles to idle on `AgentSettled`.
 #[test]
