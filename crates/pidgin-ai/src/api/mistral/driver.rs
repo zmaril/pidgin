@@ -14,9 +14,10 @@
 //! transforms the response SSE into the `CompletionChunk` objects pi's
 //! `consumeChatStream` reads (`event.data`). This seam-targeted port reproduces
 //! that boundary: it assembles the [`HttpRequest`] the injected
-//! [`HttpTransport`](crate::seams::http::HttpTransport) performs, frames the
-//! SSE response body into `data:`-line chunk values, and feeds them into the
-//! already-ported decoder ([`parse_chat_stream`]).
+//! [`HttpTransport`](crate::seams::http::HttpTransport) performs, then feeds the
+//! SSE response body through the already-ported [`MistralSseDecoder`] -- the
+//! buffered [`stream`] over the whole body, the incremental [`stream_streaming`]
+//! one arriving chunk at a time -- so both share one decode path.
 //!
 //! # What this port owns
 //!
@@ -33,13 +34,16 @@
 //!
 //! # Streaming model & error surfacing
 //!
-//! Like the Anthropic port, this driver is the buffered analogue of pi's async
+//! Like the Anthropic port, [`stream`] is the buffered analogue of pi's async
 //! `stream()`: it produces the whole event sequence eagerly from a fully-buffered
-//! response body. A missing credential, a non-2xx create, or a transport error
-//! yield an error-only [`StreamResult`] (pi's pre-`start` `catch`), while a
-//! decoded `error`/`aborted` stop is surfaced by the ported decoder itself.
+//! response body, while [`stream_streaming`] delivers the same events
+//! incrementally through the shared [`AssistantEventReader`] as chunks arrive. A
+//! missing credential, a non-2xx create, or a transport error yield a single
+//! pre-`start` `error` (pi's `catch`), while a decoded `error`/`aborted` stop is
+//! surfaced by the ported decoder itself.
 
 use std::collections::BTreeMap;
+use std::ops::ControlFlow;
 
 use serde_json::Value;
 
@@ -48,11 +52,11 @@ use crate::seams::provider::StreamResult;
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, StopReason, Usage, UsageCost,
 };
-use crate::utils::json_parse::parse_json_with_repair;
+use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
 
 use super::{
-    build_chat_payload, build_request_headers, parse_chat_stream, resolve_simple_options,
-    MistralModel, MistralOptions, SimpleMistralOptions,
+    build_chat_payload, build_request_headers, parse_sse_stream, resolve_simple_options,
+    MistralModel, MistralOptions, MistralSseDecoder, SimpleMistralOptions,
 };
 
 /// pi's `MAX_MISTRAL_ERROR_BODY_CHARS` (`mistral-conversations.ts:32`).
@@ -125,29 +129,6 @@ fn assemble_request(
     }
 }
 
-/// Split a raw `text/event-stream` body into decoded Mistral `CompletionChunk`
-/// JSON values: take every `data:` payload, stop at the `data: [DONE]` sentinel,
-/// and JSON-parse (with repair) each chunk. This reproduces the SSE framing the
-/// `@mistralai/mistralai` SDK performs before handing `event.data` to pi's
-/// `consumeChatStream`.
-fn parse_sse_chunks(body: &str) -> Vec<Value> {
-    let mut chunks = Vec::new();
-    for raw_line in body.split('\n') {
-        let line = raw_line.strip_suffix('\r').unwrap_or(raw_line);
-        let Some(rest) = line.strip_prefix("data:") else {
-            continue;
-        };
-        let payload = rest.strip_prefix(' ').unwrap_or(rest);
-        if payload == "[DONE]" {
-            break;
-        }
-        if let Ok(value) = parse_json_with_repair(payload) {
-            chunks.push(value);
-        }
-    }
-    chunks
-}
-
 /// Format a non-2xx create response into the terminal error message, mirroring
 /// pi's `formatMistralError` (`mistral-conversations.ts:185-197`): `` `Mistral
 /// API error (${statusCode}): ${truncated body}` `` when a body is present,
@@ -189,11 +170,11 @@ fn zero_usage() -> Usage {
     }
 }
 
-/// A single-`error`-event result for a failure before the stream's `start` event
-/// (missing auth, a non-2xx create, a transport error), matching pi's pre-`start`
-/// `catch` handler (`mistral-conversations.ts:92-101`).
-fn error_result(model: &MistralModel, timestamp: i64, message: String) -> StreamResult {
-    let output = AssistantMessage {
+/// The empty assistant output shell carrying pi's pre-`start` `catch` error
+/// (`stopReason: "error"` + `errorMessage`), shared by the buffered
+/// [`error_result`] and the streaming [`error_reader`].
+fn error_output(model: &MistralModel, timestamp: i64, message: String) -> AssistantMessage {
+    AssistantMessage {
         role: AssistantRole::Assistant,
         content: Vec::new(),
         api: model.api.clone(),
@@ -206,7 +187,14 @@ fn error_result(model: &MistralModel, timestamp: i64, message: String) -> Stream
         stop_reason: StopReason::Error,
         error_message: Some(message),
         timestamp,
-    };
+    }
+}
+
+/// A single-`error`-event result for a failure before the stream's `start` event
+/// (missing auth, a non-2xx create, a transport error), matching pi's pre-`start`
+/// `catch` handler (`mistral-conversations.ts:92-101`).
+fn error_result(model: &MistralModel, timestamp: i64, message: String) -> StreamResult {
+    let output = error_output(model, timestamp, message);
     StreamResult {
         events: vec![AssistantMessageEvent::Error {
             reason: StopReason::Error,
@@ -214,6 +202,63 @@ fn error_result(model: &MistralModel, timestamp: i64, message: String) -> Stream
         }],
         message: output,
     }
+}
+
+/// A decoder that yields nothing per frame and emits a single terminal `error`
+/// event at `finish` -- the streaming analogue of [`error_result`] for a failure
+/// that occurs before the SSE stream starts (missing auth, a non-2xx create, a
+/// transport error). It carries pi's caught `error` message on an empty output
+/// shell so [`stream_streaming`] can return an [`AssistantEventReader`] on every
+/// path (no preceding `start`, matching pi's pre-stream catch handler).
+struct TerminalErrorDecoder {
+    error: AssistantMessage,
+}
+
+impl SseEventDecoder for TerminalErrorDecoder {
+    fn on_frame(
+        &mut self,
+        _frame: &ServerSentEvent,
+        _out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        ControlFlow::Continue(())
+    }
+
+    fn finish(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        out.push(AssistantMessageEvent::Error {
+            reason: StopReason::Error,
+            error: self.error.clone(),
+        });
+        self.error.clone()
+    }
+}
+
+/// A single-`error`-event reader over an empty chunk stream, the streaming
+/// analogue of [`error_result`]: EOF `finish` emits exactly one terminal `error`
+/// (byte-identical to the buffered pre-stream failure).
+fn error_reader<'a>(
+    model: &MistralModel,
+    timestamp: i64,
+    message: String,
+) -> AssistantEventReader<'a> {
+    let output = error_output(model, timestamp, message);
+    AssistantEventReader::new(
+        Box::new(std::iter::empty()),
+        Box::new(TerminalErrorDecoder { error: output }),
+    )
+}
+
+/// Buffer a streaming body's chunks into a lossy UTF-8 string, stopping at the
+/// first read error -- used only for a non-2xx error body, whose diagnostic is
+/// short and which pi reads whole before throwing.
+fn drain_chunks<'a>(chunks: Box<dyn Iterator<Item = std::io::Result<Vec<u8>>> + 'a>) -> String {
+    let mut body = Vec::new();
+    for chunk in chunks {
+        match chunk {
+            Ok(bytes) => body.extend_from_slice(&bytes),
+            Err(_) => break,
+        }
+    }
+    String::from_utf8_lossy(&body).to_string()
 }
 
 /// Stream a response for `model` over the injected `transport`, mirroring pi's
@@ -242,8 +287,9 @@ pub fn stream<T: HttpTransport + ?Sized>(
 
     match transport.send(&request) {
         Ok(response) if response.is_ok() => {
-            let chunks = parse_sse_chunks(&response.body);
-            let outcome = parse_chat_stream(&chunks, model, timestamp);
+            // Feed the whole SSE body through the SAME decoder the incremental
+            // path uses, so the buffered events + message are byte-identical.
+            let outcome = parse_sse_stream(&response.body, model, timestamp);
             StreamResult {
                 events: outcome.events,
                 message: outcome.message,
@@ -255,6 +301,49 @@ pub fn stream<T: HttpTransport + ?Sized>(
             format_api_error(response.status, &response.body),
         ),
         Err(error) => error_result(model, timestamp, error.to_string()),
+    }
+}
+
+/// Stream a response for `model` over the injected `transport`, delivering events
+/// incrementally through the shared [`AssistantEventReader`].
+///
+/// This mirrors [`stream`]'s request assembly and error surfacing but performs the
+/// request via [`HttpTransport::send_streaming`], so the returned reader pulls one
+/// chunk at a time and decodes it through the SAME [`MistralSseDecoder`] the
+/// buffered path uses -- one source of truth for the event sequence. A pre-stream
+/// failure (missing auth, a non-2xx create, a transport error) yields a
+/// single-`error` reader, mirroring pi's catch handler exactly as [`stream`] does.
+pub fn stream_streaming<'a, T: HttpTransport + ?Sized>(
+    transport: &'a T,
+    model: &MistralModel,
+    context: &Context,
+    options: &MistralOptions,
+    api_key: Option<&str>,
+    timestamp: i64,
+) -> AssistantEventReader<'a> {
+    // pi asserts the credential before constructing the client; a failure throws
+    // and is caught as a pre-`start` error event.
+    if let Err(message) = assert_request_auth(&model.provider, api_key) {
+        return error_reader(model, timestamp, message);
+    }
+
+    // build_chat_payload already applies transform_messages + sets stream: true.
+    let payload = build_chat_payload(model, context, options);
+    let request = assemble_request(model, serialize_body(&payload), api_key, options);
+
+    // Status + headers arrive up front, so the error-vs-parse decision is made
+    // before the body streams -- exactly as the buffered path decides on
+    // `response.is_ok()`.
+    match transport.send_streaming(&request) {
+        Ok(response) if (200..300).contains(&response.status) => {
+            let decoder = MistralSseDecoder::new(model.clone(), timestamp);
+            AssistantEventReader::new(response.chunks, Box::new(decoder))
+        }
+        Ok(response) => {
+            let body = drain_chunks(response.chunks);
+            error_reader(model, timestamp, format_api_error(response.status, &body))
+        }
+        Err(error) => error_reader(model, timestamp, error.to_string()),
     }
 }
 
@@ -379,6 +468,91 @@ mod tests {
         let body: Value = serde_json::from_str(requests[0].body.as_deref().unwrap()).unwrap();
         assert_eq!(body["stream"], json!(true));
         assert_eq!(body["model"], json!("mistral-large-latest"));
+    }
+
+    // Incremental `stream_streaming` over the one-chunk ScriptedTransport (default
+    // `send_streaming`) yields the SAME events and final message as the buffered
+    // `stream`, and assembles the same threaded request -- proving the buffered
+    // path stays byte-identical while both share one decoder.
+    #[test]
+    fn stream_streaming_matches_buffered_over_scripted() {
+        let m = model("https://api.mistral.test");
+        let ctx = user_context();
+        let opts = MistralOptions::default();
+
+        let buffered_transport = ScriptedTransport::new();
+        buffered_transport.push_ok(hello_sse_body());
+        let buffered = stream(
+            &buffered_transport,
+            &m,
+            &ctx,
+            &opts,
+            Some("sk-mistral-key"),
+            0,
+        );
+
+        let streaming_transport = ScriptedTransport::new();
+        streaming_transport.push_ok(hello_sse_body());
+        let mut reader = stream_streaming(
+            &streaming_transport,
+            &m,
+            &ctx,
+            &opts,
+            Some("sk-mistral-key"),
+            0,
+        );
+        let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        assert_eq!(events, buffered.events);
+        assert_eq!(
+            reader.result().and_then(|r| r.as_ref().ok()),
+            Some(&buffered.message)
+        );
+
+        let requests = streaming_transport.requests();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(
+            requests[0].url,
+            "https://api.mistral.test/v1/chat/completions"
+        );
+        assert_eq!(
+            requests[0].headers.get("authorization").map(String::as_str),
+            Some("Bearer sk-mistral-key")
+        );
+    }
+
+    // A non-2xx create over the streaming path surfaces the API's error body as a
+    // single terminal `error` reader (no preceding `start`), mirroring the
+    // buffered `error_result` shape.
+    #[test]
+    fn stream_streaming_non_2xx_yields_single_error() {
+        let transport = ScriptedTransport::new();
+        transport.push_response(Ok(crate::seams::http::HttpResponse {
+            status: 429,
+            headers: BTreeMap::new(),
+            body: "{\"message\":\"rate limited\"}".to_string(),
+        }));
+
+        let m = model("https://api.mistral.test");
+        let mut reader = stream_streaming(
+            &transport,
+            &m,
+            &user_context(),
+            &MistralOptions::default(),
+            Some("sk-mistral-key"),
+            0,
+        );
+        let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        assert_eq!(events.len(), 1);
+        assert!(matches!(events[0], AssistantMessageEvent::Error { .. }));
+        let result = reader.result().expect("finished");
+        let message = result.as_ref().expect_err("error terminal");
+        assert_eq!(message.stop_reason, StopReason::Error);
+        assert_eq!(
+            message.error_message.as_deref(),
+            Some("Mistral API error (429): {\"message\":\"rate limited\"}")
+        );
     }
 
     #[test]

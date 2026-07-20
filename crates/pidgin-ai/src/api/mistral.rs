@@ -31,6 +31,7 @@
 //!   `models.ts` helpers.
 
 use std::collections::BTreeMap;
+use std::ops::ControlFlow;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
@@ -41,7 +42,8 @@ use crate::types::{
     Modality, ModelCost, ModelThinkingLevel, StopReason, ThinkingLevelMap, Usage, UsageCost,
     UserContent,
 };
-use crate::utils::json_parse::parse_streaming_json;
+use crate::utils::json_parse::{parse_json_with_repair, parse_streaming_json};
+use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
 
 mod transform_messages;
 use transform_messages::{transform_messages as transform_messages_impl, ModelIdentity};
@@ -814,75 +816,127 @@ enum CurrentKind {
 /// then a terminal `done` — or, when the decoded stop reason is `error`/`aborted`,
 /// a terminal `error` carrying `"An unknown error occurred"` (pi throws that
 /// message, and its `catch` records it via `formatMistralError`).
+///
+/// This is the boundary/replay shim: the already-parsed chunks are re-framed as an
+/// SSE body and fed through the SAME [`MistralSseDecoder`] the incremental driver
+/// uses, so the events + terminal message stay byte-identical to the streaming
+/// path. Serializing each chunk to a compact `data:` line and parsing it back is a
+/// lossless round-trip for every `serde_json::Value` these chunks carry.
 pub fn parse_chat_stream(chunks: &[Value], model: &MistralModel, timestamp: i64) -> StreamOutcome {
-    let mut output = AssistantMessage {
-        role: AssistantRole::Assistant,
-        content: Vec::new(),
-        api: model.api.clone(),
-        provider: model.provider.clone(),
-        model: model.id.clone(),
-        response_model: None,
-        response_id: None,
-        diagnostics: None,
-        usage: zero_usage(),
-        stop_reason: StopReason::Stop,
-        error_message: None,
-        timestamp,
-    };
-    let mut events: Vec<AssistantMessageEvent> = Vec::new();
-
-    events.push(AssistantMessageEvent::Start {
-        partial: output.clone(),
-    });
-
-    consume_chat_stream(chunks, model, &mut output, &mut events);
-
-    // pi's post-loop guard: an error/aborted stop is re-thrown and surfaced as an
-    // error event (`An unknown error occurred`) rather than a done event.
-    if matches!(output.stop_reason, StopReason::Aborted | StopReason::Error) {
-        let message = output
-            .error_message
-            .clone()
-            .unwrap_or_else(|| "An unknown error occurred".to_string());
-        output.stop_reason = StopReason::Error;
-        output.error_message = Some(message);
-        events.push(AssistantMessageEvent::Error {
-            reason: output.stop_reason,
-            error: output.clone(),
-        });
-    } else {
-        events.push(AssistantMessageEvent::Done {
-            reason: output.stop_reason,
-            message: output.clone(),
-        });
-    }
-
-    StreamOutcome {
-        events,
-        message: output,
-    }
+    let body: String = chunks
+        .iter()
+        .map(|chunk| {
+            format!(
+                "data: {}\n\n",
+                serde_json::to_string(chunk).unwrap_or_default()
+            )
+        })
+        .collect();
+    parse_sse_stream(&body, model, timestamp)
 }
 
-fn consume_chat_stream(
-    chunks: &[Value],
-    model: &MistralModel,
-    output: &mut AssistantMessage,
-    events: &mut Vec<AssistantMessageEvent>,
-) {
-    let mut current: Option<CurrentKind> = None;
-    // Tool blocks keyed by `${callId}:${index}` → content index. `tool_order`
-    // preserves pi's Map insertion order for the terminal `toolcall_end` flush.
-    let mut tool_blocks_by_key: std::collections::HashMap<String, usize> =
-        std::collections::HashMap::new();
-    let mut tool_order: Vec<usize> = Vec::new();
-    let mut tool_partial_args: std::collections::HashMap<usize, String> =
-        std::collections::HashMap::new();
+/// Parse a Mistral `chat.stream` SSE `body` into the uniform event stream and
+/// final message for `model`, the buffered analogue of the Anthropic port's
+/// `parse_sse_stream`.
+///
+/// Single source of truth: the whole body is fed through the shared
+/// [`AssistantEventReader`] over one chunk, decoded by the SAME
+/// [`MistralSseDecoder`] the incremental driver runs, so feeding the reader the
+/// whole body at once yields events + a terminal message byte-identical to
+/// driving it chunk-by-chunk.
+pub fn parse_sse_stream(body: &str, model: &MistralModel, timestamp: i64) -> StreamOutcome {
+    let decoder = MistralSseDecoder::new(model.clone(), timestamp);
+    let mut reader = AssistantEventReader::new(
+        Box::new(std::iter::once(Ok(body.as_bytes().to_vec()))),
+        Box::new(decoder),
+    );
+    let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+    let message = match reader.result() {
+        Some(Ok(message)) | Some(Err(message)) => message.clone(),
+        // The reader always finalizes once drained (EOF is bounded), so a
+        // fully-collected reader has a terminal result.
+        None => unreachable!("AssistantEventReader finalizes before iteration ends"),
+    };
 
-    for chunk in chunks {
-        if output.response_id.is_none() {
+    StreamOutcome { events, message }
+}
+
+/// The incremental Mistral `chat.stream` SSE decoder: the single source of truth
+/// for turning wire frames into assistant events and the accumulated message.
+///
+/// pi's Mistral driver reads already-parsed `CompletionChunk` objects
+/// (`event.data`) off the SDK's async-iterable, so this decoder's
+/// [`on_frame`](SseEventDecoder::on_frame) INLINES the per-frame parse: it takes
+/// one raw [`ServerSentEvent`], parses its `data` JSON into the `CompletionChunk`
+/// [`Value`] the chunk-walk expects, then runs the same per-chunk logic pi's
+/// `consumeChatStream` inner loop ran. It carries exactly the accumulation state
+/// that loop kept — the output message, the current text/thinking block, and the
+/// tool-block bookkeeping. The buffered [`parse_sse_stream`] and the driver's
+/// incremental reader both run this ONE decoder, so their events and final
+/// message are byte-identical.
+pub(crate) struct MistralSseDecoder {
+    model: MistralModel,
+    output: AssistantMessage,
+    /// pi pushes the `start` event before the decode loop; here it is emitted
+    /// lazily on the first `on_frame`/`finish` so it is always the first event
+    /// exactly once, whatever the chunk cadence.
+    started: bool,
+    /// The kind of the currently-accumulating text/thinking block (pi's
+    /// `currentBlock` discriminant).
+    current: Option<CurrentKind>,
+    /// Tool blocks keyed by `${callId}:${index}` → content index. `tool_order`
+    /// preserves pi's Map insertion order for the terminal `toolcall_end` flush.
+    tool_blocks_by_key: std::collections::HashMap<String, usize>,
+    tool_order: Vec<usize>,
+    tool_partial_args: std::collections::HashMap<usize, String>,
+}
+
+impl MistralSseDecoder {
+    /// A fresh decoder for `model`, seeding the empty output shell pi builds
+    /// before streaming. `timestamp` is pi's `Date.now()` message timestamp.
+    pub(crate) fn new(model: MistralModel, timestamp: i64) -> Self {
+        let output = AssistantMessage {
+            role: AssistantRole::Assistant,
+            content: Vec::new(),
+            api: model.api.clone(),
+            provider: model.provider.clone(),
+            model: model.id.clone(),
+            response_model: None,
+            response_id: None,
+            diagnostics: None,
+            usage: zero_usage(),
+            stop_reason: StopReason::Stop,
+            error_message: None,
+            timestamp,
+        };
+        Self {
+            model,
+            output,
+            started: false,
+            current: None,
+            tool_blocks_by_key: std::collections::HashMap::new(),
+            tool_order: Vec::new(),
+            tool_partial_args: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Emit pi's initial `start` event exactly once, before any frame's events.
+    fn ensure_started(&mut self, out: &mut Vec<AssistantMessageEvent>) {
+        if !self.started {
+            self.started = true;
+            out.push(AssistantMessageEvent::Start {
+                partial: self.output.clone(),
+            });
+        }
+    }
+
+    /// Consume one already-parsed `CompletionChunk` value, the body of pi's
+    /// `consumeChatStream` per-chunk loop.
+    fn consume_chunk(&mut self, chunk: &Value, out: &mut Vec<AssistantMessageEvent>) {
+        if self.output.response_id.is_none() {
             if let Some(id) = chunk.get("id").and_then(Value::as_str) {
                 if !id.is_empty() {
-                    output.response_id = Some(id.to_string());
+                    self.output.response_id = Some(id.to_string());
                 }
             }
         }
@@ -890,26 +944,26 @@ fn consume_chat_stream(
         if let Some(usage) = chunk.get("usage").filter(|u| !u.is_null()) {
             let prompt_tokens = u64_field(usage, "promptTokens");
             let cached_prompt_tokens = get_mistral_cached_prompt_tokens(usage, prompt_tokens);
-            output.usage.input = prompt_tokens.saturating_sub(cached_prompt_tokens);
-            output.usage.output = u64_field(usage, "completionTokens");
-            output.usage.cache_read = cached_prompt_tokens;
-            output.usage.cache_write = 0;
+            self.output.usage.input = prompt_tokens.saturating_sub(cached_prompt_tokens);
+            self.output.usage.output = u64_field(usage, "completionTokens");
+            self.output.usage.cache_read = cached_prompt_tokens;
+            self.output.usage.cache_write = 0;
             let total = usage.get("totalTokens").and_then(Value::as_u64);
-            output.usage.total_tokens = total.unwrap_or(
-                output.usage.input
-                    + output.usage.output
-                    + output.usage.cache_read
-                    + output.usage.cache_write,
+            self.output.usage.total_tokens = total.unwrap_or(
+                self.output.usage.input
+                    + self.output.usage.output
+                    + self.output.usage.cache_read
+                    + self.output.usage.cache_write,
             );
-            recompute_cost(model, &mut output.usage);
+            recompute_cost(&self.model, &mut self.output.usage);
         }
 
         let Some(choice) = chunk.get("choices").and_then(|c| c.get(0)) else {
-            continue;
+            return;
         };
 
         if let Some(finish_reason) = choice.get("finishReason").and_then(Value::as_str) {
-            output.stop_reason = map_chat_stop_reason(Some(finish_reason));
+            self.output.stop_reason = map_chat_stop_reason(Some(finish_reason));
         }
 
         let delta = choice.get("delta");
@@ -924,7 +978,7 @@ fn consume_chat_stream(
                 other => vec![other.clone()],
             };
             for item in &items {
-                consume_content_item(item, &mut current, output, events);
+                consume_content_item(item, &mut self.current, &mut self.output, out);
             }
         }
 
@@ -934,8 +988,8 @@ fn consume_chat_stream(
             .cloned()
             .unwrap_or_default();
         for tool_call in &tool_calls {
-            if let Some(kind) = current.take() {
-                finish_current_block(&kind, output, events);
+            if let Some(kind) = self.current.take() {
+                finish_current_block(&kind, &mut self.output, out);
             }
             let index = tool_call.get("index").and_then(Value::as_u64).unwrap_or(0);
             let provided_id = tool_call.get("id").and_then(Value::as_str);
@@ -951,26 +1005,29 @@ fn consume_chat_stream(
                 .unwrap_or("")
                 .to_string();
 
-            let block_index = match tool_blocks_by_key.get(&key) {
+            let block_index = match self.tool_blocks_by_key.get(&key) {
                 Some(&idx)
-                    if matches!(output.content.get(idx), Some(ContentBlock::ToolCall { .. })) =>
+                    if matches!(
+                        self.output.content.get(idx),
+                        Some(ContentBlock::ToolCall { .. })
+                    ) =>
                 {
                     idx
                 }
                 _ => {
-                    output.content.push(ContentBlock::ToolCall {
+                    self.output.content.push(ContentBlock::ToolCall {
                         id: call_id.clone(),
                         name,
                         arguments: json!({}),
                         thought_signature: None,
                     });
-                    let idx = output.content.len() - 1;
-                    tool_blocks_by_key.insert(key.clone(), idx);
-                    tool_order.push(idx);
-                    tool_partial_args.insert(idx, String::new());
-                    events.push(AssistantMessageEvent::ToolcallStart {
+                    let idx = self.output.content.len() - 1;
+                    self.tool_blocks_by_key.insert(key.clone(), idx);
+                    self.tool_order.push(idx);
+                    self.tool_partial_args.insert(idx, String::new());
+                    out.push(AssistantMessageEvent::ToolcallStart {
                         content_index: idx as u32,
-                        partial: output.clone(),
+                        partial: self.output.clone(),
                     });
                     idx
                 }
@@ -983,43 +1040,106 @@ fn consume_chat_stream(
                 }
                 _ => "{}".to_string(),
             };
-            let partial = tool_partial_args.entry(block_index).or_default();
+            let partial = self.tool_partial_args.entry(block_index).or_default();
             partial.push_str(&args_delta);
             let parsed = parse_streaming_json(Some(partial));
             if let Some(ContentBlock::ToolCall { arguments, .. }) =
-                output.content.get_mut(block_index)
+                self.output.content.get_mut(block_index)
             {
                 *arguments = parsed;
             }
-            events.push(AssistantMessageEvent::ToolcallDelta {
+            out.push(AssistantMessageEvent::ToolcallDelta {
                 content_index: block_index as u32,
                 delta: args_delta,
-                partial: output.clone(),
+                partial: self.output.clone(),
             });
         }
     }
+}
 
-    if let Some(kind) = current.take() {
-        finish_current_block(&kind, output, events);
+impl SseEventDecoder for MistralSseDecoder {
+    fn on_frame(
+        &mut self,
+        frame: &ServerSentEvent,
+        out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        self.ensure_started(out);
+
+        // The Mistral SDK terminates the stream with a `data: [DONE]` sentinel and
+        // never surfaces it as a `CompletionChunk`; empty frames carry no chunk.
+        if frame.data == "[DONE]" || frame.data.is_empty() {
+            return ControlFlow::Continue(());
+        }
+
+        // Inline the per-frame parse the SDK does before handing pi `event.data`.
+        // A malformed frame carries no decodable chunk; skip it (the buffered
+        // replay path only ever feeds well-formed JSON, so this never fires there).
+        if let Ok(value) = parse_json_with_repair(&frame.data) {
+            self.consume_chunk(&value, out);
+        }
+
+        ControlFlow::Continue(())
     }
-    for &index in &tool_order {
-        if !matches!(
-            output.content.get(index),
-            Some(ContentBlock::ToolCall { .. })
+
+    fn finish(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        self.ensure_started(out);
+
+        // pi's post-loop flush: close the trailing text/thinking block, then emit
+        // the terminal `toolcall_end` for every tool block in insertion order.
+        if let Some(kind) = self.current.take() {
+            finish_current_block(&kind, &mut self.output, out);
+        }
+        for &index in &self.tool_order {
+            if !matches!(
+                self.output.content.get(index),
+                Some(ContentBlock::ToolCall { .. })
+            ) {
+                continue;
+            }
+            let partial = self
+                .tool_partial_args
+                .get(&index)
+                .cloned()
+                .unwrap_or_default();
+            let parsed = parse_streaming_json(Some(&partial));
+            if let Some(ContentBlock::ToolCall { arguments, .. }) =
+                self.output.content.get_mut(index)
+            {
+                *arguments = parsed;
+            }
+            let tool_call = self.output.content[index].clone();
+            out.push(AssistantMessageEvent::ToolcallEnd {
+                content_index: index as u32,
+                tool_call,
+                partial: self.output.clone(),
+            });
+        }
+
+        // pi's post-loop guard: an error/aborted stop is re-thrown and surfaced as
+        // an error event (`An unknown error occurred`) rather than a done event.
+        if matches!(
+            self.output.stop_reason,
+            StopReason::Aborted | StopReason::Error
         ) {
-            continue;
+            let message = self
+                .output
+                .error_message
+                .clone()
+                .unwrap_or_else(|| "An unknown error occurred".to_string());
+            self.output.stop_reason = StopReason::Error;
+            self.output.error_message = Some(message);
+            out.push(AssistantMessageEvent::Error {
+                reason: self.output.stop_reason,
+                error: self.output.clone(),
+            });
+        } else {
+            out.push(AssistantMessageEvent::Done {
+                reason: self.output.stop_reason,
+                message: self.output.clone(),
+            });
         }
-        let partial = tool_partial_args.get(&index).cloned().unwrap_or_default();
-        let parsed = parse_streaming_json(Some(&partial));
-        if let Some(ContentBlock::ToolCall { arguments, .. }) = output.content.get_mut(index) {
-            *arguments = parsed;
-        }
-        let tool_call = output.content[index].clone();
-        events.push(AssistantMessageEvent::ToolcallEnd {
-            content_index: index as u32,
-            tool_call,
-            partial: output.clone(),
-        });
+
+        self.output.clone()
     }
 }
 
