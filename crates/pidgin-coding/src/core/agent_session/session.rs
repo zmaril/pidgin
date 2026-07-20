@@ -164,8 +164,7 @@ pub struct AgentSession {
     #[allow(dead_code)]
     base_tools_override: Option<HashMap<String, AgentTool>>,
     /// Session-start metadata emitted on extension bind (pi `_sessionStartEvent`).
-    // unit5: consumed by the runtime PR's `bind_extensions`/`session_start` emit.
-    #[allow(dead_code)]
+    /// Read by [`AgentSession::bind_extensions`] to emit `session_start`.
     session_start_event: SessionStartEvent,
 
     /// TUI-facing listeners keyed by a monotonic id (pi `_eventListeners`). Held
@@ -507,7 +506,83 @@ impl AgentSession {
     pub fn get_follow_up_messages(&self) -> Vec<String> {
         self.follow_up_messages.lock().unwrap().clone()
     }
+
+    /// The current session file, or `None` for an unpersisted (in-memory) session
+    /// (pi's `get sessionFile`, `agent-session.ts:956` → `sessionManager.getSessionFile()`).
+    pub fn session_file(&self) -> Option<String> {
+        self.session_manager
+            .lock()
+            .unwrap()
+            .get_session_file()
+            .map(String::from)
+    }
+
+    /// The current session id (pi's `get sessionId`, `agent-session.ts:961` →
+    /// `sessionManager.getSessionId()`).
+    pub fn session_id(&self) -> String {
+        self.session_manager
+            .lock()
+            .unwrap()
+            .get_session_id()
+            .to_string()
+    }
+
+    /// The current thinking level (pi's `get thinkingLevel`, `agent.state.thinkingLevel`).
+    pub fn thinking_level(&self) -> pidgin_agent::types::ThinkingLevel {
+        self.agent.thinking_level()
+    }
+
+    /// The session-start metadata this session emits on [`AgentSession::bind_extensions`]
+    /// (pi `_sessionStartEvent`).
+    pub(super) fn session_start_event(&self) -> &SessionStartEvent {
+        &self.session_start_event
+    }
+
+    /// Tear the session down before it is replaced or the process exits (pi's
+    /// `dispose`, `agent-session.ts:825`).
+    ///
+    /// Aborts every in-flight operation (retry backoff, compaction, branch
+    /// summarization, bash, and the agent run), invalidates the extension context
+    /// so a captured `pi`/command ctx cannot be reused after replacement,
+    /// disconnects the internal agent-event subscription, and clears the session
+    /// listeners. pi's `cleanupSessionResources(sessionId)` has no ported global
+    /// registry, so that final step is a no-op here (unit5).
+    pub fn dispose(&self) {
+        // pi wraps the aborts in try/catch so dispose always completes; the ported
+        // aborts are infallible.
+        self.abort_retry();
+        self.abort_compaction();
+        self.abort_branch_summary();
+        self.abort_bash();
+        self.agent.abort();
+
+        self.extension_runner()
+            .invalidate(STALE_EXTENSION_CTX_MESSAGE);
+        // pi's `_disconnectFromAgent`: drop the internal `agent.subscribe` handle.
+        drop(self.agent_subscription.lock().unwrap().take());
+        self.listeners.lock().unwrap().clear();
+    }
+
+    /// Swap the owned [`SessionManager`] out of this session, leaving a fresh
+    /// empty in-memory manager in its place, and return the extracted one.
+    ///
+    /// This is the ownership adaptation for pi's in-memory `/fork`, where the
+    /// runtime reuses `this.session.sessionManager` (a shared JS reference) as the
+    /// replacement session's manager. The ported `SessionManager` is owned behind
+    /// the session's shared `Arc<Mutex<..>>` and is not `Clone`, so the runtime
+    /// extracts it here (after mutating the branch) and hands the owned value to
+    /// the session factory; the disposed old session keeps the placeholder.
+    pub(super) fn swap_out_session_manager(&self) -> SessionManager {
+        let mut guard = self.session_manager.lock().unwrap();
+        let cwd = guard.get_cwd().to_string();
+        std::mem::replace(&mut *guard, SessionManager::in_memory(&cwd))
+    }
 }
+
+/// The staleness message pi's `dispose` passes to `extensionRunner.invalidate`
+/// (`agent-session.ts:838`), so a `pi`/command ctx captured before a session
+/// replacement throws when reused afterward.
+pub(super) const STALE_EXTENSION_CTX_MESSAGE: &str = "This extension ctx is stale after session replacement or reload. Do not use a captured pi or command ctx after ctx.newSession(), ctx.fork(), ctx.switchSession(), or ctx.reload(). For newSession, fork, and switchSession, move post-replacement work into withSession and use the ctx passed to withSession. For reload, do not use the old ctx after await ctx.reload().";
 
 #[cfg(test)]
 mod tests {

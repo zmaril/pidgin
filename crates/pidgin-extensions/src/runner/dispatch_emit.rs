@@ -22,8 +22,9 @@ use serde_json::{json, Map, Value};
 use pidgin_coding::core::extensions::events::common::AgentMessage;
 use pidgin_coding::core::extensions::events::{
     DiscoveredResourcePath, MessageEndEvent, MessageEndEventResult, ResourcesDiscoverReason,
-    ResourcesDiscoverResult, SessionBeforeCompactResult, SessionBeforeTreeResult,
-    SessionShutdownEvent, ToolCallEvent, ToolCallEventResult,
+    ResourcesDiscoverResult, SessionBeforeCompactResult, SessionBeforeForkResult,
+    SessionBeforeSwitchResult, SessionBeforeTreeResult, SessionShutdownEvent, ToolCallEvent,
+    ToolCallEventResult,
 };
 use pidgin_coding::core::extensions::runner::{ExtensionDispatchEvent, ExtensionEmitOutcome};
 use serde::Deserialize;
@@ -111,6 +112,14 @@ fn dispatch_event_json(event: &ExtensionDispatchEvent) -> (&'static str, Value) 
             "session_before_tree",
             tagged("session_before_tree", to_json(e)),
         ),
+        SessionBeforeSwitch(e) => (
+            "session_before_switch",
+            tagged("session_before_switch", to_json(e)),
+        ),
+        SessionBeforeFork(e) => (
+            "session_before_fork",
+            tagged("session_before_fork", to_json(e)),
+        ),
         EntryAppended(v) => ("entry_appended", tagged("entry_appended", v.clone())),
     }
 }
@@ -127,6 +136,8 @@ impl ExtensionRunner {
         let ctx = self.context_config().to_json();
         let is_before_compact = matches!(event, ExtensionDispatchEvent::SessionBeforeCompact(_));
         let is_before_tree = matches!(event, ExtensionDispatchEvent::SessionBeforeTree(_));
+        let is_before_switch = matches!(event, ExtensionDispatchEvent::SessionBeforeSwitch(_));
+        let is_before_fork = matches!(event, ExtensionDispatchEvent::SessionBeforeFork(_));
 
         let sites: Vec<String> = self
             .sites_by_name(name)
@@ -161,6 +172,23 @@ impl ExtensionRunner {
                 if let Some(result) = parse_result::<SessionBeforeTreeResult>(&invocation.result) {
                     let cancel = result.cancel == Some(true);
                     outcome = ExtensionEmitOutcome::BeforeTree(result);
+                    if cancel {
+                        return outcome;
+                    }
+                }
+            } else if is_before_switch {
+                if let Some(result) = parse_result::<SessionBeforeSwitchResult>(&invocation.result)
+                {
+                    let cancel = result.cancel == Some(true);
+                    outcome = ExtensionEmitOutcome::BeforeSwitch(result);
+                    if cancel {
+                        return outcome;
+                    }
+                }
+            } else if is_before_fork {
+                if let Some(result) = parse_result::<SessionBeforeForkResult>(&invocation.result) {
+                    let cancel = result.cancel == Some(true);
+                    outcome = ExtensionEmitOutcome::BeforeFork(result);
                     if cancel {
                         return outcome;
                     }
