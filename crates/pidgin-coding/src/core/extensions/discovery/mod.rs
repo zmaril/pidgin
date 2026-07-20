@@ -27,8 +27,9 @@
 //!
 //! Within a scanned directory ([`discover_extensions_in_dir`]) the rules are:
 //!
-//! 1. Direct files: `*.ts` or `*.js` → an entrypoint.
-//! 2. Subdirectory with `index.ts` / `index.js` (`.ts` preferred) → an entrypoint.
+//! 1. Direct files: `*.ts`, `*.js`, or `*.py` → an entrypoint.
+//! 2. Subdirectory with `index.ts` / `index.js` / `index.py` (`.ts` preferred,
+//!    then `.js`, then `.py`) → an entrypoint.
 //! 3. Subdirectory with a `package.json` carrying a `"pi"` field whose
 //!    `extensions` array declares one or more paths → those declared entrypoints
 //!    (this takes precedence over `index.ts`).
@@ -101,8 +102,11 @@ const CONFIG_DIR_NAME: &str = ".pi";
 pub enum ExtensionLanguage {
     /// A `.ts` entrypoint.
     TypeScript,
-    /// A `.js` (or any non-`.ts`) entrypoint.
+    /// A `.js` (or any non-`.ts`, non-`.py`) entrypoint.
     JavaScript,
+    /// A `.py` entrypoint (host-language extension; routed to the Python engine,
+    /// not the deno/JS runtime).
+    Python,
 }
 
 /// Which discovery root an extension was found through, in precedence order.
@@ -191,7 +195,7 @@ fn join2(base: &str, segment: &str) -> String {
 
 /// Whether a filename is an extension entrypoint file (pi's `isExtensionFile`).
 fn is_extension_file(name: &str) -> bool {
-    name.ends_with(".ts") || name.ends_with(".js")
+    name.ends_with(".ts") || name.ends_with(".js") || name.ends_with(".py")
 }
 
 /// Read a `package.json`'s `pi` manifest, or `None` if the file is unreadable,
@@ -224,7 +228,7 @@ fn package_relative_opts() -> PathInputOptions {
 /// directory declares none (pi's `resolveExtensionEntries`).
 ///
 /// Precedence: a `package.json` `pi.extensions` list (whose existing entries win)
-/// over `index.ts` over `index.js`.
+/// over `index.ts` over `index.js` over `index.py`.
 fn resolve_extension_entries(dir: &str) -> Option<Vec<String>> {
     // 1. package.json with a "pi.extensions" field takes precedence.
     let package_json_path = join2(dir, "package.json");
@@ -255,6 +259,10 @@ fn resolve_extension_entries(dir: &str) -> Option<Vec<String>> {
     let index_js = join2(dir, "index.js");
     if Path::new(&index_js).exists() {
         return Some(vec![index_js]);
+    }
+    let index_py = join2(dir, "index.py");
+    if Path::new(&index_py).exists() {
+        return Some(vec![index_py]);
     }
 
     None
@@ -308,13 +316,16 @@ fn discover_extensions_in_dir(dir: &str) -> Vec<String> {
     discovered
 }
 
-/// Infer the entrypoint language from its suffix. pi's discovery recognizes only
-/// `.ts`/`.js`; anything else (reachable only via a non-`.ts` configured path)
+/// Infer the entrypoint language from its suffix. `.ts` → TypeScript, `.py` →
+/// Python (pidgin's host-language extension, routed to the Python engine);
+/// anything else (including `.js` and any non-`.ts`/`.py` configured path)
 /// defaults to [`ExtensionLanguage::JavaScript`], matching how jiti treats an
 /// unknown suffix.
 fn infer_language(path: &str) -> ExtensionLanguage {
     if path.ends_with(".ts") {
         ExtensionLanguage::TypeScript
+    } else if path.ends_with(".py") {
+        ExtensionLanguage::Python
     } else {
         ExtensionLanguage::JavaScript
     }
