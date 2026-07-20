@@ -91,6 +91,20 @@ pub use inventory::{
 };
 
 // ---------------------------------------------------------------------------
+// Combined (deno + python) engine — one loader/runner over both planes
+// ---------------------------------------------------------------------------
+// The combined seam composes each engine's own `spawn` / factory entry points;
+// it is available whenever at least one engine is compiled in.
+#[cfg(any(feature = "deno", feature = "python"))]
+mod combined;
+
+#[cfg(any(feature = "deno", feature = "python"))]
+pub use combined::{
+    create_combined_extension_runner, CombinedExtensionLoader, CombinedExtensionRunner,
+    CombinedExtensionRuntime, EngineSelection,
+};
+
+// ---------------------------------------------------------------------------
 // V8 / deno-specific engine (the `deno` feature)
 // ---------------------------------------------------------------------------
 #[cfg(feature = "deno")]
@@ -123,7 +137,10 @@ pub use resource_loader_impl::{RealExtensionLoader, RealExtensionRuntime};
 #[cfg(feature = "deno")]
 pub use runner::{ContextConfig, ExtensionRunner, LoadedExtension};
 #[cfg(feature = "deno")]
-pub use runner_impl::{create_deno_extension_runner, hook_event_from_str, DenoExtensionRunner};
+pub use runner_impl::{
+    create_deno_extension_runner, create_deno_extension_runner_from_runtime_ref,
+    hook_event_from_str, DenoExtensionRunner,
+};
 #[cfg(feature = "deno")]
 pub use runtime::{JsPlaneHandle, SourceLanguage};
 

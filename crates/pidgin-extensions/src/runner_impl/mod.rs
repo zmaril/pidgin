@@ -388,6 +388,34 @@ pub fn create_deno_extension_runner(
     session_manager: Arc<SessionManager>,
     model_registry: Arc<ModelRegistry>,
 ) -> Box<dyn ExtensionRunnerTrait> {
+    // The owned-`Box` entry point is unchanged (its callers — #169 and the deno
+    // runner tests — depend on this signature): it simply borrows the box and
+    // shares the by-ref body below. The factory only ever *reads* the runtime
+    // (downcast_ref in the reuse path; the fallback ignores it), so a borrow
+    // suffices and no ownership of the runtime is required.
+    create_deno_extension_runner_from_runtime_ref(
+        extensions,
+        runtime.as_ref(),
+        cwd,
+        session_manager,
+        model_registry,
+    )
+}
+
+/// The by-**reference** twin of [`create_deno_extension_runner`], built for the
+/// combined (deno+python) runner factory: it constructs the deno inner runner
+/// from a *borrowed* inner runtime, because the combined runtime owns each inner
+/// `Box<dyn ExtensionRuntime>` behind a shared handle and cannot move it out.
+///
+/// Additive only — [`create_deno_extension_runner`] delegates here, so both share
+/// this one body and the owned-box signature stays intact.
+pub fn create_deno_extension_runner_from_runtime_ref(
+    extensions: Vec<Extension>,
+    runtime: &dyn ExtensionRuntime,
+    cwd: impl Into<String>,
+    session_manager: Arc<SessionManager>,
+    model_registry: Arc<ModelRegistry>,
+) -> Box<dyn ExtensionRunnerTrait> {
     let cwd = cwd.into();
 
     // Preferred (production): the loader handed us its real runtime. Share its

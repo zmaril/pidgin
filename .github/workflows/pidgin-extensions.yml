@@ -43,6 +43,14 @@ jobs:
       # deno-gated tests (which really load an extension on the V8 plane) run.
       - run: cargo build -p pidgin-cli --features deno
       - run: cargo test -p pidgin-cli --features deno
+      # The COMBINED (deno + python) extension loader: this V8 job is the only
+      # place the `deno,python` build compiles, since it needs the V8 blob. It
+      # exercises the combined loader/runner over BOTH engines and the combined
+      # CLI wiring. (The python-only slice is additionally verified offline.)
+      - run: cargo build -p pidgin-extensions --features deno,python
+      - run: cargo test -p pidgin-extensions --features deno,python
+      - run: cargo build -p pidgin-cli --features deno,python
+      - run: cargo test -p pidgin-cli --features deno,python
 
   python:
     name: python engine (PyO3)
@@ -64,3 +72,8 @@ jobs:
       - run: cargo build -p pidgin-extensions --features python
       - run: cargo clippy -p pidgin-extensions --features python --all-targets -- -D warnings
       - run: cargo test -p pidgin-extensions --features python
+      # The python-only slice of the combined CLI wiring: `pidgin -e ./ext.py`
+      # reaches the real combined loader (its python inner live), NOT the
+      # engine-free notice. Builds/tests offline since libpython needs no blob.
+      - run: cargo build -p pidgin-cli --features python
+      - run: cargo test -p pidgin-cli --features python
