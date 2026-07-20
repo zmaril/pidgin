@@ -111,3 +111,4 @@ The human merges in this order (rebasing each onto the prior as needed):
 | core/tools/read | coding-agent | pending | — | no | hybrid port (later batch) |
 | core/tools/edit | coding-agent | pending | — | no | hybrid port (later batch) |
 | agent session modules | coding-agent | pending | — | no | later batch |
+| utils/abort-signals | ai | deferred | — | no | abort-signals.ts deferred: sole consumer openai-codex-responses.ts unported; event-driven combinator has no faithful poll-seam mapping; port alongside consumer |
