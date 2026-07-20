@@ -20,9 +20,10 @@
 //! provider whose catalog models all share one registered api name becomes
 //! [`ApiRouting::Single`], one whose models span multiple api names becomes
 //! [`ApiRouting::ByApi`] over the api names that have a backend, and one with no
-//! registered api name stays [`ApiRouting::Unimplemented`]. Only the
-//! `anthropic-messages` dialect is ported today; every other dialect adapter
-//! plugs in by adding one arm to [`backend_for_api`].
+//! registered api name stays [`ApiRouting::Unimplemented`]. The
+//! `anthropic-messages` and `google-generative-ai` dialects are ported today;
+//! every other dialect adapter plugs in by adding one arm to
+//! [`backend_for_api`].
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -30,6 +31,9 @@ use std::sync::Arc;
 use pidgin_model_catalog::{catalog, Modality as CatModality, Model as CatModel};
 
 use crate::providers::anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
+use crate::providers::google_generative_ai_backend::{
+    GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API,
+};
 use crate::providers::openai_completions_backend::{
     OpenAICompletionsBackend, OPENAI_COMPLETIONS_API,
 };
@@ -249,8 +253,12 @@ fn backend_for_api(
             transport.clone(),
             clock.clone(),
         ))),
+        GOOGLE_GENERATIVE_AI_API => Some(Arc::new(GoogleGenerativeAiBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ))),
         // Follow-up (port): register the remaining ported dialects
-        // (openai_responses, google, bedrock, mistral, azure) here as their
+        // (openai_responses, google_vertex, bedrock, mistral, azure) here as their
         // transport-aware `Provider` adapters land.
         _ => None,
     }

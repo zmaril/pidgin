@@ -10,6 +10,7 @@ pub mod anthropic_backend;
 pub mod builtins;
 pub mod composer;
 pub mod faux;
+pub mod google_generative_ai_backend;
 pub mod openai_completions_backend;
 pub mod registry;
 
@@ -24,6 +25,7 @@ pub use composer::{
     ComposedProvider, ConfigValueError, ConfigValueResolver, ExtensionAuthConfig,
     ExtensionOAuthConfig, ProviderAuthConfig,
 };
+pub use google_generative_ai_backend::{GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API};
 pub use openai_completions_backend::{OpenAICompletionsBackend, OPENAI_COMPLETIONS_API};
 pub use registry::{
     clamp_thinking_level, create_models, create_provider, get_supported_thinking_levels,
