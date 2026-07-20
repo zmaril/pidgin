@@ -1,0 +1,55 @@
+This directory contains a third-party asset vendored into pidgin and
+redistributed under the MIT License.
+
+Vendored asset:
+  typebox-1.1.38.mjs
+    upstream:  typebox (npm), version 1.1.38
+    homepage:  https://github.com/sinclairzx81/typebox
+    author:    Haydn Paterson (sinclair)
+
+How it was produced:
+  typebox 1.1.38's root export (its package "." entry, ./build/index.mjs) is a
+  multi-file ES-module graph (~690 .mjs files). It was bundled into this single,
+  self-contained ESM file with esbuild 0.28.1:
+
+    npx esbuild build/index.mjs --bundle --format=esm --platform=neutral \
+      --outfile=typebox-1.1.38.mjs
+
+  Bundling to one file (no internal relative imports left to resolve) lets
+  pidgin's extension module loader serve typebox as a single asset. The named
+  export `Type` (and `Type.Object(...)`) is preserved; verified in Node before
+  vendoring. A first-line straitjacket-allow-file marker was prepended so the
+  bundled machine-generated JS does not trip the repo's source linters; the
+  bundle body is otherwise the unmodified esbuild output.
+
+  The asset is served by pidgin's deno extension module loader
+  (crates/pidgin-extensions/src/module_loader.rs) for the bare specifiers
+  `typebox` and `@sinclair/typebox`, mirroring pi's jiti virtualModules alias.
+
+The full upstream license text follows.
+
+-------------------------------------------------------------------------------
+
+TypeBox
+
+The MIT License (MIT)
+
+Copyright (c) 2017-2026 Haydn Paterson
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
