@@ -24,6 +24,12 @@ serde_json = { workspace = true }
 # napi calls arrive on node's thread with no ambient tokio runtime, so a direct
 # `block_on` does not hit the nested-runtime panic.
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time", "sync"] }
+# The shared streaming contract (Poll/PollStream) the fluessig-generated napi
+# binding (`src/generated.rs`) imports. Pinned to the fluessig rev that carries
+# the node backend + per-op export-name pins on `main`. Keep this in sync with
+# the pinned rev in `regen.sh` — the generated code and the runtime crate must
+# come from the same fluessig revision.
+fluessig-runtime = { git = "https://github.com/zmaril/fluessig", rev = "48340b16cac5a7c6658748ac5403352425811aeb" }
 
 [build-dependencies]
 napi-build = "2"
