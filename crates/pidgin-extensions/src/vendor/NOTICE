@@ -1,5 +1,6 @@
-This directory contains a third-party asset vendored into pidgin and
-redistributed under the MIT License.
+This directory contains third-party assets vendored into pidgin and
+redistributed under the MIT License, plus two hand-written faithful shims of
+named exports from the pi project.
 
 Vendored asset:
   typebox-1.1.38.mjs
@@ -26,7 +27,35 @@ How it was produced:
   (crates/pidgin-extensions/src/module_loader.rs) for the bare specifiers
   `typebox` and `@sinclair/typebox`, mirroring pi's jiti virtualModules alias.
 
-The full upstream license text follows.
+Faithful shims of pi named exports:
+  pi-ai-shim.mjs
+  pi-coding-agent-shim.mjs
+    upstream: pi (earendil-works/pi), MIT License, Copyright (c) 2025 Mario Zechner
+    homepage: https://github.com/earendil-works/pi
+
+  These two files are hand-written, behavior-faithful shims of the extension-
+  facing VALUE exports of pi's `@earendil-works/pi-ai` and
+  `@earendil-works/pi-coding-agent` packages, so that real upstream `defineTool`
+  tool extensions load, register, and invoke on pidgin's deno plane. They are
+  adaptations rather than verbatim copies:
+
+    pi-ai-shim.mjs mirrors pi's packages/ai/src/index.ts extension VALUE surface
+    (`export { Type } from "typebox"`) plus `StringEnum`, whose body is copied
+    faithfully from packages/ai/src/utils/typebox-helpers.ts (TS generics and the
+    `as any` cast are erased at transpile, so the runtime body is identical). The
+    nested `typebox` import resolves through the same loader to the vendored
+    TypeBox bundle above, sharing `Type`'s identity.
+
+    pi-coding-agent-shim.mjs mirrors pi's `defineTool`
+    (packages/coding-agent/src/core/extensions/types.ts:497), which is a pure
+    identity function; the shim is the equivalent `(tool) => tool`.
+
+  The loader serves them for the bare specifiers `@earendil-works/pi-ai` and
+  `@earendil-works/pi-coding-agent`, mirroring pi's jiti virtualModules alias.
+  pi's MIT license (Copyright (c) 2025 Mario Zechner) governs these adaptations;
+  its full text is reproduced in examples/extensions/NOTICE.
+
+The full upstream license text (for the vendored TypeBox asset) follows.
 
 -------------------------------------------------------------------------------
 

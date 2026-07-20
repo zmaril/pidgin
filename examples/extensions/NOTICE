@@ -8,6 +8,9 @@ Vendored file(s):
   examples/extensions/reload-runtime/index.ts
     upstream: packages/coding-agent/examples/extensions/reload-runtime.ts
 
+  examples/extensions/hello/index.ts
+    upstream: packages/coding-agent/examples/extensions/hello.ts
+
 The code below the short attribution header in each vendored file is an
 unmodified copy of the corresponding upstream source. The full upstream
 license text follows.

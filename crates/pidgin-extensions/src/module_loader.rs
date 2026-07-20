@@ -22,35 +22,45 @@
 //!
 //! # What pi does (the behavior this mirrors)
 //!
-//! pi loads extensions with jiti and makes TypeBox available through jiti's
-//! `virtualModules` alias map. See pi's
+//! pi loads extensions with jiti and makes its bundled modules available through
+//! jiti's `virtualModules` alias map. See pi's
 //! `packages/coding-agent/src/core/extensions/loader.ts` `VIRTUAL_MODULES`
 //! (loader.ts:47-57), which aliases `typebox` and `@sinclair/typebox` (plus the
 //! `/compile` and `/value` subpaths and the `@earendil-works/*` packages) to
 //! bundled modules. This loader mirrors the **`typebox` / `@sinclair/typebox`
-//! root** slice of that map with a single vendored, pinned TypeBox 1.1.38 ESM.
+//! root** slice of that map (a single vendored, pinned TypeBox 1.1.38 ESM) plus
+//! two small hand-written faithful shims for the extension-facing VALUE surface
+//! of the `@earendil-works/pi-ai` and `@earendil-works/pi-coding-agent` packages,
+//! so real upstream `defineTool` tool extensions load, register, and invoke.
 //!
 //! # Specifier classes
 //!
 //! [`PidginModuleLoader::resolve`] partitions every import specifier into three
-//! classes:
+//! classes, driven by the [`MODULE_TABLE`] of embedded assets:
 //!
-//! * **Vendored bare specifier** — exactly `typebox` or `@sinclair/typebox`:
-//!   resolved to the synthetic URL [`TYPEBOX_URL`], whose source
-//!   [`PidginModuleLoader::load`] serves from the embedded bundle (behind a small
-//!   `TextEncoder` shim the bundle needs — see [`TEXTENCODER_SHIM`]). This is the
-//!   only bare specifier that resolves.
+//! * **Vendored / shimmed bare specifier** — matched exactly against a
+//!   [`ModuleTableEntry::specifiers`] list:
+//!     * `typebox` / `@sinclair/typebox` → the vendored TypeBox 1.1.38 bundle
+//!       ([`TYPEBOX_SRC`]), served behind a small `TextEncoder` shim the bundle
+//!       needs (see [`TEXTENCODER_SHIM`], carried as the entry's `prelude`).
+//!     * `@earendil-works/pi-ai` → a shim re-exporting `Type` (from `typebox`,
+//!       which nest-resolves through this same loader to the SAME bundle, so
+//!       `Type`'s identity is shared) plus `StringEnum`.
+//!     * `@earendil-works/pi-coding-agent` → a shim exporting the identity
+//!       `defineTool`.
+//!   Each resolves to the entry's synthetic `file:///pidgin-vendor/…` URL, whose
+//!   source [`PidginModuleLoader::load`] serves as `prelude + source`.
 //! * **Relative / URL specifier** — starts with `.` or `/`, or already has a URL
 //!   scheme (`file:`, `http:`, …): delegated to [`deno_core::resolve_import`],
 //!   which handles the extension entry module itself (loaded under
 //!   `file:///pidgin-extension/…`) and any sibling relative import.
 //! * **Any other bare specifier** — e.g. `typebox/compile`, `typebox/value`,
-//!   `@earendil-works/pi-ai`, `node:fs`: rejected with a clear
-//!   [`ModuleLoaderError`] naming the unresolvable specifier and stating that
-//!   only `typebox` is vendored. These are the deliberate scope boundary: pi's
-//!   full alias map also serves the `/compile` + `/value` subpaths and the
-//!   pi-ai / pi-tui packages; wiring those (and a `node:` shim) is a larger
-//!   pi-runtime-shim follow-up.
+//!   `@earendil-works/pi-tui`, `node:fs`: rejected with a clear
+//!   [`ModuleLoaderError`] naming the unresolvable specifier. These are the
+//!   deliberate scope boundary: pi's full alias map also serves the `/compile` +
+//!   `/value` subpaths, the pi-tui package (`Text` etc.), and the host-backed
+//!   tool factories (`createBashTool`'s family); wiring those (and a `node:`
+//!   shim) is a larger pi-runtime / pi-tui shim follow-up.
 
 use deno_core::error::ModuleLoaderError;
 use deno_core::{
@@ -114,11 +124,70 @@ globalThis.TextEncoder ??= class TextEncoder {
 /// answers it with [`TYPEBOX_SRC`].
 const TYPEBOX_URL: &str = "file:///pidgin-vendor/typebox-1.1.38.mjs";
 
-/// pidgin's [`deno_core::ModuleLoader`]: resolves the bare `typebox` /
-/// `@sinclair/typebox` specifiers to a vendored TypeBox 1.1.38 bundle, delegates
-/// relative/URL specifiers to deno_core's default resolution, and rejects every
-/// other bare specifier with a clear error. See the module docs for the full
-/// rationale and specifier-class table.
+/// Faithful shim of the extension-facing VALUE surface of `@earendil-works/pi-ai`
+/// (`Type` re-export + `StringEnum`). Its nested `import { Type } from "typebox"`
+/// nest-resolves through this loader to [`TYPEBOX_URL`], sharing `Type`'s identity
+/// with direct typebox importers. See `vendor/NOTICE`.
+const PI_AI_SHIM_SRC: &str = include_str!("vendor/pi-ai-shim.mjs");
+
+/// The synthetic URL the pi-ai shim loads under.
+const PI_AI_SHIM_URL: &str = "file:///pidgin-vendor/pi-ai-shim.mjs";
+
+/// Faithful shim of `@earendil-works/pi-coding-agent`'s identity `defineTool`
+/// (pi's `types.ts:497`), the one value export a `defineTool` tool extension
+/// imports from that package. See `vendor/NOTICE`.
+const PI_CODING_AGENT_SHIM_SRC: &str = include_str!("vendor/pi-coding-agent-shim.mjs");
+
+/// The synthetic URL the pi-coding-agent shim loads under.
+const PI_CODING_AGENT_SHIM_URL: &str = "file:///pidgin-vendor/pi-coding-agent-shim.mjs";
+
+/// One embedded module the loader can resolve and serve for a set of bare
+/// specifiers. Refactoring the resolve/load pair around this table lets N
+/// specifiers scale cleanly rather than growing hardcoded `if` arms.
+struct ModuleTableEntry {
+    /// The exact bare specifiers that resolve to this entry (aliases share one
+    /// entry, mirroring pi's jiti alias map — e.g. `typebox` / `@sinclair/typebox`).
+    specifiers: &'static [&'static str],
+    /// The synthetic URL the entry loads under; [`PidginModuleLoader::resolve`]
+    /// maps every `specifiers` value to it, and [`PidginModuleLoader::load`]
+    /// matches the incoming `module_specifier` against it.
+    url: &'static str,
+    /// The embedded module source served for `url`.
+    source: &'static str,
+    /// Text prepended to `source` at load (e.g. the [`TEXTENCODER_SHIM`] the
+    /// TypeBox bundle needs). `None` for shims that need no host prelude.
+    prelude: Option<&'static str>,
+}
+
+/// The embedded modules pidgin's loader resolves, mirroring the `typebox` root +
+/// `@earendil-works/*` value slice of pi's jiti `virtualModules` alias map.
+const MODULE_TABLE: &[ModuleTableEntry] = &[
+    ModuleTableEntry {
+        specifiers: &["typebox", "@sinclair/typebox"],
+        url: TYPEBOX_URL,
+        source: TYPEBOX_SRC,
+        prelude: Some(TEXTENCODER_SHIM),
+    },
+    ModuleTableEntry {
+        specifiers: &["@earendil-works/pi-ai"],
+        url: PI_AI_SHIM_URL,
+        source: PI_AI_SHIM_SRC,
+        prelude: None,
+    },
+    ModuleTableEntry {
+        specifiers: &["@earendil-works/pi-coding-agent"],
+        url: PI_CODING_AGENT_SHIM_URL,
+        source: PI_CODING_AGENT_SHIM_SRC,
+        prelude: None,
+    },
+];
+
+/// pidgin's [`deno_core::ModuleLoader`]: resolves the vendored/shimmed bare
+/// specifiers in [`MODULE_TABLE`] (the `typebox` root plus the
+/// `@earendil-works/pi-ai` / `@earendil-works/pi-coding-agent` value shims),
+/// delegates relative/URL specifiers to deno_core's default resolution, and
+/// rejects every other bare specifier with a clear error. See the module docs for
+/// the full rationale and specifier-class table.
 pub struct PidginModuleLoader;
 
 impl PidginModuleLoader {
@@ -143,10 +212,13 @@ impl ModuleLoader for PidginModuleLoader {
         referrer: &str,
         _kind: ResolutionKind,
     ) -> Result<ModuleSpecifier, ModuleLoaderError> {
-        // 1. The one vendored bare specifier: TypeBox's root export, aliased
-        //    exactly as pi's jiti virtualModules map does (loader.ts:49,52).
-        if specifier == "typebox" || specifier == "@sinclair/typebox" {
-            return ModuleSpecifier::parse(TYPEBOX_URL).map_err(ModuleLoaderError::from_err);
+        // 1. A vendored/shimmed bare specifier from the module table: TypeBox's
+        //    root export and the `@earendil-works/*` value shims, aliased exactly
+        //    as pi's jiti virtualModules map does (loader.ts:47-57).
+        for entry in MODULE_TABLE {
+            if entry.specifiers.contains(&specifier) {
+                return ModuleSpecifier::parse(entry.url).map_err(ModuleLoaderError::from_err);
+            }
         }
 
         // 2. Relative or already-qualified loadable-URL specifiers: the
@@ -167,9 +239,10 @@ impl ModuleLoader for PidginModuleLoader {
         //    "module loading is not supported".
         Err(ModuleLoaderError::generic(format!(
             "cannot resolve bare specifier {specifier:?}: pidgin's extension module loader only \
-             vendors `typebox` (and its `@sinclair/typebox` alias). Subpaths like \
-             `typebox/compile` / `typebox/value` and packages like `@earendil-works/pi-ai` are \
-             not yet available on the plane."
+             vendors `typebox` (and its `@sinclair/typebox` alias) and the value shims for \
+             `@earendil-works/pi-ai` (Type, StringEnum) and `@earendil-works/pi-coding-agent` \
+             (defineTool). Subpaths like `typebox/compile` / `typebox/value`, `@earendil-works/pi-tui`, \
+             `node:` builtins, and host-backed tool factories are not yet available on the plane."
         )))
     }
 
@@ -179,21 +252,25 @@ impl ModuleLoader for PidginModuleLoader {
         _maybe_referrer: Option<&ModuleLoadReferrer>,
         _options: ModuleLoadOptions,
     ) -> ModuleLoadResponse {
-        if module_specifier.as_str() == TYPEBOX_URL {
-            // Prepend the TextEncoder shim so the bundle's top-level
-            // `new TextEncoder()` succeeds on the deno_web-less plane (see
-            // TEXTENCODER_SHIM). One String allocation per load; loads are rare.
-            let source = format!("{TEXTENCODER_SHIM}{TYPEBOX_SRC}");
-            return ModuleLoadResponse::Sync(Ok(ModuleSource::new(
-                ModuleType::JavaScript,
-                ModuleSourceCode::String(source.into()),
-                module_specifier,
-                None,
-            )));
+        for entry in MODULE_TABLE {
+            if module_specifier.as_str() == entry.url {
+                // Serve `prelude + source`. For the TypeBox entry the prelude is
+                // the TextEncoder shim, so the bundle's top-level
+                // `new TextEncoder()` succeeds on the deno_web-less plane (see
+                // TEXTENCODER_SHIM); the shim entries have no prelude. One String
+                // allocation per load; loads are rare.
+                let source = format!("{}{}", entry.prelude.unwrap_or(""), entry.source);
+                return ModuleLoadResponse::Sync(Ok(ModuleSource::new(
+                    ModuleType::JavaScript,
+                    ModuleSourceCode::String(source.into()),
+                    module_specifier,
+                    None,
+                )));
+            }
         }
 
-        // resolve() only ever hands us TYPEBOX_URL or a specifier it delegated to
-        // deno_core (whose source the extension supplies inline via
+        // resolve() only ever hands us a MODULE_TABLE url or a specifier it
+        // delegated to deno_core (whose source the extension supplies inline via
         // load_side_es_module_from_code, so load() is never called for it). Any
         // other specifier reaching here has no source to serve.
         ModuleLoadResponse::Sync(Err(ModuleLoaderError::generic(format!(
