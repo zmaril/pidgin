@@ -1,3 +1,7 @@
+// straitjacket-allow-file:duplication — the theme/keybindings/scripted-input
+// setup preamble is the same two-helper boilerplate every llama TUI test file
+// carries (see `llama_ui_behavior`); keeping each test file self-contained is
+// deliberate.
 //! Behavioural tests for the `/llama` mount seam: the widened
 //! [`ExtensionContext::ui`] `custom` surface and the interactive
 //! [`TuiExtensionUi`] host that mounts a [`LlamaView`] as a focused overlay and

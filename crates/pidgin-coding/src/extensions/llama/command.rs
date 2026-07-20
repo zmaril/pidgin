@@ -44,22 +44,21 @@ use crate::core::extensions::types::{ExtensionContext, NotifyLevel, UiError};
 
 use super::client::{LlamaClient, LlamaListOptions, LlamaModelInfo, LlamaModelStatus};
 use super::provider::LlamaProviderController;
-use super::ui::{show_llama_ui, ConnectionErrorChoice, LlamaManagerAction, LlamaUi, LlamaView};
+use super::mount::show_llama_ui;
+use super::ui::{ConnectionErrorChoice, LlamaManagerAction, LlamaUi, LlamaView};
 
 /// An owned notification sink for the loop's informational `ctx.ui.notify` calls
 /// (see the module note on why the `'static` `run` future needs an owned sink).
 pub type NotifyFn = Rc<dyn Fn(&str, NotifyLevel)>;
 
-/// The lowercase status literal pi reads off `model.status.value` (its serde
-/// `rename_all = "lowercase"` wire form).
-fn status_label(status: LlamaModelStatus) -> &'static str {
-    match status {
-        LlamaModelStatus::Unloaded => "unloaded",
-        LlamaModelStatus::Loading => "loading",
-        LlamaModelStatus::Loaded => "loaded",
-        LlamaModelStatus::Downloading => "downloading",
-        LlamaModelStatus::Sleeping => "sleeping",
-    }
+/// The lowercase status literal pi reads off `model.status.value` — taken
+/// straight from the enum's serde `rename_all = "lowercase"` wire form so the
+/// mapping has a single source of truth.
+fn status_label(status: LlamaModelStatus) -> String {
+    serde_json::to_value(status)
+        .ok()
+        .and_then(|value| value.as_str().map(str::to_string))
+        .unwrap_or_default()
 }
 
 /// `modelIsLoaded(model)` — loaded or sleeping (`index.ts:7`).
