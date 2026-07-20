@@ -34,6 +34,7 @@ use crate::providers::anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_ME
 use crate::providers::google_generative_ai_backend::{
     GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API,
 };
+use crate::providers::mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
 use crate::providers::openai_completions_backend::{
     OpenAICompletionsBackend, OPENAI_COMPLETIONS_API,
 };
@@ -257,8 +258,12 @@ fn backend_for_api(
             transport.clone(),
             clock.clone(),
         ))),
+        MISTRAL_CONVERSATIONS_API => Some(Arc::new(MistralBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ))),
         // Follow-up (port): register the remaining ported dialects
-        // (openai_responses, google_vertex, bedrock, mistral, azure) here as their
+        // (openai_responses, google_vertex, bedrock, azure) here as their
         // transport-aware `Provider` adapters land.
         _ => None,
     }
