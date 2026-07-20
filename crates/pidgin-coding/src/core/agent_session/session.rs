@@ -217,6 +217,12 @@ pub struct AgentSession {
     /// `_autoCompactionAbortController`); `Some` only while `run_auto_compaction`
     /// runs. Tripped by [`AgentSession::abort_compaction`].
     pub(super) auto_compaction_abort_signal: Arc<Mutex<Option<AbortSignal>>>,
+    /// The abort signal for an in-progress branch summarization (pi
+    /// `_branchSummaryAbortController`); `Some` only while
+    /// [`AgentSession::navigate_tree`](super::tree) summarizes an abandoned branch.
+    /// Tripped by [`AgentSession::abort_branch_summary`] and observed by
+    /// [`AgentSession::is_compacting`]. See [`super::tree`].
+    pub(super) branch_summary_abort_signal: Arc<Mutex<Option<AbortSignal>>>,
 
     /// The current auto-retry attempt count (pi `_retryAttempt`). Shared with the
     /// agent-event handler, which resets it on a successful assistant response and
@@ -395,6 +401,7 @@ impl AgentSession {
             overflow_recovery_attempted,
             compaction_abort_signal: Arc::new(Mutex::new(None)),
             auto_compaction_abort_signal: Arc::new(Mutex::new(None)),
+            branch_summary_abort_signal: Arc::new(Mutex::new(None)),
             is_agent_run_active,
             is_aborting: AtomicBool::new(false),
             base_system_prompt,
