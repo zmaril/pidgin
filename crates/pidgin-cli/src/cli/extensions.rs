@@ -131,6 +131,14 @@ mod tests {
     use super::*;
     use crate::cli::args::Args;
 
+    /// Assert every field of a report is empty (the "loaded nothing" shape).
+    fn assert_empty(report: &ExtensionsReport) {
+        assert!(report.names.is_empty());
+        assert!(report.commands.is_empty());
+        assert!(report.tools.is_empty());
+        assert!(report.errors.is_empty());
+    }
+
     /// Without the `deno` feature, requesting `-e foo.ts` yields an empty report
     /// and does not panic (the graceful-notice path). This asserts the
     /// arg→behavior contract with no V8.
@@ -141,21 +149,13 @@ mod tests {
             extensions: Some(vec!["foo.ts".to_string()]),
             ..Args::default()
         };
-        let report = load_and_report_extensions(&parsed, ".");
-        assert!(report.names.is_empty());
-        assert!(report.commands.is_empty());
-        assert!(report.tools.is_empty());
-        assert!(report.errors.is_empty());
+        assert_empty(&load_and_report_extensions(&parsed, "."));
     }
 
     /// A default report is empty across both configs.
     #[test]
     fn default_report_is_empty() {
-        let report = ExtensionsReport::default();
-        assert!(report.names.is_empty());
-        assert!(report.commands.is_empty());
-        assert!(report.tools.is_empty());
-        assert!(report.errors.is_empty());
+        assert_empty(&ExtensionsReport::default());
     }
 
     /// Under the `deno` feature, loading the inline `task-list.ts` fixture with
