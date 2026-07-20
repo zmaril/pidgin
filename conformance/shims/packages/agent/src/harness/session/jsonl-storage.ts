@@ -1,3 +1,4 @@
+// straitjacket-allow-file:duplication — parallel native-storage shim; jsonl/memory backends share the same NodeExecutionEnv-detection and Result/SessionError reshaping boilerplate by design.
 // Native shim for packages/agent/src/harness/session/jsonl-storage.ts, backed by
 // the pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs
 // when the module is marked `native` in conformance/manifest.json: the original
