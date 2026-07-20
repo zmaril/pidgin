@@ -11,13 +11,14 @@
 //!
 //! Ported from the credential-*aware* half of pi's
 //! `packages/coding-agent/src/core/provider-composer.ts` at pinned commit
-//! `3da591ab`. In pi this lives in the coding-agent package, but its primitives
-//! operate on pidgin-ai's own rich auth traits ([`ApiKeyAuth`], [`OAuthAuth`],
-//! [`ProviderAuth`], [`ModelAuth`], [`AuthResult`]) and on [`Provider`]/
-//! [`RegistryProvider`], so the AUTH layer is the additive rich surface that
-//! belongs here in pidgin-ai. The consumer crate `pidgin-coding`
-//! (model-runtime) calls into these definitions (its reserved
-//! `adapt_oauth(config) -> Box<dyn OAuthAuth>` call site bridges to [`adapt_oauth`]).
+//! `3da591ab`. In pi this lives in the coding-agent package alongside the
+//! credential-blind half, and so it does here: this module lives in pidgin-coding
+//! next to [`provider_composer`](super::provider_composer). Its primitives operate
+//! on pidgin-ai's own rich auth traits ([`ApiKeyAuth`], [`OAuthAuth`],
+//! [`ProviderAuth`], [`ModelAuth`], [`AuthResult`]) and on
+//! [`RegistryProvider`](pidgin_ai::providers::registry::RegistryProvider), which
+//! pidgin-coding reaches cross-crate. The runtime (model-runtime, same crate)
+//! calls [`compose_model_provider`] to assemble the rich composed provider.
 //!
 //! # Split from the credential-blind half
 //!
@@ -35,16 +36,19 @@
 //! [`ProviderAuth`], the `"no authentication method configured"` throw, the
 //! `supportsBaseApi` streaming dispatch, and the eager stream wiring.
 //!
-//! # Config-value resolution seam
+//! # Config-value resolution
 //!
 //! pi's composers call `resolve-config-value.ts` (`resolveConfigValueOrThrow` /
 //! `resolveHeadersOrThrow` / `getConfigValueEnvVarNames` / `isCommandConfigValue`)
 //! to turn a configured `$ENV` / `!command` / literal string into a value. That
-//! resolver lives in `pidgin-coding`, which pidgin-ai cannot depend on. The
-//! composers therefore take a [`ConfigValueResolver`] seam; `pidgin-coding` wires
-//! its ported resolver in, and this crate's tests use a small literal/`$ENV`
-//! resolver. This mirrors how the rest of pidgin-ai injects environment-coupled
-//! behavior through seams.
+//! resolver is ported in this crate as
+//! [`resolve_config_value`](super::resolve_config_value); now that the composers
+//! and the resolver co-locate in `pidgin-coding`, the composers call it directly
+//! (the earlier `ConfigValueResolver` seam existed only to cross the former
+//! pidgin-ai <-> pidgin-coding boundary and has collapsed). The composed
+//! api-key/OAuth handlers speak [`BTreeMap`] for their configured headers/env, so
+//! small `btree_to_hash`/`into_btree` bridges adapt those to the resolver's
+//! [`HashMap`](std::collections::HashMap) surface at the call boundary.
 //!
 //! # `adaptOAuth` bridge
 //!
@@ -66,74 +70,41 @@
 //! The `extension.streamSimple` branch (an effectful runtime concern, deferred
 //! with the rest of the runtime slice) is not wired here.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
-use crate::auth::error::AuthFlowError;
-use crate::auth::oauth::extension::{adapt_extension_oauth, ExtensionOAuthLogin};
-use crate::auth::oauth::flow::OAuthFlowMachine;
-use crate::auth::types::{
+use pidgin_ai::auth::error::AuthFlowError;
+use pidgin_ai::auth::oauth::extension::{adapt_extension_oauth, ExtensionOAuthLogin};
+use pidgin_ai::auth::oauth::flow::OAuthFlowMachine;
+use pidgin_ai::auth::types::{
     ApiKeyAuth, ApiKeyCredential, AuthCheck, AuthContext, AuthInteraction, AuthPrompt,
     AuthPromptKind, AuthResult, AuthType, ModelAuth, OAuthAuth, OAuthCredential, ProviderAuth,
     ProviderHeaders,
 };
-use crate::compat::get_api_provider;
-use crate::providers::registry::RegistryProvider;
-use crate::seams::provider::{AbortSignal, StreamResult};
-use crate::types::{
+use pidgin_ai::compat::get_api_provider;
+use pidgin_ai::providers::registry::RegistryProvider;
+use pidgin_ai::seams::provider::{AbortSignal, StreamResult};
+use pidgin_ai::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, StopReason,
     StreamOptions, Usage, UsageCost,
 };
 
-/// An error thrown while resolving a configured `$ENV` / `!command` / literal
-/// config value, mirroring the errors pi's `resolve-config-value.ts` throws. The
-/// [`ConfigValueResolver`] seam returns this; the composers re-wrap it as an
-/// [`AuthFlowError`] on the resolve path.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ConfigValueError(pub String);
+use super::resolve_config_value::{
+    get_config_value_env_var_names, is_command_config_value, resolve_config_value_or_throw,
+    resolve_headers_or_throw,
+};
 
-impl std::fmt::Display for ConfigValueError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
-    }
+/// Bridge the composers' [`BTreeMap`] header/env surface onto the resolver's
+/// [`HashMap`] one (pi keeps a single map type; the Rust ports differ, so the
+/// boundary converts).
+fn btree_to_hash(map: &BTreeMap<String, String>) -> HashMap<String, String> {
+    map.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
 }
 
-impl std::error::Error for ConfigValueError {}
-
-/// The config-value resolution seam the composers depend on.
-///
-/// Mirrors the subset of pi's `resolve-config-value.ts` the auth layer uses. A
-/// configured value may be a literal, a `$ENV` / `${ENV}` reference, or a
-/// `!command`. `pidgin-coding` implements this over its ported resolver; the
-/// error-coupled command form lives on the far side of this seam so pidgin-ai
-/// stays free of process/shell I/O.
-pub trait ConfigValueResolver: Send + Sync {
-    /// The environment-variable names a config value references, in order
-    /// (pi's `getConfigValueEnvVarNames`). Empty for literals and commands.
-    fn get_env_var_names(&self, value: &str) -> Vec<String>;
-
-    /// Whether the value is a `!command` config value (pi's
-    /// `isCommandConfigValue`).
-    fn is_command(&self, value: &str) -> bool;
-
-    /// Resolve a single config value, preferring `env` over ambient sources
-    /// (pi's `resolveConfigValueOrThrow`). `description` names the value in
-    /// error messages.
-    fn resolve_or_throw(
-        &self,
-        value: &str,
-        description: &str,
-        env: Option<&BTreeMap<String, String>>,
-    ) -> Result<String, ConfigValueError>;
-
-    /// Resolve a header map's values (pi's `resolveHeadersOrThrow`). Returns
-    /// `None` when `headers` is `None`.
-    fn resolve_headers_or_throw(
-        &self,
-        headers: Option<&BTreeMap<String, String>>,
-        description: &str,
-        env: Option<&BTreeMap<String, String>>,
-    ) -> Result<Option<BTreeMap<String, String>>, ConfigValueError>;
+/// The inverse of [`btree_to_hash`], reordering the resolver's unordered
+/// [`HashMap`] result back into the composers' deterministic [`BTreeMap`].
+fn into_btree(map: HashMap<String, String>) -> BTreeMap<String, String> {
+    map.into_iter().collect()
 }
 
 /// Minimal ai-side mirror of the `models.json` provider block's auth-relevant
@@ -293,7 +264,6 @@ pub fn with_configured_auth(
 /// Assemble the env context for resolving config values: seed with `explicit`,
 /// then fill in any referenced env-var names from `ctx` (`provider-composer.ts:279-291`).
 pub fn config_context_env(
-    resolver: &dyn ConfigValueResolver,
     values: &[&str],
     ctx: &dyn AuthContext,
     explicit: Option<&BTreeMap<String, String>>,
@@ -301,7 +271,7 @@ pub fn config_context_env(
     let mut env: BTreeMap<String, String> = explicit.cloned().unwrap_or_default();
     let mut seen: BTreeSet<String> = BTreeSet::new();
     for value in values {
-        for name in resolver.get_env_var_names(value) {
+        for name in get_config_value_env_var_names(value) {
             if !seen.insert(name.clone()) {
                 continue;
             }
@@ -330,7 +300,6 @@ struct ComposedApiKeyAuth {
     raw_key: Option<String>,
     raw_headers: Option<BTreeMap<String, String>>,
     auth_header: bool,
-    resolver: Arc<dyn ConfigValueResolver>,
 }
 
 impl ComposedApiKeyAuth {
@@ -369,16 +338,16 @@ impl ComposedApiKeyAuth {
             .as_ref()
             .map(|h| h.values().map(String::as_str).collect())
             .unwrap_or_default();
-        let header_env =
-            config_context_env(self.resolver.as_ref(), &header_values, ctx, explicit_ref);
-        let headers = self
-            .resolver
-            .resolve_headers_or_throw(
-                self.raw_headers.as_ref(),
-                &format!("provider \"{}\"", self.provider_id),
-                header_env.as_ref(),
-            )
-            .map_err(|e| AuthFlowError::new(e.to_string()))?;
+        let header_env = config_context_env(&header_values, ctx, explicit_ref);
+        let raw_headers = self.raw_headers.as_ref().map(btree_to_hash);
+        let header_env_hash = header_env.as_ref().map(btree_to_hash);
+        let headers = resolve_headers_or_throw(
+            raw_headers.as_ref(),
+            &format!("provider \"{}\"", self.provider_id),
+            header_env_hash.as_ref(),
+        )
+        .map_err(|e| AuthFlowError::new(e.to_string()))?
+        .map(into_btree);
         let auth = with_configured_auth(base_auth, headers.as_ref(), self.auth_header)?;
         Ok(AuthResult {
             auth,
@@ -453,13 +422,13 @@ impl ApiKeyAuth for ComposedApiKeyAuth {
                 });
         }
         if let Some(raw_key) = &self.raw_key {
-            if self.resolver.is_command(raw_key) {
+            if is_command_config_value(raw_key) {
                 return Some(AuthCheck {
                     source: Some("configured API key".to_string()),
                     check_type: AuthType::ApiKey,
                 });
             }
-            for name in self.resolver.get_env_var_names(raw_key) {
+            for name in get_config_value_env_var_names(raw_key) {
                 ctx.env(&name)?;
             }
             return Some(AuthCheck {
@@ -502,15 +471,14 @@ impl ApiKeyAuth for ComposedApiKeyAuth {
                 })
             }
         } else if let Some(raw_key) = &self.raw_key {
-            let env = config_context_env(self.resolver.as_ref(), &[raw_key.as_str()], ctx, None);
-            let key = self
-                .resolver
-                .resolve_or_throw(
-                    raw_key,
-                    &format!("API key for provider \"{}\"", self.provider_id),
-                    env.as_ref(),
-                )
-                .map_err(|e| AuthFlowError::new(e.to_string()))?;
+            let env = config_context_env(&[raw_key.as_str()], ctx, None);
+            let env_hash = env.as_ref().map(btree_to_hash);
+            let key = resolve_config_value_or_throw(
+                raw_key,
+                &format!("API key for provider \"{}\"", self.provider_id),
+                env_hash.as_ref(),
+            )
+            .map_err(|e| AuthFlowError::new(e.to_string()))?;
             if let Some(inherited) = &self.inherited {
                 let synthetic = ApiKeyCredential {
                     key: Some(key),
@@ -551,7 +519,6 @@ pub fn compose_api_key_auth(
     base_has_oauth: bool,
     config: Option<&ProviderAuthConfig>,
     extension: Option<&ExtensionAuthConfig>,
-    resolver: Arc<dyn ConfigValueResolver>,
 ) -> Option<Box<dyn ApiKeyAuth>> {
     let raw_key = configured_api_key(config, extension);
     let has_oauth = extension.is_some_and(|e| e.oauth.is_some()) || base_has_oauth;
@@ -572,7 +539,6 @@ pub fn compose_api_key_auth(
         raw_key,
         raw_headers,
         auth_header,
-        resolver,
     }))
 }
 
@@ -584,7 +550,6 @@ struct ComposedOAuthAuth {
     inner: Box<dyn OAuthAuth>,
     raw_headers: Option<BTreeMap<String, String>>,
     auth_header: bool,
-    resolver: Arc<dyn ConfigValueResolver>,
 }
 
 impl OAuthAuth for ComposedOAuthAuth {
@@ -615,14 +580,15 @@ impl OAuthAuth for ComposedOAuthAuth {
                     .collect()
             })
         });
-        let headers = self
-            .resolver
-            .resolve_headers_or_throw(
-                self.raw_headers.as_ref(),
-                &format!("provider \"{}\"", self.provider_id),
-                env.as_ref(),
-            )
-            .map_err(|e| AuthFlowError::new(e.to_string()))?;
+        let raw_headers = self.raw_headers.as_ref().map(btree_to_hash);
+        let env_hash = env.as_ref().map(btree_to_hash);
+        let headers = resolve_headers_or_throw(
+            raw_headers.as_ref(),
+            &format!("provider \"{}\"", self.provider_id),
+            env_hash.as_ref(),
+        )
+        .map_err(|e| AuthFlowError::new(e.to_string()))?
+        .map(into_btree);
         with_configured_auth(auth, headers.as_ref(), self.auth_header)
     }
 }
@@ -638,7 +604,6 @@ pub fn compose_oauth_auth(
     base_oauth: Option<Box<dyn OAuthAuth>>,
     config: Option<&ProviderAuthConfig>,
     extension: Option<&ExtensionAuthConfig>,
-    resolver: Arc<dyn ConfigValueResolver>,
 ) -> Option<Box<dyn OAuthAuth>> {
     let inner = match extension.and_then(|e| e.oauth.clone()) {
         // `extension?.oauth ? adaptOAuth(extension.oauth) : base?.auth.oauth`.
@@ -652,7 +617,6 @@ pub fn compose_oauth_auth(
         inner,
         raw_headers,
         auth_header,
-        resolver,
     }))
 }
 
@@ -780,8 +744,6 @@ pub struct ComposeModelProviderInput {
     pub base_url: Option<String>,
     /// The base provider's headers.
     pub headers: Option<ProviderHeaders>,
-    /// The config-value resolution seam.
-    pub resolver: Arc<dyn ConfigValueResolver>,
 }
 
 /// Guard that at least one auth method composed, else throw pi's verbatim
@@ -820,7 +782,6 @@ pub fn compose_model_provider(
         name,
         base_url,
         headers,
-        resolver,
     } = input;
 
     let base_has_oauth = base_oauth.is_some();
@@ -830,14 +791,12 @@ pub fn compose_model_provider(
         base_has_oauth,
         config.as_ref(),
         extension.as_ref(),
-        resolver.clone(),
     );
     let oauth = compose_oauth_auth(
         &provider_id,
         base_oauth,
         config.as_ref(),
         extension.as_ref(),
-        resolver,
     );
     let auth = require_auth_method(&provider_id, api_key, oauth)?;
 

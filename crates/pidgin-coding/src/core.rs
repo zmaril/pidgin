@@ -32,6 +32,7 @@ pub mod project_trust;
 pub mod prompt_templates;
 pub mod provider_attribution;
 pub mod provider_composer;
+pub mod provider_composer_auth;
 pub mod radius;
 pub mod remote_catalog_provider;
 pub mod resolve_config_value;

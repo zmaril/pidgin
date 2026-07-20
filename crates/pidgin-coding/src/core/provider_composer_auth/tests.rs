@@ -1,4 +1,7 @@
-// straitjacket-allow-file:duplication - test resolver mirrors the ported ConfigValueResolver adapter surface
+// straitjacket-allow-file:duplication - these AUTH-composer assertions mirror the
+// sibling credential-blind provider_composer tests' fixture/setup shape (stub
+// handlers, header maps, verbatim pi throw messages) member for member; the
+// parallel structure is a faithful transcription of pi's composer tests, not copied code.
 //! Tests for the provider-composer AUTH layer.
 //!
 //! Assertions are translated from pi's `model-runtime-auth-options.test.ts`
@@ -7,71 +10,17 @@
 //! are derived from those pi tests, not fabricated.
 
 use std::collections::BTreeMap;
-use std::sync::Arc;
 
 use serde_json::Map;
 
 use super::*;
-use crate::auth::context::DefaultAuthContext;
-use crate::auth::error::AuthFlowError;
-use crate::auth::oauth::flow::OAuthFlowMachine;
-use crate::auth::types::{
+use pidgin_ai::auth::context::DefaultAuthContext;
+use pidgin_ai::auth::error::AuthFlowError;
+use pidgin_ai::auth::oauth::flow::OAuthFlowMachine;
+use pidgin_ai::auth::types::{
     AuthEvent, AuthInteraction, AuthPrompt, ModelAuth, OAuthAuth, OAuthCredential,
 };
-use crate::seams::storage::MemoryEnv;
-
-/// A config-value resolver for tests: literals pass through, `$NAME` interpolates
-/// from the resolved env map, `!command` is flagged but not executed. Mirrors the
-/// subset of pi's `resolve-config-value.ts` the auth layer exercises.
-struct TestResolver;
-
-impl ConfigValueResolver for TestResolver {
-    fn get_env_var_names(&self, value: &str) -> Vec<String> {
-        match value.strip_prefix('$') {
-            Some(name) if !name.starts_with('{') && !name.is_empty() => vec![name.to_string()],
-            _ => Vec::new(),
-        }
-    }
-
-    fn is_command(&self, value: &str) -> bool {
-        value.starts_with('!')
-    }
-
-    fn resolve_or_throw(
-        &self,
-        value: &str,
-        description: &str,
-        env: Option<&BTreeMap<String, String>>,
-    ) -> Result<String, ConfigValueError> {
-        if let Some(name) = value.strip_prefix('$') {
-            return env
-                .and_then(|env| env.get(name))
-                .cloned()
-                .ok_or_else(|| ConfigValueError(format!("{description}: {name} is not set")));
-        }
-        Ok(value.to_string())
-    }
-
-    fn resolve_headers_or_throw(
-        &self,
-        headers: Option<&BTreeMap<String, String>>,
-        description: &str,
-        env: Option<&BTreeMap<String, String>>,
-    ) -> Result<Option<BTreeMap<String, String>>, ConfigValueError> {
-        let Some(headers) = headers else {
-            return Ok(None);
-        };
-        let mut resolved = BTreeMap::new();
-        for (key, value) in headers {
-            resolved.insert(key.clone(), self.resolve_or_throw(value, description, env)?);
-        }
-        Ok(Some(resolved))
-    }
-}
-
-fn resolver() -> Arc<dyn ConfigValueResolver> {
-    Arc::new(TestResolver)
-}
+use pidgin_ai::seams::storage::MemoryEnv;
 
 /// An [`AuthInteraction`] that answers every prompt with a fixed secret.
 struct StubInteraction;
@@ -181,15 +130,8 @@ fn compose_api_key_auth_resolves_key_and_headers_from_env() {
             .with_env("REQUEST_SCOPED_HEADER", "request-header"),
     );
 
-    let handler = compose_api_key_auth(
-        "request-env-provider",
-        None,
-        false,
-        Some(&config),
-        None,
-        resolver(),
-    )
-    .expect("api-key auth composes");
+    let handler = compose_api_key_auth("request-env-provider", None, false, Some(&config), None)
+        .expect("api-key auth composes");
 
     let result = handler.resolve(&ctx, None).unwrap().unwrap();
     assert_eq!(result.auth.api_key.as_deref(), Some("request-key"));
@@ -214,15 +156,8 @@ fn compose_api_key_auth_applies_auth_header() {
     };
     let ctx = DefaultAuthContext::new(MemoryEnv::new());
 
-    let handler = compose_api_key_auth(
-        "auth-header-provider",
-        None,
-        false,
-        Some(&config),
-        None,
-        resolver(),
-    )
-    .expect("api-key auth composes");
+    let handler = compose_api_key_auth("auth-header-provider", None, false, Some(&config), None)
+        .expect("api-key auth composes");
     let result = handler.resolve(&ctx, None).unwrap().unwrap();
     let resolved_headers = result.auth.headers.unwrap();
     assert_eq!(
@@ -243,15 +178,8 @@ fn compose_api_key_auth_default_name_and_login() {
         api_key: Some("$EXTENSION_TEST_API_KEY".to_string()),
         ..ExtensionAuthConfig::default()
     };
-    let handler = compose_api_key_auth(
-        "extension-api-key",
-        None,
-        false,
-        None,
-        Some(&extension),
-        resolver(),
-    )
-    .expect("api-key auth composes");
+    let handler = compose_api_key_auth("extension-api-key", None, false, None, Some(&extension))
+        .expect("api-key auth composes");
     assert_eq!(handler.name(), "API key");
     let credential = handler.login(&StubInteraction).unwrap().unwrap();
     assert_eq!(credential.key.as_deref(), Some("typed-key"));
@@ -269,14 +197,7 @@ fn compose_api_key_auth_none_for_oauth_only() {
         }),
         ..ExtensionAuthConfig::default()
     };
-    let handler = compose_api_key_auth(
-        "extension-oauth",
-        None,
-        false,
-        None,
-        Some(&extension),
-        resolver(),
-    );
+    let handler = compose_api_key_auth("extension-oauth", None, false, None, Some(&extension));
     assert!(handler.is_none());
 }
 
@@ -284,7 +205,7 @@ fn compose_api_key_auth_none_for_oauth_only() {
 // composeOAuthAuth yields nothing.
 #[test]
 fn compose_oauth_auth_none_without_source() {
-    let handler = compose_oauth_auth("p", None, None, None, resolver());
+    let handler = compose_oauth_auth("p", None, None, None);
     assert!(handler.is_none());
 }
 
@@ -304,7 +225,6 @@ fn compose_oauth_auth_layers_headers_and_auth_header() {
         Some(Box::new(StubOAuth)),
         Some(&config),
         None,
-        resolver(),
     )
     .expect("oauth auth composes");
 
@@ -340,7 +260,6 @@ fn compose_model_provider_assembles_auth_and_identity() {
         name: "Acme".to_string(),
         base_url: Some("https://acme.test/v1".to_string()),
         headers: None,
-        resolver: resolver(),
     })
     .expect("provider composes");
 
@@ -374,6 +293,6 @@ fn require_auth_method_accepts_api_key() {
         headers: None,
         auth_header: None,
     };
-    let api_key = compose_api_key_auth("p", None, false, Some(&config), None, resolver());
+    let api_key = compose_api_key_auth("p", None, false, Some(&config), None);
     assert!(require_auth_method("p", api_key, None).is_ok());
 }

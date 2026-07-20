@@ -78,13 +78,10 @@ use pidgin_ai::auth::{
     env_api_key_auth, ApiKeyAuth, AuthCheck, AuthResolutionOverrides, AuthResult, AuthType,
     Credential, CredentialInfo, CredentialStore, DefaultAuthContext, ModelsError, ProviderHeaders,
 };
-use pidgin_ai::compose_model_provider as compose_rich_provider;
-use pidgin_ai::providers::composer::{ComposeAuthError, ComposeModelProviderInput};
 use pidgin_ai::providers::registry::{
     create_provider, ApiRouting, CreateProviderOptions, FilterModels, Models, MutableModels,
     ProviderAuth, RefreshOptions, RegistryProvider,
 };
-use pidgin_ai::providers::ConfigValueResolver;
 use pidgin_ai::seams::storage::SystemEnv;
 use pidgin_ai::{builtin_providers, Model};
 
@@ -96,7 +93,10 @@ use super::provider_composer::{
     compose_model_provider, configured_request_auth_status, extension_auth_config,
     provider_auth_config, resolve_compatibility_request_config, resolve_configured_model_headers,
     validate_extension_provider, AuthSource, AuthStatus, CompatibilityRequestConfig, ComposeError,
-    ComposedProvider, ConfigValueResolverAdapter, ProviderConfigInput,
+    ComposedProvider, ProviderConfigInput,
+};
+use super::provider_composer_auth::{
+    compose_model_provider as compose_rich_provider, ComposeAuthError, ComposeModelProviderInput,
 };
 use super::skills::get_agent_dir;
 
@@ -166,10 +166,6 @@ pub struct ModelRuntime {
     config: ModelConfig,
     models: Models,
     snapshot: ModelRuntimeSnapshot,
-    /// The config-value resolution seam threaded into the AUTH-layer composer
-    /// (`compose_rich_provider`) so `$ENV` / `!command` / literal keys resolve
-    /// through pi's ported resolver.
-    resolver: Arc<dyn ConfigValueResolver>,
 }
 
 impl ModelRuntime {
@@ -225,7 +221,6 @@ impl ModelRuntime {
             config,
             models: Models::with_auth_context(Arc::new(DefaultAuthContext::new(SystemEnv::new()))),
             snapshot: ModelRuntimeSnapshot::default(),
-            resolver: Arc::new(ConfigValueResolverAdapter),
         };
         runtime.configure_radius_providers();
         runtime.rebuild_providers();
@@ -761,7 +756,6 @@ impl ModelRuntime {
             name: name.clone(),
             base_url: base_url.clone(),
             headers: headers.clone(),
-            resolver: self.resolver.clone(),
         })?;
 
         let auth: ProviderAuth = base.map(|base| base.auth().clone()).unwrap_or_default();

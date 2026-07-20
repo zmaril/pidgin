@@ -10,7 +10,6 @@ pub mod anthropic_backend;
 pub mod azure_openai_responses_backend;
 pub mod bedrock_backend;
 pub mod builtins;
-pub mod composer;
 pub mod faux;
 pub mod google_generative_ai_backend;
 pub mod mistral_backend;
@@ -24,12 +23,6 @@ pub use bedrock_backend::{BedrockBackend, BEDROCK_CONVERSE_STREAM_API};
 pub use builtins::{
     builtin_models, builtin_providers, builtin_providers_with_transport, catalog_model_to_ai,
     provider_from_catalog, provider_from_catalog_with_transport, radius_provider,
-};
-pub use composer::{
-    adapt_oauth, compose_api_key_auth, compose_model_provider, compose_oauth_auth,
-    config_context_env, with_configured_auth, ComposeAuthError, ComposeModelProviderInput,
-    ComposedProvider, ConfigValueError, ConfigValueResolver, ExtensionAuthConfig,
-    ExtensionOAuthConfig, ProviderAuthConfig,
 };
 pub use google_generative_ai_backend::{GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API};
 pub use mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
