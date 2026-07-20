@@ -48,6 +48,7 @@ use crate::types::{
     Usage, UsageCost,
 };
 use crate::utils::json_parse::{parse_json_with_repair, parse_streaming_json};
+use crate::utils::sse::{ServerSentEvent, SseFrameSplitter};
 
 /// The Anthropic wire event names pi's `iterateAnthropicEvents` accepts; every
 /// other named SSE event (pings, proxy stats, unknown types) is ignored
@@ -72,111 +73,16 @@ pub struct AnthropicModel {
     pub cost: ModelCost,
 }
 
-/// A decoded server-sent event (pi's `ServerSentEvent`).
-#[derive(Debug, Clone, PartialEq)]
-struct ServerSentEvent {
-    event: Option<String>,
-    data: String,
-    raw: Vec<String>,
-}
-
-#[derive(Debug, Default)]
-struct SseDecoderState {
-    event: Option<String>,
-    data: Vec<String>,
-    raw: Vec<String>,
-}
-
-fn flush_sse_event(state: &mut SseDecoderState) -> Option<ServerSentEvent> {
-    if state.event.is_none() && state.data.is_empty() {
-        return None;
-    }
-    let event = ServerSentEvent {
-        event: state.event.take(),
-        data: state.data.join("\n"),
-        raw: std::mem::take(&mut state.raw),
-    };
-    state.data.clear();
-    state.raw.clear();
-    Some(event)
-}
-
-fn decode_sse_line(line: &str, state: &mut SseDecoderState) -> Option<ServerSentEvent> {
-    if line.is_empty() {
-        return flush_sse_event(state);
-    }
-
-    state.raw.push(line.to_string());
-    if line.starts_with(':') {
-        return None;
-    }
-
-    let (field_name, mut value) = match line.find(':') {
-        None => (line, String::new()),
-        Some(idx) => (&line[..idx], line[idx + 1..].to_string()),
-    };
-    if let Some(stripped) = value.strip_prefix(' ') {
-        value = stripped.to_string();
-    }
-
-    if field_name == "event" {
-        state.event = Some(value);
-    } else if field_name == "data" {
-        state.data.push(value);
-    }
-
-    None
-}
-
-fn next_line_break_index(text: &str) -> Option<usize> {
-    let cr = text.find('\r');
-    let lf = text.find('\n');
-    match (cr, lf) {
-        (None, lf) => lf,
-        (cr, None) => cr,
-        (Some(cr), Some(lf)) => Some(cr.min(lf)),
-    }
-}
-
-/// One line consumed from `text`, plus the remaining tail. Byte indices are
-/// safe: the delimiters are ASCII `\r`/`\n`.
-fn consume_line(text: &str) -> Option<(String, String)> {
-    let line_break = next_line_break_index(text)?;
-    let bytes = text.as_bytes();
-    let mut next = line_break + 1;
-    if bytes[line_break] == b'\r' && bytes.get(next) == Some(&b'\n') {
-        next += 1;
-    }
-    Some((text[..line_break].to_string(), text[next..].to_string()))
-}
-
 /// Frame a complete SSE body into events, mirroring pi's `iterateSseMessages`.
 ///
-/// pi streams the body in chunks; here the whole body is available, which yields
-/// the identical sequence: consume every full line, then decode any trailing
-/// partial line and flush a dangling event.
+/// The incremental framing now lives in the shared [`SseFrameSplitter`]; the
+/// buffered path here feeds the whole body in one `feed` + `finish`, which
+/// yields the byte-identical frame sequence pi's chunked reader produced.
 fn iterate_sse_messages(body: &str) -> Vec<ServerSentEvent> {
-    let mut state = SseDecoderState::default();
+    let mut splitter = SseFrameSplitter::new();
     let mut events = Vec::new();
-    let mut buffer = body.to_string();
-
-    while let Some((line, rest)) = consume_line(&buffer) {
-        buffer = rest;
-        if let Some(event) = decode_sse_line(&line, &mut state) {
-            events.push(event);
-        }
-    }
-
-    if !buffer.is_empty() {
-        if let Some(event) = decode_sse_line(&buffer, &mut state) {
-            events.push(event);
-        }
-    }
-
-    if let Some(event) = flush_sse_event(&mut state) {
-        events.push(event);
-    }
-
+    splitter.feed(body.as_bytes(), &mut events);
+    splitter.finish(&mut events);
     events
 }
 
