@@ -1265,7 +1265,16 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/session-manager.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/session-manager/tree-traversal.test.ts",
+        "test/session-manager/file-operations.test.ts",
+        "test/session-manager/build-context.test.ts",
+        "test/session-manager/custom-session-id.test.ts",
+        "test/session-manager/labels.test.ts",
+        "test/session-manager/migration.test.ts",
+        "test/session-manager/save-entry.test.ts"
+      ]
     },
     {
       "package": "coding-agent",

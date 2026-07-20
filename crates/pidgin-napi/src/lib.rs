@@ -47,6 +47,18 @@ pub mod compaction_utils;
 // closure) stays in pi's TS. Additive.
 pub mod terminal_image;
 
+// Coding-agent session-manager surface (`SessionManagerCore` + the module free
+// functions `migrateSessionEntries` / `buildContextEntries` /
+// `buildSessionContext` / `findMostRecentSession` / `loadEntriesFromFile` /
+// `sessionManagerList{,All}`): drives pi's canonical CLI `SessionManager`
+// (`core/session-manager.ts`) natively via the Rust port
+// (`pidgin_coding::core::session_manager`, PR #101). The JS shim re-exports the
+// module's un-flipped surface (types, `assertValidSessionId`,
+// `parseSessionEntries`, …) from pi's original and fronts the ported surface
+// with a delegating `SessionManager` class + free functions. `pub` so the
+// module's free `#[napi]` functions register as crate-reachable. Additive.
+pub mod session_manager;
+
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
 mod oauth;

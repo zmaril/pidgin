@@ -788,6 +788,16 @@ impl SessionManager {
         &self.cwd
     }
 
+    /// Override the effective working directory, leaving the loaded header's own
+    /// `cwd` untouched. Mirrors the `cwdOverride` argument of
+    /// `SessionManager.open` (`session-manager.ts`), where the opened manager's
+    /// effective cwd is `cwdOverride ?? header.cwd ?? process.cwd()`; the port's
+    /// [`open`](SessionManager::open) resolves the header/`process.cwd()` arms and
+    /// this applies the override arm.
+    pub fn set_cwd(&mut self, cwd: &str) {
+        self.cwd = cwd.to_string();
+    }
+
     /// The session directory (empty for in-memory). Mirrors `getSessionDir`.
     pub fn get_session_dir(&self) -> &str {
         &self.session_dir
