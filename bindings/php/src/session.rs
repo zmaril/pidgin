@@ -252,6 +252,9 @@ fn build_harness(
         session: AgentSession::new(Rc::new(InMemorySessionStorage::new())),
         models: Box::new(RegistryCompaction::new(registry)),
         stream,
+        // Buffered-stream (completion-only) path; the incremental seam is
+        // additive and existing harnesses leave it `None`.
+        stream_incremental: None,
         tools: None,
         resources: None,
         system_prompt: system_prompt.map(SystemPromptSource::Static),
