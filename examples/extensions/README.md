@@ -20,8 +20,9 @@ exercises all three surfaces:
 | Hook: `tool_call` | blocks destructive `rm -rf` bash commands (a guardrail) |
 
 The tasks live in a module-scoped array for the life of the process. A
-production extension would reconstruct state from session entries (see pi's
-upstream `todo.ts`); the in-memory list keeps this example focused.
+production extension would reconstruct state from session entries, as pi's
+upstream stateful-list examples do; the in-memory list keeps this example
+focused.
 
 ## Loading it
 

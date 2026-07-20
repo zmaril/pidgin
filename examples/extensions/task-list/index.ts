@@ -11,8 +11,9 @@
  *     `rm -rf` bash guardrail (mirrors protected-paths.ts)
  *
  * The tasks live in a module-scoped array, so they persist for the life of the
- * process (a real extension would reconstruct state from session entries — see
- * todo.ts in pi's upstream examples — but an in-memory list keeps this focused).
+ * process (a real extension would reconstruct state from session entries, as
+ * pi's upstream stateful-list examples do, but an in-memory list keeps this
+ * focused).
  *
  * How to load it:
  *   - Quick test:   pi -e ./examples/extensions/task-list/index.ts
