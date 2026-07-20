@@ -1,3 +1,8 @@
+// straitjacket-allow-file:duplication -- the marker classes faithfully mirror
+// pi's upstream pi-tui components, which repeat the same container surface
+// (addChild/removeChild/clear) across Box (components/box.ts) and Container
+// (tui.ts). The parallel between the Box and Container markers is intentional and
+// faithful to upstream, not incidental duplication.
 // Render-stub shim of @earendil-works/pi-tui: component classes are display-time
 // markers (renderResult/renderCall are never invoked on pidgin's headless plane);
 // pure utils copied verbatim from pi. MIT (c) 2025 Mario Zechner.
