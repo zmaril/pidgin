@@ -1,3 +1,5 @@
+// straitjacket-allow-file:color — the only color-shaped token in this file is the
+// PR reference `#101` in the header prose below, not an actual color literal.
 // Native shim for packages/coding-agent/src/core/session-manager.ts, backed by
 // the pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs
 // when the module is marked `native` in conformance/manifest.json: pi's original
