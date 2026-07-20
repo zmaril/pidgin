@@ -27,6 +27,7 @@ use crate::types::{
     AnthropicMessagesCompat, AssistantMessage, AssistantMessageEvent, AssistantRole, Context,
     Model, StopReason, StreamOptions, Usage, UsageCost,
 };
+use crate::utils::sse::AssistantEventReader;
 
 /// The api id this backend serves, pi's `anthropic-messages` [`Api`] discriminant.
 pub const ANTHROPIC_MESSAGES_API: &str = "anthropic-messages";
@@ -106,6 +107,53 @@ impl Provider for AnthropicMessagesBackend {
             timestamp,
         )
     }
+
+    fn stream_incremental<'a>(
+        &'a self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        _signal: Option<&AbortSignal>,
+    ) -> AssistantEventReader<'a> {
+        // Same model/options assembly as `stream`, but the request runs through
+        // the driver's incremental `stream_streaming` entry point: the returned
+        // reader pulls one chunk at a time off the transport, so a streaming
+        // transport surfaces real per-frame timing while the buffered `stream`
+        // path is left untouched.
+        let mut typed_model: Model<AnthropicMessagesCompat> = match reserialize_model(model) {
+            Ok(typed_model) => typed_model,
+            Err(error) => {
+                // Mirror `stream`'s pre-start error shape as a replayed reader.
+                return AssistantEventReader::from_buffered(error_result(
+                    model,
+                    self.clock.now_ms(),
+                    format!("Anthropic model is not compatible with anthropic-messages: {error}"),
+                ));
+            }
+        };
+
+        if let Some(base_url) = options.and_then(|o| o.base_url.as_ref()) {
+            typed_model.base_url = base_url.clone();
+        }
+
+        let anthropic_options = AnthropicOptions {
+            cache_retention: options.and_then(|o| o.cache_retention),
+            session_id: options.and_then(|o| o.session_id.clone()),
+            env: options.and_then(|o| o.env.clone()),
+            api_key: options.and_then(|o| o.api_key.clone()),
+            headers: options.and_then(|o| o.headers.clone()),
+            ..AnthropicOptions::default()
+        };
+
+        let timestamp = self.clock.now_ms();
+        driver::stream_streaming(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            &anthropic_options,
+            timestamp,
+        )
+    }
 }
 
 /// Re-present a `Model<Value>` as a `Model<AnthropicMessagesCompat>` via a serde
@@ -164,9 +212,12 @@ mod tests {
         create_provider, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
     };
     use crate::seams::clock::FakeClock;
-    use crate::seams::http::ScriptedTransport;
+    use crate::seams::http::{HttpRequest, HttpResponse, HttpStreamResponse, ScriptedTransport};
     use crate::seams::storage::MemoryEnv;
     use crate::types::ContentBlock;
+    use std::collections::BTreeMap;
+    use std::io;
+    use std::time::{Duration, Instant};
 
     /// A neutral non-reasoning anthropic `Model<Value>` targeting `base_url`. The
     /// backend re-serializes this into `Model<AnthropicMessagesCompat>`.
@@ -362,6 +413,191 @@ mod tests {
         assert_eq!(result.message.stop_reason, StopReason::Error);
         assert_eq!(
             result.message.error_message.as_deref(),
+            Some("Provider is not configured: anthropic")
+        );
+        assert!(scripted.requests().is_empty());
+    }
+
+    /// A transport whose `send_streaming` splits the SSE body into one chunk per
+    /// frame and sleeps `delay` before yielding each, so the reader's per-frame
+    /// PULL timing is observable. Its buffered `send` returns the whole body.
+    struct SleepingStreamTransport {
+        body: String,
+        delay: Duration,
+    }
+
+    struct SleepingChunks {
+        frames: std::vec::IntoIter<Vec<u8>>,
+        delay: Duration,
+    }
+
+    impl Iterator for SleepingChunks {
+        type Item = io::Result<Vec<u8>>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let bytes = self.frames.next()?;
+            std::thread::sleep(self.delay);
+            Some(Ok(bytes))
+        }
+    }
+
+    impl HttpTransport for SleepingStreamTransport {
+        fn send(&self, _request: &HttpRequest) -> io::Result<HttpResponse> {
+            Ok(HttpResponse::ok(self.body.clone()))
+        }
+
+        fn send_streaming(&self, _request: &HttpRequest) -> io::Result<HttpStreamResponse<'_>> {
+            let frames: Vec<Vec<u8>> = self
+                .body
+                .split("\n\n")
+                .filter(|part| !part.is_empty())
+                .map(|part| format!("{part}\n\n").into_bytes())
+                .collect();
+            Ok(HttpStreamResponse {
+                status: 200,
+                headers: BTreeMap::new(),
+                chunks: Box::new(SleepingChunks {
+                    frames: frames.into_iter(),
+                    delay: self.delay,
+                }),
+            })
+        }
+    }
+
+    // Incremental over the one-chunk ScriptedTransport (default `send_streaming`)
+    // yields the SAME events and final message as the buffered `stream`, and
+    // builds the same threaded request.
+    #[test]
+    fn backend_stream_incremental_matches_buffered_over_scripted() {
+        let model = anthropic_model("https://api.anthropic.test");
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (_scripted_buffered, transport_buffered) = scripted_hello();
+        let backend_buffered = AnthropicMessagesBackend::new(transport_buffered, fake_clock());
+        let buffered = backend_buffered.stream(&model, &user_context(), Some(&options), None);
+
+        let (scripted, transport) = scripted_hello();
+        let backend = AnthropicMessagesBackend::new(transport, fake_clock());
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        assert_eq!(events, buffered.events);
+        assert_eq!(
+            reader.result().and_then(|r| r.as_ref().ok()),
+            Some(&buffered.message)
+        );
+
+        let requests = scripted.requests();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].url, "https://api.anthropic.test/v1/messages");
+        assert_eq!(
+            requests[0].headers.get("x-api-key").map(String::as_str),
+            Some("sk-test-key")
+        );
+    }
+
+    // Over a per-frame sleeping transport, the yielded events span multiple
+    // sleeping chunks -- non-zero inter-event spread -- while resolving to the
+    // same "Hello" message as the buffered path.
+    #[test]
+    fn backend_stream_incremental_streams_with_inter_event_spread() {
+        let delay = Duration::from_millis(12);
+        let transport: Arc<dyn HttpTransport> = Arc::new(SleepingStreamTransport {
+            body: hello_sse_body(),
+            delay,
+        });
+        let backend = AnthropicMessagesBackend::new(transport, fake_clock());
+        let model = anthropic_model("https://api.anthropic.test");
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let start = Instant::now();
+        let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
+        for event in reader.by_ref() {
+            stamped.push((start.elapsed(), event));
+        }
+
+        assert!(matches!(
+            stamped.last().map(|(_, e)| e),
+            Some(AssistantMessageEvent::Done { .. })
+        ));
+        assert_eq!(
+            reader
+                .result()
+                .and_then(|r| r.as_ref().ok())
+                .map(|m| m.content.clone()),
+            Some(vec![ContentBlock::Text {
+                text: "Hello".to_string(),
+                text_signature: None,
+            }])
+        );
+
+        assert!(stamped.len() >= 2);
+        let spread = stamped.last().unwrap().0 - stamped.first().unwrap().0;
+        assert!(
+            spread >= delay,
+            "expected non-zero inter-event spread from per-frame streaming, got {spread:?}",
+        );
+    }
+
+    // The `Models::stream_incremental` applyAuth path yields the SAME events and
+    // message as `Models::stream`, threading the resolved env api key.
+    #[test]
+    fn models_stream_incremental_matches_models_stream() {
+        let model = anthropic_model("https://api.anthropic.test");
+
+        let (_scripted_buffered, transport_buffered) = scripted_hello();
+        let env_buffered = MemoryEnv::new().with_env("ANTHROPIC_API_KEY", "sk-env-secret");
+        let models_buffered =
+            models_with_anthropic_backend(env_buffered, transport_buffered, &model);
+        let buffered = models_buffered.stream(&model, &user_context(), None, None);
+
+        let (scripted, transport) = scripted_hello();
+        let env = MemoryEnv::new().with_env("ANTHROPIC_API_KEY", "sk-env-secret");
+        let models = models_with_anthropic_backend(env, transport, &model);
+        let mut reader = models.stream_incremental(&model, &user_context(), None, None);
+        let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        assert_eq!(events, buffered.events);
+        assert_eq!(
+            reader.result().and_then(|r| r.as_ref().ok()),
+            Some(&buffered.message)
+        );
+        assert_eq!(
+            scripted.requests()[0]
+                .headers
+                .get("x-api-key")
+                .map(String::as_str),
+            Some("sk-env-secret")
+        );
+    }
+
+    // Unconfigured provider: `Models::stream_incremental` gates before dispatch
+    // with the exact "Provider is not configured" terminal error -- a single
+    // error event, no panic, no request.
+    #[test]
+    fn models_stream_incremental_unconfigured_provider_errors_without_request() {
+        let scripted = ScriptedTransport::new();
+        let transport: Arc<dyn HttpTransport> = Arc::new(scripted.clone());
+        let model = anthropic_model("https://api.anthropic.test");
+        let models = models_with_anthropic_backend(MemoryEnv::new(), transport, &model);
+
+        let mut reader = models.stream_incremental(&model, &user_context(), None, None);
+        let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        assert_eq!(events.len(), 1);
+        assert!(matches!(events[0], AssistantMessageEvent::Error { .. }));
+        let result = reader.result().expect("finished");
+        let message = result.as_ref().expect("from_buffered resolves as Ok");
+        assert_eq!(message.stop_reason, StopReason::Error);
+        assert_eq!(
+            message.error_message.as_deref(),
             Some("Provider is not configured: anthropic")
         );
         assert!(scripted.requests().is_empty());

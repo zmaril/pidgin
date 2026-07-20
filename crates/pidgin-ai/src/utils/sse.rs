@@ -25,6 +25,7 @@ use std::collections::VecDeque;
 use std::io;
 use std::ops::ControlFlow;
 
+use crate::seams::provider::StreamResult;
 use crate::types::{AssistantMessage, AssistantMessageEvent, StopReason};
 
 /// A decoded server-sent event (pi's `ServerSentEvent`).
@@ -249,6 +250,26 @@ pub trait SseEventDecoder {
     fn finish(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage;
 }
 
+/// The never-invoked decoder for [`AssistantEventReader::from_buffered`]: a
+/// replayed reader starts `finished` with its events pre-loaded, so the pull loop
+/// never reaches a decoder call. Present only to satisfy the reader's non-optional
+/// decoder slot.
+struct BufferedReplayDecoder;
+
+impl SseEventDecoder for BufferedReplayDecoder {
+    fn on_frame(
+        &mut self,
+        _frame: &ServerSentEvent,
+        _out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        ControlFlow::Continue(())
+    }
+
+    fn finish(&mut self, _out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        unreachable!("from_buffered reader is pre-finished and never pulls a chunk")
+    }
+}
+
 /// The PULL iterator over a streaming assistant response.
 ///
 /// Each `next()` drains a ready spill-buffer, else pulls ONE chunk from the
@@ -278,6 +299,27 @@ impl<'a> AssistantEventReader<'a> {
             ready: VecDeque::new(),
             finished: false,
             result: None,
+        }
+    }
+
+    /// Replay an already-materialized [`StreamResult`] as a reader.
+    ///
+    /// This is the buffered-compatibility fallback behind
+    /// [`Provider::stream_incremental`](crate::seams::provider::Provider::stream_incremental)'s
+    /// default: it yields the result's `events` in order (they already carry the
+    /// terminal `done`/`error`) via [`Iterator`], and its
+    /// [`result`](Self::result) resolves to the result's `message` as `Ok`. It
+    /// pulls no chunk and runs no decoder, so it has ~0 inter-event spread -- it
+    /// is NOT incremental; a real backend overrides `stream_incremental` to stream
+    /// per frame. The returned reader is `'static` and coerces to any `'a`.
+    pub fn from_buffered(result: StreamResult) -> AssistantEventReader<'static> {
+        AssistantEventReader {
+            chunks: Box::new(std::iter::empty()),
+            splitter: SseFrameSplitter::new(),
+            decoder: Box::new(BufferedReplayDecoder),
+            ready: result.events.into_iter().collect(),
+            finished: true,
+            result: Some(Ok(result.message)),
         }
     }
 
@@ -651,5 +693,59 @@ mod tests {
             Some(AssistantMessageEvent::Error { .. })
         ));
         assert!(reader.result().unwrap().is_err());
+    }
+
+    #[test]
+    fn from_buffered_replays_events_in_order_with_message() {
+        use crate::seams::provider::StreamResult;
+
+        // A materialized result: two text deltas then a terminal Done.
+        let message = {
+            let mut decoder = TextDeltaDecoder::new();
+            decoder.text = "ab".to_string();
+            decoder.message()
+        };
+        let events = vec![
+            AssistantMessageEvent::TextDelta {
+                content_index: 0,
+                delta: "a".to_string(),
+                partial: message.clone(),
+            },
+            AssistantMessageEvent::TextDelta {
+                content_index: 0,
+                delta: "b".to_string(),
+                partial: message.clone(),
+            },
+            AssistantMessageEvent::Done {
+                reason: StopReason::Stop,
+                message: message.clone(),
+            },
+        ];
+        let result = StreamResult {
+            events: events.clone(),
+            message: message.clone(),
+        };
+
+        let start = Instant::now();
+        let mut reader = AssistantEventReader::from_buffered(result);
+        let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
+        for event in reader.by_ref() {
+            stamped.push((start.elapsed(), event));
+        }
+
+        // Replays the events in order and resolves `.result()` to the message.
+        let yielded: Vec<AssistantMessageEvent> = stamped.iter().map(|(_, e)| e.clone()).collect();
+        assert_eq!(yielded, events);
+        assert_eq!(
+            reader.result().and_then(|r| r.as_ref().ok()),
+            Some(&message)
+        );
+
+        // A pure replay pulls no chunk: the spread is ~0.
+        let spread = stamped.last().unwrap().0 - stamped.first().unwrap().0;
+        assert!(
+            spread < Duration::from_millis(5),
+            "buffered replay should have ~0 inter-event spread, got {spread:?}",
+        );
     }
 }
