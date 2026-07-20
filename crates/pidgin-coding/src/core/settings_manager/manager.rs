@@ -4,6 +4,8 @@
 //! `packages/coding-agent/src/core/settings-manager.ts`.
 
 use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use serde_json::{json, Map, Value};
 
@@ -33,6 +35,12 @@ pub struct SettingsManager {
     global_settings_load_error: Option<String>,
     project_settings_load_error: Option<String>,
     errors: Vec<SettingsError>,
+    /// A `Send + Sync` live mirror of [`SettingsManager::get_block_images`],
+    /// kept in sync at every merge-affecting mutation. The `!Send`
+    /// [`SettingsManager`] cannot be captured by the Agent's `Send + Sync`
+    /// `convertToLlm` closure, so the block-images filter reads this atomic
+    /// instead — see [`crate::core::block_images`].
+    block_images: Arc<AtomicBool>,
 }
 
 impl SettingsManager {
@@ -49,6 +57,9 @@ impl SettingsManager {
         project_trusted: bool,
     ) -> Self {
         let settings = deep_merge_settings(&initial_global, &initial_project);
+        let block_images = settings
+            .get_nested_bool("images", "blockImages")
+            .unwrap_or(false);
         Self {
             storage,
             global_settings: initial_global,
@@ -62,6 +73,7 @@ impl SettingsManager {
             global_settings_load_error: global_load_error,
             project_settings_load_error: project_load_error,
             errors: initial_errors,
+            block_images: Arc::new(AtomicBool::new(block_images)),
         }
     }
 
@@ -252,11 +264,29 @@ impl SettingsManager {
         }
 
         self.settings = deep_merge_settings(&self.global_settings, &self.project_settings);
+        self.sync_block_images_flag();
     }
 
     /// Apply additional overrides on top of the current merged settings.
     pub fn apply_overrides(&mut self, overrides: Settings) {
         self.settings = deep_merge_settings(&self.settings, &overrides);
+        self.sync_block_images_flag();
+    }
+
+    /// Refresh the [`SettingsManager::block_images`] atomic from the merged
+    /// settings so the shared handle stays a live mirror of
+    /// [`SettingsManager::get_block_images`] after any merge-affecting mutation.
+    fn sync_block_images_flag(&self) {
+        self.block_images
+            .store(self.get_block_images(), Ordering::Relaxed);
+    }
+
+    /// A shared, `Send + Sync` handle that tracks
+    /// [`SettingsManager::get_block_images`] live. Handed to the Agent's
+    /// `convertToLlm` closure, which cannot capture this `!Send` manager — see
+    /// [`crate::core::block_images`].
+    pub fn block_images_flag(&self) -> Arc<AtomicBool> {
+        Arc::clone(&self.block_images)
     }
 
     /// Await pending writes. Writes are synchronous in this port, so this is a
@@ -950,6 +980,10 @@ impl SettingsManager {
 
     pub fn set_block_images(&mut self, blocked: bool) {
         self.set_global_nested("images", "blockImages", json!(blocked));
+        // Keep the shared live mirror in step so the Agent's `convertToLlm`
+        // closure observes the toggle on its next call (pi reads
+        // `getBlockImages()` live per call).
+        self.sync_block_images_flag();
     }
 
     pub fn get_enabled_models(&self) -> Option<Vec<String>> {

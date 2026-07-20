@@ -16,7 +16,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 use tempfile::TempDir;
 
 use pidgin_agent::types::ThinkingLevel;
@@ -750,4 +750,88 @@ fn in_memory_manager_reads_configured_external_editor() {
         SettingsManagerCreateOptions::default(),
     );
     assert_eq!(manager.get_external_editor_command(), "code --wait");
+}
+
+// -- blockImages setting (pi `test/block-images.test.ts`, SettingsManager) ---
+
+#[test]
+fn block_images_defaults_to_false() {
+    let manager = SettingsManager::in_memory(
+        Settings::from_map(Map::new()),
+        SettingsManagerCreateOptions::default(),
+    );
+    assert!(!manager.get_block_images());
+}
+
+#[test]
+fn block_images_returns_true_when_set() {
+    let manager = SettingsManager::in_memory(
+        Settings::from_map(
+            json!({ "images": { "blockImages": true } })
+                .as_object()
+                .unwrap()
+                .clone(),
+        ),
+        SettingsManagerCreateOptions::default(),
+    );
+    assert!(manager.get_block_images());
+}
+
+#[test]
+fn block_images_persists_via_set_block_images() {
+    let mut manager = SettingsManager::in_memory(
+        Settings::from_map(Map::new()),
+        SettingsManagerCreateOptions::default(),
+    );
+    assert!(!manager.get_block_images());
+
+    manager.set_block_images(true);
+    assert!(manager.get_block_images());
+
+    manager.set_block_images(false);
+    assert!(!manager.get_block_images());
+}
+
+#[test]
+fn block_images_coexists_with_auto_resize() {
+    let manager = SettingsManager::in_memory(
+        Settings::from_map(
+            json!({ "images": { "autoResize": true, "blockImages": true } })
+                .as_object()
+                .unwrap()
+                .clone(),
+        ),
+        SettingsManagerCreateOptions::default(),
+    );
+    assert!(manager.get_image_auto_resize());
+    assert!(manager.get_block_images());
+}
+
+// The shared live mirror handed to the Agent's `convertToLlm` closure tracks
+// `getBlockImages()` across construction and `setBlockImages`, so a mid-session
+// toggle is observed live (pi reads the setting per call).
+#[test]
+fn block_images_flag_mirrors_the_setting_live() {
+    use std::sync::atomic::Ordering;
+
+    let mut manager = SettingsManager::in_memory(
+        Settings::from_map(
+            json!({ "images": { "blockImages": true } })
+                .as_object()
+                .unwrap()
+                .clone(),
+        ),
+        SettingsManagerCreateOptions::default(),
+    );
+    let flag = manager.block_images_flag();
+    assert!(flag.load(Ordering::Relaxed), "initialized from the setting");
+
+    manager.set_block_images(false);
+    assert!(
+        !flag.load(Ordering::Relaxed),
+        "same handle tracks the toggle"
+    );
+
+    manager.set_block_images(true);
+    assert!(flag.load(Ordering::Relaxed));
 }
