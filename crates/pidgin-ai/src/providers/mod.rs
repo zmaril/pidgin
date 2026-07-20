@@ -13,6 +13,7 @@ pub mod faux;
 pub mod google_generative_ai_backend;
 pub mod mistral_backend;
 pub mod openai_completions_backend;
+pub mod openai_responses_backend;
 pub mod registry;
 
 pub use anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
@@ -29,6 +30,7 @@ pub use composer::{
 pub use google_generative_ai_backend::{GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API};
 pub use mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
 pub use openai_completions_backend::{OpenAICompletionsBackend, OPENAI_COMPLETIONS_API};
+pub use openai_responses_backend::{OpenAIResponsesBackend, OPENAI_RESPONSES_API};
 pub use registry::{
     clamp_thinking_level, create_models, create_provider, get_supported_thinking_levels,
     models_are_equal, ApiRouting, CreateProviderOptions, FilterModels, Models, MutableModels,

@@ -9,8 +9,8 @@
 
 use super::*;
 use crate::api::openai_responses_shared::{
-    convert_responses_messages, process_responses_stream, short_hash, ResponsesStreamOptions,
-    StreamOutcome,
+    convert_responses_messages, parse_responses_sse_stream, process_responses_stream, short_hash,
+    ResponsesStreamOptions, StreamOutcome,
 };
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, ContentBlock, Context, Message,
@@ -885,5 +885,104 @@ fn empty_tool_result_uses_no_tool_output_placeholder() {
     assert_eq!(
         function_call_output.get("output").and_then(Value::as_str),
         Some("(no tool output)")
+    );
+}
+
+/// Serialize a slice of decoded Responses events into an SSE body, one frame per
+/// event carrying the real `event:` name plus the `data:` JSON.
+fn sse_body(events: &[Value]) -> String {
+    events
+        .iter()
+        .map(|event| {
+            let name = event.get("type").and_then(Value::as_str).unwrap_or("");
+            format!("event: {name}\ndata: {event}\n\n")
+        })
+        .collect()
+}
+
+// The buffered whole-body SSE parser is byte-identical to the decoded-events
+// boundary: both drive the same `OpenAIResponsesSseDecoder`, so a full text
+// lifecycle yields the SAME events and terminal message. This is the
+// buffered-byte-identical guarantee the streaming-native retrofit rests on.
+#[test]
+fn parse_responses_sse_stream_matches_process_responses_stream() {
+    let events = vec![
+        json!({ "type": "response.created", "response": { "id": "resp_1" } }),
+        json!({
+            "type": "response.output_item.added",
+            "output_index": 0,
+            "item": { "type": "message", "id": "msg_1", "role": "assistant", "content": [] }
+        }),
+        json!({ "type": "response.output_text.delta", "output_index": 0, "delta": "Hello" }),
+        json!({ "type": "response.output_text.delta", "output_index": 0, "delta": " world" }),
+        json!({
+            "type": "response.output_item.done",
+            "output_index": 0,
+            "item": {
+                "type": "message",
+                "id": "msg_1",
+                "role": "assistant",
+                "content": [{ "type": "output_text", "text": "Hello world" }]
+            }
+        }),
+        json!({ "type": "response.completed", "response": { "id": "resp_1", "status": "completed" } }),
+    ];
+
+    let buffered = process(&events);
+    let from_sse = parse_responses_sse_stream(
+        &sse_body(&events),
+        &base_model(),
+        &ResponsesStreamOptions::default(),
+        0,
+    );
+
+    assert_eq!(from_sse.events, buffered.events);
+    assert_eq!(from_sse.message, buffered.message);
+}
+
+// A frame split across two chunks decodes identically to the whole body fed at
+// once: the shared `AssistantEventReader`/`SseFrameSplitter` buffers the partial
+// line across the chunk boundary.
+#[test]
+fn responses_sse_frames_split_across_chunks_decode_identically() {
+    use crate::api::openai_responses_shared::OpenAIResponsesSseDecoder;
+    use crate::types::AssistantMessageEvent;
+    use crate::utils::sse::AssistantEventReader;
+
+    let events = vec![
+        json!({ "type": "response.created", "response": { "id": "resp_1" } }),
+        json!({
+            "type": "response.output_item.added",
+            "output_index": 0,
+            "item": { "type": "message", "id": "msg_1", "role": "assistant", "content": [] }
+        }),
+        json!({ "type": "response.output_text.delta", "output_index": 0, "delta": "Hi" }),
+        json!({
+            "type": "response.output_item.done",
+            "output_index": 0,
+            "item": {
+                "type": "message",
+                "id": "msg_1",
+                "role": "assistant",
+                "content": [{ "type": "output_text", "text": "Hi" }]
+            }
+        }),
+        json!({ "type": "response.completed", "response": { "id": "resp_1", "status": "completed" } }),
+    ];
+    let body = sse_body(&events);
+    let whole = process(&events);
+
+    // Split the body into single-byte chunks and drive the reader.
+    let chunks: Vec<std::io::Result<Vec<u8>>> =
+        body.as_bytes().iter().map(|b| Ok(vec![*b])).collect();
+    let decoder =
+        OpenAIResponsesSseDecoder::new(base_model(), ResponsesStreamOptions::default(), 0);
+    let mut reader = AssistantEventReader::new(Box::new(chunks.into_iter()), Box::new(decoder));
+    let dripped: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+    assert_eq!(dripped, whole.events);
+    assert_eq!(
+        reader.result().and_then(|r| r.as_ref().ok()),
+        Some(&whole.message)
     );
 }
