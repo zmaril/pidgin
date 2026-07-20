@@ -2109,6 +2109,7 @@ version = "0.1.0"
 dependencies = [
  "pidgin-coding",
  "pidgin-core",
+ "pidgin-extensions",
  "pidgin-tui",
  "serde_json",
 ]
