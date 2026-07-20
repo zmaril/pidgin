@@ -1,3 +1,9 @@
+// straitjacket-allow-file:duplication — the turn recipe below (identity converter,
+// faux reply, assistant-text/error extraction, agent-loop config) is deliberately
+// replicated from crates/pidgin-coding/src/modes/interactive/turn.rs. This binding
+// is a standalone crate that mirrors bindings/php's isolation and must not depend on
+// pidgin-coding, so the small recipe is transcribed rather than shared (see below).
+
 //! The pidgin Python native extension (PyO3 cdylib).
 //!
 //! Sibling of `bindings/php`: a standalone crate outside the root workspace that
