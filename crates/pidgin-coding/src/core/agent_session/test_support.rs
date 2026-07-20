@@ -60,11 +60,13 @@ use crate::core::extensions::runner::{
     StubExtensionRunner, UnsubscribeFn,
 };
 use crate::core::model_runtime::{CreateModelRuntimeOptions, ModelRuntime, ModelsPath};
+use crate::core::prompt_templates::PromptTemplate;
 use crate::core::resource_loader_orchestrator::{
-    DefaultResourceLoader, DefaultResourceLoaderOptions,
+    DefaultResourceLoader, DefaultResourceLoaderOptions, PromptsResult, ReloadOptions,
 };
 use crate::core::session_manager::SessionManager;
 use crate::core::settings_manager::{Settings, SettingsManager};
+use crate::core::skills::{LoadSkillsResult, Skill};
 use crate::core::source_info::{SourceInfo, SourceOrigin, SourceScope};
 
 use super::events::AgentSessionEvent;
@@ -248,6 +250,12 @@ pub(crate) struct HarnessOptions {
     /// is the "custom `streamFn`" analog: it drives summarization and bypasses the
     /// configured-auth gate. `None` is the default `streamSimple` analog.
     pub summarization_models: Option<Box<dyn crate::core::compaction::Models>>,
+    /// Skills injected into the resource loader (pi's fake `getSkills`). When set
+    /// (or `prompt_templates` is), the loader is reloaded so the session's skill /
+    /// prompt-template expansion sees them.
+    pub skills: Vec<Skill>,
+    /// Prompt templates injected into the resource loader (pi's fake `getPrompts`).
+    pub prompt_templates: Vec<PromptTemplate>,
 }
 
 impl Default for HarnessOptions {
@@ -259,6 +267,8 @@ impl Default for HarnessOptions {
             make_runner: None,
             settings: None,
             summarization_models: None,
+            skills: Vec::new(),
+            prompt_templates: Vec::new(),
         }
     }
 }
@@ -453,11 +463,34 @@ pub(crate) fn create_harness(options: HarnessOptions) -> Harness {
     let agent_dir = temp_dir.path().join(".agent").to_string_lossy().to_string();
 
     let model_runtime = build_model_runtime(&temp_dir, options.with_configured_auth);
-    let resource_loader = DefaultResourceLoader::new(DefaultResourceLoaderOptions {
+    // When skills / prompt templates are injected (pi's fake `getSkills`/`getPrompts`),
+    // reload the loader through its overrides so the session's skill / prompt-template
+    // expansion sees them. A `home_dir` seam keeps the reload off the ambient `$HOME`.
+    let needs_reload = !options.skills.is_empty() || !options.prompt_templates.is_empty();
+    let home_dir = temp_dir.path().join("home");
+    std::fs::create_dir_all(&home_dir).expect("create home dir");
+    let injected_skills = options.skills.clone();
+    let injected_prompts = options.prompt_templates.clone();
+    let mut loader_options = DefaultResourceLoaderOptions {
         cwd: cwd.clone(),
         agent_dir: agent_dir.clone(),
+        home_dir: Some(home_dir.to_string_lossy().to_string()),
         ..Default::default()
-    });
+    };
+    if needs_reload {
+        loader_options.skills_override = Some(Box::new(move |_base| LoadSkillsResult {
+            skills: injected_skills.clone(),
+            diagnostics: Vec::new(),
+        }));
+        loader_options.prompts_override = Some(Box::new(move |_base| PromptsResult {
+            prompts: injected_prompts.clone(),
+            diagnostics: Vec::new(),
+        }));
+    }
+    let mut resource_loader = DefaultResourceLoader::new(loader_options);
+    if needs_reload {
+        resource_loader.reload(ReloadOptions::default());
+    }
 
     let responses: Arc<Mutex<(Vec<FauxResponse>, usize)>> = Arc::new(Mutex::new((Vec::new(), 0)));
     let call_count = Arc::new(AtomicUsize::new(0));
@@ -591,6 +624,19 @@ fn build_model_runtime(temp_dir: &tempfile::TempDir, with_configured_auth: bool)
 /// `pi.on("agent_end", ...)`). Captures only `Send + Sync` handles.
 pub(crate) type AgentEndCallback = Arc<dyn Fn() + Send + Sync>;
 
+/// An `input` handler that decides each event's action (pi's `pi.on("input",
+/// (event) => ...)`).
+pub(crate) type InputResponseHandler = Arc<dyn Fn(&str) -> InputEventResult + Send + Sync>;
+
+/// A `before_agent_start` handler (pi's `pi.on("before_agent_start", ...)`),
+/// taking the prompt and current system prompt.
+pub(crate) type BeforeAgentStartHandler =
+    Arc<dyn Fn(&str, &str) -> BeforeAgentStartCombinedResult + Send + Sync>;
+
+/// A `message_end` replacement handler (pi's `pi.on("message_end", ...)`).
+pub(crate) type MessageEndReplacementHandler =
+    Arc<dyn Fn(&AgentMessage) -> Option<AgentMessage> + Send + Sync>;
+
 /// A configurable [`ExtensionRunner`] for the extension-touching queue/concurrent
 /// cases. Every method delegates to an inner [`StubExtensionRunner`] except the
 /// hooks a test opts into:
@@ -605,12 +651,24 @@ pub(crate) struct TestExtensionRunner {
     inner: StubExtensionRunner,
     input_events: Option<Arc<Mutex<Vec<InputEvent>>>>,
     commands: Vec<String>,
+    command_runs: Option<Arc<Mutex<Vec<String>>>>,
     on_agent_end: Option<AgentEndCallback>,
     agent_end_fired: AtomicBool,
     event_order: Option<Arc<Mutex<Vec<String>>>>,
     #[allow(clippy::type_complexity)]
     before_compact:
         Option<Arc<dyn Fn(&SessionBeforeCompactEvent) -> SessionBeforeCompactResult + Send + Sync>>,
+    /// A handler that decides an `input` event's action (pi's `pi.on("input", ...)`
+    /// returning `handled` / `transform`).
+    input_response: Option<InputResponseHandler>,
+    /// A `before_agent_start` handler (pi's `pi.on("before_agent_start", ...)`).
+    before_agent_start: Option<BeforeAgentStartHandler>,
+    /// A `message_end` replacement handler (pi's `pi.on("message_end", ...)`
+    /// returning a replacement message).
+    message_end_replacement: Option<MessageEndReplacementHandler>,
+    /// A shared flag set when `bind_core` is invoked (pi's `runner.bindCore(...)`),
+    /// so a test holding a clone can assert `bind_extensions` wired the hosts.
+    bind_core_flag: Option<Arc<AtomicBool>>,
 }
 
 /// A `session_before_compact` handler for [`TestExtensionRunner`] (pi's
@@ -625,11 +683,53 @@ impl TestExtensionRunner {
             inner: StubExtensionRunner,
             input_events: None,
             commands: Vec::new(),
+            command_runs: None,
             on_agent_end: None,
             agent_end_fired: AtomicBool::new(false),
             event_order: None,
             before_compact: None,
+            input_response: None,
+            before_agent_start: None,
+            message_end_replacement: None,
+            bind_core_flag: None,
         }
+    }
+
+    /// Record `bind_core` invocations into `flag` (so `bind_extensions` wiring can
+    /// be asserted from a test-held clone).
+    pub fn with_bind_core_flag(mut self, flag: Arc<AtomicBool>) -> Self {
+        self.bind_core_flag = Some(flag);
+        self
+    }
+
+    /// Register an `input` handler that decides each event's action (pi's
+    /// `pi.on("input", (event) => ...)`). Also reports `has_handlers("input")`.
+    pub fn with_input_response(mut self, handler: InputResponseHandler) -> Self {
+        self.input_response = Some(handler);
+        self
+    }
+
+    /// Register a `before_agent_start` handler (pi's `pi.on("before_agent_start",
+    /// ...)`); it may inject custom messages and override the system prompt. Also
+    /// reports `has_handlers("before_agent_start")`.
+    pub fn with_before_agent_start(mut self, handler: BeforeAgentStartHandler) -> Self {
+        self.before_agent_start = Some(handler);
+        self
+    }
+
+    /// Register a `message_end` replacement handler (pi's `pi.on("message_end",
+    /// ...)` returning a replacement message).
+    pub fn with_message_end_replacement(mut self, handler: MessageEndReplacementHandler) -> Self {
+        self.message_end_replacement = Some(handler);
+        self
+    }
+
+    /// Register `name` as an extension command whose handler records its raw
+    /// argument string into `sink` (pi's `pi.registerCommand(name, { handler })`).
+    pub fn with_recording_command(mut self, name: &str, sink: Arc<Mutex<Vec<String>>>) -> Self {
+        self.commands.push(name.to_string());
+        self.command_runs = Some(sink);
+        self
     }
 
     /// Register a `session_before_compact` handler (pi's
@@ -688,6 +788,20 @@ fn stub_resolved_command(name: &str) -> ResolvedCommand {
     }
 }
 
+/// A [`ResolvedCommand`] whose handler records its raw argument string into `sink`
+/// (pi's `pi.registerCommand(name, { handler: (args) => runs.push(args) })`).
+fn recording_resolved_command(name: &str, sink: Arc<Mutex<Vec<String>>>) -> ResolvedCommand {
+    let mut command = stub_resolved_command(name).command;
+    command.handler = Arc::new(move |args: &str, _ctx: &dyn CommandContext| {
+        sink.lock().unwrap().push(args.to_string());
+        Ok(())
+    });
+    ResolvedCommand {
+        command,
+        invocation_name: name.to_string(),
+    }
+}
+
 impl ExtensionRunner for TestExtensionRunner {
     fn emit_session_shutdown(&self, event: SessionShutdownEvent) {
         self.inner.emit_session_shutdown(event);
@@ -732,6 +846,9 @@ impl ExtensionRunner for TestExtensionRunner {
                 .unwrap()
                 .push(format!("extension:message_end:{role}"));
         }
+        if let Some(handler) = &self.message_end_replacement {
+            return handler(&event.message);
+        }
         self.inner.emit_message_end(event)
     }
 
@@ -750,7 +867,10 @@ impl ExtensionRunner for TestExtensionRunner {
                 streaming_behavior,
             });
         }
-        InputEventResult::Continue
+        match &self.input_response {
+            Some(handler) => handler(text),
+            None => InputEventResult::Continue,
+        }
     }
 
     fn emit_before_agent_start(
@@ -760,6 +880,9 @@ impl ExtensionRunner for TestExtensionRunner {
         system_prompt: &str,
         system_prompt_options: &BuildSystemPromptOptions,
     ) -> Option<BeforeAgentStartCombinedResult> {
+        if let Some(handler) = &self.before_agent_start {
+            return Some(handler(prompt, system_prompt));
+        }
         self.inner
             .emit_before_agent_start(prompt, images, system_prompt, system_prompt_options)
     }
@@ -781,15 +904,20 @@ impl ExtensionRunner for TestExtensionRunner {
     }
 
     fn has_handlers(&self, event_type: &str) -> bool {
-        (event_type == "input" && self.input_events.is_some())
+        (event_type == "input" && (self.input_events.is_some() || self.input_response.is_some()))
             || (matches!(event_type, "message_start" | "message_end") && self.event_order.is_some())
+            || (event_type == "message_end" && self.message_end_replacement.is_some())
             || (event_type == "session_before_compact" && self.before_compact.is_some())
+            || (event_type == "before_agent_start" && self.before_agent_start.is_some())
             || self.inner.has_handlers(event_type)
     }
 
     fn get_command(&self, name: &str) -> Option<ResolvedCommand> {
         if self.commands.iter().any(|c| c == name) {
-            return Some(stub_resolved_command(name));
+            return Some(match &self.command_runs {
+                Some(sink) => recording_resolved_command(name, Arc::clone(sink)),
+                None => stub_resolved_command(name),
+            });
         }
         self.inner.get_command(name)
     }
@@ -816,6 +944,9 @@ impl ExtensionRunner for TestExtensionRunner {
         context_actions: Arc<dyn SessionContextHost>,
         provider_actions: Option<Arc<dyn ProviderRegistrationHost>>,
     ) {
+        if let Some(flag) = &self.bind_core_flag {
+            flag.store(true, Ordering::SeqCst);
+        }
         self.inner
             .bind_core(actions, context_actions, provider_actions);
     }

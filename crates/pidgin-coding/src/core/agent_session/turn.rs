@@ -157,6 +157,23 @@ fn user_message_text(message: &AgentMessage) -> String {
     }
 }
 
+/// Normalize an extension-supplied replacement message (pi's inline normalization
+/// in `_emitExtensionEvent`, L744-751): a `user`/`assistant`/`toolResult`/`custom`
+/// message whose `content` is null or missing gets `content: []` so it never
+/// enters agent state or session history with a malformed body.
+fn normalize_replacement_message(message: AgentMessage) -> AgentMessage {
+    let role = message_role(&message);
+    let normalizable = matches!(role, Some("user" | "assistant" | "toolResult" | "custom"));
+    let content_missing = message.get("content").is_none_or(Value::is_null);
+    if normalizable && content_missing {
+        let mut normalized = message;
+        normalized["content"] = json!([]);
+        normalized
+    } else {
+        message
+    }
+}
+
 /// Fan `event` out to every listener synchronously in registration order (pi's
 /// `_emit`, L527). Shared by [`AgentSession::emit`] and [`AgentEventHandler`].
 ///
@@ -232,8 +249,20 @@ impl AgentEventHandler {
             }
         }
 
-        // 2. Emit to extensions first.
-        self.emit_extension_event(event);
+        // 2. Emit to extensions first. For `message_end` this yields an optional
+        //    replacement message an extension supplied (pi `emitMessageEnd`).
+        let replacement = self.emit_extension_event(event);
+
+        // Apply a `message_end` replacement in place (pi `_replaceMessageInPlace`,
+        // L683): mirror it into agent state so later turn/agent events, listeners,
+        // and the persistence below all observe the replacement.
+        let effective_message = match (event, replacement) {
+            (AgentEvent::MessageEnd { message }, Some(new_message)) => {
+                self.replace_message_in_place(message, &new_message);
+                Some(new_message)
+            }
+            _ => None,
+        };
 
         // 3. Notify all listeners. `will_retry` is folded into agent_end (pi
         //    `_willRetryAfterAgentEnd`, L647); every other event ignores it.
@@ -241,12 +270,37 @@ impl AgentEventHandler {
             AgentEvent::AgentEnd { messages } => self.will_retry_after_agent_end(messages),
             _ => false,
         };
-        let session_event = AgentSessionEvent::from_agent_event(event.clone(), will_retry);
+        let session_event = match &effective_message {
+            Some(message) => AgentSessionEvent::MessageEnd {
+                message: message.clone(),
+            },
+            None => AgentSessionEvent::from_agent_event(event.clone(), will_retry),
+        };
         emit_to_listeners(&self.listeners, &session_event);
 
-        // 4. Session persistence on message_end (pi L604).
+        // 4. Session persistence on message_end (pi L604). Persist the replacement
+        //    when one was supplied.
         if let AgentEvent::MessageEnd { message } = event {
-            self.persist_message_end(message);
+            self.persist_message_end(effective_message.as_ref().unwrap_or(message));
+        }
+    }
+
+    /// Replace a finalized message in agent state with an extension-supplied
+    /// replacement (pi's `_replaceMessageInPlace`, L683).
+    ///
+    /// pi mutates the finalized message object by identity so agent state, later
+    /// turn/agent events, listeners, and the eventual `appendMessage` persistence
+    /// stay in sync. The Rust agent stores messages as owned [`Value`]s, so the
+    /// port replaces the just-finalized message (the last state entry equal to
+    /// `target`) with the replacement.
+    fn replace_message_in_place(&self, target: &AgentMessage, replacement: &AgentMessage) {
+        if target == replacement {
+            return;
+        }
+        let mut messages = self.agent.messages();
+        if let Some(index) = messages.iter().rposition(|message| message == target) {
+            messages[index] = replacement.clone();
+            self.agent.set_messages(messages);
         }
     }
 
@@ -286,7 +340,10 @@ impl AgentEventHandler {
     /// Map a core [`AgentEvent`] to its extension event and emit it (pi's
     /// `_emitExtensionEvent`, L700). The strongly-typed core payloads are
     /// projected onto the `Value`-shaped extension event fields via serde.
-    fn emit_extension_event(&self, event: &AgentEvent) {
+    ///
+    /// Returns the extension-supplied replacement message for `message_end` (pi's
+    /// `emitMessageEnd` result, normalized), or `None` for every other event.
+    fn emit_extension_event(&self, event: &AgentEvent) -> Option<AgentMessage> {
         match event {
             AgentEvent::AgentStart => {
                 *self.turn_index.lock().unwrap() = 0;
@@ -343,12 +400,13 @@ impl AgentEventHandler {
                     }));
             }
             AgentEvent::MessageEnd { message } => {
-                let _replacement = self.extension_runner.emit_message_end(&MessageEndEvent {
+                let replacement = self.extension_runner.emit_message_end(&MessageEndEvent {
                     message: message.clone(),
                 });
-                // unit5: applying an extension replacement back into agent state
-                // (pi `_replaceMessageInPlace`, L683) lands in PR7; the
-                // StubExtensionRunner returns None, so nothing is replaced here.
+                // An untyped handler can return a message with null/missing content;
+                // normalize so it never enters agent state or session history (pi
+                // L744-751). The in-place replacement itself happens in `handle`.
+                return replacement.map(normalize_replacement_message);
             }
             AgentEvent::ToolExecutionStart {
                 tool_call_id,
@@ -397,6 +455,7 @@ impl AgentEventHandler {
                     ));
             }
         }
+        None
     }
 
     /// Persist a finalized message and track the last assistant message (pi
@@ -584,9 +643,16 @@ impl AgentSession {
     /// queue per `options.streaming_behavior` instead of starting a new turn
     /// (pi L1147).
     pub fn prompt_with(&self, text: &str, options: PromptOptions) -> Result<(), PromptError> {
-        // unit5: the `/`-command extension shortcut (pi L1110,
-        // `_tryExecuteExtensionCommand`, gated on `expand_prompt_templates`) lands
-        // in PR7; non-command text is unaffected.
+        // Handle extension commands first: they execute immediately (even during
+        // streaming) and manage their own LLM interaction, so there is no prompt to
+        // send (pi L1110, `_tryExecuteExtensionCommand`, gated on
+        // `expand_prompt_templates`).
+        if options.expand_prompt_templates
+            && text.starts_with('/')
+            && self.try_execute_extension_command(text)
+        {
+            return Ok(());
+        }
 
         // Emit the input event for extension interception (pi L1122). With the
         // StubExtensionRunner `has_handlers` is false, so this is skipped. When
@@ -618,10 +684,14 @@ impl AgentSession {
             }
         }
 
-        // unit5: skill-command and prompt-template expansion (pi L1140, gated on
-        // `expand_prompt_templates`) land in PR7; the text passes through
-        // unexpanded.
-        let expanded_text = current_text;
+        // Expand skill commands (`/skill:name args`) and prompt templates
+        // (`/template args`) before sending (pi L1140, gated on
+        // `expand_prompt_templates`).
+        let expanded_text = if options.expand_prompt_templates {
+            self.expand_prompt_input(&current_text)
+        } else {
+            current_text
+        };
 
         // If streaming, route to the steering / follow-up queue rather than
         // starting a new turn (pi L1147). A steering behavior must be supplied.
@@ -685,18 +755,17 @@ impl AgentSession {
             messages.extend(pending.drain(..));
         }
 
-        // Emit before_agent_start (pi L1213). With the StubExtensionRunner this
-        // returns None.
+        // Emit before_agent_start (pi L1213). Any custom messages it returns are
+        // appended alongside the user message; a returned system prompt overrides
+        // the base for this turn, otherwise the base is restored (pi L1218-1241).
+        let base_system_prompt = self.base_system_prompt.lock().unwrap().clone();
         let before_start = self.extension_runner().emit_before_agent_start(
             &expanded_text,
             current_images.as_deref(),
-            &self.agent.system_prompt(),
+            &base_system_prompt,
             &Value::Null,
         );
-        if before_start.is_some() {
-            // unit5: injecting extension custom messages and applying a
-            // system-prompt override (pi L1220-1241) land in PR7.
-        }
+        self.apply_before_agent_start(before_start, &base_system_prompt, &mut messages);
 
         self.run_agent_prompt(messages)
     }
@@ -714,8 +783,9 @@ impl AgentSession {
             Ok(())
         })();
 
-        // finally (pi L1056):
-        // unit5: resetting `_systemPromptOverride` (pi L1057) lands in PR7.
+        // finally (pi L1056): clear the per-turn system-prompt override so the next
+        // turn starts from the base prompt (pi L1057).
+        *self.system_prompt_override.lock().unwrap() = None;
         self.flush_pending_bash_messages();
         self.emit_agent_settled();
 

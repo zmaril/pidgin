@@ -106,15 +106,14 @@ impl AgentSession {
     /// Queue a steering message while the agent is running (pi's `steer`, L1323).
     ///
     /// Delivered after the current assistant turn finishes its tool calls, before
-    /// the next LLM call. Rejects extension commands (they cannot be queued).
-    ///
-    /// unit5: skill-command and prompt-template expansion (pi L1330) land in PR7;
-    /// the text passes through unexpanded.
+    /// the next LLM call. Rejects extension commands (they cannot be queued), then
+    /// expands skill commands and prompt templates (pi L1325-1331).
     pub fn steer(&self, text: &str, images: Option<Vec<ImageContent>>) -> Result<(), PromptError> {
         if text.starts_with('/') {
             self.throw_if_extension_command(text)?;
         }
-        self.queue_steer(text, images);
+        let expanded = self.expand_prompt_input(text);
+        self.queue_steer(&expanded, images);
         Ok(())
     }
 
@@ -122,10 +121,8 @@ impl AgentSession {
     /// L1343).
     ///
     /// Delivered only when the agent has no more tool calls or steering messages.
-    /// Rejects extension commands (they cannot be queued).
-    ///
-    /// unit5: skill-command and prompt-template expansion (pi L1350) land in PR7;
-    /// the text passes through unexpanded.
+    /// Rejects extension commands (they cannot be queued), then expands skill
+    /// commands and prompt templates (pi L1345-1351).
     pub fn follow_up(
         &self,
         text: &str,
@@ -134,7 +131,8 @@ impl AgentSession {
         if text.starts_with('/') {
             self.throw_if_extension_command(text)?;
         }
-        self.queue_follow_up(text, images);
+        let expanded = self.expand_prompt_input(text);
+        self.queue_follow_up(&expanded, images);
         Ok(())
     }
 

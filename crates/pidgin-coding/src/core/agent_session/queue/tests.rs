@@ -462,9 +462,9 @@ fn persists_message_end_events_in_order_for_a_tool_call_turn() {
 // PR7 subsystem — ignored with a precise reason.
 // ---------------------------------------------------------------------------
 
-#[test]
-#[ignore = "unit5: enabled by PR7 (`_tryExecuteExtensionCommand` / idle command dispatch)"]
-fn dispatches_extension_commands_immediately_when_prompted_while_idle() {}
+// `dispatches_extension_commands_immediately_when_prompted_while_idle` was
+// enabled by PR7; it is implemented in [`super::super::extension_turn::tests`]
+// alongside the other `/`-command dispatch cases.
 
 #[test]
 #[ignore = "unit5: sync/eager + !Send AgentSession — extension `sendUserMessage` steer must run mid-turn; unreachable from any Send+Sync hook. Drain order covered by the idle steering tests"]

@@ -322,14 +322,7 @@ fn reports_streaming_behavior_to_input_handlers_while_streaming() {}
 #[ignore = "unit5: sync/eager + !Send AgentSession — the streaming guard needs an in-flight run, unreachable from any mid-run hook"]
 fn throws_when_prompted_during_streaming_without_a_streaming_behavior() {}
 
-#[test]
-#[ignore = "unit5: enabled by PR7 (skill-command expansion)"]
-fn expands_skill_commands_before_sending_the_prompt() {}
-
-#[test]
-#[ignore = "unit5: enabled by PR7 (prompt-template expansion)"]
-fn expands_prompt_templates_before_sending_the_prompt() {}
-
-#[test]
-#[ignore = "unit5: enabled by PR7 (extension-command dispatch)"]
-fn dispatches_extension_commands_without_consuming_a_provider_response() {}
+// The skill-command expansion, prompt-template expansion, and extension-command
+// dispatch cases were enabled by PR7; they are implemented in
+// [`super::super::extension_turn::tests`] with their fixtures alongside the other
+// extension-turn cases.

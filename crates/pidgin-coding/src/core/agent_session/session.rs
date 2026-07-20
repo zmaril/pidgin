@@ -117,8 +117,9 @@ pub struct AgentSession {
     pub agent: Agent,
     /// Session-tree persistence (pi `readonly sessionManager`). Held in an
     /// `Arc<Mutex<..>>` so the internal `agent.subscribe` handler (a `'static`
-    /// closure) can append finalized messages during a run.
-    session_manager: Arc<Mutex<SessionManager>>,
+    /// closure) can append finalized messages during a run. `pub(super)` so the
+    /// extension host bridge in [`super::host`] can share the same handle.
+    pub(super) session_manager: Arc<Mutex<SessionManager>>,
     /// Settings access (pi `readonly settingsManager`).
     pub settings_manager: SettingsManager,
 
@@ -129,6 +130,12 @@ pub struct AgentSession {
     /// The extension runner, defaulted to the stub (pi `_extensionRunner`). An
     /// `Arc` so the internal agent-event handler can emit through it.
     extension_runner: Arc<dyn ExtensionRunner>,
+    /// Whether the project is trusted, snapshotted from the settings manager at
+    /// construction (pi `settingsManager.isProjectTrusted()`). The
+    /// `SettingsManager` is `!Send`, so the `Send + Sync` extension host bridge in
+    /// [`super::host`] cannot hold it; this shared snapshot lets the bridge answer
+    /// `isProjectTrusted` without crossing the `!Send` boundary.
+    pub(super) project_trusted: Arc<Mutex<bool>>,
 
     /// Models cycled with Ctrl+P (pi `_scopedModels`).
     scoped_models: Mutex<Vec<ScopedModel>>,
@@ -136,9 +143,9 @@ pub struct AgentSession {
     // unit5: the following configuration is consumed by the runtime/tool-registry
     // PR (`_buildRuntime`/`_refreshToolRegistry`); held here so construction is a
     // faithful move-out of the config.
-    /// Resource loader (pi `_resourceLoader`).
-    #[allow(dead_code)]
-    resource_loader: DefaultResourceLoader,
+    /// Resource loader (pi `_resourceLoader`). Read by the extension-turn skill /
+    /// prompt-template expansion in [`super::extension_turn`].
+    pub(super) resource_loader: DefaultResourceLoader,
     /// SDK custom tools (pi `_customTools`).
     #[allow(dead_code)]
     custom_tools: Vec<ToolDefinition>,
@@ -161,8 +168,9 @@ pub struct AgentSession {
 
     /// TUI-facing listeners keyed by a monotonic id (pi `_eventListeners`). Held
     /// in an `Arc<Mutex<..>>` so `subscribe` can hand back a `'static` unsubscribe
-    /// closure that removes by id.
-    listeners: Arc<Mutex<Vec<(u64, AgentSessionEventListener)>>>,
+    /// closure that removes by id. `pub(super)` so the extension host bridge in
+    /// [`super::host`] can emit `entry_appended` through the same registry.
+    pub(super) listeners: Arc<Mutex<Vec<(u64, AgentSessionEventListener)>>>,
     /// Monotonic subscription-id source for the listener registry.
     next_listener_id: AtomicU64,
 
@@ -226,12 +234,24 @@ pub struct AgentSession {
     pub(super) retry_settings: Arc<Mutex<RetryResolved>>,
 
     /// Whether an agent run or post-run continuation is active (pi
-    /// `_isAgentRunActive`). Drives [`AgentSession::is_idle`].
-    is_agent_run_active: AtomicBool,
+    /// `_isAgentRunActive`). Drives [`AgentSession::is_idle`]. An `Arc` so the
+    /// `Send + Sync` extension host bridge in [`super::host`] can answer `isIdle`
+    /// against the same flag.
+    pub(super) is_agent_run_active: Arc<AtomicBool>,
     /// Whether an abort is in progress.
     // unit5: set/cleared by the turn-runner PR's `abort`/`prompt` flow.
     #[allow(dead_code)]
     is_aborting: AtomicBool,
+
+    /// The base (tool-derived) system prompt (pi `_baseSystemPrompt`). Captured at
+    /// construction from the agent's initial system prompt; an extension
+    /// `before_agent_start` override layers on top of it and resets back to it on
+    /// the next turn. Shared with the host bridge's `getSystemPrompt`.
+    pub(super) base_system_prompt: Arc<Mutex<String>>,
+    /// The active extension system-prompt override (pi `_systemPromptOverride`);
+    /// `Some` only for the duration of a turn whose `before_agent_start` handler
+    /// supplied one. Cleared in `run_agent_prompt`'s finally block.
+    pub(super) system_prompt_override: Arc<Mutex<Option<String>>>,
 }
 
 impl AgentSession {
@@ -294,6 +314,16 @@ impl AgentSession {
         // live model (pi `this.model`) when deciding `will_retry`.
         let handler_agent = agent.clone();
 
+        // Capture the base system prompt (pi `_baseSystemPrompt`) from the agent's
+        // initial system prompt. Extension `before_agent_start` overrides layer on
+        // top of this and reset back to it (see [`super::extension_turn`]).
+        let base_system_prompt = Arc::new(Mutex::new(agent.system_prompt()));
+        let system_prompt_override = Arc::new(Mutex::new(None));
+        let is_agent_run_active = Arc::new(AtomicBool::new(false));
+        // Snapshot project trust (pi `settingsManager.isProjectTrusted()`) for the
+        // `Send + Sync` host bridge, which cannot hold the `!Send` settings manager.
+        let project_trusted = Arc::new(Mutex::new(settings_manager.is_project_trusted()));
+
         // pi always subscribes an internal `_handleAgentEvent` handler here for
         // session persistence, extension bridging, and (later) auto-retry /
         // compaction. Wire it with `Arc` clones of the shared turn state so the
@@ -324,6 +354,7 @@ impl AgentSession {
             cwd,
             model_runtime,
             extension_runner,
+            project_trusted,
             scoped_models: Mutex::new(scoped_models),
             resource_loader,
             custom_tools,
@@ -346,8 +377,10 @@ impl AgentSession {
             overflow_recovery_attempted,
             compaction_abort_signal: Arc::new(Mutex::new(None)),
             auto_compaction_abort_signal: Arc::new(Mutex::new(None)),
-            is_agent_run_active: AtomicBool::new(false),
+            is_agent_run_active,
             is_aborting: AtomicBool::new(false),
+            base_system_prompt,
+            system_prompt_override,
         }
     }
 
