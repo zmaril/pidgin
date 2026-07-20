@@ -1,0 +1,3902 @@
+{
+  "provenance": {
+    "pidgin": "7756e93",
+    "pi": "3da591ab",
+    "hinzu_run": "scratchpad/hinzu-run/portdiff-coding-agent.json",
+    "note": "working-tree HEAD observed 677288c; pi submodule 3da591a"
+  },
+  "method": "grep-fallback: portdiff records have no per-symbol tier array (only tier_breakdown counts); pi symbols enumerated from src-coding-agent.graph.json (symbols[].file==path), each grepped (-rwl --include=*.rs) as snake_case/original/SCREAMING (fn/const) or PascalCase (type) across pidgin-coding/src and pidgin-cli/src; zero hits => MISSING. Best-effort: a renamed symbol reads as missing.",
+  "started_files": [
+    {
+      "src": "packages/coding-agent/src/core/extensions/types.ts",
+      "path": "src/core/extensions/types.ts",
+      "band": "STARTED",
+      "fan_in": 118,
+      "coverage": 0.46,
+      "matched_symbols": 64,
+      "total_symbols": 139,
+      "mapped_target": "core/extensions/types",
+      "tier_breakdown": {
+        "exact_module": 3,
+        "subtree": 0,
+        "global_name": 61,
+        "unmatched": 75
+      },
+      "graph_symbol_count": 139,
+      "missing_symbols": [
+        {
+          "name": "ExtensionFactory",
+          "kind": "type",
+          "fan_in": 6
+        },
+        {
+          "name": "WorkingIndicatorOptions",
+          "kind": "type",
+          "fan_in": 5
+        },
+        {
+          "name": "ExtensionUIDialogOptions",
+          "kind": "type",
+          "fan_in": 4
+        },
+        {
+          "name": "EntryRenderer",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "MessageRenderer",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "ExtensionFlag",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "ExtensionWidgetOptions",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "ProviderConfig",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "defineTool",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "AnyToolDefinition",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "AutocompleteProviderFactory",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "BashToolResultEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "EditToolCallEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "EditToolResultEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "EditorFactory",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ExtensionActions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ExtensionContextActions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ExtensionShortcut",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "FindToolCallEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "FindToolResultEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "GrepToolCallEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "GrepToolResultEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "InlineExtension",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "LsToolCallEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "LsToolResultEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ReadToolResultEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "WriteToolCallEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "WriteToolResultEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "AppendEntryHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "CompactOptions",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "CustomToolCallEvent",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "CustomToolResultEvent",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "EntryRenderOptions",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ExtensionHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ExtensionRuntimeState",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "GetActiveToolsHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "GetAllToolsHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "GetCommandsHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "GetSessionNameHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "GetThinkingLevelHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "HandlerFn",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "MessageRenderOptions",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ProjectTrustHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ProviderModelConfig",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "RefreshToolsHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SendMessageHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SendUserMessageHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SessionEvent",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SetActiveToolsHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SetLabelHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SetModelHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SetSessionNameHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SetThinkingLevelHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "TerminalInputHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ToolCallEventBase",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ToolResultEventBase",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "WidgetPlacement",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "isBashToolResult",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "isEditToolResult",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "isFindToolResult",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "isGrepToolResult",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "isLsToolResult",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "isReadToolResult",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "isToolCallEventType",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "isWriteToolResult",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 74
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+      "path": "src/modes/interactive/theme/theme.ts",
+      "band": "STARTED",
+      "fan_in": 104,
+      "coverage": 0.455,
+      "matched_symbols": 61,
+      "total_symbols": 134,
+      "mapped_target": "modes/interactive/theme",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 49,
+        "global_name": 12,
+        "unmatched": 73
+      },
+      "graph_symbol_count": 121,
+      "missing_symbols": [
+        {
+          "name": "setRegisteredThemes",
+          "kind": "fn/const",
+          "fan_in": 6
+        },
+        {
+          "name": "getLanguageFromPath",
+          "kind": "fn/const",
+          "fan_in": 4
+        },
+        {
+          "name": "getSettingsListTheme",
+          "kind": "fn/const",
+          "fan_in": 4
+        },
+        {
+          "name": "setGlobalTheme",
+          "kind": "fn/const",
+          "fan_in": 4
+        },
+        {
+          "name": "ThemeInfo",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "getAvailableThemes",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "getAvailableThemesWithPaths",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "getEditorTheme",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "getThemeByName",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "CliHighlightTheme",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "getBuiltinThemes",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getCliHighlightTheme",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "resolveThemeColors",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "TerminalAutoThemeDetectionOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "TerminalBackgroundThemeDetectionOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "TerminalThemeDetectionOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "addTheme",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "buildCliHighlightTheme",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getAnsiColorLuminance",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getCustomThemeInfos",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "deletion",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "doctag",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "emphasis",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "hr",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "operator",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "regexp",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 95
+    },
+    {
+      "src": "packages/coding-agent/src/core/agent-session.ts",
+      "path": "src/core/agent-session.ts",
+      "band": "STARTED",
+      "fan_in": 71,
+      "coverage": 0.513,
+      "matched_symbols": 78,
+      "total_symbols": 152,
+      "mapped_target": "core/agent_session",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 68,
+        "global_name": 10,
+        "unmatched": 74
+      },
+      "graph_symbol_count": 13,
+      "missing_symbols": [
+        {
+          "name": "ModelCycleResult",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "withoutDeletedHeaders",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "ParsedSkillBlock",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "SessionStats",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "estimateMessagesTokens",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "ExtensionBindings",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ToolDefinitionEntry",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 6
+    },
+    {
+      "src": "packages/coding-agent/src/config.ts",
+      "path": "src/config.ts",
+      "band": "STARTED",
+      "fan_in": 38,
+      "coverage": 0.093,
+      "matched_symbols": 4,
+      "total_symbols": 43,
+      "mapped_target": "core/auth/auth_guidance",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 2,
+        "global_name": 2,
+        "unmatched": 39
+      },
+      "graph_symbol_count": 43,
+      "missing_symbols": [
+        {
+          "name": "getSelfUpdateCommand",
+          "kind": "fn/const",
+          "fan_in": 14
+        },
+        {
+          "name": "detectInstallMethod",
+          "kind": "fn/const",
+          "fan_in": 13
+        },
+        {
+          "name": "SelfUpdateCommand",
+          "kind": "type",
+          "fan_in": 5
+        },
+        {
+          "name": "SelfUpdatePackageTarget",
+          "kind": "type",
+          "fan_in": 5
+        },
+        {
+          "name": "InstallMethod",
+          "kind": "type",
+          "fan_in": 4
+        },
+        {
+          "name": "getCustomThemesDir",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "getSelfUpdateCommandForMethod",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "getSelfUpdateUnavailableInstruction",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "getUpdateInstruction",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "SelfUpdateCommandStep",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "expandTildePath",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getChangelogPath",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getInferredNpmInstall",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getPathComparisonCandidates",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getThemesDir",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "isManagedByGlobalPackageManager",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "isSelfUpdatePathWritable",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "normalizeSelfUpdatePackageTarget",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "readCommandOutput",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getBundledInteractiveAssetPath",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getDebugLogPath",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getEntrypointPackageDir",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getExportTemplateDir",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getGlobalPackageRoots",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getInteractiveAssetsDir",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getPackageJsonPath",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getSettingsPath",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getShareViewerUrl",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "makeSelfUpdateCommand",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "makeSelfUpdateCommandStep",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "normalizeExistingPathForComparison",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "PackageJson",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "getModelsPath",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getPromptsDir",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getToolsDir",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 8
+    },
+    {
+      "src": "packages/coding-agent/src/core/sdk.ts",
+      "path": "src/core/sdk.ts",
+      "band": "STARTED",
+      "fan_in": 23,
+      "coverage": 0.4,
+      "matched_symbols": 4,
+      "total_symbols": 10,
+      "mapped_target": "core/sdk",
+      "tier_breakdown": {
+        "exact_module": 4,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 6
+      },
+      "graph_symbol_count": 10,
+      "missing_symbols": [
+        {
+          "name": "convertToLlmWithBlockImages",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "transformHeaders",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 8
+    },
+    {
+      "src": "packages/coding-agent/src/core/extensions/runner.ts",
+      "path": "src/core/extensions/runner.ts",
+      "band": "STARTED",
+      "fan_in": 13,
+      "coverage": 0.378,
+      "matched_symbols": 45,
+      "total_symbols": 119,
+      "mapped_target": "core/extensions/runner",
+      "tier_breakdown": {
+        "exact_module": 19,
+        "subtree": 0,
+        "global_name": 26,
+        "unmatched": 74
+      },
+      "graph_symbol_count": 45,
+      "missing_symbols": [
+        {
+          "name": "BuiltInKeyBindings",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "RunnerEmitEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "SessionBeforeEvent",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "buildBuiltinKeybindings",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "ForkHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "NavigateTreeHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "NewSessionHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ReloadHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SessionBeforeEventResult",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ShutdownHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SwitchSessionHandler",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "addAutocompleteProvider",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getAllThemes",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getEditorComponent",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getEditorText",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getToolsExpanded",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "onTerminalInput",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "pasteToEditor",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setEditorComponent",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setEditorText",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setFooter",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setHeader",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setStatus",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setTitle",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setToolsExpanded",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setWidget",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setWorkingIndicator",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setWorkingMessage",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setWorkingVisible",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 16
+    },
+    {
+      "src": "packages/coding-agent/src/core/tools/bash.ts",
+      "path": "src/core/tools/bash.ts",
+      "band": "STARTED",
+      "fan_in": 12,
+      "coverage": 0.452,
+      "matched_symbols": 14,
+      "total_symbols": 31,
+      "mapped_target": "core/tools/bash",
+      "tier_breakdown": {
+        "exact_module": 11,
+        "subtree": 0,
+        "global_name": 3,
+        "unmatched": 17
+      },
+      "graph_symbol_count": 31,
+      "missing_symbols": [
+        {
+          "name": "clearUpdateTimer",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "BashResultRenderComponent",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "BashRenderState",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "formatBashCall",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatDuration",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "onAbort",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "rebuildBashResultRenderComponent",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "scheduleOutputUpdate",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "BashResultRenderState",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "handleData",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 21
+    },
+    {
+      "src": "packages/coding-agent/src/core/extensions/loader.ts",
+      "path": "src/core/extensions/loader.ts",
+      "band": "STARTED",
+      "fan_in": 11,
+      "coverage": 0.596,
+      "matched_symbols": 31,
+      "total_symbols": 52,
+      "mapped_target": "core/extensions/loader",
+      "tier_breakdown": {
+        "exact_module": 2,
+        "subtree": 0,
+        "global_name": 29,
+        "unmatched": 21
+      },
+      "graph_symbol_count": 52,
+      "missing_symbols": [
+        {
+          "name": "ExtensionCacheToken",
+          "kind": "type",
+          "fan_in": 4
+        },
+        {
+          "name": "clearExtensionCache",
+          "kind": "fn/const",
+          "fan_in": 4
+        },
+        {
+          "name": "loadExtensionFromFactory",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "createExtension",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "createExtensionAPI",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "loadExtensionsInternal",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "HandlerFn",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "getAliases",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isCurrentCacheToken",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "loadExtension",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "loadExtensionModule",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "resolveWorkspaceOrImport",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "useExtensionCacheCwd",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "assertActive",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getFlag",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "notInitialized",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "on",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "registerEntryRenderer",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "registerFlag",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "registerMessageRenderer",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "registerShortcut",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 31
+    },
+    {
+      "src": "packages/coding-agent/src/core/tools/edit.ts",
+      "path": "src/core/tools/edit.ts",
+      "band": "STARTED",
+      "fan_in": 8,
+      "coverage": 0.276,
+      "matched_symbols": 8,
+      "total_symbols": 29,
+      "mapped_target": "core/tools/edit",
+      "tier_breakdown": {
+        "exact_module": 4,
+        "subtree": 0,
+        "global_name": 4,
+        "unmatched": 21
+      },
+      "graph_symbol_count": 29,
+      "missing_symbols": [
+        {
+          "name": "createEditTool",
+          "kind": "fn/const",
+          "fan_in": 12
+        },
+        {
+          "name": "RenderableEditArgs",
+          "kind": "type",
+          "fan_in": 4
+        },
+        {
+          "name": "EditPreview",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "EditToolInput",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "EditRenderState",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "buildEditCallComponent",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getRenderablePreviewInput",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "setEditPreview",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "EditOperations",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "EditToolDetails",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "EditToolResultLike",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "createEditCallRenderComponent",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getEditCallRenderComponent",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getEditHeaderBg",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "LegacyEditToolInput",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "readFile",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 13
+    },
+    {
+      "src": "packages/coding-agent/src/core/tools/read.ts",
+      "path": "src/core/tools/read.ts",
+      "band": "STARTED",
+      "fan_in": 8,
+      "coverage": 0.174,
+      "matched_symbols": 4,
+      "total_symbols": 23,
+      "mapped_target": "core/tools/read",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 4,
+        "unmatched": 19
+      },
+      "graph_symbol_count": 23,
+      "missing_symbols": [
+        {
+          "name": "ReadRenderArgs",
+          "kind": "type",
+          "fan_in": 5
+        },
+        {
+          "name": "CompactReadClassification",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "formatReadLineRange",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "ReadOperations",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "formatCompactReadCall",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatReadCall",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatReadResult",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getCompactReadClassification",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getNonVisionImageNote",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getPiDocsClassification",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "trimTrailingEmptyLines",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "ReadToolInput",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "onAbort",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "readFile",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 9
+    },
+    {
+      "src": "packages/coding-agent/src/utils/child-process.ts",
+      "path": "src/utils/child-process.ts",
+      "band": "STARTED",
+      "fan_in": 7,
+      "coverage": 0.462,
+      "matched_symbols": 6,
+      "total_symbols": 13,
+      "mapped_target": "utils/child_process",
+      "tier_breakdown": {
+        "exact_module": 3,
+        "subtree": 0,
+        "global_name": 3,
+        "unmatched": 7
+      },
+      "graph_symbol_count": 13,
+      "missing_symbols": [
+        {
+          "name": "armIdleTimer",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "cleanup",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "onExit",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "onStderrEnd",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "onStdoutEnd",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 8
+    },
+    {
+      "src": "packages/coding-agent/src/core/tools/file-mutation-queue.ts",
+      "path": "src/core/tools/file-mutation-queue.ts",
+      "band": "STARTED",
+      "fan_in": 6,
+      "coverage": 0.333,
+      "matched_symbols": 1,
+      "total_symbols": 3,
+      "mapped_target": "core/tools/file_mutation_queue",
+      "tier_breakdown": {
+        "exact_module": 1,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 2
+      },
+      "graph_symbol_count": 3,
+      "missing_symbols": [
+        {
+          "name": "isMissingPathError",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 2
+    },
+    {
+      "src": "packages/coding-agent/src/cli/startup-ui.ts",
+      "path": "src/cli/startup-ui.ts",
+      "band": "STARTED",
+      "fan_in": 5,
+      "coverage": 0.059,
+      "matched_symbols": 1,
+      "total_symbols": 17,
+      "mapped_target": null,
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 1,
+        "unmatched": 16
+      },
+      "graph_symbol_count": 17,
+      "missing_symbols": [
+        {
+          "name": "shouldRunFirstTimeSetup",
+          "kind": "fn/const",
+          "fan_in": 6
+        },
+        {
+          "name": "createStartupTui",
+          "kind": "fn/const",
+          "fan_in": 4
+        },
+        {
+          "name": "clearStartupTui",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "showStartupSelector",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "startStartupTui",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "DistributionMetadata",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "applyDetectedStartupTheme",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isOfficialDistribution",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "loadStartupThemes",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "showFirstTimeSetup",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "showSetup",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "showStartupInput",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "onThemePreview",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 4
+    },
+    {
+      "src": "packages/coding-agent/src/core/footer-data-provider.ts",
+      "path": "src/core/footer-data-provider.ts",
+      "band": "STARTED",
+      "fan_in": 5,
+      "coverage": 0.321,
+      "matched_symbols": 9,
+      "total_symbols": 28,
+      "mapped_target": "core/footer_data_provider",
+      "tier_breakdown": {
+        "exact_module": 8,
+        "subtree": 0,
+        "global_name": 1,
+        "unmatched": 19
+      },
+      "graph_symbol_count": 9,
+      "missing_symbols": [
+        {
+          "name": "ReadonlyFooterDataProvider",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "isWindowsMountedRepoPath",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isWslEnvironment",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "resolveBranchWithGitAsync",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "shouldPollGitHead",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 4
+    },
+    {
+      "src": "packages/coding-agent/src/core/tools/find.ts",
+      "path": "src/core/tools/find.ts",
+      "band": "STARTED",
+      "fan_in": 5,
+      "coverage": 0.313,
+      "matched_symbols": 5,
+      "total_symbols": 16,
+      "mapped_target": "core/tools/find",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 5,
+        "unmatched": 11
+      },
+      "graph_symbol_count": 16,
+      "missing_symbols": [
+        {
+          "name": "createFindTool",
+          "kind": "fn/const",
+          "fan_in": 5
+        },
+        {
+          "name": "FindToolDetails",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "cleanup",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "formatFindCall",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatFindResult",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "FindToolInput",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "onAbort",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 9
+    },
+    {
+      "src": "packages/coding-agent/src/core/event-bus.ts",
+      "path": "src/core/event-bus.ts",
+      "band": "STARTED",
+      "fan_in": 4,
+      "coverage": 0.571,
+      "matched_symbols": 4,
+      "total_symbols": 7,
+      "mapped_target": "core/event_bus",
+      "tier_breakdown": {
+        "exact_module": 4,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 3
+      },
+      "graph_symbol_count": 7,
+      "missing_symbols": [
+        {
+          "name": "createEventBus",
+          "kind": "fn/const",
+          "fan_in": 4
+        },
+        {
+          "name": "EventBusController",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "on",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "safeHandler",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 3
+    },
+    {
+      "src": "packages/coding-agent/src/core/output-guard.ts",
+      "path": "src/core/output-guard.ts",
+      "band": "STARTED",
+      "fan_in": 4,
+      "coverage": 0.111,
+      "matched_symbols": 1,
+      "total_symbols": 9,
+      "mapped_target": "core/output_guard",
+      "tier_breakdown": {
+        "exact_module": 1,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 8
+      },
+      "graph_symbol_count": 9,
+      "missing_symbols": [
+        {
+          "name": "StdoutTakeoverState",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "getRawStdoutWrite",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 7
+    },
+    {
+      "src": "packages/coding-agent/src/core/timings.ts",
+      "path": "src/core/timings.ts",
+      "band": "STARTED",
+      "fan_in": 4,
+      "coverage": 0.167,
+      "matched_symbols": 1,
+      "total_symbols": 6,
+      "mapped_target": "core/timings",
+      "tier_breakdown": {
+        "exact_module": 1,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 5
+      },
+      "graph_symbol_count": 6,
+      "missing_symbols": [
+        {
+          "name": "TimingNamespace",
+          "kind": "type",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 5
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/custom-editor.ts",
+      "path": "src/modes/interactive/components/custom-editor.ts",
+      "band": "STARTED",
+      "fan_in": 4,
+      "coverage": 0.25,
+      "matched_symbols": 1,
+      "total_symbols": 4,
+      "mapped_target": null,
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 1,
+        "unmatched": 3
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "CustomEditor",
+          "kind": "type",
+          "fan_in": 3
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/session-selector.ts",
+      "path": "src/modes/interactive/components/session-selector.ts",
+      "band": "STARTED",
+      "fan_in": 4,
+      "coverage": 0.18,
+      "matched_symbols": 11,
+      "total_symbols": 61,
+      "mapped_target": "core",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 6,
+        "global_name": 5,
+        "unmatched": 50
+      },
+      "graph_symbol_count": 17,
+      "missing_symbols": [
+        {
+          "name": "SessionScope",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "FlatSessionNode",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "SessionList",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "SessionsLoader",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "buildSessionTree",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "deleteSessionFile",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "flattenSessionTree",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatSessionDate",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getTrashErrorHint",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "sortNodes",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "updateLatestActivity",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "SessionSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SessionSelectorHeader",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 4
+    },
+    {
+      "src": "packages/coding-agent/src/utils/clipboard-image.ts",
+      "path": "src/utils/clipboard-image.ts",
+      "band": "STARTED",
+      "fan_in": 4,
+      "coverage": 0.071,
+      "matched_symbols": 1,
+      "total_symbols": 14,
+      "mapped_target": "harness/env/nodejs",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 0,
+        "unmatched": 13
+      },
+      "graph_symbol_count": 14,
+      "missing_symbols": [
+        {
+          "name": "readClipboardImage",
+          "kind": "fn/const",
+          "fan_in": 7
+        },
+        {
+          "name": "ClipboardImage",
+          "kind": "type",
+          "fan_in": 5
+        },
+        {
+          "name": "baseMimeType",
+          "kind": "fn/const",
+          "fan_in": 5
+        },
+        {
+          "name": "isWaylandSession",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "selectPreferredImageMimeType",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "convertToPng",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "extensionForImageMimeType",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isSupportedImageMimeType",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isWSL",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "readClipboardImageViaNativeClipboard",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "readClipboardImageViaPowerShell",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "readClipboardImageViaWlPaste",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "readClipboardImageViaXclip",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 1
+    },
+    {
+      "src": "packages/coding-agent/src/utils/pi-user-agent.ts",
+      "path": "src/utils/pi-user-agent.ts",
+      "band": "STARTED",
+      "fan_in": 4,
+      "coverage": 0.0,
+      "matched_symbols": 0,
+      "total_symbols": 1,
+      "mapped_target": "utils/pi_user_agent",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 1
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "getPiUserAgent",
+          "kind": "fn/const",
+          "fan_in": 4
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/core/tools/grep.ts",
+      "path": "src/core/tools/grep.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.3,
+      "matched_symbols": 6,
+      "total_symbols": 20,
+      "mapped_target": "core/tools/grep",
+      "tier_breakdown": {
+        "exact_module": 1,
+        "subtree": 0,
+        "global_name": 5,
+        "unmatched": 14
+      },
+      "graph_symbol_count": 20,
+      "missing_symbols": [
+        {
+          "name": "createGrepTool",
+          "kind": "fn/const",
+          "fan_in": 5
+        },
+        {
+          "name": "GrepToolDetails",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "cleanup",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "stopChild",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "formatBlock",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatGrepCall",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatGrepResult",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getFileLines",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "GrepToolInput",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "onAbort",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "readFile",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 9
+    },
+    {
+      "src": "packages/coding-agent/src/main.ts",
+      "path": "src/main.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.08,
+      "matched_symbols": 2,
+      "total_symbols": 25,
+      "mapped_target": "core",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 2,
+        "global_name": 0,
+        "unmatched": 23
+      },
+      "graph_symbol_count": 25,
+      "missing_symbols": [
+        {
+          "name": "collectSettingsDiagnostics",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "MainOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "forkSessionOrExit",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "prepareInitialMessage",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "promptConfirm",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "promptForMissingSessionCwd",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "readPipedStdin",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "resolveCliPaths",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "toPrintOutputMode",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 16
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/bordered-loader.ts",
+      "path": "src/modes/interactive/components/bordered-loader.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.429,
+      "matched_symbols": 3,
+      "total_symbols": 7,
+      "mapped_target": "core/agent_session",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 2,
+        "unmatched": 4
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "BorderedLoader",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/countdown-timer.ts",
+      "path": "src/modes/interactive/components/countdown-timer.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.333,
+      "matched_symbols": 1,
+      "total_symbols": 3,
+      "mapped_target": "core/agent_session",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 0,
+        "unmatched": 2
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [],
+      "present_symbols_count": 1
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/tool-execution.ts",
+      "path": "src/modes/interactive/components/tool-execution.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.542,
+      "matched_symbols": 13,
+      "total_symbols": 24,
+      "mapped_target": "modes/interactive/components/tool_execution",
+      "tier_breakdown": {
+        "exact_module": 9,
+        "subtree": 0,
+        "global_name": 4,
+        "unmatched": 11
+      },
+      "graph_symbol_count": 2,
+      "missing_symbols": [],
+      "present_symbols_count": 2
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/user-message.ts",
+      "path": "src/modes/interactive/components/user-message.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.5,
+      "matched_symbols": 3,
+      "total_symbols": 6,
+      "mapped_target": "modes/interactive/components/user_message",
+      "tier_breakdown": {
+        "exact_module": 3,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 3
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [],
+      "present_symbols_count": 1
+    },
+    {
+      "src": "packages/coding-agent/src/modes/rpc/jsonl.ts",
+      "path": "src/modes/rpc/jsonl.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.2,
+      "matched_symbols": 1,
+      "total_symbols": 5,
+      "mapped_target": "modes/rpc/jsonl",
+      "tier_breakdown": {
+        "exact_module": 1,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 4
+      },
+      "graph_symbol_count": 5,
+      "missing_symbols": [
+        {
+          "name": "attachJsonlLineReader",
+          "kind": "fn/const",
+          "fan_in": 5
+        },
+        {
+          "name": "emitLine",
+          "kind": "fn/const",
+          "fan_in": 2
+        }
+      ],
+      "present_symbols_count": 3
+    },
+    {
+      "src": "packages/coding-agent/src/modes/rpc/rpc-mode.ts",
+      "path": "src/modes/rpc/rpc-mode.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.382,
+      "matched_symbols": 21,
+      "total_symbols": 55,
+      "mapped_target": "core",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 10,
+        "global_name": 11,
+        "unmatched": 34
+      },
+      "graph_symbol_count": 55,
+      "missing_symbols": [
+        {
+          "name": "cleanup",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "createDialogPromise",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "checkShutdownRequested",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "createExtensionUIContext",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "detachInput",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "handleInputLine",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "addAutocompleteProvider",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getAllThemes",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getEditorComponent",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getEditorText",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "getToolsExpanded",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "onAbort",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "onInputEnd",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "onTerminalInput",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "pasteToEditor",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setEditorComponent",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setEditorText",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setFooter",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setHeader",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setStatus",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setTitle",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setToolsExpanded",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setWidget",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setWorkingIndicator",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setWorkingMessage",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "setWorkingVisible",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "shutdownHandler",
+          "kind": "fn/const",
+          "fan_in": 0
+        },
+        {
+          "name": "waitForIdle",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 27
+    },
+    {
+      "src": "packages/coding-agent/src/utils/image-resize.ts",
+      "path": "src/utils/image-resize.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.111,
+      "matched_symbols": 1,
+      "total_symbols": 9,
+      "mapped_target": "auth/oauth/xai",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 0,
+        "unmatched": 8
+      },
+      "graph_symbol_count": 9,
+      "missing_symbols": [
+        {
+          "name": "resizeImage",
+          "kind": "fn/const",
+          "fan_in": 8
+        },
+        {
+          "name": "formatDimensionNote",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "ResizeImageWorkerResponse",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "createResizeWorker",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isResizeImageWorkerResponse",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "resizeImageInWorker",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "toTransferableBytes",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 2
+    },
+    {
+      "src": "packages/coding-agent/src/utils/tools-manager.ts",
+      "path": "src/utils/tools-manager.ts",
+      "band": "STARTED",
+      "fan_in": 3,
+      "coverage": 0.2,
+      "matched_symbols": 3,
+      "total_symbols": 15,
+      "mapped_target": "utils/tools_manager",
+      "tier_breakdown": {
+        "exact_module": 3,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 12
+      },
+      "graph_symbol_count": 15,
+      "missing_symbols": [
+        {
+          "name": "ensureTool",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "findBinaryRecursively",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatSpawnFailure",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getWindowsTarCommand",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 11
+    },
+    {
+      "src": "packages/coding-agent/src/core/export-html/tool-renderer.ts",
+      "path": "src/core/export-html/tool-renderer.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.3,
+      "matched_symbols": 3,
+      "total_symbols": 10,
+      "mapped_target": "core/export_html/tool_renderer",
+      "tier_breakdown": {
+        "exact_module": 2,
+        "subtree": 0,
+        "global_name": 1,
+        "unmatched": 7
+      },
+      "graph_symbol_count": 10,
+      "missing_symbols": [
+        {
+          "name": "createRenderContext",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "ToolHtmlRendererDeps",
+          "kind": "type",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 8
+    },
+    {
+      "src": "packages/coding-agent/src/extensions/llama/index.ts",
+      "path": "src/extensions/llama/index.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.067,
+      "matched_symbols": 1,
+      "total_symbols": 15,
+      "mapped_target": "modes/interactive/app",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 0,
+        "unmatched": 14
+      },
+      "graph_symbol_count": 15,
+      "missing_symbols": [
+        {
+          "name": "syncCatalog",
+          "kind": "fn/const",
+          "fan_in": 5
+        },
+        {
+          "name": "isConnectionError",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "llamaExtension",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "modelIsLoaded",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "configuredClient",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "connectionErrorMessage",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "downloadModel",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "loadModel",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "parseHuggingFaceModel",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "readCatalog",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "restoreLoaded",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "unloadModel",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 3
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/bash-execution.ts",
+      "path": "src/modes/interactive/components/bash-execution.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.455,
+      "matched_symbols": 5,
+      "total_symbols": 11,
+      "mapped_target": "modes/interactive/components/tool_execution",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 2,
+        "global_name": 3,
+        "unmatched": 6
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "BashExecutionComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/config-selector.ts",
+      "path": "src/modes/interactive/components/config-selector.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.111,
+      "matched_symbols": 7,
+      "total_symbols": 63,
+      "mapped_target": "core",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 6,
+        "global_name": 1,
+        "unmatched": 56
+      },
+      "graph_symbol_count": 16,
+      "missing_symbols": [
+        {
+          "name": "ResourceItem",
+          "kind": "type",
+          "fan_in": 22
+        },
+        {
+          "name": "ProjectOverrideState",
+          "kind": "type",
+          "fan_in": 6
+        },
+        {
+          "name": "ConfigWriteScope",
+          "kind": "type",
+          "fan_in": 5
+        },
+        {
+          "name": "ResourceGroup",
+          "kind": "type",
+          "fan_in": 4
+        },
+        {
+          "name": "ResourceList",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ScopedResolvedPaths",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "addToGroup",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "buildGroups",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatBaseDir",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getGroupLabel",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "ConfigSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ConfigSelectorHeader",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "FlatEntry",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ResourceSubgroup",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 2
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/extension-input.ts",
+      "path": "src/modes/interactive/components/extension-input.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.333,
+      "matched_symbols": 2,
+      "total_symbols": 6,
+      "mapped_target": "core/agent_session",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 1,
+        "unmatched": 4
+      },
+      "graph_symbol_count": 2,
+      "missing_symbols": [
+        {
+          "name": "ExtensionInputOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ExtensionInputComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/extension-selector.ts",
+      "path": "src/modes/interactive/components/extension-selector.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.333,
+      "matched_symbols": 2,
+      "total_symbols": 6,
+      "mapped_target": "core/agent_session",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 1,
+        "unmatched": 4
+      },
+      "graph_symbol_count": 2,
+      "missing_symbols": [
+        {
+          "name": "ExtensionSelectorOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ExtensionSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/login-dialog.ts",
+      "path": "src/modes/interactive/components/login-dialog.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.133,
+      "matched_symbols": 2,
+      "total_symbols": 15,
+      "mapped_target": "auth/types",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 1,
+        "unmatched": 13
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "LoginDialogComponent",
+          "kind": "type",
+          "fan_in": 6
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/model-selector.ts",
+      "path": "src/modes/interactive/components/model-selector.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.222,
+      "matched_symbols": 4,
+      "total_symbols": 18,
+      "mapped_target": "providers/registry",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 2,
+        "global_name": 2,
+        "unmatched": 14
+      },
+      "graph_symbol_count": 4,
+      "missing_symbols": [
+        {
+          "name": "ModelItem",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ModelScope",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ScopedModelItem",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ModelSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/oauth-selector.ts",
+      "path": "src/modes/interactive/components/oauth-selector.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.111,
+      "matched_symbols": 1,
+      "total_symbols": 9,
+      "mapped_target": null,
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 1,
+        "unmatched": 8
+      },
+      "graph_symbol_count": 3,
+      "missing_symbols": [
+        {
+          "name": "AuthSelectorProvider",
+          "kind": "type",
+          "fan_in": 11
+        },
+        {
+          "name": "formatAuthSelectorProviderType",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "OAuthSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts",
+      "path": "src/modes/interactive/components/scoped-models-selector.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.15,
+      "matched_symbols": 3,
+      "total_symbols": 20,
+      "mapped_target": "core/timings",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 2,
+        "unmatched": 17
+      },
+      "graph_symbol_count": 11,
+      "missing_symbols": [
+        {
+          "name": "EnabledIds",
+          "kind": "type",
+          "fan_in": 6
+        },
+        {
+          "name": "ModelItem",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ModelsCallbacks",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "ModelsConfig",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "getSortedIds",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "ScopedModelsSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 5
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/session-selector-search.ts",
+      "path": "src/modes/interactive/components/session-selector-search.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.083,
+      "matched_symbols": 1,
+      "total_symbols": 12,
+      "mapped_target": null,
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 1,
+        "unmatched": 11
+      },
+      "graph_symbol_count": 12,
+      "missing_symbols": [
+        {
+          "name": "filterAndSortSessions",
+          "kind": "fn/const",
+          "fan_in": 10
+        },
+        {
+          "name": "NameFilter",
+          "kind": "type",
+          "fan_in": 6
+        },
+        {
+          "name": "SortMode",
+          "kind": "type",
+          "fan_in": 5
+        },
+        {
+          "name": "ParsedSearchQuery",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "hasSessionName",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "MatchResult",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "getSessionSearchText",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "matchSession",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "matchesNameFilter",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "normalizeWhitespaceLower",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "parseSearchQuery",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 1
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/status-indicator.ts",
+      "path": "src/modes/interactive/components/status-indicator.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.444,
+      "matched_symbols": 8,
+      "total_symbols": 18,
+      "mapped_target": "modes/interactive/components/status_indicator",
+      "tier_breakdown": {
+        "exact_module": 5,
+        "subtree": 0,
+        "global_name": 3,
+        "unmatched": 10
+      },
+      "graph_symbol_count": 8,
+      "missing_symbols": [
+        {
+          "name": "CompactionStatusReason",
+          "kind": "type",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 7
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/tree-selector.ts",
+      "path": "src/modes/interactive/components/tree-selector.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.259,
+      "matched_symbols": 15,
+      "total_symbols": 58,
+      "mapped_target": "components/settings_list",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 13,
+        "global_name": 2,
+        "unmatched": 43
+      },
+      "graph_symbol_count": 13,
+      "missing_symbols": [
+        {
+          "name": "FilterMode",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "TreeList",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "FlatNode",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "HorizontalViewportRow",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "TreeHelp",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "compactRawKeys",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "formatHelpKeys",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "renderHorizontalViewport",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "GutterInfo",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "LabelInput",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "SearchLine",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ToolCallInfo",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "TreeSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/trust-selector.ts",
+      "path": "src/modes/interactive/components/trust-selector.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.125,
+      "matched_symbols": 1,
+      "total_symbols": 8,
+      "mapped_target": null,
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 1,
+        "unmatched": 7
+      },
+      "graph_symbol_count": 4,
+      "missing_symbols": [
+        {
+          "name": "TrustSelectorOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "formatDecision",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "TrustSelection",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "TrustSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/interactive-mode.ts",
+      "path": "src/modes/interactive/interactive-mode.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.138,
+      "matched_symbols": 41,
+      "total_symbols": 298,
+      "mapped_target": "core",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 23,
+        "global_name": 18,
+        "unmatched": 257
+      },
+      "graph_symbol_count": 19,
+      "missing_symbols": [
+        {
+          "name": "formatResumeCommand",
+          "kind": "fn/const",
+          "fan_in": 9
+        },
+        {
+          "name": "LoginProviderCompletionOption",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "RenderSessionItem",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "isExpandable",
+          "kind": "fn/const",
+          "fan_in": 3
+        },
+        {
+          "name": "Expandable",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "createFuzzyAutocompleteItems",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "InteractiveModeOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "formatLoginProviderCompletionDescription",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getLoginProviderCompletionOptions",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getLoginProviderSearchText",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "hasDefaultModelProvider",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isAnthropicSubscriptionAuthKey",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isCustomSessionEntry",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isDeadTerminalError",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isUnknownModel",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "quoteIfNeeded",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "CompactionQueuedMessage",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ExpandableText",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 1
+    },
+    {
+      "src": "packages/coding-agent/src/modes/rpc/rpc-types.ts",
+      "path": "src/modes/rpc/rpc-types.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.286,
+      "matched_symbols": 2,
+      "total_symbols": 7,
+      "mapped_target": "modes/rpc/types",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 2,
+        "global_name": 0,
+        "unmatched": 5
+      },
+      "graph_symbol_count": 7,
+      "missing_symbols": [
+        {
+          "name": "RpcResponse",
+          "kind": "type",
+          "fan_in": 6
+        },
+        {
+          "name": "RpcExtensionUIResponse",
+          "kind": "type",
+          "fan_in": 3
+        },
+        {
+          "name": "RpcExtensionUIRequest",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "RpcSlashCommand",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "RpcCommandType",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 2
+    },
+    {
+      "src": "packages/coding-agent/src/package-manager-cli.ts",
+      "path": "src/package-manager-cli.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.167,
+      "matched_symbols": 7,
+      "total_symbols": 42,
+      "mapped_target": "modes/interactive/theme/runtime",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 4,
+        "global_name": 3,
+        "unmatched": 35
+      },
+      "graph_symbol_count": 42,
+      "missing_symbols": [
+        {
+          "name": "PackageCommand",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "PackageCommandRuntimeOptions",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "UpdateTarget",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "createCommandSettingsManager",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getPackageCommandUsage",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "handlePackageCommand",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "reportProjectTrustWarnings",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "reportSettingsErrors",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "CommandSettingsResult",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "PackageCommandOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "SelfUpdatePlan",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "formatPackage",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getCommandAppMode",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getSelfUpdatePlan",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "handleConfigCommand",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "parsePackageCommand",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "prepareWindowsNpmSelfUpdate",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "printConfigCommandHelp",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "printPackageCommandHelp",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "printPnpmSelfUpdateMetadataHint",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "printSelfUpdateFallback",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "printSelfUpdateNote",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "printSelfUpdateUnavailable",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "refreshModelCatalogs",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "runSelfUpdate",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "updateTargetIncludesExtensions",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "updateTargetIncludesSelf",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "hr",
+          "kind": "fn/const",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 14
+    },
+    {
+      "src": "packages/coding-agent/src/utils/exif-orientation.ts",
+      "path": "src/utils/exif-orientation.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.455,
+      "matched_symbols": 5,
+      "total_symbols": 11,
+      "mapped_target": "utils/exif",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 5,
+        "global_name": 0,
+        "unmatched": 6
+      },
+      "graph_symbol_count": 11,
+      "missing_symbols": [
+        {
+          "name": "DstIndexFn",
+          "kind": "type",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 10
+    },
+    {
+      "src": "packages/coding-agent/src/utils/windows-self-update.ts",
+      "path": "src/utils/windows-self-update.ts",
+      "band": "STARTED",
+      "fan_in": 2,
+      "coverage": 0.2,
+      "matched_symbols": 1,
+      "total_symbols": 5,
+      "mapped_target": "utils",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 0,
+        "unmatched": 4
+      },
+      "graph_symbol_count": 5,
+      "missing_symbols": [
+        {
+          "name": "cleanupWindowsSelfUpdateQuarantine",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getQuarantineRoot",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "getLoadedSharedObjectsInPackageDir",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "quarantineWindowsNativeDependencies",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 1
+    },
+    {
+      "src": "packages/coding-agent/src/core/extensions/wrapper.ts",
+      "path": "src/core/extensions/wrapper.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.333,
+      "matched_symbols": 1,
+      "total_symbols": 3,
+      "mapped_target": "core/tools/bash",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 0,
+        "unmatched": 2
+      },
+      "graph_symbol_count": 3,
+      "missing_symbols": [
+        {
+          "name": "wrapRegisteredTool",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 2
+    },
+    {
+      "src": "packages/coding-agent/src/core/provider-attribution.ts",
+      "path": "src/core/provider-attribution.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.571,
+      "matched_symbols": 4,
+      "total_symbols": 7,
+      "mapped_target": "core/provider_attribution",
+      "tier_breakdown": {
+        "exact_module": 4,
+        "subtree": 0,
+        "global_name": 0,
+        "unmatched": 3
+      },
+      "graph_symbol_count": 7,
+      "missing_symbols": [
+        {
+          "name": "getDefaultAttributionHeaders",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getSessionHeaders",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "isOpenRouterModel",
+          "kind": "fn/const",
+          "fan_in": 1
+        }
+      ],
+      "present_symbols_count": 4
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/armin.ts",
+      "path": "src/modes/interactive/components/armin.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.182,
+      "matched_symbols": 4,
+      "total_symbols": 22,
+      "mapped_target": "widgets/loader",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 2,
+        "global_name": 2,
+        "unmatched": 18
+      },
+      "graph_symbol_count": 5,
+      "missing_symbols": [
+        {
+          "name": "buildFinalGrid",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getChar",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "getPixel",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "ArminComponent",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "Effect",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/branch-summary-message.ts",
+      "path": "src/modes/interactive/components/branch-summary-message.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.5,
+      "matched_symbols": 3,
+      "total_symbols": 6,
+      "mapped_target": "modes/interactive/components/tool_execution",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 2,
+        "unmatched": 3
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "BranchSummaryMessageComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/compaction-summary-message.ts",
+      "path": "src/modes/interactive/components/compaction-summary-message.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.5,
+      "matched_symbols": 3,
+      "total_symbols": 6,
+      "mapped_target": "modes/interactive/components/tool_execution",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 2,
+        "unmatched": 3
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "CompactionSummaryMessageComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/custom-entry.ts",
+      "path": "src/modes/interactive/components/custom-entry.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.5,
+      "matched_symbols": 3,
+      "total_symbols": 6,
+      "mapped_target": "modes/interactive/components/tool_execution",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 2,
+        "unmatched": 3
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "CustomEntryComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/custom-message.ts",
+      "path": "src/modes/interactive/components/custom-message.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.5,
+      "matched_symbols": 3,
+      "total_symbols": 6,
+      "mapped_target": "modes/interactive/components/tool_execution",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 2,
+        "unmatched": 3
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "CustomMessageComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/daxnuts.ts",
+      "path": "src/modes/interactive/components/daxnuts.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.273,
+      "matched_symbols": 3,
+      "total_symbols": 11,
+      "mapped_target": "core/agent_session",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 2,
+        "unmatched": 8
+      },
+      "graph_symbol_count": 4,
+      "missing_symbols": [
+        {
+          "name": "buildImage",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "parseImage",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "DaxnutsComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 1
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/extension-editor.ts",
+      "path": "src/modes/interactive/components/extension-editor.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.333,
+      "matched_symbols": 2,
+      "total_symbols": 6,
+      "mapped_target": "core/settings_manager/manager",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 1,
+        "unmatched": 4
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "ExtensionEditorComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/first-time-setup.ts",
+      "path": "src/modes/interactive/components/first-time-setup.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.125,
+      "matched_symbols": 1,
+      "total_symbols": 8,
+      "mapped_target": null,
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 1,
+        "unmatched": 7
+      },
+      "graph_symbol_count": 3,
+      "missing_symbols": [
+        {
+          "name": "FirstTimeSetupOptions",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "FirstTimeSetupResult",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "FirstTimeSetupComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/settings-selector.ts",
+      "path": "src/modes/interactive/components/settings-selector.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.207,
+      "matched_symbols": 6,
+      "total_symbols": 29,
+      "mapped_target": "core",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 2,
+        "global_name": 4,
+        "unmatched": 23
+      },
+      "graph_symbol_count": 10,
+      "missing_symbols": [
+        {
+          "name": "SettingsCallbacks",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "preferredTheme",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "themeItems",
+          "kind": "fn/const",
+          "fan_in": 2
+        },
+        {
+          "name": "SelectSubmenu",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "SettingsConfig",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "defaultAutomaticThemes",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "singleModeThemeItems",
+          "kind": "fn/const",
+          "fan_in": 1
+        },
+        {
+          "name": "SettingsSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "ThemeSubmenu",
+          "kind": "type",
+          "fan_in": 0
+        },
+        {
+          "name": "WarningSettingsSubmenu",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/skill-invocation-message.ts",
+      "path": "src/modes/interactive/components/skill-invocation-message.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.5,
+      "matched_symbols": 3,
+      "total_symbols": 6,
+      "mapped_target": "modes/interactive/components/tool_execution",
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 1,
+        "global_name": 2,
+        "unmatched": 3
+      },
+      "graph_symbol_count": 1,
+      "missing_symbols": [
+        {
+          "name": "SkillInvocationMessageComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    },
+    {
+      "src": "packages/coding-agent/src/modes/interactive/components/user-message-selector.ts",
+      "path": "src/modes/interactive/components/user-message-selector.ts",
+      "band": "STARTED",
+      "fan_in": 1,
+      "coverage": 0.333,
+      "matched_symbols": 3,
+      "total_symbols": 9,
+      "mapped_target": null,
+      "tier_breakdown": {
+        "exact_module": 0,
+        "subtree": 0,
+        "global_name": 3,
+        "unmatched": 6
+      },
+      "graph_symbol_count": 3,
+      "missing_symbols": [
+        {
+          "name": "UserMessageItem",
+          "kind": "type",
+          "fan_in": 2
+        },
+        {
+          "name": "UserMessageList",
+          "kind": "type",
+          "fan_in": 1
+        },
+        {
+          "name": "UserMessageSelectorComponent",
+          "kind": "type",
+          "fan_in": 0
+        }
+      ],
+      "present_symbols_count": 0
+    }
+  ],
+  "priority_paths_ts": {
+    "src": "packages/coding-agent/src/utils/paths.ts",
+    "path": "src/utils/paths.ts",
+    "band": "PORTED",
+    "fan_in": 25,
+    "coverage": 0.875,
+    "matched_symbols": 7,
+    "total_symbols": 8,
+    "mapped_target": "utils/paths",
+    "tier_breakdown": {
+      "exact_module": 7,
+      "subtree": 0,
+      "global_name": 0,
+      "unmatched": 1
+    },
+    "graph_symbol_count": 8,
+    "missing_symbols": [],
+    "present_symbols_count": 8
+  }
+}
