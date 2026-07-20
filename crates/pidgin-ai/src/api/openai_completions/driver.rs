@@ -55,6 +55,7 @@
 //! than discarding the response body.
 
 use std::collections::BTreeMap;
+use std::ops::ControlFlow;
 
 use serde_json::Value;
 
@@ -64,10 +65,11 @@ use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, CacheRetention, Context, Model,
     OpenAICompletionsCompat, SessionAffinityFormat, StopReason,
 };
+use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
 
 use super::{
-    build_params, get_compat, parse_sse_chunks, resolve_cache_retention, walk_chunks, zero_usage,
-    OpenAICompletionsModel, OpenAICompletionsOptions, ResolvedCompat,
+    build_params, get_compat, parse_sse_stream, resolve_cache_retention, zero_usage,
+    OpenAICompletionsModel, OpenAICompletionsOptions, OpenAICompletionsSseDecoder, ResolvedCompat,
 };
 
 /// pi's `hasHeader` (`openai-completions.ts:51`): a case-insensitive lookup for a
@@ -342,8 +344,11 @@ pub fn stream<T: HttpTransport + ?Sized>(
 
     match transport.send(&request) {
         Ok(response) if response.is_ok() => {
-            let chunks = parse_sse_chunks(&response.body);
-            let outcome = walk_chunks(&chunks, &lean, options, timestamp);
+            // Single source of truth: the buffered body runs through the SAME
+            // `OpenAICompletionsSseDecoder` (via the shared `SseFrameSplitter`) the
+            // incremental `stream_streaming` uses, so the two paths are
+            // byte-identical over the same body.
+            let outcome = parse_sse_stream(&response.body, &lean, timestamp);
             StreamResult {
                 events: outcome.events,
                 message: outcome.message,
@@ -355,5 +360,131 @@ pub fn stream<T: HttpTransport + ?Sized>(
             format_api_error(response.status, &response.body),
         ),
         Err(error) => error_result(&lean, timestamp, error.to_string()),
+    }
+}
+
+/// A decoder that yields nothing per frame and emits a single terminal `error`
+/// event at `finish` -- the streaming analogue of [`error_result`] for a failure
+/// that occurs before the SSE stream starts (missing auth, a non-2xx create, a
+/// transport error). It carries pi's caught `error` message on an empty output
+/// shell so [`stream_streaming`] can return an [`AssistantEventReader`] on every
+/// path (no preceding `start`, matching pi's pre-stream catch handler). Mirrors the
+/// anthropic driver's `TerminalErrorDecoder`.
+struct TerminalErrorDecoder {
+    error: AssistantMessage,
+}
+
+impl SseEventDecoder for TerminalErrorDecoder {
+    fn on_frame(
+        &mut self,
+        _frame: &ServerSentEvent,
+        _out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        ControlFlow::Continue(())
+    }
+
+    fn finish(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        out.push(AssistantMessageEvent::Error {
+            reason: StopReason::Error,
+            error: self.error.clone(),
+        });
+        self.error.clone()
+    }
+}
+
+/// A single-`error`-event reader over an empty chunk stream, the streaming analogue
+/// of [`error_result`]: EOF `finish` emits exactly one terminal `error`
+/// (byte-identical to the buffered pre-stream failure).
+fn error_reader<'a>(
+    model: &OpenAICompletionsModel,
+    timestamp: i64,
+    message: String,
+) -> AssistantEventReader<'a> {
+    let mut output = empty_output(model, timestamp);
+    output.stop_reason = StopReason::Error;
+    output.error_message = Some(message);
+    AssistantEventReader::new(
+        Box::new(std::iter::empty()),
+        Box::new(TerminalErrorDecoder { error: output }),
+    )
+}
+
+/// Buffer a streaming body's chunks into a lossy UTF-8 string, stopping at the first
+/// read error -- used only for a non-2xx error body, whose diagnostic is short and
+/// which pi reads whole before throwing. Mirrors the anthropic driver's
+/// `drain_chunks`.
+fn drain_chunks<'a>(chunks: Box<dyn Iterator<Item = std::io::Result<Vec<u8>>> + 'a>) -> String {
+    let mut body = Vec::new();
+    for chunk in chunks {
+        match chunk {
+            Ok(bytes) => body.extend_from_slice(&bytes),
+            Err(_) => break,
+        }
+    }
+    String::from_utf8_lossy(&body).to_string()
+}
+
+/// Stream a response for `model` over the injected `transport`, delivering events
+/// incrementally through the shared [`AssistantEventReader`].
+///
+/// This mirrors [`stream`]'s request assembly and error surfacing but performs the
+/// request via [`HttpTransport::send_streaming`], so the returned reader pulls one
+/// chunk at a time and decodes it through the SAME [`OpenAICompletionsSseDecoder`]
+/// the buffered path uses -- one source of truth for the event sequence. A
+/// pre-stream failure (missing auth, a non-2xx create, a transport error) yields a
+/// single-`error` reader, mirroring pi's catch handler exactly as [`stream`] does.
+/// The anthropic driver's `stream_streaming` is the template.
+pub fn stream_streaming<'a, T: HttpTransport + ?Sized>(
+    transport: &'a T,
+    model: &Model<OpenAICompletionsCompat>,
+    context: &Context,
+    options: &OpenAICompletionsOptions,
+    timestamp: i64,
+) -> AssistantEventReader<'a> {
+    let lean = lean_model(model);
+    let api_key = options.api_key.as_deref();
+
+    // pi's getClientApiKey throws before the client is built; caught as an error.
+    let client_key = match client_api_key(&lean.provider, api_key, options.headers.as_ref()) {
+        Ok(key) => key,
+        Err(message) => return error_reader(&lean, timestamp, message),
+    };
+
+    let compat = get_compat(&lean);
+
+    let cache_retention = resolve_cache_retention(
+        options.cache_retention,
+        options.cache_retention_env.as_deref(),
+    );
+    let session_id = if cache_retention == CacheRetention::None {
+        None
+    } else {
+        options.session_id.as_deref()
+    };
+
+    let body = build_params(&lean, context, options);
+    let request = assemble_request(
+        &lean,
+        &compat,
+        serialize_body(&body),
+        &client_key,
+        model.headers.as_ref(),
+        options.headers.as_ref(),
+        session_id,
+    );
+
+    // Status + headers arrive up front, so the error-vs-parse decision is made
+    // before the body streams -- exactly as the buffered path decides on
+    // `response.is_ok()`.
+    match transport.send_streaming(&request) {
+        Ok(response) if (200..300).contains(&response.status) => {
+            let decoder = OpenAICompletionsSseDecoder::new(lean, timestamp);
+            AssistantEventReader::new(response.chunks, Box::new(decoder))
+        }
+        Ok(response) => {
+            let body = drain_chunks(response.chunks);
+            error_reader(&lean, timestamp, format_api_error(response.status, &body))
+        }
+        Err(error) => error_reader(&lean, timestamp, error.to_string()),
     }
 }
