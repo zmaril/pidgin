@@ -12,6 +12,14 @@ repository.workspace = true
 # own default) to inject a live transport into the builtin provider registry.
 native-http = ["pidgin-ai/native-http"]
 
+# Marks the deno/V8 plane build. OFF by default so the lean workspace build
+# never pulls V8. Gates the real highlight.js grammar engine in
+# `utils::syntax_highlight` (`highlight` / `supports_language`); the default
+# build ships a pi-faithful raw fallback in its place. No extra dependencies:
+# pidgin-coding never depends on pidgin-extensions (would cycle), so this is a
+# bare cfg flag that flips the seam bodies.
+deno = []
+
 [dependencies]
 anyhow = { workspace = true }
 pidgin-agent = { path = "../pidgin-agent" }
