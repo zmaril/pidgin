@@ -27,6 +27,7 @@ use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, StopReason,
     StreamOptions, Usage, UsageCost,
 };
+use crate::utils::sse::AssistantEventReader;
 
 /// The api id this backend serves, pi's `mistral-conversations` [`Api`]
 /// discriminant.
@@ -86,17 +87,7 @@ impl Provider for MistralBackend {
             typed_model.base_url = base_url.clone();
         }
 
-        // pi's buildBaseOptions defaults maxTokens to `model.maxTokens`; the
-        // temperature/max_tokens/metadata fields are not on this base's
-        // `StreamOptions` yet.
-        // Follow-up (#192): thread StreamOptions.temperature/max_tokens/metadata once merged.
-        let mistral_options = MistralOptions {
-            max_tokens: (typed_model.max_tokens > 0).then_some(typed_model.max_tokens),
-            session_id: options.and_then(|o| o.session_id.clone()),
-            cache_retention: options.and_then(|o| o.cache_retention),
-            headers: options.and_then(|o| o.headers.clone()),
-            ..MistralOptions::default()
-        };
+        let mistral_options = build_mistral_options(&typed_model, options);
         let api_key = options.and_then(|o| o.api_key.as_deref());
 
         // The buffered driver performs a single synchronous request with no
@@ -111,6 +102,76 @@ impl Provider for MistralBackend {
             api_key,
             timestamp,
         )
+    }
+
+    fn stream_incremental<'a>(
+        &'a self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        _signal: Option<&AbortSignal>,
+    ) -> AssistantEventReader<'a> {
+        // Same model/options assembly as `stream`, but the request runs through
+        // the driver's incremental `stream_streaming` entry point: the returned
+        // reader pulls one chunk at a time off the transport, so a streaming
+        // transport surfaces real per-frame timing while the buffered `stream`
+        // path is left untouched.
+        let mut typed_model: MistralModel = match reserialize_model(model) {
+            Ok(typed_model) => typed_model,
+            Err(error) => {
+                // Mirror `stream`'s pre-start error shape as a replayed reader.
+                return AssistantEventReader::from_buffered(error_result(
+                    model,
+                    self.clock.now_ms(),
+                    format!("Mistral model is not compatible with mistral-conversations: {error}"),
+                ));
+            }
+        };
+
+        if let Some(base_url) = options.and_then(|o| o.base_url.as_ref()) {
+            typed_model.base_url = base_url.clone();
+        }
+
+        let mistral_options = build_mistral_options(&typed_model, options);
+        let api_key = options.and_then(|o| o.api_key.as_deref());
+
+        let timestamp = self.clock.now_ms();
+        driver::stream_streaming(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            &mistral_options,
+            api_key,
+            timestamp,
+        )
+    }
+}
+
+/// Map the generic [`StreamOptions`] onto the driver's [`MistralOptions`],
+/// threading the #192 per-request tuning knobs with pi's precedence.
+///
+/// Precedence (`mistral-conversations.ts` `buildChatPayload`, lines 253-254):
+/// - `temperature` comes straight from `StreamOptions` (`payload.temperature =
+///   options.temperature` when set); Mistral models carry no temperature default,
+///   so an unset value leaves `temperature` off the payload.
+/// - `max_tokens` follows the "StreamOptions overrides model" rule: an explicit
+///   `StreamOptions.max_tokens` wins, else the model's `maxTokens` default is used
+///   (pi's `buildBaseOptions` `options?.maxTokens ?? model.maxTokens`), else the
+///   field is omitted.
+/// - `metadata` is intentionally NOT threaded into the request body: pi's Mistral
+///   driver never reads `options.metadata` into the `chat.stream` payload (only
+///   `anthropic-messages` maps `metadata.user_id`), so emitting it here would
+///   diverge from pi. `StreamOptions.metadata` stays inert for this dialect.
+fn build_mistral_options(model: &MistralModel, options: Option<&StreamOptions>) -> MistralOptions {
+    MistralOptions {
+        temperature: options.and_then(|o| o.temperature),
+        max_tokens: options
+            .and_then(|o| o.max_tokens)
+            .or_else(|| (model.max_tokens > 0).then_some(model.max_tokens)),
+        session_id: options.and_then(|o| o.session_id.clone()),
+        cache_retention: options.and_then(|o| o.cache_retention),
+        headers: options.and_then(|o| o.headers.clone()),
+        ..MistralOptions::default()
     }
 }
 
@@ -161,16 +222,19 @@ fn error_result(model: &Model, timestamp: i64, message: String) -> StreamResult 
 mod tests {
     use super::*;
 
-    use serde_json::json;
+    use serde_json::{json, Value};
 
     use crate::auth::DefaultAuthContext;
     use crate::providers::registry::{
         create_provider, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
     };
     use crate::seams::clock::FakeClock;
-    use crate::seams::http::{HttpResponse, ScriptedTransport};
+    use crate::seams::http::{HttpRequest, HttpResponse, HttpStreamResponse, ScriptedTransport};
     use crate::seams::storage::MemoryEnv;
     use crate::types::ContentBlock;
+    use std::collections::BTreeMap;
+    use std::io;
+    use std::time::{Duration, Instant};
 
     /// A scripted `chat.stream` SSE body yielding a single `Hello` text block, in
     /// the SDK-shaped (camelCase) `CompletionChunk` frames the ported decoder
@@ -355,6 +419,207 @@ mod tests {
         );
     }
 
+    // #192: an explicit `StreamOptions.temperature` / `max_tokens` overrides the
+    // model defaults and reaches the outgoing `chat.stream` body, on BOTH the
+    // buffered and incremental mapping paths. `metadata` stays inert for Mistral
+    // (pi's driver never maps it into the payload).
+    #[test]
+    fn backend_threads_stream_options_temperature_and_max_tokens() {
+        let model = mistral_model("https://api.mistral.test");
+        let mut metadata: BTreeMap<String, Value> = BTreeMap::new();
+        metadata.insert("user_id".to_string(), json!("u-42"));
+        let options = StreamOptions {
+            api_key: Some("sk-mistral-key".to_string()),
+            temperature: Some(0.3),
+            max_tokens: Some(256),
+            metadata: Some(metadata),
+            ..StreamOptions::default()
+        };
+
+        // Buffered path.
+        let (scripted, transport) = scripted_hello();
+        let backend = MistralBackend::new(transport, fake_clock());
+        backend.stream(&model, &user_context(), Some(&options), None);
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body["temperature"], json!(0.3));
+        assert_eq!(body["maxTokens"], json!(256));
+        assert!(body.get("metadata").is_none());
+
+        // Incremental path threads the identical knobs.
+        let (scripted_incr, transport_incr) = scripted_hello();
+        let backend_incr = MistralBackend::new(transport_incr, fake_clock());
+        let mut reader =
+            backend_incr.stream_incremental(&model, &user_context(), Some(&options), None);
+        let _: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+        let body_incr: Value =
+            serde_json::from_str(scripted_incr.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body_incr["temperature"], json!(0.3));
+        assert_eq!(body_incr["maxTokens"], json!(256));
+        assert!(body_incr.get("metadata").is_none());
+    }
+
+    // Without a `StreamOptions.max_tokens`, the mapping falls back to the model's
+    // `maxTokens` default (pi's `options?.maxTokens ?? model.maxTokens`), and no
+    // temperature is emitted (Mistral models carry no temperature default).
+    #[test]
+    fn backend_max_tokens_falls_back_to_model_default() {
+        let (scripted, transport) = scripted_hello();
+        let backend = MistralBackend::new(transport, fake_clock());
+        let model = mistral_model("https://api.mistral.test");
+        let options = StreamOptions {
+            api_key: Some("sk-mistral-key".to_string()),
+            ..StreamOptions::default()
+        };
+        backend.stream(&model, &user_context(), Some(&options), None);
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body["maxTokens"], json!(8192));
+        assert!(body.get("temperature").is_none());
+    }
+
+    // Incremental over the one-chunk ScriptedTransport (default `send_streaming`)
+    // yields the SAME events and final message as the buffered `stream`, and
+    // builds the same threaded request.
+    #[test]
+    fn backend_stream_incremental_matches_buffered_over_scripted() {
+        let model = mistral_model("https://api.mistral.test");
+        let options = StreamOptions {
+            api_key: Some("sk-mistral-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (_scripted_buffered, transport_buffered) = scripted_hello();
+        let backend_buffered = MistralBackend::new(transport_buffered, fake_clock());
+        let buffered = backend_buffered.stream(&model, &user_context(), Some(&options), None);
+
+        let (scripted, transport) = scripted_hello();
+        let backend = MistralBackend::new(transport, fake_clock());
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        assert_eq!(events, buffered.events);
+        assert_eq!(
+            reader.result().and_then(|r| r.as_ref().ok()),
+            Some(&buffered.message)
+        );
+
+        let requests = scripted.requests();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(
+            requests[0].url,
+            "https://api.mistral.test/v1/chat/completions"
+        );
+        assert_eq!(
+            requests[0].headers.get("authorization").map(String::as_str),
+            Some("Bearer sk-mistral-key")
+        );
+    }
+
+    /// A transport whose `send_streaming` splits the SSE body into one chunk per
+    /// frame and sleeps `delay` before yielding each, so the reader's per-frame
+    /// PULL timing is observable. Its buffered `send` returns the whole body.
+    struct SleepingStreamTransport {
+        body: String,
+        delay: Duration,
+    }
+
+    struct SleepingChunks {
+        frames: std::vec::IntoIter<Vec<u8>>,
+        delay: Duration,
+    }
+
+    impl Iterator for SleepingChunks {
+        type Item = io::Result<Vec<u8>>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let bytes = self.frames.next()?;
+            std::thread::sleep(self.delay);
+            Some(Ok(bytes))
+        }
+    }
+
+    impl HttpTransport for SleepingStreamTransport {
+        fn send(&self, _request: &HttpRequest) -> io::Result<HttpResponse> {
+            Ok(HttpResponse::ok(self.body.clone()))
+        }
+
+        fn send_streaming(&self, _request: &HttpRequest) -> io::Result<HttpStreamResponse<'_>> {
+            let frames: Vec<Vec<u8>> = self
+                .body
+                .split("\n\n")
+                .filter(|part| !part.is_empty())
+                .map(|part| format!("{part}\n\n").into_bytes())
+                .collect();
+            Ok(HttpStreamResponse {
+                status: 200,
+                headers: BTreeMap::new(),
+                chunks: Box::new(SleepingChunks {
+                    frames: frames.into_iter(),
+                    delay: self.delay,
+                }),
+            })
+        }
+    }
+
+    /// A scripted `chat.stream` SSE body yielding a `Hello world` text block over
+    /// two frames, so per-frame streaming produces observable spread.
+    fn hello_world_sse_body() -> String {
+        [
+            "data: {\"id\":\"resp_1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"}}]}\n\n",
+            "data: {\"id\":\"resp_1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" world\"},\"finishReason\":\"stop\"}],\"usage\":{\"promptTokens\":10,\"completionTokens\":5,\"totalTokens\":15}}\n\n",
+            "data: [DONE]\n\n",
+        ]
+        .concat()
+    }
+
+    // Over a per-frame sleeping transport, the yielded events span multiple
+    // sleeping chunks -- non-zero inter-event spread -- while resolving to the
+    // same "Hello world" message as the buffered path.
+    #[test]
+    fn backend_stream_incremental_streams_with_inter_event_spread() {
+        let delay = Duration::from_millis(12);
+        let transport: Arc<dyn HttpTransport> = Arc::new(SleepingStreamTransport {
+            body: hello_world_sse_body(),
+            delay,
+        });
+        let backend = MistralBackend::new(transport, fake_clock());
+        let model = mistral_model("https://api.mistral.test");
+        let options = StreamOptions {
+            api_key: Some("sk-mistral-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let start = Instant::now();
+        let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
+        for event in reader.by_ref() {
+            stamped.push((start.elapsed(), event));
+        }
+
+        assert!(matches!(
+            stamped.last().map(|(_, e)| e),
+            Some(AssistantMessageEvent::Done { .. })
+        ));
+        assert_eq!(
+            reader
+                .result()
+                .and_then(|r| r.as_ref().ok())
+                .map(|m| m.content.clone()),
+            Some(vec![ContentBlock::Text {
+                text: "Hello world".to_string(),
+                text_signature: None,
+            }])
+        );
+
+        assert!(stamped.len() >= 2);
+        let spread = stamped.last().unwrap().0 - stamped.first().unwrap().0;
+        assert!(
+            spread >= delay,
+            "expected non-zero inter-event spread from per-frame streaming, got {spread:?}",
+        );
+    }
+
     // Unconfigured provider: applyAuth gates before dispatch with the exact
     // "Provider is not configured" error, no panic and no network request.
     #[test]
@@ -387,6 +652,7 @@ mod native_http_tests {
     use std::io::{Read, Write};
     use std::net::{TcpListener, TcpStream};
     use std::thread;
+    use std::time::{Duration, Instant};
 
     use serde_json::json;
 
@@ -495,6 +761,100 @@ mod native_http_tests {
                 text: "Hello".to_string(),
                 text_signature: None,
             }]
+        );
+    }
+
+    /// The `chat.stream` SSE frames the incremental loopback serves, written as
+    /// separate chunked writes with a delay between them so the reader observes
+    /// real inter-frame timing.
+    const SSE_FRAMES: [&str; 3] = [
+        "data: {\"id\":\"resp_1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"}}]}\n\n",
+        "data: {\"id\":\"resp_1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" world\"},\"finishReason\":\"stop\"}],\"usage\":{\"promptTokens\":10,\"completionTokens\":5,\"totalTokens\":15}}\n\n",
+        "data: [DONE]\n\n",
+    ];
+
+    // Over the real reqwest transport driving a delayed `Transfer-Encoding:
+    // chunked` loopback, `stream_incremental` delivers events across MULTIPLE
+    // iterator steps with non-zero wall-clock spread, resolving to the same
+    // "Hello world" message -- proving the pull loop streams per frame, not
+    // buffered.
+    #[test]
+    fn backend_streams_incrementally_over_reqwest_loopback_with_timing() {
+        let delay = Duration::from_millis(15);
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind loopback");
+        let base_url = format!("http://{}", listener.local_addr().expect("local addr"));
+
+        let handle = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept");
+            drain_request(&mut stream);
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n")
+                .expect("write headers");
+            for frame in SSE_FRAMES {
+                let chunk = format!("{:X}\r\n{frame}\r\n", frame.len());
+                stream.write_all(chunk.as_bytes()).expect("write chunk");
+                stream.flush().expect("flush chunk");
+                thread::sleep(delay);
+            }
+            stream.write_all(b"0\r\n\r\n").expect("write terminator");
+            stream.flush().ok();
+        });
+
+        let transport: Arc<dyn HttpTransport> =
+            Arc::new(ReqwestTransport::builder().no_proxy().build());
+        let clock: Arc<dyn Clock> = Arc::new(FakeClock::new(1_700_000_000_000));
+        let backend = MistralBackend::new(transport, clock);
+
+        let model: Model = serde_json::from_value(json!({
+            "id": "mistral-large-latest",
+            "name": "Mistral Large",
+            "api": "mistral-conversations",
+            "provider": "mistral",
+            "baseUrl": base_url,
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000,
+            "maxTokens": 8192,
+        }))
+        .unwrap();
+        let context: Context = serde_json::from_value(json!({
+            "messages": [{ "role": "user", "content": "Hi", "timestamp": 0 }],
+        }))
+        .unwrap();
+        let options = StreamOptions {
+            api_key: Some("sk-mistral-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let mut reader = backend.stream_incremental(&model, &context, Some(&options), None);
+        let start = Instant::now();
+        let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
+        for event in reader.by_ref() {
+            stamped.push((start.elapsed(), event));
+        }
+        handle.join().expect("server thread");
+
+        assert!(matches!(
+            stamped.last().map(|(_, e)| e),
+            Some(AssistantMessageEvent::Done { .. })
+        ));
+        assert_eq!(
+            reader
+                .result()
+                .and_then(|r| r.as_ref().ok())
+                .map(|m| m.content.clone()),
+            Some(vec![ContentBlock::Text {
+                text: "Hello world".to_string(),
+                text_signature: None,
+            }])
+        );
+
+        assert!(stamped.len() >= 2);
+        let spread = stamped.last().unwrap().0 - stamped.first().unwrap().0;
+        assert!(
+            spread >= delay,
+            "expected non-zero inter-event spread from chunked streaming, got {spread:?}",
         );
     }
 }
