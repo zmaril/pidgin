@@ -49,6 +49,7 @@ use std::collections::BTreeMap;
 
 use serde_json::Value;
 
+use crate::api::github_copilot_headers::build_copilot_dynamic_headers;
 use crate::seams::http::HttpRequest;
 use crate::types::{AnthropicMessagesCompat, Context, Model};
 
@@ -211,10 +212,17 @@ pub fn assemble_request(
                 headers.insert("anthropic-beta".to_string(), betas.join(","));
             }
             // mergeHeaders(base, model.headers, dynamicHeaders, optionsHeaders):
-            // dynamicHeaders (copilot vision) are a sibling concern, omitted here.
+            // the copilot dynamic headers sit between model.headers and
+            // optionsHeaders (`anthropic-messages.ts:858-867`), so they override
+            // model.headers but a caller header still wins. This branch is reached
+            // only for github-copilot (`resolve_auth_mode`).
             if let Some(model_headers) = &model.headers {
                 merge_into(&mut headers, model_headers);
             }
+            merge_into(
+                &mut headers,
+                &build_copilot_dynamic_headers(&context.messages),
+            );
             if let Some(options_headers) = options_headers {
                 merge_into(&mut headers, options_headers);
             }
