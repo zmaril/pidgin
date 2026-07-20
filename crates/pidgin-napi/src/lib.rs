@@ -317,6 +317,37 @@ pub fn parse_git_url(source: String) -> Option<String> {
     Some(serde_json::Value::Object(obj).to_string())
 }
 
+// --- coding-agent http-dispatcher layer -------------------------------------
+//
+// Thin wrappers over `pidgin_coding::core::http_dispatcher`, backing the native
+// `core/http-dispatcher.ts` shim's idle-timeout parse/format helpers. pi's
+// `parseHttpIdleTimeoutMs(value: unknown)` accepts a number OR a string; the two
+// typeof branches are exposed here as separate exports and recombined in the
+// shim. `Option<u64>` (pi's `number | undefined`) crosses as `f64 | null`; the
+// shim converts `null` → `undefined`.
+
+/// `parseHttpIdleTimeoutMs` (core/http-dispatcher.ts) numeric branch: normalize
+/// a numeric idle-timeout. Non-finite or negative → `null`, else floored.
+#[napi(js_name = "parseHttpIdleTimeoutMsFromNumber")]
+pub fn parse_http_idle_timeout_ms_from_number(value: f64) -> Option<f64> {
+    pidgin_coding::core::http_dispatcher::parse_http_idle_timeout_num(value).map(|ms| ms as f64)
+}
+
+/// `parseHttpIdleTimeoutMs` (core/http-dispatcher.ts) string branch:
+/// `"disabled"` (case-insensitive) → `0`, empty/whitespace or non-numeric →
+/// `null`, else the numeric value floored.
+#[napi(js_name = "parseHttpIdleTimeoutMsFromString")]
+pub fn parse_http_idle_timeout_ms_from_string(value: String) -> Option<f64> {
+    pidgin_coding::core::http_dispatcher::parse_http_idle_timeout_ms(&value).map(|ms| ms as f64)
+}
+
+/// `formatHttpIdleTimeoutMs` (core/http-dispatcher.ts): a preset label when one
+/// matches, else `"<seconds> sec"`.
+#[napi(js_name = "formatHttpIdleTimeoutMs")]
+pub fn format_http_idle_timeout_ms(timeout_ms: f64) -> String {
+    pidgin_coding::core::http_dispatcher::format_http_idle_timeout_ms(timeout_ms as u64)
+}
+
 // --- coding-agent export-html layer -----------------------------------------
 //
 // Thin wrappers over `pidgin_coding::core::export_html::ansi_to_html`, backing
