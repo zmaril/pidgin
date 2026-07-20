@@ -27,7 +27,13 @@ use std::rc::Rc;
 
 use crate::overlay::{ComponentId, OverlayFocusRestoreState, OverlayStackEntry, ReactionAction};
 use crate::terminal::Terminal;
+use crate::terminal_colors::TerminalColorScheme;
 use crate::{normalize_terminal_output, visible_width};
+
+/// A registered terminal-color-scheme listener (pi's
+/// `(scheme: TerminalColorScheme) => void`). Invoked when the terminal reports a
+/// light/dark scheme change via a DEC private mode 2031 color-scheme report.
+pub type TerminalColorSchemeListener = Box<dyn FnMut(TerminalColorScheme)>;
 
 /// Cursor position marker: a zero-width APC sequence terminals ignore.
 /// Focusable components emit this at the cursor position when focused; the
@@ -326,6 +332,14 @@ pub struct Tui<T: Terminal> {
     /// Registered input listeners (pi's `inputListeners` set). Each is offered
     /// every input string before focus dispatch and may consume or rewrite it.
     pub(crate) input_listeners: Vec<InputListener>,
+    /// Registered terminal-color-scheme listeners (pi's
+    /// `terminalColorSchemeListeners` set). Fanned out when a DEC 2031
+    /// color-scheme report is consumed at the top of `handle_input`.
+    pub(crate) terminal_color_scheme_listeners: Vec<TerminalColorSchemeListener>,
+    /// Whether DEC private mode 2031 color-scheme notifications are enabled
+    /// (pi's `terminalColorSchemeNotificationsEnabled`). Gates the `\x1b[?2031h`
+    /// / `\x1b[?2031l` writes on start/stop and toggle.
+    pub(crate) terminal_color_scheme_notifications_enabled: bool,
 }
 
 impl<T: Terminal> Tui<T> {
@@ -362,6 +376,8 @@ impl<T: Terminal> Tui<T> {
             input_deliveries: Vec::new(),
             input_reactions: std::collections::HashMap::new(),
             input_listeners: Vec::new(),
+            terminal_color_scheme_listeners: Vec::new(),
+            terminal_color_scheme_notifications_enabled: false,
         }
     }
 
@@ -376,6 +392,47 @@ impl<T: Terminal> Tui<T> {
         F: FnMut(&str) -> InputListenerResult + 'static,
     {
         self.input_listeners.push(Box::new(listener));
+    }
+
+    /// Register a terminal-color-scheme listener, ported from pi's
+    /// `TUI.onTerminalColorSchemeChange`. The listener is invoked with the
+    /// reported [`TerminalColorScheme`] whenever a DEC 2031 color-scheme report is
+    /// consumed at the top of [`Tui::handle_input`]. Unlike pi (which returns an
+    /// unsubscribe closure), listeners live for the lifetime of the `Tui`,
+    /// matching the [`Tui::add_input_listener`] precedent (the theme controller
+    /// registers once and never unsubscribes).
+    pub fn on_terminal_color_scheme_change<F>(&mut self, listener: F)
+    where
+        F: FnMut(TerminalColorScheme) + 'static,
+    {
+        self.terminal_color_scheme_listeners
+            .push(Box::new(listener));
+    }
+
+    /// Enable or disable DEC private mode 2031 color-scheme change notifications,
+    /// ported from pi's `TUI.setTerminalColorSchemeNotifications`. Equality-guards
+    /// against a redundant toggle; when the renderer is running (`!stopped`)
+    /// writes the enable (`\x1b[?2031h`) or disable (`\x1b[?2031l`) sequence.
+    pub fn set_terminal_color_scheme_notifications(&mut self, enabled: bool) {
+        if self.terminal_color_scheme_notifications_enabled == enabled {
+            return;
+        }
+        self.terminal_color_scheme_notifications_enabled = enabled;
+        if !self.stopped {
+            self.terminal.write(if enabled {
+                "\x1b[?2031h"
+            } else {
+                "\x1b[?2031l"
+            });
+        }
+    }
+
+    /// Invalidate every component's cached render state, ported from pi's
+    /// `override invalidate`: invalidate the root container (its children) plus
+    /// each overlay component.
+    pub fn invalidate(&mut self) {
+        self.container.invalidate();
+        self.invalidate_overlays();
     }
 
     /// Add a child component (delegates to the embedded container).
@@ -476,6 +533,9 @@ impl<T: Terminal> Tui<T> {
         self.stopped = false;
         self.terminal.start();
         self.terminal.hide_cursor();
+        if self.terminal_color_scheme_notifications_enabled {
+            self.terminal.write("\x1b[?2031h");
+        }
         self.query_cell_size();
         self.request_render(false);
     }
@@ -493,6 +553,9 @@ impl<T: Terminal> Tui<T> {
     /// Ported from `TUI::stop`.
     pub fn stop(&mut self) {
         self.stopped = true;
+        if self.terminal_color_scheme_notifications_enabled {
+            self.terminal.write("\x1b[?2031l");
+        }
         if !self.previous_lines.is_empty() {
             let target_row = self.previous_lines.len() as i64; // line after last content
             let line_diff = target_row - self.hardware_cursor_row;
@@ -1247,5 +1310,94 @@ mod tests {
         // Column 2 (width of "ab") -> \x1b[3G; marker must not appear in output.
         assert!(writes.contains("\x1b[3G"), "writes: {writes:?}");
         assert!(!writes.contains(CURSOR_MARKER));
+    }
+
+    #[test]
+    fn color_scheme_notifications_emit_dec_2031_sequences() {
+        // Toggling color-scheme notifications while the renderer is running writes
+        // the DEC private mode 2031 enable/disable sequences; the equality guard
+        // makes a redundant toggle a no-op; and start/stop emit when enabled.
+        let terminal = LoggingTerminal::new(20, 5);
+        let mut tui = Tui::new(terminal, false);
+        tui.set_base_lines(vec!["hi".to_string()]);
+        tui.start();
+        // Nothing enabled yet: no 2031 sequences from start().
+        let boot = tui.take_writes();
+        assert!(!boot.contains("\x1b[?2031"), "boot writes: {boot:?}");
+
+        // Enable while started -> enable sequence written.
+        tui.set_terminal_color_scheme_notifications(true);
+        assert_eq!(tui.take_writes(), "\x1b[?2031h");
+
+        // Redundant enable -> equality guard, no write.
+        tui.set_terminal_color_scheme_notifications(true);
+        assert_eq!(tui.take_writes(), "");
+
+        // Disable -> disable sequence written.
+        tui.set_terminal_color_scheme_notifications(false);
+        assert_eq!(tui.take_writes(), "\x1b[?2031l");
+
+        // Redundant disable -> equality guard, no write.
+        tui.set_terminal_color_scheme_notifications(false);
+        assert_eq!(tui.take_writes(), "");
+
+        // Re-enable, then stop() emits the disable sequence.
+        tui.set_terminal_color_scheme_notifications(true);
+        assert_eq!(tui.take_writes(), "\x1b[?2031h");
+        tui.stop();
+        let stop_writes = tui.take_writes();
+        assert!(
+            stop_writes.contains("\x1b[?2031l"),
+            "stop writes: {stop_writes:?}"
+        );
+
+        // start() re-emits the enable sequence while notifications stay enabled.
+        tui.start();
+        let start_writes = tui.take_writes();
+        assert!(
+            start_writes.contains("\x1b[?2031h"),
+            "start writes: {start_writes:?}"
+        );
+    }
+
+    #[test]
+    fn color_scheme_report_is_consumed_not_delivered() {
+        // A DEC 2031 color-scheme report fed to handle_input fires the registered
+        // listeners and is consumed: it never reaches the focused component.
+        let terminal = LoggingTerminal::new(20, 5);
+        let mut tui = Tui::new(terminal, false);
+
+        let focusable: Rc<RefCell<dyn Component>> = Rc::new(RefCell::new(SharedLines::new()));
+        let id = tui.register_component(focusable);
+        tui.set_focus(Some(id));
+        tui.start();
+
+        let seen: Rc<RefCell<Vec<TerminalColorScheme>>> = Rc::new(RefCell::new(Vec::new()));
+        let sink = seen.clone();
+        tui.on_terminal_color_scheme_change(move |scheme| sink.borrow_mut().push(scheme));
+
+        // Feed a light-scheme report: listener fires, focused component gets nothing.
+        tui.handle_input("\x1b[?997;2n");
+        assert_eq!(*seen.borrow(), vec![TerminalColorScheme::Light]);
+        assert!(
+            tui.input_deliveries().is_empty(),
+            "report must not be delivered: {:?}",
+            tui.input_deliveries()
+        );
+
+        // A dark-scheme report likewise fans out and is consumed.
+        tui.handle_input("\x1b[?997;1n");
+        assert_eq!(
+            *seen.borrow(),
+            vec![TerminalColorScheme::Light, TerminalColorScheme::Dark]
+        );
+        assert!(tui.input_deliveries().is_empty());
+
+        // A non-report input still reaches the focused component.
+        tui.handle_input("a");
+        assert_eq!(tui.input_deliveries().len(), 1);
+        assert_eq!(tui.input_deliveries()[0], (id, "a".to_string()));
+        // ...and did not spuriously fire a color-scheme listener.
+        assert_eq!(seen.borrow().len(), 2);
     }
 }

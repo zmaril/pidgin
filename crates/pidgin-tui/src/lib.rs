@@ -20,6 +20,7 @@ pub mod markdown;
 pub mod overlay;
 pub mod renderer;
 pub mod terminal;
+pub mod terminal_colors;
 pub mod terminal_image;
 pub mod text_util;
 pub mod undo_stack;
@@ -68,6 +69,10 @@ pub use terminal::{
     normalize_apple_terminal_input, parse_negotiation_sequence, CrosstermTerminal, LoggingTerminal,
     ModifierKey, NegotiationSequence, ProcessTerminal, StdinBuffer, StdinBufferOptions, StdinEvent,
     Terminal, TerminalInput,
+};
+pub use terminal_colors::{
+    is_osc11_background_color_response, parse_osc11_background_color, parse_osc_hex_channel,
+    parse_terminal_color_scheme_report, RgbColor, TerminalColorScheme,
 };
 pub use terminal_image::{
     allocate_image_id, calculate_image_cell_size, calculate_image_rows, delete_all_kitty_images,

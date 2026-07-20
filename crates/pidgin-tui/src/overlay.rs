@@ -11,6 +11,7 @@ use std::rc::Rc;
 
 use crate::renderer::{Component, Tui, SEGMENT_RESET};
 use crate::terminal::Terminal;
+use crate::terminal_colors::parse_terminal_color_scheme_report;
 use crate::{
     extract_segments, is_image_line, is_key_release, slice_by_column, slice_with_width,
     visible_width,
@@ -726,14 +727,50 @@ impl<T: Terminal> Tui<T> {
             .unwrap_or(false)
     }
 
-    /// Handle terminal input. Ported from `TUI.handleInput` (`tui.ts`): first the
-    /// registered input listeners get a chance to consume or rewrite the input,
-    /// then the overlay focus-restore reconciliation runs, and finally the input
-    /// is delivered to the focused component. The OSC/color-scheme/cell-size/debug
-    /// interceptors pi runs before the listeners are not part of this port (the
-    /// run loop feeds already-decoded [`crate::TerminalInput`]s, so those terminal
-    /// query replies are handled inside [`crate::ProcessTerminal::feed`]).
+    /// Consume a DEC private mode 2031 color-scheme report, ported from pi's
+    /// `TUI.consumeTerminalColorSchemeReport`. If `data` parses as a color-scheme
+    /// report, each registered listener is invoked with the reported scheme and
+    /// the input is consumed (`true`); otherwise this is a no-op (`false`).
+    fn consume_terminal_color_scheme_report(&mut self, data: &str) -> bool {
+        let scheme = match parse_terminal_color_scheme_report(data) {
+            Some(scheme) => scheme,
+            None => return false,
+        };
+        for listener in self.terminal_color_scheme_listeners.iter_mut() {
+            listener(scheme);
+        }
+        true
+    }
+
+    /// Invalidate every overlay component's cached render state. Used by
+    /// [`Tui::invalidate`](crate::renderer::Tui::invalidate) to reach the overlay
+    /// stack, which lives in this module (pi's `override invalidate` loop over
+    /// `overlayStack`).
+    pub(crate) fn invalidate_overlays(&mut self) {
+        for entry in &self.overlay_stack {
+            if let Some(component) = self.components.get(entry.component) {
+                component.borrow_mut().invalidate();
+            }
+        }
+    }
+
+    /// Handle terminal input. Ported from `TUI.handleInput` (`tui.ts`): first a
+    /// DEC 2031 color-scheme report is consumed and fanned out to the
+    /// color-scheme listeners; then the registered input listeners get a chance to
+    /// consume or rewrite the input; then the overlay focus-restore reconciliation
+    /// runs, and finally the input is delivered to the focused component. The
+    /// remaining OSC/cell-size/debug interceptors pi runs before the listeners are
+    /// not part of this port (the run loop feeds already-decoded
+    /// [`crate::TerminalInput`]s, so those terminal query replies are handled
+    /// inside [`crate::ProcessTerminal::feed`]).
     pub fn handle_input(&mut self, data: &str) {
+        // pi's `consumeTerminalColorSchemeReport` runs first: a DEC 2031
+        // color-scheme report is consumed (never delivered to the focused
+        // component) and fanned out to the registered listeners.
+        if self.consume_terminal_color_scheme_report(data) {
+            return;
+        }
+
         // Offer the input to each listener in registration order (pi's
         // `inputListeners` loop). A listener may consume the input outright or
         // rewrite it; an empty rewrite drops it. Listeners are taken out during
