@@ -93,7 +93,7 @@ impl From<CellDimensionsJs> for CellDimensions {
 /// (`{ images: "kitty" | "iterm2" | null, trueColor, hyperlinks }`).
 #[napi(object)]
 pub struct TerminalCapabilitiesJs {
-    pub images: Option<String>,
+    pub images: Either<String, Null>,
     pub true_color: bool,
     pub hyperlinks: bool,
 }
@@ -108,7 +108,10 @@ fn protocol_to_str(p: ImageProtocol) -> &'static str {
 impl From<TerminalCapabilities> for TerminalCapabilitiesJs {
     fn from(c: TerminalCapabilities) -> Self {
         Self {
-            images: c.images.map(|p| protocol_to_str(p).to_string()),
+            images: match c.images {
+                Some(p) => Either::A(protocol_to_str(p).to_string()),
+                None => Either::B(Null),
+            },
             true_color: c.true_color,
             hyperlinks: c.hyperlinks,
         }
@@ -119,16 +122,18 @@ impl TryFrom<TerminalCapabilitiesJs> for TerminalCapabilities {
     type Error = Error;
 
     fn try_from(c: TerminalCapabilitiesJs) -> Result<Self> {
-        let images = match c.images.as_deref() {
-            None => None,
-            Some("kitty") => Some(ImageProtocol::Kitty),
-            Some("iterm2") => Some(ImageProtocol::ITerm2),
-            Some(other) => {
-                return Err(Error::new(
-                    Status::InvalidArg,
-                    format!("unknown image protocol {other:?} (expected \"kitty\", \"iterm2\", or null)"),
-                ));
-            }
+        let images = match c.images {
+            Either::B(Null) => None,
+            Either::A(s) => match s.as_str() {
+                "kitty" => Some(ImageProtocol::Kitty),
+                "iterm2" => Some(ImageProtocol::ITerm2),
+                other => {
+                    return Err(Error::new(
+                        Status::InvalidArg,
+                        format!("unknown image protocol {other:?} (expected \"kitty\", \"iterm2\", or null)"),
+                    ));
+                }
+            },
         };
         Ok(Self {
             images,
