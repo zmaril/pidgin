@@ -46,6 +46,8 @@ use crate::utils::json_parse::parse_streaming_json;
 mod transform_messages;
 use transform_messages::{transform_messages as transform_messages_impl, ModelIdentity};
 
+pub mod driver;
+
 #[cfg(test)]
 mod tests;
 
