@@ -132,6 +132,10 @@ struct ResultBlock {
 #[derive(Deserialize)]
 struct ToolResultSpec {
     content: Vec<ResultBlock>,
+    /// Opaque tool-specific details (e.g. the edit tool's `{ diff, .. }`), read
+    /// by real renderers such as `edit_render_result`.
+    #[serde(default)]
+    details: Value,
     #[serde(rename = "isError")]
     is_error: bool,
 }
@@ -148,6 +152,7 @@ struct ToolVec {
     result: Option<ToolResultSpec>,
     #[serde(rename = "isPartial")]
     is_partial: bool,
+    expanded: bool,
     width: usize,
     expected: Vec<String>,
 }
@@ -201,6 +206,8 @@ fn interactive_tool_execution_vectors() {
             theme.clone(),
         );
 
+        component.set_expanded(v.expanded);
+
         if let Some(result) = &v.result {
             let content = result
                 .content
@@ -217,7 +224,7 @@ fn interactive_tool_execution_vectors() {
                 ToolExecutionResult {
                     content,
                     is_error: result.is_error,
-                    details: Value::Null,
+                    details: result.details.clone(),
                 },
                 v.is_partial,
             );

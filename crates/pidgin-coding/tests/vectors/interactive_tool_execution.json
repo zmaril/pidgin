@@ -10,6 +10,7 @@
 		"cwd": "/tmp/tool-cwd",
 		"result": null,
 		"isPartial": true,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -34,6 +35,7 @@
 		"cwd": "/tmp/tool-cwd",
 		"result": null,
 		"isPartial": true,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -62,9 +64,11 @@
 					"text": "line 1\nline 2\nline 3"
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -95,9 +99,11 @@
 					"text": "line 1\nline 2\nline 3"
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -128,9 +134,11 @@
 					"text": "command failed: not found"
 				}
 			],
+			"details": null,
 			"isError": true
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -159,9 +167,11 @@
 					"text": "command failed: not found"
 				}
 			],
+			"details": null,
 			"isError": true
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -190,9 +200,11 @@
 					"text": "partial output so far"
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": true,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -221,9 +233,11 @@
 					"text": "partial output so far"
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": true,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -251,6 +265,7 @@
 		"cwd": "/tmp/tool-cwd",
 		"result": null,
 		"isPartial": true,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -281,6 +296,7 @@
 		"cwd": "/tmp/tool-cwd",
 		"result": null,
 		"isPartial": true,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -312,9 +328,11 @@
 					"text": ""
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -342,9 +360,11 @@
 					"text": ""
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -369,6 +389,7 @@
 		"cwd": "/tmp/tool-cwd",
 		"result": null,
 		"isPartial": true,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -389,6 +410,7 @@
 		"cwd": "/tmp/tool-cwd",
 		"result": null,
 		"isPartial": true,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -414,9 +436,11 @@
 					"text": "file contents here"
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -443,9 +467,11 @@
 					"text": "file contents here"
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -472,9 +498,11 @@
 					"text": "ENOENT: no such file"
 				}
 			],
+			"details": null,
 			"isError": true
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -501,9 +529,11 @@
 					"text": "ENOENT: no such file"
 				}
 			],
+			"details": null,
 			"isError": true
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -525,6 +555,7 @@
 		"cwd": "/tmp/tool-cwd",
 		"result": null,
 		"isPartial": true,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -543,6 +574,7 @@
 		"cwd": "/tmp/tool-cwd",
 		"result": null,
 		"isPartial": true,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
@@ -566,9 +598,11 @@
 					"text": "match at line 5"
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 40,
 		"expected": [
 			"",
@@ -593,14 +627,485 @@
 					"text": "match at line 5"
 				}
 			],
+			"details": null,
 			"isError": false
 		},
 		"isPartial": false,
+		"expanded": false,
 		"width": 80,
 		"expected": [
 			"",
 			"\u001b[38;5;188m\u001b[1mmyUnknownTool\u001b[22m\u001b[39m                                                                   ",
 			"\u001b[38;5;244mmatch at line 5\u001b[39m                                                                 "
+		]
+	},
+	{
+		"label": "edit-call-pending",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                           \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "edit-call-pending",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                                                                   \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "edit-result-multiline",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully replaced 1 block(s) in foo.txt."
+				}
+			],
+			"details": {
+				"diff": " 1 alpha\n-2 beta\n-3 gamma\n+2 BETA\n+3 GAMMA\n 4 delta",
+				"firstChangedLine": 2
+			},
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                           \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"",
+			" \u001b[38;5;244m 1 alpha\u001b[39m                               ",
+			" \u001b[38;5;167m-2 beta\u001b[39m                                ",
+			" \u001b[38;5;167m-3 gamma\u001b[39m                               ",
+			" \u001b[38;5;143m+2 BETA\u001b[39m                                ",
+			" \u001b[38;5;143m+3 GAMMA\u001b[39m                               ",
+			" \u001b[38;5;244m 4 delta\u001b[39m                               "
+		]
+	},
+	{
+		"label": "edit-result-multiline",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully replaced 1 block(s) in foo.txt."
+				}
+			],
+			"details": {
+				"diff": " 1 alpha\n-2 beta\n-3 gamma\n+2 BETA\n+3 GAMMA\n 4 delta",
+				"firstChangedLine": 2
+			},
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                                                                   \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"",
+			" \u001b[38;5;244m 1 alpha\u001b[39m                                                                       ",
+			" \u001b[38;5;167m-2 beta\u001b[39m                                                                        ",
+			" \u001b[38;5;167m-3 gamma\u001b[39m                                                                       ",
+			" \u001b[38;5;143m+2 BETA\u001b[39m                                                                        ",
+			" \u001b[38;5;143m+3 GAMMA\u001b[39m                                                                       ",
+			" \u001b[38;5;244m 4 delta\u001b[39m                                                                       "
+		]
+	},
+	{
+		"label": "edit-result-multiline-expanded",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully replaced 1 block(s) in foo.txt."
+				}
+			],
+			"details": {
+				"diff": " 1 alpha\n-2 beta\n-3 gamma\n+2 BETA\n+3 GAMMA\n 4 delta",
+				"firstChangedLine": 2
+			},
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": true,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                           \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"",
+			" \u001b[38;5;244m 1 alpha\u001b[39m                               ",
+			" \u001b[38;5;167m-2 beta\u001b[39m                                ",
+			" \u001b[38;5;167m-3 gamma\u001b[39m                               ",
+			" \u001b[38;5;143m+2 BETA\u001b[39m                                ",
+			" \u001b[38;5;143m+3 GAMMA\u001b[39m                               ",
+			" \u001b[38;5;244m 4 delta\u001b[39m                               "
+		]
+	},
+	{
+		"label": "edit-result-multiline-expanded",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully replaced 1 block(s) in foo.txt."
+				}
+			],
+			"details": {
+				"diff": " 1 alpha\n-2 beta\n-3 gamma\n+2 BETA\n+3 GAMMA\n 4 delta",
+				"firstChangedLine": 2
+			},
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": true,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                                                                   \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"",
+			" \u001b[38;5;244m 1 alpha\u001b[39m                                                                       ",
+			" \u001b[38;5;167m-2 beta\u001b[39m                                                                        ",
+			" \u001b[38;5;167m-3 gamma\u001b[39m                                                                       ",
+			" \u001b[38;5;143m+2 BETA\u001b[39m                                                                        ",
+			" \u001b[38;5;143m+3 GAMMA\u001b[39m                                                                       ",
+			" \u001b[38;5;244m 4 delta\u001b[39m                                                                       "
+		]
+	},
+	{
+		"label": "edit-result-addition",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully replaced 1 block(s) in foo.txt."
+				}
+			],
+			"details": {
+				"diff": " 1 line 1\n 2 line 2\n+3 line 3\n+4 line 4",
+				"firstChangedLine": 3
+			},
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                           \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"",
+			" \u001b[38;5;244m 1 line 1\u001b[39m                              ",
+			" \u001b[38;5;244m 2 line 2\u001b[39m                              ",
+			" \u001b[38;5;143m+3 line 3\u001b[39m                              ",
+			" \u001b[38;5;143m+4 line 4\u001b[39m                              "
+		]
+	},
+	{
+		"label": "edit-result-addition",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully replaced 1 block(s) in foo.txt."
+				}
+			],
+			"details": {
+				"diff": " 1 line 1\n 2 line 2\n+3 line 3\n+4 line 4",
+				"firstChangedLine": 3
+			},
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                                                                   \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"",
+			" \u001b[38;5;244m 1 line 1\u001b[39m                                                                      ",
+			" \u001b[38;5;244m 2 line 2\u001b[39m                                                                      ",
+			" \u001b[38;5;143m+3 line 3\u001b[39m                                                                      ",
+			" \u001b[38;5;143m+4 line 4\u001b[39m                                                                      "
+		]
+	},
+	{
+		"label": "edit-result-tabs",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully replaced 1 block(s) in foo.txt."
+				}
+			],
+			"details": {
+				"diff": "-1 \tfirst\n-2 \tsecond\n+1 \tFIRST\n+2 \tSECOND\n 3 last",
+				"firstChangedLine": 1
+			},
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                           \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"",
+			" \u001b[38;5;167m-1    first\u001b[39m                            ",
+			" \u001b[38;5;167m-2    second\u001b[39m                           ",
+			" \u001b[38;5;143m+1    FIRST\u001b[39m                            ",
+			" \u001b[38;5;143m+2    SECOND\u001b[39m                           ",
+			" \u001b[38;5;244m 3 last\u001b[39m                                "
+		]
+	},
+	{
+		"label": "edit-result-tabs",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully replaced 1 block(s) in foo.txt."
+				}
+			],
+			"details": {
+				"diff": "-1 \tfirst\n-2 \tsecond\n+1 \tFIRST\n+2 \tSECOND\n 3 last",
+				"firstChangedLine": 1
+			},
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                                                                   \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"",
+			" \u001b[38;5;167m-1    first\u001b[39m                                                                    ",
+			" \u001b[38;5;167m-2    second\u001b[39m                                                                   ",
+			" \u001b[38;5;143m+1    FIRST\u001b[39m                                                                    ",
+			" \u001b[38;5;143m+2    SECOND\u001b[39m                                                                   ",
+			" \u001b[38;5;244m 3 last\u001b[39m                                                                        "
+		]
+	},
+	{
+		"label": "edit-result-error",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Error: could not find text to replace in foo.txt"
+				}
+			],
+			"details": {},
+			"isError": true
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                           \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"",
+			" \u001b[38;5;167mError: could not find text to replace  ",
+			" \u001b[38;5;167min foo.txt\u001b[39m                             "
+		]
+	},
+	{
+		"label": "edit-result-error",
+		"toolName": "edit",
+		"args": {
+			"edits": [
+				{
+					"newText": "y",
+					"oldText": "x"
+				}
+			],
+			"path": "foo.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Error: could not find text to replace in foo.txt"
+				}
+			],
+			"details": {},
+			"isError": true
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1medit\u001b[22m\u001b[39m \u001b[38;5;109mfoo.txt\u001b[39m                                                                   \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"",
+			" \u001b[38;5;167mError: could not find text to replace in foo.txt\u001b[39m                               "
 		]
 	}
 ]

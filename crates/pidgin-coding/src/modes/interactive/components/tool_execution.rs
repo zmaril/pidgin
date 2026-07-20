@@ -4,38 +4,39 @@
 //! (`ToolExecutionComponent`), composing `pidgin-tui`'s `Box`, `Text`, and
 //! `Spacer`.
 //!
-//! ## Renderer-path scope (STOP-and-report boundary)
+//! ## Renderer-path scope
 //!
 //! pi delegates a tool's visible framing to the tool definition's `renderCall` /
-//! `renderResult` closures. Those UI-render hooks are **deferred** on the Rust
+//! `renderResult` closures. Those UI-render hooks now live on the Rust
 //! [`ToolDefinition`](crate::core::extensions::types::ToolDefinition)
-//! (`core/extensions/types.rs`: "UI-render hooks (`renderCall`/`renderResult`)
-//! are deferred with the rest of the TUI layer"). No per-tool renderer, and no
-//! `DiffComponent`, exists in Rust yet.
-//!
-//! This port therefore implements **exactly the branches pi takes when a tool
-//! has no `renderCall` / `renderResult`**:
+//! ([`ToolRenderCall`]/[`ToolRenderResult`] in `core/extensions/types.rs`), and
+//! this component invokes them exactly where pi's `updateDisplay` does:
 //! - no tool definition → the generic `formatToolExecution` text path;
-//! - a tool definition without renderers → pi's `createCallFallback` /
+//! - a tool definition **with** a `renderCall` / `renderResult` → the resolved
+//!   renderer builds the call / result [`Component`], handed a
+//!   [`ToolRenderContext`] assembled from this component's state;
+//! - a tool definition **without** renderers → pi's `createCallFallback` /
 //!   `createResultFallback` (the tool title + text output).
 //!
-//! Because those renderers are absent for *every* Rust tool definition (built-in
-//! or extension), this component renders the fallback for every tool. Its output
-//! is byte-identical to pi **only** for tools whose pi definition likewise lacks
-//! `renderCall` / `renderResult`. Once the per-tool renderer suite +
-//! `DiffComponent` + `ToolRenderContext` are ported, they slot into the branches
-//! guarded here. Image content blocks (`getCapabilities().images`) are likewise
-//! out of scope for this PR.
+//! Renderer resolution mirrors pi's `getCallRenderer` / `getResultRenderer`: the
+//! extension-supplied definition's renderer wins, falling back to the built-in
+//! definition's renderer. The built-in `edit` tool is the first renderer wired
+//! here (`renderShell: "self"` plus `renderCall` / `renderResult`). Image content
+//! blocks (`getCapabilities().images`) remain out of scope for this PR.
 
 use pidgin_tui::renderer::Component;
 use pidgin_tui::widgets::box_widget::BoxWidget;
 use pidgin_tui::widgets::text::BgFn;
 use pidgin_tui::{Spacer, Text};
 
+use pidgin_agent::types::AgentToolResult;
 use pidgin_ai::types::ContentBlock;
 use serde_json::Value;
 
-use crate::core::extensions::types::{RenderShell, ToolDefinition};
+use crate::core::extensions::types::{
+    RenderShell, ToolDefinition, ToolRenderCall, ToolRenderContext, ToolRenderResult,
+    ToolRenderResultOptions,
+};
 use crate::core::tools::index::{create_all_tool_definitions, ToolsOptions};
 use crate::core::tools::render_utils::get_text_output;
 use crate::modes::interactive::theme::Theme;
@@ -87,8 +88,16 @@ pub struct ToolExecution {
     execution_started: bool,
     args_complete: bool,
     result: Option<ToolExecutionResult>,
+    cwd: String,
     has_definition: bool,
     render_shell: RenderShell,
+    /// Resolved call renderer (pi's `getCallRenderer`): the extension
+    /// definition's `render_call`, else the built-in definition's. `None` →
+    /// the [`call_fallback`](Self::call_fallback) path.
+    render_call: Option<ToolRenderCall>,
+    /// Resolved result renderer (pi's `getResultRenderer`), same precedence.
+    /// `None` → the [`result_fallback`](Self::result_fallback) path.
+    render_result: Option<ToolRenderResult>,
 }
 
 impl ToolExecution {
@@ -116,6 +125,8 @@ impl ToolExecution {
 
         let has_definition = built_in_tool_definition.is_some() || tool_definition.is_some();
         let render_shell = resolve_render_shell(&built_in_tool_definition, &tool_definition);
+        let render_call = resolve_render_call(&built_in_tool_definition, &tool_definition);
+        let render_result = resolve_render_result(&built_in_tool_definition, &tool_definition);
 
         Self {
             theme,
@@ -129,8 +140,11 @@ impl ToolExecution {
             execution_started: false,
             args_complete: false,
             result: None,
+            cwd: cwd.to_string(),
             has_definition,
             render_shell,
+            render_call,
+            render_result,
         }
     }
 
@@ -229,6 +243,65 @@ impl ToolExecution {
         Some(Box::new(Text::new(&styled, 0, 0, None)))
     }
 
+    /// pi's `getRenderContext()` — the stateless subset of the context threaded
+    /// into `renderCall` / `renderResult`. `is_error` mirrors pi's
+    /// `this.result?.isError ?? false`.
+    fn render_context(&self) -> ToolRenderContext<'_> {
+        ToolRenderContext {
+            args: &self.args,
+            cwd: &self.cwd,
+            execution_started: self.execution_started,
+            args_complete: self.args_complete,
+            is_partial: self.is_partial,
+            expanded: self.expanded,
+            show_images: self.show_images,
+            is_error: self.result.as_ref().is_some_and(|r| r.is_error),
+        }
+    }
+
+    /// The result rebuilt as an [`AgentToolResult`] for `renderResult` (pi passes
+    /// `{ content, details }`). Only called when [`result`](Self::result) is set.
+    fn agent_result(&self, result: &ToolExecutionResult) -> AgentToolResult {
+        AgentToolResult {
+            content: result.content.clone(),
+            details: result.details.clone(),
+            added_tool_names: None,
+            terminate: None,
+        }
+    }
+
+    /// The call component: the resolved `renderCall` output when present (pi's
+    /// `callRenderer(args, theme, ctx)`), else [`call_fallback`](Self::call_fallback).
+    fn call_component(&self) -> Box<dyn Component> {
+        match &self.render_call {
+            Some(render_call) => render_call(&self.args, &self.theme, &self.render_context()),
+            None => self.call_fallback(),
+        }
+    }
+
+    /// The result component for a present result: the resolved `renderResult`
+    /// output when present (pi's `resultRenderer(result, options, theme, ctx)`),
+    /// else [`result_fallback`](Self::result_fallback). pi always adds the
+    /// renderer's component (even when it renders empty); the fallback is added
+    /// only when non-empty.
+    fn result_component(&self, result: &ToolExecutionResult) -> Option<Box<dyn Component>> {
+        match &self.render_result {
+            Some(render_result) => {
+                let options = ToolRenderResultOptions {
+                    expanded: self.expanded,
+                    is_partial: self.is_partial,
+                };
+                Some(render_result(
+                    &self.agent_result(result),
+                    &options,
+                    &self.theme,
+                    &self.render_context(),
+                ))
+            }
+            None => self.result_fallback(),
+        }
+    }
+
     /// pi's `getTextOutput()` for text-only results: each text block is
     /// stripped/sanitized/CR-normalized (the ported [`get_text_output`]) and the
     /// blocks are joined with `\n`. (Image indicators are out of scope.)
@@ -283,16 +356,41 @@ fn resolve_render_shell(
     }
 }
 
+/// pi's `getCallRenderer()` precedence: the extension definition's `render_call`
+/// wins, else the built-in definition's.
+fn resolve_render_call(
+    built_in: &Option<ToolDefinition>,
+    tool_definition: &Option<ToolDefinition>,
+) -> Option<ToolRenderCall> {
+    match (built_in, tool_definition) {
+        (None, td) => td.as_ref().and_then(|d| d.render_call.clone()),
+        (Some(b), None) => b.render_call.clone(),
+        (Some(b), Some(td)) => td.render_call.clone().or_else(|| b.render_call.clone()),
+    }
+}
+
+/// pi's `getResultRenderer()` precedence, matching [`resolve_render_call`].
+fn resolve_render_result(
+    built_in: &Option<ToolDefinition>,
+    tool_definition: &Option<ToolDefinition>,
+) -> Option<ToolRenderResult> {
+    match (built_in, tool_definition) {
+        (None, td) => td.as_ref().and_then(|d| d.render_result.clone()),
+        (Some(b), None) => b.render_result.clone(),
+        (Some(b), Some(td)) => td.render_result.clone().or_else(|| b.render_result.clone()),
+    }
+}
+
 impl Component for ToolExecution {
     fn render(&self, width: usize) -> Vec<String> {
         if self.has_definition && self.render_shell == RenderShell::SelfRender {
             // Self-render shell: a plain Container (no background) of the call +
-            // result fallbacks; render prepends a single blank line.
+            // result components; render prepends a single blank line.
             let mut content_lines: Vec<String> = Vec::new();
-            content_lines.extend(self.call_fallback().render(width));
-            if self.result.is_some() {
-                if let Some(rf) = self.result_fallback() {
-                    content_lines.extend(rf.render(width));
+            content_lines.extend(self.call_component().render(width));
+            if let Some(result) = &self.result {
+                if let Some(rc) = self.result_component(result) {
+                    content_lines.extend(rc.render(width));
                 }
             }
             if content_lines.is_empty() {
@@ -307,12 +405,12 @@ impl Component for ToolExecution {
         // content component.
         let mut lines = Spacer::new(1).render(width);
         if self.has_definition {
-            // Default shell: a background Box holding the call (+ result) fallback.
+            // Default shell: a background Box holding the call (+ result) component.
             let mut content_box = BoxWidget::new(1, 1, Some(self.bg_fn()));
-            content_box.add_child(self.call_fallback());
-            if self.result.is_some() {
-                if let Some(rf) = self.result_fallback() {
-                    content_box.add_child(rf);
+            content_box.add_child(self.call_component());
+            if let Some(result) = &self.result {
+                if let Some(rc) = self.result_component(result) {
+                    content_box.add_child(rc);
                 }
             }
             lines.extend(content_box.render(width));
