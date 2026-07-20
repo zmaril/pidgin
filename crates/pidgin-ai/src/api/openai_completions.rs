@@ -44,6 +44,12 @@ use crate::types::{
 };
 use crate::utils::json_parse::{parse_json_with_repair, parse_streaming_json};
 
+/// The transport-driving request assembler + stream driver (pi's `createClient` /
+/// `stream`), kept in a sibling module so this file stays within the straitjacket
+/// line ceiling while faithfully mirroring the anthropic `client.rs`/`driver.rs`
+/// split.
+pub mod driver;
+
 /// The minimum slice of a pi `Model<"openai-completions">` this driver needs.
 ///
 /// Deserialized leniently (like [`crate::api::anthropic::AnthropicModel`]) so any

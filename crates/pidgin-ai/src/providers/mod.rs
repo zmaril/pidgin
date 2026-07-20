@@ -10,6 +10,7 @@ pub mod anthropic_backend;
 pub mod builtins;
 pub mod composer;
 pub mod faux;
+pub mod openai_completions_backend;
 pub mod registry;
 
 pub use anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
@@ -23,6 +24,7 @@ pub use composer::{
     ComposedProvider, ConfigValueError, ConfigValueResolver, ExtensionAuthConfig,
     ExtensionOAuthConfig, ProviderAuthConfig,
 };
+pub use openai_completions_backend::{OpenAICompletionsBackend, OPENAI_COMPLETIONS_API};
 pub use registry::{
     clamp_thinking_level, create_models, create_provider, get_supported_thinking_levels,
     models_are_equal, ApiRouting, CreateProviderOptions, FilterModels, Models, MutableModels,

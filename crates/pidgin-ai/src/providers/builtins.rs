@@ -30,6 +30,9 @@ use std::sync::Arc;
 use pidgin_model_catalog::{catalog, Modality as CatModality, Model as CatModel};
 
 use crate::providers::anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
+use crate::providers::openai_completions_backend::{
+    OpenAICompletionsBackend, OPENAI_COMPLETIONS_API,
+};
 use crate::providers::registry::{
     create_provider, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
     RefreshContext, RegistryProvider, StreamBackendRef,
@@ -242,9 +245,13 @@ fn backend_for_api(
             transport.clone(),
             clock.clone(),
         ))),
+        OPENAI_COMPLETIONS_API => Some(Arc::new(OpenAICompletionsBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ))),
         // Follow-up (port): register the remaining ported dialects
-        // (openai_completions, openai_responses, google, bedrock, mistral, azure)
-        // here as their transport-aware `Provider` adapters land.
+        // (openai_responses, google, bedrock, mistral, azure) here as their
+        // transport-aware `Provider` adapters land.
         _ => None,
     }
 }
@@ -735,7 +742,9 @@ mod tests {
     fn multi_api_assembles_byapi_over_registered_only() {
         let mut apis = BTreeSet::new();
         apis.insert(ANTHROPIC_MESSAGES_API.to_string());
-        apis.insert("openai-completions".to_string());
+        // `openai-responses` has no ported adapter yet, so it stands in as the
+        // still-unregistered dialect the ByApi assembly must omit.
+        apis.insert("openai-responses".to_string());
 
         let (scripted, transport) = scripted_hellos(1);
         let routing = api_routing_for(&apis, &transport, &fake_clock());
@@ -745,7 +754,7 @@ mod tests {
         };
         assert!(map.contains_key(ANTHROPIC_MESSAGES_API));
         assert!(
-            !map.contains_key("openai-completions"),
+            !map.contains_key("openai-responses"),
             "an unregistered api name must be omitted from the ByApi map"
         );
 
@@ -774,14 +783,38 @@ mod tests {
     }
 
     // (c/ii) The real multi-api `opencode` provider: its anthropic-messages models
-    // stream through the assembled ByApi backend, while a model of a not-yet-ported
-    // dialect (openai-completions) takes the "no API implementation" path.
+    // stream through the assembled ByApi backend, and its openai-completions leg is
+    // now a registered backend in the map (the end-to-end completions drive is
+    // covered by `openai_completions_backend`'s own OpenAI-shaped SSE fixtures),
+    // while a model of a still-not-ported dialect (google-generative-ai) takes the
+    // "no API implementation" path.
     #[test]
-    fn opencode_byapi_binds_anthropic_and_leaves_others_unimplemented() {
+    fn opencode_byapi_binds_registered_dialects_and_leaves_others_unimplemented() {
         let apis = catalog_provider_apis("opencode");
         assert!(apis.contains(ANTHROPIC_MESSAGES_API));
-        assert!(apis.contains("openai-completions"));
+        assert!(apis.contains(OPENAI_COMPLETIONS_API));
+        assert!(
+            apis.contains("google-generative-ai"),
+            "opencode carries a still-unregistered dialect"
+        );
         assert!(apis.len() > 1, "opencode is a mixed-dialect provider");
+
+        // The assembled routing carries a bound backend for each registered leg.
+        let (_scripted, transport) = scripted_hellos(1);
+        let routing = api_routing_for(&apis, &transport, &fake_clock());
+        let map = match routing {
+            ApiRouting::ByApi(map) => map,
+            _ => panic!("opencode is a mixed-dialect provider and must assemble to ByApi"),
+        };
+        assert!(map.contains_key(ANTHROPIC_MESSAGES_API));
+        assert!(
+            map.contains_key(OPENAI_COMPLETIONS_API),
+            "the newly-registered openai-completions leg must be bound in the ByApi map"
+        );
+        assert!(
+            !map.contains_key("google-generative-ai"),
+            "a still-unregistered dialect must be omitted from the ByApi map"
+        );
 
         let (scripted, transport) = scripted_hellos(1);
         let provider = provider_from_catalog_with_transport("opencode", &transport, &fake_clock());
@@ -796,8 +829,8 @@ mod tests {
         assert_eq!(ok.message.stop_reason, StopReason::Stop);
         assert_eq!(scripted.requests().len(), 1);
 
-        // A model of a not-yet-ported dialect still errors with no request.
-        let other_model = model_with_api(&provider, "openai-completions");
+        // A model of a still-not-ported dialect errors with no further request.
+        let other_model = model_with_api(&provider, "google-generative-ai");
         let err = provider.stream(&other_model, &user_context(), None, None);
         assert_eq!(err.message.stop_reason, StopReason::Error);
         assert!(err
