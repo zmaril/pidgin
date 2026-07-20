@@ -17,6 +17,7 @@ pub mod diagnostics;
 pub mod event_bus;
 pub mod experimental;
 pub mod export_html;
+pub mod extension_oauth_adapt;
 pub mod extensions;
 pub mod footer_data_provider;
 pub mod http_dispatcher;

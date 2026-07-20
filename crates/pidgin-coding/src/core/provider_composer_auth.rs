@@ -56,7 +56,7 @@
 //! (`login(callbacks)` / `refreshToken` / `getApiKey`) to a canonical
 //! [`OAuthAuth`]. pidgin-ai's [`OAuthAuth`] is flow-machine-shaped, so the
 //! re-inversion (presenting the push login as a suspend/resume flow machine)
-//! lives in [`crate::auth::oauth::extension`] behind a thread + channel bridge;
+//! lives in [`super::extension_oauth_adapt`] behind a thread + channel bridge;
 //! [`adapt_oauth`] is the thin call into it. [`compose_oauth_auth`] references it
 //! exactly where pi references `adaptOAuth`, so composing an *extension* OAuth
 //! provider drives the bridge while composing a base OAuth provider (the tested
@@ -74,7 +74,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
 use pidgin_ai::auth::error::AuthFlowError;
-use pidgin_ai::auth::oauth::extension::{adapt_extension_oauth, ExtensionOAuthLogin};
+use pidgin_ai::auth::oauth::extension::ExtensionOAuthLogin;
 use pidgin_ai::auth::oauth::flow::OAuthFlowMachine;
 use pidgin_ai::auth::types::{
     ApiKeyAuth, ApiKeyCredential, AuthCheck, AuthContext, AuthInteraction, AuthPrompt,
@@ -89,6 +89,7 @@ use pidgin_ai::types::{
     StreamOptions, Usage, UsageCost,
 };
 
+use super::extension_oauth_adapt::adapt_extension_oauth;
 use super::resolve_config_value::{
     get_config_value_env_var_names, is_command_config_value, resolve_config_value_or_throw,
     resolve_headers_or_throw,
