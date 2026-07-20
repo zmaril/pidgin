@@ -263,6 +263,13 @@ impl Editor {
         self.terminal_rows = rows;
     }
 
+    /// Replace the border-rule color function. Mirrors assigning pi's public
+    /// `editor.borderColor` property (e.g. from `updateEditorBorderColor`, which
+    /// recolors the border on every theme / thinking-level change).
+    pub fn set_border_color(&mut self, border_color: Box<dyn Fn(&str) -> String>) {
+        self.border_color = border_color;
+    }
+
     /// Current horizontal padding (`getPaddingX`).
     pub fn get_padding_x(&self) -> usize {
         self.padding_x
