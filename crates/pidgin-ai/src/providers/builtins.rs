@@ -794,15 +794,16 @@ mod tests {
     // stream through the assembled ByApi backend, and its openai-completions leg is
     // now a registered backend in the map (the end-to-end completions drive is
     // covered by `openai_completions_backend`'s own OpenAI-shaped SSE fixtures),
-    // while a model of a still-not-ported dialect (google-generative-ai) takes the
-    // "no API implementation" path.
+    // as is its google-generative-ai leg, while a model of a still-not-ported
+    // dialect (openai-responses) takes the "no API implementation" path.
     #[test]
     fn opencode_byapi_binds_registered_dialects_and_leaves_others_unimplemented() {
         let apis = catalog_provider_apis("opencode");
         assert!(apis.contains(ANTHROPIC_MESSAGES_API));
         assert!(apis.contains(OPENAI_COMPLETIONS_API));
+        assert!(apis.contains(GOOGLE_GENERATIVE_AI_API));
         assert!(
-            apis.contains("google-generative-ai"),
+            apis.contains("openai-responses"),
             "opencode carries a still-unregistered dialect"
         );
         assert!(apis.len() > 1, "opencode is a mixed-dialect provider");
@@ -820,7 +821,11 @@ mod tests {
             "the newly-registered openai-completions leg must be bound in the ByApi map"
         );
         assert!(
-            !map.contains_key("google-generative-ai"),
+            map.contains_key(GOOGLE_GENERATIVE_AI_API),
+            "the newly-registered google-generative-ai leg must be bound in the ByApi map"
+        );
+        assert!(
+            !map.contains_key("openai-responses"),
             "a still-unregistered dialect must be omitted from the ByApi map"
         );
 
@@ -838,7 +843,7 @@ mod tests {
         assert_eq!(scripted.requests().len(), 1);
 
         // A model of a still-not-ported dialect errors with no further request.
-        let other_model = model_with_api(&provider, "google-generative-ai");
+        let other_model = model_with_api(&provider, "openai-responses");
         let err = provider.stream(&other_model, &user_context(), None, None);
         assert_eq!(err.message.stop_reason, StopReason::Error);
         assert!(err

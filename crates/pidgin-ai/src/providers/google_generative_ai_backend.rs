@@ -99,7 +99,8 @@ impl Provider for GoogleGenerativeAiBackend {
         // The request-shaping options come from the MODEL for now: `max_tokens`
         // maps onto `maxOutputTokens`, and there is no model temperature to
         // thread.
-        // TODO(#192): thread StreamOptions.temperature/max_tokens/metadata once merged.
+        // Follow-up (#192): thread StreamOptions.temperature/max_tokens/metadata
+        // once merged.
         let request_options = GoogleRequestOptions {
             temperature: None,
             max_tokens: (model.max_tokens > 0).then_some(model.max_tokens),
