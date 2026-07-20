@@ -3,9 +3,9 @@
   "generated_by": "scripts/conformance.sh",
   "manifest_native_modules": 38,
   "rust_backed": {
-    "passing": 518,
+    "passing": 538,
     "total": 3777,
-    "percent": 13.7
+    "percent": 14.2
   },
   "total": 3777,
   "passing": 2919,
@@ -13,8 +13,8 @@
   "skipped": 785,
   "by_package": {
     "agent": {
-      "rust_backed_passing": 35,
-      "rust_backed_percent": 19.4,
+      "rust_backed_passing": 55,
+      "rust_backed_percent": 30.6,
       "total": 180,
       "passing": 180,
       "failing": 0,
