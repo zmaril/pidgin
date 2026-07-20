@@ -47,7 +47,8 @@ use crate::core::extensions::events::selection::{
 };
 use crate::core::extensions::events::session::{
     ResourcesDiscoverReason, ResourcesDiscoverResult, SessionBeforeCompactEvent,
-    SessionBeforeCompactResult, SessionShutdownEvent,
+    SessionBeforeCompactResult, SessionBeforeTreeEvent, SessionBeforeTreeResult,
+    SessionShutdownEvent, SessionTreeEvent,
 };
 use crate::core::extensions::events::tool::{
     ToolCallEvent, ToolCallEventResult, ToolResultEvent, ToolResultEventResult,
@@ -658,6 +659,14 @@ pub(crate) struct TestExtensionRunner {
     #[allow(clippy::type_complexity)]
     before_compact:
         Option<Arc<dyn Fn(&SessionBeforeCompactEvent) -> SessionBeforeCompactResult + Send + Sync>>,
+    /// A `session_before_tree` handler (pi's `pi.on("session_before_tree", ...)`);
+    /// it may cancel navigation, supply the summary, or override instructions/label.
+    #[allow(clippy::type_complexity)]
+    before_tree:
+        Option<Arc<dyn Fn(&SessionBeforeTreeEvent) -> SessionBeforeTreeResult + Send + Sync>>,
+    /// A sink recording every dispatched `session_tree` event (pi's
+    /// `pi.on("session_tree", ...)`).
+    tree_events: Option<Arc<Mutex<Vec<SessionTreeEvent>>>>,
     /// A handler that decides an `input` event's action (pi's `pi.on("input", ...)`
     /// returning `handled` / `transform`).
     input_response: Option<InputResponseHandler>,
@@ -676,6 +685,11 @@ pub(crate) struct TestExtensionRunner {
 pub(crate) type BeforeCompactHandler =
     Arc<dyn Fn(&SessionBeforeCompactEvent) -> SessionBeforeCompactResult + Send + Sync>;
 
+/// A `session_before_tree` handler for [`TestExtensionRunner`] (pi's
+/// `pi.on("session_before_tree", ...)`).
+pub(crate) type BeforeTreeHandler =
+    Arc<dyn Fn(&SessionBeforeTreeEvent) -> SessionBeforeTreeResult + Send + Sync>;
+
 impl TestExtensionRunner {
     /// Start from a runner that only forwards to the stub.
     pub fn new() -> Self {
@@ -688,6 +702,8 @@ impl TestExtensionRunner {
             agent_end_fired: AtomicBool::new(false),
             event_order: None,
             before_compact: None,
+            before_tree: None,
+            tree_events: None,
             input_response: None,
             before_agent_start: None,
             message_end_replacement: None,
@@ -737,6 +753,22 @@ impl TestExtensionRunner {
     /// replacement compaction. Also reports `has_handlers("session_before_compact")`.
     pub fn with_before_compact(mut self, handler: BeforeCompactHandler) -> Self {
         self.before_compact = Some(handler);
+        self
+    }
+
+    /// Register a `session_before_tree` handler (pi's
+    /// `pi.on("session_before_tree", ...)`); it may cancel navigation, supply the
+    /// branch summary, or override the instructions/label. Also reports
+    /// `has_handlers("session_before_tree")`.
+    pub fn with_before_tree(mut self, handler: BeforeTreeHandler) -> Self {
+        self.before_tree = Some(handler);
+        self
+    }
+
+    /// Record every dispatched `session_tree` event into `sink` (pi's
+    /// `pi.on("session_tree", ...)`).
+    pub fn with_tree_recording(mut self, sink: Arc<Mutex<Vec<SessionTreeEvent>>>) -> Self {
+        self.tree_events = Some(sink);
         self
     }
 
@@ -819,6 +851,15 @@ impl ExtensionRunner for TestExtensionRunner {
             if let Some(handler) = &self.before_compact {
                 return ExtensionEmitOutcome::BeforeCompact(handler(before));
             }
+        }
+        if let ExtensionDispatchEvent::SessionBeforeTree(before) = event {
+            if let Some(handler) = &self.before_tree {
+                return ExtensionEmitOutcome::BeforeTree(handler(before));
+            }
+        }
+        if let (Some(sink), ExtensionDispatchEvent::SessionTree(tree)) = (&self.tree_events, event)
+        {
+            sink.lock().unwrap().push(tree.clone());
         }
         if let (Some(sink), ExtensionDispatchEvent::MessageStart(start)) =
             (&self.event_order, event)
@@ -908,6 +949,7 @@ impl ExtensionRunner for TestExtensionRunner {
             || (matches!(event_type, "message_start" | "message_end") && self.event_order.is_some())
             || (event_type == "message_end" && self.message_end_replacement.is_some())
             || (event_type == "session_before_compact" && self.before_compact.is_some())
+            || (event_type == "session_before_tree" && self.before_tree.is_some())
             || (event_type == "before_agent_start" && self.before_agent_start.is_some())
             || self.inner.has_handlers(event_type)
     }
