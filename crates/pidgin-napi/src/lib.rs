@@ -21,6 +21,12 @@ mod faux;
 // the write stream out; overlays/focus/input stay in pi's TS. Additive.
 mod tui;
 
+// TUI stdin-buffer surface (`StdinBufferCore`): drives pi's `StdinBuffer`
+// escape-sequence splitter / bracketed-paste / Kitty-dedup state machine
+// natively. The JS shim keeps only pi's EventEmitter plumbing, the completion
+// timer, and Buffer adaptation; every splitting decision runs in Rust. Additive.
+mod stdin_buffer;
+
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
 mod oauth;

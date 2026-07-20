@@ -305,6 +305,13 @@ impl StdinBuffer {
         !self.buffer.is_empty()
     }
 
+    /// The currently buffered incomplete remainder, mirroring pi's
+    /// `StdinBuffer.getBuffer()`. Non-destructive; used by the napi bridge to
+    /// answer the JS shim's `getBuffer()` without reimplementing any splitting.
+    pub fn buffer(&self) -> &str {
+        &self.buffer
+    }
+
     /// Port of pi's `StdinBuffer.process`. Accumulates `data`, emits every
     /// complete sequence (and any paste), and retains an incomplete remainder.
     pub fn process(&mut self, data: &str) -> Vec<StdinEvent> {

@@ -2034,7 +2034,10 @@
     {
       "package": "tui",
       "src": "packages/tui/src/stdin-buffer.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/stdin-buffer.test.ts"
+      ]
     },
     {
       "package": "tui",
