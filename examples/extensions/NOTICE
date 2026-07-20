@@ -5,6 +5,9 @@ Vendored file(s):
   examples/extensions/pirate/index.ts
     upstream: packages/coding-agent/examples/extensions/pirate.ts
 
+  examples/extensions/reload-runtime/index.ts
+    upstream: packages/coding-agent/examples/extensions/reload-runtime.ts
+
 The code below the short attribution header in each vendored file is an
 unmodified copy of the corresponding upstream source. The full upstream
 license text follows.

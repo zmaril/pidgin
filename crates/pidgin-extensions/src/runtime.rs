@@ -291,6 +291,13 @@ fn js_plane_thread(mut rx: mpsc::UnboundedReceiver<Command>) {
 
         let mut runtime = JsRuntime::new(RuntimeOptions {
             extensions: vec![api_ops::extension()],
+            // Bare-specifier resolution for extension imports. Without a loader
+            // deno_core uses NoopModuleLoader, so an extension whose value import
+            // survives transpile (notably `import { Type } from "typebox"`) fails
+            // to load. This serves a vendored typebox and rejects other bare
+            // specifiers with a clear error (see `module_loader`). Built here on
+            // the runtime's owning thread — the `Rc<dyn ModuleLoader>` is `!Send`.
+            module_loader: Some(Rc::new(crate::module_loader::PidginModuleLoader::new())),
             ..Default::default()
         });
         runtime.op_state().borrow_mut().put(inventory.clone());

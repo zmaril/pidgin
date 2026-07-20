@@ -116,6 +116,8 @@ mod dispatch;
 #[cfg(feature = "deno")]
 mod loader;
 #[cfg(feature = "deno")]
+mod module_loader;
+#[cfg(feature = "deno")]
 mod oauth_login_impl;
 #[cfg(feature = "deno")]
 mod resource_loader_impl;
