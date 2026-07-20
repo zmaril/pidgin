@@ -14,6 +14,18 @@ a PHP call reaches through the `pidgin-core` façade and back. PHP goes first
 because it is the weirdest host (synchronous, request-scoped, thread-bound); if
 the façade survives PHP, easier hosts follow.
 
+## Running pi from PHP: `Pidgin\Session` and the web demo
+
+Beyond the `Pidgin::version()` scaffold, the extension now exposes
+`class Pidgin\Session` — a real agent turn from PHP. Construct a session and call
+`->send($message)` (or `->sendStream($message)`) to run a turn through the
+pidgin engine and get the assistant reply back, offline (faux) with no API key or
+live against Anthropic with `ANTHROPIC_API_KEY` set. A plain-PHP chat webpage
+that demonstrates this end to end lives in [`demo/`](demo/) — run
+`./demo/serve.sh` and open http://127.0.0.1:8080. See
+[`demo/README.md`](demo/README.md) for the full `Pidgin\Session` API surface,
+build steps, and faux vs. live details.
+
 ## What it exposes
 
 - `class Pidgin` with a static method `Pidgin::version(): string`.
