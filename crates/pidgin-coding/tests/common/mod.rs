@@ -10,8 +10,10 @@
 //! package-manager types.
 
 // Each integration-test binary that includes this module uses a different
-// subset of these helpers, so per-binary `dead_code` is expected and allowed.
-#![allow(dead_code)]
+// subset of these helpers, so per-binary `dead_code` (local helpers) and
+// `unused_imports` (the shared `pidgin_testkit` re-exports) are both expected
+// and allowed.
+#![allow(dead_code, unused_imports)]
 
 use std::fs;
 
