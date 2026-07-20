@@ -381,11 +381,18 @@ fn build_item(
 
 #[cfg(test)]
 pub(crate) mod test_support {
-    //! Frame-encoding helpers shared by this module's tests and the bedrock
-    //! driver's tests (which build eventstream fixtures over the same framing).
-    //! Test-only: compiled only under `cfg(test)`.
+    //! Frame-encoding helpers and a raw-bytes transport shared by this module's
+    //! tests and the bedrock driver/backend tests (which build eventstream
+    //! fixtures over the same framing). Test-only: compiled only under
+    //! `cfg(test)`.
+
+    use std::collections::{BTreeMap, VecDeque};
+    use std::io;
+    use std::sync::{Arc, Mutex};
 
     use serde_json::Value;
+
+    use crate::seams::http::{HttpRequest, HttpResponse, HttpStreamResponse, HttpTransport};
 
     use super::{crc32, header_type, MESSAGE_CRC_LEN, PRELUDE_LEN};
 
@@ -441,6 +448,76 @@ pub(crate) mod test_support {
         out.push(header_type::STRING);
         out.extend_from_slice(&(value.len() as u16).to_be_bytes());
         out.extend_from_slice(value.as_bytes());
+    }
+
+    #[derive(Default)]
+    struct BytesState {
+        responses: VecDeque<(u16, Vec<u8>)>,
+        requests: Vec<HttpRequest>,
+    }
+
+    /// A scripted [`HttpTransport`] that returns RAW BYTES over
+    /// [`send_streaming`](HttpTransport::send_streaming) — the path the bedrock
+    /// driver uses. Unlike [`ScriptedTransport`](crate::seams::http::ScriptedTransport),
+    /// whose `String` body cannot hold a binary eventstream (CRC/length bytes
+    /// `>= 0x80` are not valid UTF-8), this preserves the exact fixture bytes.
+    /// Records every request for assertions.
+    #[derive(Clone, Default)]
+    pub(crate) struct ScriptedBytesTransport {
+        state: Arc<Mutex<BytesState>>,
+    }
+
+    impl ScriptedBytesTransport {
+        pub(crate) fn new() -> Self {
+            Self::default()
+        }
+
+        /// Queue a `(status, body-bytes)` response.
+        pub(crate) fn push(&self, status: u16, body: Vec<u8>) -> &Self {
+            self.state
+                .lock()
+                .unwrap()
+                .responses
+                .push_back((status, body));
+            self
+        }
+
+        /// Every request performed so far, in order.
+        pub(crate) fn requests(&self) -> Vec<HttpRequest> {
+            self.state.lock().unwrap().requests.clone()
+        }
+
+        fn next(&self, request: &HttpRequest) -> io::Result<(u16, Vec<u8>)> {
+            let mut state = self.state.lock().unwrap();
+            state.requests.push(request.clone());
+            state
+                .responses
+                .pop_front()
+                .ok_or_else(|| io::Error::other("ScriptedBytesTransport: no scripted response"))
+        }
+    }
+
+    impl HttpTransport for ScriptedBytesTransport {
+        fn send(&self, request: &HttpRequest) -> io::Result<HttpResponse> {
+            // The bedrock driver never calls `send` (binary bodies must not go
+            // through the String path); provided only for trait completeness, as
+            // a lossy view.
+            let (status, body) = self.next(request)?;
+            Ok(HttpResponse {
+                status,
+                headers: BTreeMap::new(),
+                body: String::from_utf8_lossy(&body).into_owned(),
+            })
+        }
+
+        fn send_streaming(&self, request: &HttpRequest) -> io::Result<HttpStreamResponse<'_>> {
+            let (status, body) = self.next(request)?;
+            Ok(HttpStreamResponse {
+                status,
+                headers: BTreeMap::new(),
+                chunks: Box::new(std::iter::once(Ok(body))),
+            })
+        }
     }
 }
 

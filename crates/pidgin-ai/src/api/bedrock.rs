@@ -64,7 +64,8 @@ use crate::utils::headers::{provider_headers_to_record, ProviderHeaders};
 use crate::utils::provider_env::ProviderEnv;
 use crate::utils::sanitize_unicode::sanitize_surrogates;
 
-mod eventstream;
+pub mod driver;
+pub(crate) mod eventstream;
 mod stream;
 mod transform_messages;
 pub use eventstream::{decode_event_stream, EventStreamError};
