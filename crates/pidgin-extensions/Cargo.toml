@@ -58,7 +58,7 @@ deno_ast = { version = "=0.53.3", features = ["transpiling"], optional = true }
 # links libpython. NOT `extension-module`/`abi3` — those are for the separate
 # `bindings/python` cdylib and suppress libpython linking an embedder requires;
 # they never build together (different crates), so there is no conflict.
-pyo3 = { version = "0.23", features = ["auto-initialize"], optional = true }
+pyo3 = { version = "0.29", features = ["auto-initialize"], optional = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 tokio = { version = "1", optional = true, features = [
