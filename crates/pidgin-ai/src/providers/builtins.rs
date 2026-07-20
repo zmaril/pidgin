@@ -31,6 +31,9 @@ use std::sync::Arc;
 use pidgin_model_catalog::{catalog, Modality as CatModality, Model as CatModel};
 
 use crate::providers::anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
+use crate::providers::azure_openai_responses_backend::{
+    AzureOpenAIResponsesBackend, AZURE_OPENAI_RESPONSES_API,
+};
 use crate::providers::google_generative_ai_backend::{
     GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API,
 };
@@ -241,8 +244,8 @@ pub fn provider_from_catalog(id: &str) -> RegistryProvider {
 /// a multi-api provider gains the entry in its [`ApiRouting::ByApi`] map — with
 /// no change to [`provider_from_catalog_with_transport`] or the assembly in
 /// [`api_routing_for`]. Registered today: `anthropic-messages`,
-/// `openai-completions`, `google-generative-ai`, `mistral`, and
-/// `openai-responses`.
+/// `openai-completions`, `google-generative-ai`, `mistral`, `openai-responses`,
+/// and `azure-openai-responses`.
 fn backend_for_api(
     api: &str,
     transport: &Arc<dyn HttpTransport>,
@@ -269,9 +272,13 @@ fn backend_for_api(
             transport.clone(),
             clock.clone(),
         ))),
+        AZURE_OPENAI_RESPONSES_API => Some(Arc::new(AzureOpenAIResponsesBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ))),
         // Follow-up (port): register the remaining ported dialects
-        // (google_vertex, bedrock, azure) here as their transport-aware
-        // `Provider` adapters land.
+        // (google_vertex, bedrock) here as their transport-aware `Provider`
+        // adapters land.
         _ => None,
     }
 }
@@ -718,15 +725,16 @@ mod tests {
 
     // (b) A builtin whose single dialect has no registered backend still resolves
     // to Unimplemented: its stream yields the "no API implementation" error.
-    // `azure-openai-responses` carries only the still-unported
-    // `azure-openai-responses` dialect (the exemplar retargeted off
-    // `openai`/`openai-responses`, which are now registered).
+    // `google-vertex` carries only the still-unported `google-vertex` dialect (the
+    // exemplar retargeted off `azure-openai-responses`, which is now registered).
     #[test]
-    fn azure_openai_responses_resolves_unimplemented_and_errors_on_stream() {
-        let apis = catalog_provider_apis("azure-openai-responses");
+    fn google_vertex_resolves_unimplemented_and_errors_on_stream() {
+        let apis = catalog_provider_apis("google-vertex");
         assert!(
-            !apis.contains(OPENAI_RESPONSES_API) && !apis.contains(ANTHROPIC_MESSAGES_API),
-            "azure-openai-responses must not carry a registered dialect"
+            !apis.contains(OPENAI_RESPONSES_API)
+                && !apis.contains(ANTHROPIC_MESSAGES_API)
+                && !apis.contains(AZURE_OPENAI_RESPONSES_API),
+            "google-vertex must not carry a registered dialect"
         );
         let (_scripted, transport) = scripted_hellos(0);
         assert!(
@@ -738,16 +746,13 @@ mod tests {
         );
 
         let (scripted, transport) = scripted_hellos(0);
-        let provider = provider_from_catalog_with_transport(
-            "azure-openai-responses",
-            &transport,
-            &fake_clock(),
-        );
+        let provider =
+            provider_from_catalog_with_transport("google-vertex", &transport, &fake_clock());
         let model = provider
             .get_models()
             .into_iter()
             .next()
-            .expect("azure-openai-responses lists models");
+            .expect("google-vertex lists models");
         let result = provider.stream(&model, &user_context(), None, None);
 
         assert_eq!(result.message.stop_reason, StopReason::Error);
@@ -767,9 +772,9 @@ mod tests {
     fn multi_api_assembles_byapi_over_registered_only() {
         let mut apis = BTreeSet::new();
         apis.insert(ANTHROPIC_MESSAGES_API.to_string());
-        // `azure-openai-responses` has no ported adapter yet, so it stands in as
-        // the still-unregistered dialect the ByApi assembly must omit.
-        apis.insert("azure-openai-responses".to_string());
+        // `google-vertex` has no ported adapter yet, so it stands in as the
+        // still-unregistered dialect the ByApi assembly must omit.
+        apis.insert("google-vertex".to_string());
 
         let (scripted, transport) = scripted_hellos(1);
         let routing = api_routing_for(&apis, &transport, &fake_clock());
@@ -779,7 +784,7 @@ mod tests {
         };
         assert!(map.contains_key(ANTHROPIC_MESSAGES_API));
         assert!(
-            !map.contains_key("azure-openai-responses"),
+            !map.contains_key("google-vertex"),
             "an unregistered api name must be omitted from the ByApi map"
         );
 
@@ -809,11 +814,10 @@ mod tests {
 
     // (c/ii) The real multi-api `opencode` provider: its anthropic-messages models
     // stream through the assembled ByApi backend, and each of its other legs —
-    // openai-completions, google-generative-ai, and (newly) openai-responses — is a
+    // openai-completions, google-generative-ai, and openai-responses — is a
     // registered backend in the map. A synthetic model of a still-not-ported
-    // dialect (`azure-openai-responses`, which opencode does not carry) still takes
-    // the "no API implementation" path, exercising the ByApi Unimplemented
-    // fallback.
+    // dialect (`google-vertex`, which opencode does not carry) still takes the
+    // "no API implementation" path, exercising the ByApi Unimplemented fallback.
     #[test]
     fn opencode_byapi_binds_registered_dialects_and_leaves_others_unimplemented() {
         let apis = catalog_provider_apis("opencode");
@@ -863,7 +867,7 @@ mod tests {
         // A synthetic model of a still-not-ported dialect (one opencode does not
         // carry) errors with no further request.
         let mut other_model = anthropic_model.clone();
-        other_model.api = "azure-openai-responses".to_string();
+        other_model.api = "google-vertex".to_string();
         let err = provider.stream(&other_model, &user_context(), None, None);
         assert_eq!(err.message.stop_reason, StopReason::Error);
         assert!(err
