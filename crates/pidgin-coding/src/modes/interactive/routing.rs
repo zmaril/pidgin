@@ -23,7 +23,8 @@ use pidgin_tui::renderer::Component;
 use serde_json::Value;
 
 use crate::modes::interactive::components::{
-    AssistantMessage, ToolExecution, ToolExecutionOptions, ToolExecutionResult, UserMessage,
+    AssistantMessage, IdleStatus, ToolExecution, ToolExecutionOptions, ToolExecutionResult,
+    UserMessage, WorkingStatusIndicator,
 };
 use crate::modes::interactive::theme::Theme;
 
@@ -37,9 +38,41 @@ pub type SharedComponent = Rc<RefCell<dyn Component>>;
 /// [`ChatState`] (mutation). Mirrors pi's `chatContainer` children vector.
 pub type ChatEntries = Rc<RefCell<Vec<SharedComponent>>>;
 
-/// A shared line buffer for a placeholder chrome region (status line). Held both
-/// by the region's render component and by [`ChatState`] for updates.
-pub type StatusHandle = Rc<RefCell<Vec<String>>>;
+/// The status region's current view: an idle placeholder (two blank lines) or a
+/// live working spinner. Mirrors pi's `activeStatusIndicator` slot, restricted to
+/// the two indicators the offline shell mounts (PR-4C); retry / compaction /
+/// branch-summary indicators arrive with the `AgentSessionEvent` seam.
+pub enum StatusView {
+    /// No turn running: two full-width blank lines.
+    Idle(IdleStatus),
+    /// A turn is running: the accent-spinner working indicator.
+    Working(WorkingStatusIndicator),
+}
+
+/// A shared status view, flipped by [`ChatState`] and rendered by [`StatusRegion`].
+pub type StatusSlot = Rc<RefCell<StatusView>>;
+
+/// The status-region component: renders whichever [`StatusView`] is currently
+/// mounted. pi's interactive shell swaps `activeStatusIndicator` in the same slot.
+pub struct StatusRegion {
+    slot: StatusSlot,
+}
+
+impl StatusRegion {
+    /// Wrap a shared status view as a render component.
+    pub fn new(slot: StatusSlot) -> Self {
+        Self { slot }
+    }
+}
+
+impl Component for StatusRegion {
+    fn render(&self, width: usize) -> Vec<String> {
+        match &*self.slot.borrow() {
+            StatusView::Idle(idle) => idle.render(width),
+            StatusView::Working(working) => working.render(width),
+        }
+    }
+}
 
 /// The chat message-list region component: renders each entry in insertion
 /// order, concatenating their lines. This is pi's `chatContainer` (a `Container`
@@ -72,7 +105,7 @@ impl Component for ChatRegion {
 /// fields.
 pub struct ChatState {
     entries: ChatEntries,
-    status: StatusHandle,
+    status: StatusSlot,
     theme: Theme,
     cwd: String,
     /// pi's `streamingComponent`: the assistant bubble currently being streamed.
@@ -82,8 +115,8 @@ pub struct ChatState {
 }
 
 impl ChatState {
-    /// Build the router state over a shared entry list and status handle.
-    pub fn new(entries: ChatEntries, status: StatusHandle, theme: Theme, cwd: String) -> Self {
+    /// Build the router state over a shared entry list and status slot.
+    pub fn new(entries: ChatEntries, status: StatusSlot, theme: Theme, cwd: String) -> Self {
         Self {
             entries,
             status,
@@ -110,16 +143,17 @@ impl ChatState {
     /// message-list branches of pi's `handleEvent`.
     pub fn handle_event(&mut self, event: &AgentEvent) {
         match event {
-            // Turn lifecycle -> status placeholder (PR-4C chrome).
+            // Turn lifecycle -> status region (PR-4C chrome): a working spinner
+            // while a turn runs, restored to the idle placeholder on turn end.
             AgentEvent::AgentStart | AgentEvent::TurnStart => {
                 self.pending_tools.clear();
-                self.set_status("Working...");
+                self.set_working();
             }
             AgentEvent::TurnEnd { .. } => {}
             AgentEvent::AgentEnd { .. } => {
                 self.streaming = None;
                 self.pending_tools.clear();
-                self.clear_status();
+                self.set_idle();
             }
             // Message list.
             AgentEvent::MessageStart { message } => self.on_message_start(message),
@@ -243,14 +277,20 @@ impl ChatState {
         }
     }
 
-    // --- status placeholder -------------------------------------------------
+    // --- status region ------------------------------------------------------
 
-    fn set_status(&self, text: &str) {
-        *self.status.borrow_mut() = vec![text.to_string()];
+    /// Mount the working spinner (pi's default working message). The spinner is
+    /// rendered at frame 0 statically — the offline run loop has no timer tick to
+    /// animate it. PR-4C follow-up: drive [`WorkingStatusIndicator::tick`] from a
+    /// render-loop timer to animate the spinner, matching pi's `setInterval`.
+    fn set_working(&self) {
+        *self.status.borrow_mut() =
+            StatusView::Working(WorkingStatusIndicator::new(&self.theme, "Working...", None));
     }
 
-    fn clear_status(&self) {
-        self.status.borrow_mut().clear();
+    /// Restore the idle placeholder (two blank lines).
+    fn set_idle(&self) {
+        *self.status.borrow_mut() = StatusView::Idle(IdleStatus);
     }
 }
 

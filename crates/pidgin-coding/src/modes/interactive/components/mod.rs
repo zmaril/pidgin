@@ -32,10 +32,16 @@
 //! `DiffComponent`) lands when that suite is ported.
 
 pub mod assistant_message;
+pub mod footer;
+pub mod status_indicator;
 pub mod tool_execution;
 pub mod user_message;
 
 pub use assistant_message::AssistantMessage;
+pub use footer::{FooterComponent, FooterData};
+pub use status_indicator::{
+    IdleStatus, StatusIndicator, StatusIndicatorKind, WorkingStatusIndicator,
+};
 pub use tool_execution::{ToolExecution, ToolExecutionOptions, ToolExecutionResult};
 pub use user_message::UserMessage;
 

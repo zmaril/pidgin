@@ -38,6 +38,14 @@
 //! retry tests in `footer-data-provider.test.ts` are consequently deferred; the
 //! four synchronous branch-detection tests are ported below.
 
+// straitjacket-allow-file:duplication — this is the unstyled fragment of pi's
+// `footer.ts` mirror. The interactive `components/footer.rs` ANSI-styled
+// `FooterComponent` intentionally re-derives the same layout/stats arithmetic
+// and shares the `sanitize_status_text` shape (both faithfully track pi's single
+// upstream `footer.ts`). cpd reports the clone against this file because its
+// `core/` path sorts before `modes/…/components/footer.rs`, so the allow-file
+// marker must live on this alphabetically-first member of the pair.
+
 use std::collections::BTreeMap;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;

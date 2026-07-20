@@ -37,7 +37,8 @@ use pidgin_tui::{
     RenderError, RunLoop, SelectListTheme, SharedLines, Terminal, TerminalInput, Tui,
 };
 
-use super::routing::{ChatRegion, ChatState};
+use super::components::{FooterComponent, FooterData, IdleStatus};
+use super::routing::{ChatRegion, ChatState, StatusRegion, StatusSlot, StatusView};
 use super::theme::{create_theme, parse_theme_json, ColorMode, Theme};
 use super::turn::{TurnCommand, TurnDriver};
 
@@ -112,10 +113,11 @@ impl<W: Write> InteractiveShell<W> {
         // (4) pending messages — placeholder (PR-4C).
         tui.add_child(Box::new(SharedLines::new()));
 
-        // (5) status — placeholder chrome (PR-4C); the router updates this line.
-        let status = SharedLines::new();
-        let status_handle = status.handle();
-        tui.add_child(Box::new(status));
+        // (5) status — the real status region (PR-4C): an `IdleStatus`
+        // (two blank lines) by default, swapped to a `WorkingStatusIndicator`
+        // while a turn runs. The router (`ChatState`) flips the shared slot.
+        let status_slot: StatusSlot = Rc::new(RefCell::new(StatusView::Idle(IdleStatus)));
+        tui.add_child(Box::new(StatusRegion::new(Rc::clone(&status_slot))));
 
         // (6) widget-above — deferred extension slot; empty placeholder.
         tui.add_child(Box::new(SharedLines::new()));
@@ -124,9 +126,9 @@ impl<W: Write> InteractiveShell<W> {
         // appends user bubbles to.
         let chat_state = Rc::new(RefCell::new(ChatState::new(
             Rc::clone(&entries),
-            status_handle,
+            status_slot,
             theme.clone(),
-            cwd,
+            cwd.clone(),
         )));
 
         // The turn worker (offline faux) and the event channel it forwards to.
@@ -153,12 +155,11 @@ impl<W: Write> InteractiveShell<W> {
         // (8) widget-below — deferred extension slot; empty placeholder.
         tui.add_child(Box::new(SharedLines::new()));
 
-        // (9) footer — placeholder chrome (PR-4C).
-        let footer = SharedLines::new();
-        footer.set(vec![
-            String::new(),
-            "faux provider - no network".to_string(),
-        ]);
+        // (9) footer — the real `FooterComponent` (PR-4C). Live token/context/cost
+        // stats and git branch / session name arrive with the unported
+        // `AgentSession`, so those are zeroed / `None` here; cwd is live and the
+        // full layout (pwd line + stats line + model) renders even zeroed.
+        let footer = FooterComponent::new(footer_data(cwd), theme.clone());
         tui.add_child(Box::new(footer));
 
         let mut run_loop = RunLoop::new(tui);
@@ -347,6 +348,37 @@ impl InteractiveShell<std::io::Stdout> {
 fn default_theme() -> Theme {
     let theme_json = parse_theme_json(DARK_THEME_JSON).expect("embedded dark.json parses");
     create_theme(&theme_json, Some(ColorMode::Color256), None).expect("create dark theme")
+}
+
+/// Assemble the footer's [`FooterData`] from what the offline shell has today: a
+/// live `cwd` (abbreviated against `$HOME`) and everything else zeroed / `None`.
+/// Token/context/cost stats, git branch, session name, and the model id all live
+/// on the unported `AgentSession`; they land when that seam does.
+fn footer_data(cwd: String) -> FooterData {
+    FooterData {
+        cwd,
+        home: std::env::var("HOME")
+            .ok()
+            .or_else(|| std::env::var("USERPROFILE").ok()),
+        git_branch: None,
+        session_name: None,
+        total_input: 0,
+        total_output: 0,
+        total_cache_read: 0,
+        total_cache_write: 0,
+        latest_cache_hit_rate: None,
+        total_cost: 0.0,
+        using_subscription: false,
+        context_percent: Some(0.0),
+        context_window: 0,
+        auto_compact_enabled: true,
+        experimental: false,
+        model_id: None,
+        provider: String::new(),
+        thinking: None,
+        provider_count: 1,
+        extension_statuses: std::collections::BTreeMap::new(),
+    }
 }
 
 /// A minimal editor theme (dim border, plain autocomplete) — enough for a real
