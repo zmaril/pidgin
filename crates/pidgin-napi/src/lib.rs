@@ -27,6 +27,12 @@ mod tui;
 // timer, and Buffer adaptation; every splitting decision runs in Rust. Additive.
 mod stdin_buffer;
 
+// TUI terminal-colors surface (`isOsc11BackgroundColorResponse`,
+// `parseOsc11BackgroundColor`, `parseTerminalColorSchemeReport`): pi's pure
+// terminal color parsers (`terminal-colors.ts`) run natively. `pub` so the
+// module's free `#[napi]` functions register as crate-reachable. Additive.
+pub mod terminal_colors;
+
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
 mod oauth;
