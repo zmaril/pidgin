@@ -63,8 +63,10 @@ use crate::core::extensions::events::selection::{
 };
 use crate::core::extensions::events::session::{
     ResourcesDiscoverReason, ResourcesDiscoverResult, SessionBeforeCompactEvent,
-    SessionBeforeCompactResult, SessionBeforeTreeEvent, SessionBeforeTreeResult,
-    SessionCompactEvent, SessionShutdownEvent, SessionStartEvent, SessionTreeEvent,
+    SessionBeforeCompactResult, SessionBeforeForkEvent, SessionBeforeForkResult,
+    SessionBeforeSwitchEvent, SessionBeforeSwitchResult, SessionBeforeTreeEvent,
+    SessionBeforeTreeResult, SessionCompactEvent, SessionShutdownEvent, SessionStartEvent,
+    SessionTreeEvent,
 };
 use crate::core::extensions::events::tool::{
     ToolCallEvent, ToolCallEventResult, ToolExecutionEndEvent, ToolExecutionStartEvent,
@@ -190,6 +192,16 @@ pub enum ExtensionDispatchEvent {
     /// pi `session_start` (both the initial event and the `reason:"reload"`
     /// rebuild).
     SessionStart(SessionStartEvent),
+    /// pi `session_before_switch` (returns a result via
+    /// [`ExtensionEmitOutcome::BeforeSwitch`]). Emitted by
+    /// [`AgentSessionRuntime`](crate::core::agent_session::AgentSessionRuntime)
+    /// before a `/new` or `/resume` session replacement; a handler may cancel it.
+    SessionBeforeSwitch(SessionBeforeSwitchEvent),
+    /// pi `session_before_fork` (returns a result via
+    /// [`ExtensionEmitOutcome::BeforeFork`]). Emitted by
+    /// [`AgentSessionRuntime`](crate::core::agent_session::AgentSessionRuntime)
+    /// before a `/fork`; a handler may cancel it.
+    SessionBeforeFork(SessionBeforeForkEvent),
     /// pi `session_compact`.
     SessionCompact(SessionCompactEvent),
     /// pi `session_before_compact` (returns a result via
@@ -207,7 +219,7 @@ pub enum ExtensionDispatchEvent {
 }
 
 /// The result of a generic [`ExtensionRunner::emit`]. Most events return nothing;
-/// the two `session_before_*` events return a typed cancel/override result (pi's
+/// the `session_before_*` events return a typed cancel/override result (pi's
 /// `RunnerEmitResult<TEvent>` conditional, runner.ts:149).
 pub enum ExtensionEmitOutcome {
     /// No handler-supplied result (pi's `undefined`).
@@ -216,6 +228,10 @@ pub enum ExtensionEmitOutcome {
     BeforeCompact(SessionBeforeCompactResult),
     /// `session_before_tree` -> cancel or summary override.
     BeforeTree(SessionBeforeTreeResult),
+    /// `session_before_switch` -> cancel the `/new` or `/resume` switch.
+    BeforeSwitch(SessionBeforeSwitchResult),
+    /// `session_before_fork` -> cancel the `/fork`.
+    BeforeFork(SessionBeforeForkResult),
 }
 
 // ---------------------------------------------------------------------------

@@ -39,8 +39,8 @@ use pidgin_ai::Model;
 use crate::core::extensions::command::ResolvedCommand;
 use crate::core::extensions::events::common::BuildSystemPromptOptions;
 use crate::core::extensions::runner::{
-    ExtensionCommandContextHost, ExtensionMode, FlagValue, ProviderRegistrationHost,
-    SessionContextHost, SessionControlHost,
+    ExtensionCommandContextHost, ExtensionDispatchEvent, ExtensionMode, FlagValue,
+    ProviderRegistrationHost, SessionContextHost, SessionControlHost,
 };
 use crate::core::session_manager::SessionManager;
 
@@ -297,6 +297,14 @@ impl AgentSession {
             .bind_command_context(Some(bridge as Arc<dyn ExtensionCommandContextHost>));
         self.extension_runner()
             .set_ui_context(None, ExtensionMode::Print);
+        // pi's `bindExtensions` (agent-session.ts:2230) emits the stored
+        // `session_start` event through the runner once the hosts are bound. The
+        // subsequent `extendResourcesFromExtensions` (`resources_discover`) pass is
+        // deferred to the resources slice (unit5).
+        self.extension_runner()
+            .emit(&ExtensionDispatchEvent::SessionStart(
+                self.session_start_event().clone(),
+            ));
     }
 }
 
