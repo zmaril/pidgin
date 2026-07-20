@@ -19,6 +19,7 @@ pub mod env_api_keys;
 pub mod models_store;
 pub mod providers;
 pub mod seams;
+pub mod session_resources;
 pub mod types;
 pub mod utils;
 
@@ -44,6 +45,10 @@ pub use providers::{
     CreateProviderOptions, FilterModels, Models, MutableModels, ProviderAuth, ProviderHeaders,
     ProviderSnapshot, RefreshContext, RefreshOptions, RefreshResult, RegistryProvider,
     ANTHROPIC_MESSAGES_API,
+};
+pub use session_resources::{
+    cleanup_session_resources, register_session_resource_cleanup, AggregateCleanupError,
+    CleanupError, SessionResourceCleanup,
 };
 pub use types::*;
 pub use utils::event_stream::{
