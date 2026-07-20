@@ -50,6 +50,12 @@ impl From<ExtensionLanguage> for SourceLanguage {
         match language {
             ExtensionLanguage::TypeScript => SourceLanguage::TypeScript,
             ExtensionLanguage::JavaScript => SourceLanguage::JavaScript,
+            // The deno/JS runtime never legitimately receives a Python-language
+            // extension: the combined loader routes `.py` to the Python engine and
+            // only `.ts`/`.js` here. This arm keeps the exhaustive match compiling.
+            ExtensionLanguage::Python => {
+                unreachable!("Python extensions are not handled by the deno/JS runtime")
+            }
         }
     }
 }

@@ -102,6 +102,19 @@ fn discovers_direct_js_files() {
     assert_eq!(result.extensions[0].language, ExtensionLanguage::JavaScript);
 }
 
+#[test]
+fn discovers_direct_py_files() {
+    let (temp, ext_dir) = setup();
+    write(&ext_dir.join("foo.py"), EXT_CODE);
+
+    let result = discover(&temp, &[]);
+
+    assert!(result.errors.is_empty());
+    assert_eq!(result.extensions.len(), 1);
+    assert_eq!(basenames(&result), vec!["foo.py"]);
+    assert_eq!(result.extensions[0].language, ExtensionLanguage::Python);
+}
+
 // ---------------------------------------------------------------------------
 // Subdirectory discovery: index files
 // ---------------------------------------------------------------------------
@@ -131,6 +144,20 @@ fn discovers_subdirectory_with_index_js() {
     assert!(result.errors.is_empty());
     assert_eq!(result.extensions.len(), 1);
     assert!(contains_path(&result, "index.js"));
+}
+
+#[test]
+fn discovers_subdirectory_with_index_py() {
+    let (temp, ext_dir) = setup();
+    write(&ext_dir.join("my-extension").join("index.py"), EXT_CODE);
+
+    let result = discover(&temp, &[]);
+
+    assert!(result.errors.is_empty());
+    assert_eq!(result.extensions.len(), 1);
+    assert!(contains_path(&result, "index.py"));
+    assert_eq!(result.extensions[0].id, "my-extension");
+    assert_eq!(result.extensions[0].language, ExtensionLanguage::Python);
 }
 
 #[test]
@@ -472,6 +499,21 @@ fn infers_language_from_entrypoint_suffix() {
     let js = result.extensions.iter().find(|e| e.id == "plain").unwrap();
     assert_eq!(ts.language, ExtensionLanguage::TypeScript);
     assert_eq!(js.language, ExtensionLanguage::JavaScript);
+}
+
+#[test]
+fn is_extension_file_recognizes_py() {
+    assert!(is_extension_file("foo.py"));
+    assert!(is_extension_file("foo.ts"));
+    assert!(is_extension_file("foo.js"));
+    assert!(!is_extension_file("foo.txt"));
+}
+
+#[test]
+fn infer_language_maps_py_to_python() {
+    assert_eq!(infer_language("foo.py"), ExtensionLanguage::Python);
+    assert_eq!(infer_language("foo.ts"), ExtensionLanguage::TypeScript);
+    assert_eq!(infer_language("foo.js"), ExtensionLanguage::JavaScript);
 }
 
 #[test]
