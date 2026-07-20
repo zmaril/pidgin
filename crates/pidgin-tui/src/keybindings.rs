@@ -143,6 +143,7 @@ fn normalize_keys(keys: &[String]) -> Vec<String> {
 /// Definitions and user bindings are stored as ordered `(id, ...)` lists to
 /// mirror JavaScript object/map iteration order, which pi's conflict and
 /// resolved-binding outputs depend on.
+#[derive(Clone)]
 pub struct KeybindingsManager {
     definitions: Vec<(String, KeybindingDefinition)>,
     // `None` value = key present but explicitly `undefined` (falls back to default).

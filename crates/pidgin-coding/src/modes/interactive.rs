@@ -2,6 +2,7 @@
 
 pub mod app;
 pub mod components;
+pub mod extension_ui;
 pub mod model_search;
 pub mod routing;
 pub mod theme;

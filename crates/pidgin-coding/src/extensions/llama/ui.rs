@@ -38,13 +38,18 @@
 //!   stale-query guards). Wiring the literal 500 ms timer needs the same ambient
 //!   loop the mount seam provides and lands with it.
 //!
-//! ## Mount seam — deferred
+//! ## Mount seam
 //!
 //! pi's `showLlamaUi` mounts the view via `ctx.ui.custom(...)` and reports errors
-//! via `ctx.ui.notify(...)`. The Rust [`ExtensionContext`] is an opaque marker
-//! trait and that `ctx.ui` capability is not yet defined, so [`show_llama_ui`] is
-//! a documented stub (see its body). The [`LlamaView`] itself is fully
-//! implemented and testable against the [`LlamaUi`] trait without it.
+//! via `ctx.ui.notify(...)`. The Rust [`ExtensionContext`] now carries that
+//! narrowed `ctx.ui` capability (`custom` + `notify`), so [`show_llama_ui`] is a
+//! faithful port: it builds a [`CustomFactory`](crate::core::extensions::types::CustomFactory)
+//! that constructs the [`LlamaView`] and hands it to the host as a detached
+//! overlay whose `run` future the host drives to completion. The interactive host
+//! ([`TuiExtensionUi`](crate::modes::interactive::extension_ui::TuiExtensionUi))
+//! mounts the view as a focused overlay and drives `run` by manual poll
+//! interleaved with pumping terminal input into the view — the sync-shell analog
+//! of pi's event loop resolving the dialog promises on keypress.
 
 // straitjacket-allow-file:duplication — faithful line-for-line mirror of pi's
 // `ui.ts`; the frame/dialog composition and the HuggingFaceSearch state machine
@@ -68,7 +73,9 @@ use pidgin_tui::renderer::{Component, Container};
 use pidgin_tui::widgets::{Spacer, Text};
 use pidgin_tui::width::{truncate_to_width, visible_width};
 
-use crate::core::extensions::types::ExtensionContext;
+use crate::core::extensions::types::{
+    CustomFactory, CustomHost, CustomMount, ExtensionContext, UiError,
+};
 use crate::modes::interactive::components::{key_hint, DynamicBorder};
 use crate::modes::interactive::theme::Theme;
 
@@ -946,6 +953,24 @@ impl LlamaView {
     pub fn invalidate(&self) {}
 }
 
+/// [`LlamaView`] as a renderable overlay [`Component`] (pi's `LlamaView`
+/// implements `Component`). The view is interior-mutable, so the trait's
+/// `&mut self` `handle_input` delegates to the inherent `&self` handler; the
+/// mount seam ([`show_llama_ui`]) delivers keyboard input through the registered
+/// input closure rather than this trait method (the mounted `component` is a
+/// shared `Rc<dyn Component>`), but the impl is kept faithful for direct mounts.
+impl Component for LlamaView {
+    fn render(&self, width: usize) -> Vec<String> {
+        LlamaView::render(self, width)
+    }
+    fn handle_input(&mut self, data: &str) {
+        LlamaView::handle_input(self, data);
+    }
+    fn invalidate(&mut self) {
+        LlamaView::invalidate(self);
+    }
+}
+
 impl LlamaUi for LlamaView {
     async fn show_models(
         &self,
@@ -1322,23 +1347,76 @@ where
 // showLlamaUi — mount seam stub
 // ---------------------------------------------------------------------------
 
-/// `showLlamaUi(ctx, run)` — mount the [`LlamaView`] and drive `run(view)` (pi's
-/// `showLlamaUi`).
+/// `showLlamaUi(ctx, run)` — mount the [`LlamaView`] as a detached custom overlay
+/// and drive `run(view)` to completion (pi's `showLlamaUi`,
+/// `extensions/llama/ui.ts:480`).
 ///
-/// **Deferred.** pi mounts via `ctx.ui.custom(...)` and reports errors via
-/// `ctx.ui.notify(...)`. The Rust [`ExtensionContext`] is an opaque marker trait
-/// and that `ctx.ui` capability is not yet defined (see the module docs). This is
-/// a stub for the extension-framework lane to wire once `ctx.ui.custom`/`notify`
-/// exist: it must construct a [`LlamaView`], mount it as a focused overlay,
-/// `await run(&view)`, and unmount + surface any error via `notify`.
-pub fn show_llama_ui<C: ExtensionContext>(_ctx: &C) {
-    // PR follow-up: wire to `ctx.ui.custom`/`ctx.ui.notify` when the
-    // extension-framework lane defines the `ctx.ui` capability. The `LlamaView`
-    // (above) is already complete and testable against `LlamaUi`.
-    unimplemented!(
-        "showLlamaUi requires the ctx.ui.custom/notify mount seam (deferred to the \
-         extension-framework lane); LlamaView is fully implemented and testable"
-    )
+/// Ports pi's
+/// ```ts
+/// await ctx.ui.custom<void>((tui, theme, keybindings, done) => {
+///   const view = new LlamaView(tui, theme, keybindings);
+///   void run(view).then(() => done(), (error) => { ctx.ui.notify(error, "error"); done(); });
+///   return view;
+/// });
+/// ```
+/// onto the widened [`ExtensionContext::ui`] seam: the [`CustomFactory`] builds
+/// the [`LlamaView`] from the [`CustomHost`], registers the view's
+/// interior-mutable input closure (which also drives the pending Hugging Face
+/// search — pi's debounce timer — whose fetch is synchronous in the Rust client),
+/// and returns a [`CustomMount`] whose `run` future is `run(view)`. The host
+/// mounts the view as a focused overlay, drives `run` to completion, unmounts, and
+/// maps a `run` error to `notify(msg, Error)` + [`UiError::Failed`] (pi's error
+/// branch). With no interactive surface mounted the default no-op
+/// [`ExtensionUi`](crate::core::extensions::types::ExtensionUi) returns
+/// [`UiError::Unavailable`] (pi's `ctx.mode !== "tui"` guard, surfaced to the
+/// caller as an error).
+pub fn show_llama_ui<C, R, Fut>(ctx: &C, run: R) -> Result<(), UiError>
+where
+    C: ExtensionContext,
+    R: FnOnce(Rc<LlamaView>) -> Fut + 'static,
+    Fut: Future<Output = Result<(), String>> + 'static,
+{
+    let factory: CustomFactory = Box::new(move |host: &dyn CustomHost| {
+        let view = Rc::new(LlamaView::new(
+            host.theme().clone(),
+            host.keybindings().clone(),
+        ));
+        // pi mounts the view focused; the dialog widgets accept input only when
+        // focused (`Focusable.focused`).
+        view.set_focused(true);
+        // pi delivers keyboard input straight to the mounted component's
+        // `handleInput`. The Rust `component` is a shared `Rc<dyn Component>` used
+        // for rendering, so register the view's `&self` input closure here; it
+        // also drives the pending Hugging Face search (pi's `setTimeout(runSearch)`
+        // debounce body), whose fetch is synchronous in the Rust client.
+        let input_view = Rc::clone(&view);
+        host.set_input_handler(Rc::new(move |data: &str| {
+            input_view.handle_input(data);
+            drive_pending_search(&input_view);
+        }));
+        host.request_render();
+        let run_view = Rc::clone(&view);
+        CustomMount {
+            component: view as Rc<dyn Component>,
+            run: Box::pin(run(run_view)),
+        }
+    });
+    ctx.ui().custom(factory)
+}
+
+/// Drive the view's pending Hugging Face fetch to completion (pi's `runSearch`
+/// debounce body). [`LlamaView::run_pending_search`] is a no-op unless the last
+/// input scheduled a query; when it did, the underlying Hugging Face transport is
+/// synchronous, so the future resolves in a single manual poll. If it were to
+/// pend (an async transport), the scheduled query is retried on the next input.
+fn drive_pending_search(view: &Rc<LlamaView>) {
+    use std::task::{Context, Poll, Waker};
+    let mut fut = Box::pin(view.run_pending_search());
+    let waker = Waker::noop();
+    let mut cx = Context::from_waker(waker);
+    match fut.as_mut().poll(&mut cx) {
+        Poll::Ready(()) | Poll::Pending => {}
+    }
 }
 
 #[cfg(test)]

@@ -2,9 +2,12 @@
 //! module (`packages/coding-agent/src/extensions/llama`).
 
 pub mod client;
+pub mod command;
 pub mod huggingface;
 pub mod provider;
 pub mod ui;
+
+pub use command::{run_llama_command, NotifyFn};
 
 pub use client::{
     format_bytes, llama_inference_url, normalize_llama_server_url, parse_sse_frame,
