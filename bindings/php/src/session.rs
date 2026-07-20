@@ -43,9 +43,9 @@ use pidgin_core::ai::providers::faux::{
     faux_assistant_message, faux_text, FauxAssistantOptions, FauxProvider, FauxResponseStep,
     RegisterFauxProviderOptions,
 };
-use pidgin_core::ai::providers::registry::create_models;
+use pidgin_core::ai::providers::registry::{create_models, Models};
 use pidgin_core::ai::seams::{AbortSignal, Provider};
-use pidgin_core::ai::types::{ContentBlock, Context, Message, UserContent};
+use pidgin_core::ai::types::{ContentBlock, Context, Message, Model, UserContent};
 use pidgin_core::coding::modes::print::{
     builtin_models_registry, provider_stream, RegistryCompaction,
 };
@@ -214,22 +214,7 @@ fn build_faux_harness(
     // Compaction is not reached by a single completion turn, but the harness
     // requires the seam; an empty registry suffices for the faux path.
     let registry = Rc::new(create_models());
-    let harness = AgentHarness::new(AgentHarnessOptions {
-        env: Box::new(MemoryExecutionEnv::new(DEFAULT_CWD)),
-        session: AgentSession::new(Rc::new(InMemorySessionStorage::new())),
-        models: Box::new(RegistryCompaction::new(registry)),
-        stream,
-        tools: None,
-        resources: None,
-        system_prompt: system_prompt.map(SystemPromptSource::Static),
-        stream_options: None,
-        model,
-        thinking_level: None,
-        active_tool_names: None,
-        steering_mode: None,
-        follow_up_mode: None,
-    })
-    .map_err(|e| e.to_string())?;
+    let harness = build_harness(model, stream, registry, system_prompt)?;
 
     Ok((harness, faux))
 }
@@ -249,7 +234,19 @@ fn build_live_harness(
         .ok_or_else(|| format!("unknown model: {provider}/{model_id}"))?;
     let stream = provider_stream(registry.clone());
 
-    let harness = AgentHarness::new(AgentHarnessOptions {
+    build_harness(model, stream, registry, system_prompt)
+}
+
+/// Assemble a completion-only `AgentHarness`: the shared in-memory env, session
+/// storage, and compaction wiring, parameterized only by the resolved `model`,
+/// the provider `stream` seam, and the `registry` the compaction bridge wraps.
+fn build_harness(
+    model: Model,
+    stream: ProviderStream,
+    registry: Rc<Models>,
+    system_prompt: Option<String>,
+) -> Result<AgentHarness, String> {
+    AgentHarness::new(AgentHarnessOptions {
         env: Box::new(MemoryExecutionEnv::new(DEFAULT_CWD)),
         session: AgentSession::new(Rc::new(InMemorySessionStorage::new())),
         models: Box::new(RegistryCompaction::new(registry)),
@@ -264,9 +261,7 @@ fn build_live_harness(
         steering_mode: None,
         follow_up_mode: None,
     })
-    .map_err(|e| e.to_string())?;
-
-    Ok(harness)
+    .map_err(|e| e.to_string())
 }
 
 /// The deterministic faux reply, mirroring pi's interactive faux turn text.
