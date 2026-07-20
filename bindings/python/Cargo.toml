@@ -32,7 +32,6 @@ pidgin-agent = { path = "../../crates/pidgin-agent" }
 pidgin-ai = { path = "../../crates/pidgin-ai" }
 
 serde_json = "1"
-anyhow = "1"
 
 # Standalone workspace: this empty table makes cargo treat this crate as its own
 # workspace rather than attaching it to the workspace rooted at the repository

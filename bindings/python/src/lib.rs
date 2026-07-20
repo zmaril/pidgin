@@ -243,25 +243,21 @@ impl WorkerState {
         };
 
         // Forwarding sink: extract streamed text deltas from MessageUpdate events.
-        let on_delta = Arc::new(on_delta);
-        let sink: AgentEventSink = {
-            let on_delta = Arc::clone(&on_delta);
-            Arc::new(move |event: AgentEvent| {
-                if let AgentEvent::MessageUpdate {
-                    assistant_message_event,
-                    ..
-                } = event
+        let sink: AgentEventSink = Arc::new(move |event: AgentEvent| {
+            if let AgentEvent::MessageUpdate {
+                assistant_message_event,
+                ..
+            } = event
+            {
+                if let pidgin_ai::AssistantMessageEvent::TextDelta { delta, .. } =
+                    *assistant_message_event
                 {
-                    if let pidgin_ai::AssistantMessageEvent::TextDelta { delta, .. } =
-                        *assistant_message_event
-                    {
-                        if !delta.is_empty() {
-                            on_delta(delta);
-                        }
+                    if !delta.is_empty() {
+                        on_delta(delta);
                     }
                 }
-            })
-        };
+            }
+        });
 
         let new_messages = run_agent_loop(
             vec![user_message(text)],
