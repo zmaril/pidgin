@@ -28,11 +28,17 @@
 //! pi's `getProviderEnvValue(name, env)` scoped-override lookup.
 
 use std::collections::BTreeMap;
+use std::ops::ControlFlow;
 
 use serde_json::{json, Map, Value};
 
 use super::google_generative_ai::merge_headers;
-use super::google_shared::{parse_google_stream, GoogleModel, StreamOutcome};
+use super::google_shared::{parse_google_stream, GoogleModel, GoogleStreamDecoder, StreamOutcome};
+use crate::types::{AssistantMessage, AssistantMessageEvent};
+use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
+
+pub mod client;
+pub mod driver;
 
 /// The `google-vertex` API discriminant set on the output message.
 pub const API: &str = "google-vertex";
@@ -260,6 +266,81 @@ pub fn build_client_config(
 /// and final message for `model`.
 pub fn parse_stream(chunks: &[Value], model: &GoogleModel, now_ms: i64) -> StreamOutcome {
     parse_google_stream(chunks, model, API, now_ms)
+}
+
+/// The incremental Vertex SSE decoder: it frames a `?alt=sse`
+/// `streamGenerateContent` body one `data:` event at a time and runs the shared
+/// [`GoogleStreamDecoder`] over the parsed chunk.
+///
+/// Vertex uses the same `@google/genai` `GenerateContentResponse` type as the
+/// direct Gemini API and the SDK yields already-parsed chunk objects, so this
+/// decoder is byte-identical to the direct-Gemini
+/// [`GoogleGenerativeAiSseDecoder`](super::google_generative_ai::GoogleGenerativeAiSseDecoder)
+/// except for the `google-vertex` api discriminant threaded into the shared
+/// decoder core. Each frame's `data:` payload is one complete chunk JSON; a
+/// `[DONE]` sentinel, an empty payload, or an unparseable payload is skipped —
+/// matching the buffered framing so the two paths stay byte-identical.
+pub(crate) struct GoogleVertexSseDecoder {
+    inner: GoogleStreamDecoder,
+}
+
+impl GoogleVertexSseDecoder {
+    /// A fresh Vertex SSE decoder for `model`.
+    pub(crate) fn new(model: GoogleModel, now_ms: i64) -> Self {
+        Self {
+            inner: GoogleStreamDecoder::new(model, API, now_ms),
+        }
+    }
+}
+
+impl SseEventDecoder for GoogleVertexSseDecoder {
+    fn on_frame(
+        &mut self,
+        frame: &ServerSentEvent,
+        out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        let data = frame.data.trim();
+        // A stray `[DONE]` sentinel or an empty payload carries no chunk; the SDK
+        // never surfaces one, so skip it (mirrors the buffered `flush_chunk`).
+        if data.is_empty() || data == "[DONE]" {
+            return ControlFlow::Continue(());
+        }
+        // Inline the SDK's per-frame parse: each `data:` payload is one complete
+        // `GenerateContentResponse`. An unparseable payload is dropped (the
+        // buffered path drops it too), never a terminal error.
+        if let Ok(chunk) = serde_json::from_str::<Value>(data) {
+            self.inner.process_chunk(&chunk, out);
+        }
+        ControlFlow::Continue(())
+    }
+
+    fn finish(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        self.inner.finish(out)
+    }
+}
+
+/// Parse a Vertex `?alt=sse` `streamGenerateContent` `body` into the uniform
+/// event stream and final message for `model`.
+///
+/// This feeds the whole body through the shared
+/// [`SseFrameSplitter`](crate::utils::sse::SseFrameSplitter) and the SAME
+/// [`GoogleVertexSseDecoder`] the incremental driver uses, over a one-chunk
+/// iterator, so the buffered driver's events + terminal message are byte-identical
+/// to feeding the reader chunk-by-chunk.
+pub fn parse_sse_stream(body: &str, model: &GoogleModel, now_ms: i64) -> StreamOutcome {
+    let decoder = GoogleVertexSseDecoder::new(model.clone(), now_ms);
+    let mut reader = AssistantEventReader::new(
+        Box::new(std::iter::once(Ok(body.as_bytes().to_vec()))),
+        Box::new(decoder),
+    );
+    let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+    let message = match reader.result() {
+        Some(Ok(message)) | Some(Err(message)) => message.clone(),
+        // The reader always finalizes once drained (EOF is bounded), so a
+        // fully-collected reader has a terminal result.
+        None => unreachable!("AssistantEventReader finalizes before iteration ends"),
+    };
+    StreamOutcome { events, message }
 }
 
 /// napi boundary entry point: decode the Vertex stream chunks given the model

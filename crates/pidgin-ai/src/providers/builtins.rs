@@ -38,6 +38,7 @@ use crate::providers::bedrock_backend::{BedrockBackend, BEDROCK_CONVERSE_STREAM_
 use crate::providers::google_generative_ai_backend::{
     GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API,
 };
+use crate::providers::google_vertex_backend::{GoogleVertexBackend, GOOGLE_VERTEX_API};
 use crate::providers::mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
 use crate::providers::openai_completions_backend::{
     OpenAICompletionsBackend, OPENAI_COMPLETIONS_API,
@@ -246,7 +247,7 @@ pub fn provider_from_catalog(id: &str) -> RegistryProvider {
 /// no change to [`provider_from_catalog_with_transport`] or the assembly in
 /// [`api_routing_for`]. Registered today: `anthropic-messages`,
 /// `openai-completions`, `google-generative-ai`, `mistral`, `openai-responses`,
-/// and `azure-openai-responses`.
+/// `azure-openai-responses`, and `google-vertex`.
 fn backend_for_api(
     api: &str,
     transport: &Arc<dyn HttpTransport>,
@@ -281,9 +282,12 @@ fn backend_for_api(
             transport.clone(),
             clock.clone(),
         ))),
-        // Follow-up (port): register the remaining ported dialects
-        // (google_vertex) here as their transport-aware `Provider`
-        // adapters land.
+        GOOGLE_VERTEX_API => Some(Arc::new(GoogleVertexBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ))),
+        // Follow-up (port): register the remaining ported dialects here as
+        // their transport-aware `Provider` adapters land.
         _ => None,
     }
 }
