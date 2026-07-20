@@ -22,6 +22,7 @@
 
 use serde_json::{json, Map, Value};
 
+use crate::api::openai_prompt_cache::clamp_openai_prompt_cache_key;
 use crate::api::openai_responses::OpenAIResponsesModel;
 use crate::api::openai_responses_shared::{convert_responses_messages, convert_responses_tools};
 use crate::types::{Context, ModelThinkingLevel};
@@ -40,8 +41,6 @@ pub const DEFAULT_AZURE_API_VERSION: &str = "v1";
 /// OpenAI Responses rejects `max_output_tokens` below 16.
 const OPENAI_RESPONSES_MIN_OUTPUT_TOKENS: u64 = 16;
 
-const OPENAI_PROMPT_CACHE_KEY_MAX_LENGTH: usize = 64;
-
 /// Azure-specific request options. As with the OpenAI module, this is the subset
 /// read at this boundary; env fallbacks are resolved by the caller.
 #[derive(Debug, Clone, Default)]
@@ -57,19 +56,6 @@ pub struct AzureOpenAIResponsesOptions {
     pub azure_deployment_name: Option<String>,
     /// Explicit `AZURE_OPENAI_DEPLOYMENT_NAME_MAP` contents (`modelId=deployment,...`).
     pub deployment_name_map: Option<String>,
-}
-
-fn clamp_openai_prompt_cache_key(key: Option<&str>) -> Option<String> {
-    let key = key?;
-    if key.chars().count() <= OPENAI_PROMPT_CACHE_KEY_MAX_LENGTH {
-        Some(key.to_string())
-    } else {
-        Some(
-            key.chars()
-                .take(OPENAI_PROMPT_CACHE_KEY_MAX_LENGTH)
-                .collect(),
-        )
-    }
 }
 
 /// Parse the `AZURE_OPENAI_DEPLOYMENT_NAME_MAP` string (`modelId=deployment,...`)

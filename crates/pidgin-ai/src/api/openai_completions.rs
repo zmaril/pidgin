@@ -33,6 +33,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 
+use crate::api::openai_prompt_cache::clamp_openai_prompt_cache_key;
 use crate::cost::calculate_cost_with;
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, CacheControlFormat, CacheRetention,
@@ -42,10 +43,6 @@ use crate::types::{
     VercelGatewayRouting,
 };
 use crate::utils::json_parse::{parse_json_with_repair, parse_streaming_json};
-
-/// OpenAI's documented 64-character cap on `prompt_cache_key`
-/// (`openai-prompt-cache.ts`).
-const OPENAI_PROMPT_CACHE_KEY_MAX_LENGTH: usize = 64;
 
 /// The minimum slice of a pi `Model<"openai-completions">` this driver needs.
 ///
@@ -1086,19 +1083,6 @@ pub fn convert_tools(tools: &[Value], compat: &ResolvedCompat) -> Vec<Value> {
 // ---------------------------------------------------------------------------
 // buildParams (`openai-completions.ts:575-731`)
 // ---------------------------------------------------------------------------
-
-/// Clamp a `prompt_cache_key` to OpenAI's 64-character limit (by Unicode scalar).
-fn clamp_openai_prompt_cache_key(key: Option<&str>) -> Option<String> {
-    let key = key?;
-    if key.chars().count() <= OPENAI_PROMPT_CACHE_KEY_MAX_LENGTH {
-        return Some(key.to_string());
-    }
-    Some(
-        key.chars()
-            .take(OPENAI_PROMPT_CACHE_KEY_MAX_LENGTH)
-            .collect(),
-    )
-}
 
 /// The Anthropic-style cache-control marker to stamp on the request, if any.
 fn get_compat_cache_control(

@@ -15,6 +15,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 
+use crate::api::openai_prompt_cache::clamp_openai_prompt_cache_key;
 use crate::api::openai_responses_shared::{
     convert_responses_messages, convert_responses_tools, process_responses_stream,
     ResponsesStreamOptions, StreamOutcome,
@@ -31,8 +32,6 @@ pub const OPENAI_TOOL_CALL_PROVIDERS: [&str; 3] = ["openai", "openai-codex", "op
 /// OpenAI Responses rejects `max_output_tokens` below 16
 /// (`openai-responses.ts:30`).
 const OPENAI_RESPONSES_MIN_OUTPUT_TOKENS: u64 = 16;
-
-const OPENAI_PROMPT_CACHE_KEY_MAX_LENGTH: usize = 64;
 
 /// The minimum slice of a pi `Model` this driver needs for request shaping and
 /// stream processing: identity + api/provider (for cross-model detection and
@@ -139,22 +138,6 @@ fn get_prompt_cache_retention(
         Some("24h")
     } else {
         None
-    }
-}
-
-/// Clamp a prompt cache key to OpenAI's 64-character limit (pi's
-/// `clampOpenAIPromptCacheKey`). Counts by Unicode scalar, like pi's
-/// `Array.from(key)`.
-pub fn clamp_openai_prompt_cache_key(key: Option<&str>) -> Option<String> {
-    let key = key?;
-    if key.chars().count() <= OPENAI_PROMPT_CACHE_KEY_MAX_LENGTH {
-        Some(key.to_string())
-    } else {
-        Some(
-            key.chars()
-                .take(OPENAI_PROMPT_CACHE_KEY_MAX_LENGTH)
-                .collect(),
-        )
     }
 }
 
