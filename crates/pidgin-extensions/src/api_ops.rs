@@ -469,6 +469,19 @@ globalThis.__pidgin.makeContext = (data) => {
     setThinkingLevel: noop,
     abort: noop,
     compact: async () => {},
+    // Interactive UI surface (pi's ExtensionUIContext). A faithful no-op subset:
+    // enough shape that a handler touching `ctx.ui` (e.g. pirate's
+    // `ctx.ui.notify(...)`) does not throw. `notify` is SYNC/returns void per pi;
+    // there is no host UI sink wired yet, so it silently drops the notification.
+    // Real TUI/CLI routing is a follow-up (see ext-ctx-ui-surface-slice).
+    ui: {
+      notify: (_message, _type) => {},
+      custom: async () => undefined,
+      select: async () => undefined,
+      confirm: async () => false,
+      input: async () => undefined,
+      setStatus: () => {},
+    },
   };
 };
 
@@ -521,6 +534,11 @@ globalThis.__pidgin.invokeStored = async (kind, name, argsJson) => {
   if (!Array.isArray(args)) { args = [args]; }
   const fail = (message) =>
     JSON.stringify({ ok: false, result: null, error: message });
+  // The stored path has no ctx_json threaded from Rust (queries.rs invokes with
+  // an args array only), so build a ctx from defaults. It shares the one
+  // makeContext builder with the hook path, so its `ui.notify` (+ no-op ui
+  // subset) exists and a handler calling `ctx.ui.notify(...)` no longer throws.
+  const ctx = globalThis.__pidgin.makeContext();
   try {
     let result;
     switch (kind) {
@@ -529,7 +547,11 @@ globalThis.__pidgin.invokeStored = async (kind, name, argsJson) => {
         if (!tool || typeof tool.execute !== "function") {
           return fail(`no registered tool '${name}' with an execute closure`);
         }
-        result = await tool.execute(...args);
+        // pi's execute is (toolCallId, params, signal, onUpdate, ctx). The stored
+        // args are [id, params]; pad signal/onUpdate so ctx lands in position 5
+        // without shifting params (existing tools read params as arg 2 and ignore
+        // the rest, so the padding is harmless).
+        result = await tool.execute(args[0], args[1], undefined, undefined, ctx);
         break;
       }
       case "command": {
@@ -537,7 +559,9 @@ globalThis.__pidgin.invokeStored = async (kind, name, argsJson) => {
         if (!cmd || typeof cmd.handler !== "function") {
           return fail(`no registered command '${name}' with a handler closure`);
         }
-        result = await cmd.handler(...args);
+        // pi's command handler is (args, ctx). Stored args is a single-element
+        // [argString], so `...args, ctx` lands ctx in position 2.
+        result = await cmd.handler(...args, ctx);
         break;
       }
       case "providerGetApiKey": {
