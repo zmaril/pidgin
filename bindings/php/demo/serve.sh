@@ -2,16 +2,24 @@
 # serve.sh — launch the pidgin PHP chat demo on the PHP built-in server with the
 # pidgin-php extension loaded.
 #
-# Resolves the built .so (prefers target/release, else target/debug, both under
-# bindings/php), then runs `php -d extension=<so> -S 127.0.0.1:8080 -t demo/`.
+# Resolves the built cdylib — .so on Linux, .dylib on macOS — preferring
+# target/release, else target/debug, both under bindings/php, then runs
+# `php -d extension=<so> -S 127.0.0.1:8080 -t demo/`.
 # No php.ini edit required. Mode (FAUX/LIVE) follows ANTHROPIC_API_KEY.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # bindings/php/demo
 php_dir="$(cd "$here/.." && pwd)"                        # bindings/php
 
-release_so="$php_dir/target/release/libpidgin_php.so"
-debug_so="$php_dir/target/debug/libpidgin_php.so"
+# cargo names the cdylib libpidgin_php.so on Linux and libpidgin_php.dylib on
+# macOS. dlopen does not care about the suffix, so accept either.
+case "$(uname -s)" in
+    Darwin) libext="dylib" ;;
+    *)      libext="so" ;;
+esac
+
+release_so="$php_dir/target/release/libpidgin_php.$libext"
+debug_so="$php_dir/target/debug/libpidgin_php.$libext"
 
 if [[ -f "$release_so" ]]; then
     so="$release_so"

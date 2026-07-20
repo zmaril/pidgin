@@ -76,11 +76,16 @@ The extension exposes (documented here for the Python-binding team):
 - `Pidgin::version(): string` — the pidgin engine version, read through the
   `pidgin-core` façade.
 - `class Pidgin\Session` with:
-  - `__construct(?string $model = null, ?string $provider = null, ?string $systemPrompt = null, ?bool $faux = null)`
-    — arguments are **positional** (ext-php-rs 0.13.1 does not support named-arg
-    skipping of the `Option` params). The 4th arg `$faux = true` forces the
-    offline canned provider (no API key required); `false` (or a real key) uses
-    the live path.
+  - `__construct(?string $model = null, ?string $provider = null, ?string $system_prompt = null, ?bool $faux = null)`
+    — the third parameter is `$system_prompt` (snake_case, matching the Python
+    binding's `system_prompt`), not `$systemPrompt`. Arguments are
+    **positional**: ext-php-rs 0.13.1 marks the `Option` params optional but
+    does not expose their defaults to reflection, so *skipping* a middle
+    parameter with named args fails with `ArgumentCountError: Argument #3
+    ($system_prompt) must be passed explicitly, because the default value is not
+    known`. Omitting trailing arguments is fine, and `new Session()` works. The
+    4th arg `$faux = true` forces the offline canned provider (no API key
+    required); `false` (or a real key) uses the live path.
   - `->send(string $message): string` — blocking; returns the assistant's full
     reply text. Multi-turn context is retained across `send()` calls on the same
     `Session` object.
