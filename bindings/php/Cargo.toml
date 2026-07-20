@@ -22,6 +22,14 @@ anyhow = "1"
 # The shared streaming contract (Poll/PollStream) the generated binding imports.
 # Pinned to the merged fluessig#58 (PHP-header fix) on `main`. See regen.sh / README.md.
 fluessig-runtime = { git = "https://github.com/zmaril/fluessig", rev = "fb70926e037bed3a374445f8f19b62868cd66ba3" }
+# Used by the hand-authored `Pidgin\Session` surface to extract assistant text
+# from the harness's `serde_json::Value` turn result.
+serde_json = "1"
+
+[features]
+# Opt into live HTTP (real Anthropic turns) through the façade. NOT default: the
+# faux build stays reqwest-free.
+native-http = ["pidgin-core/native-http"]
 
 # Standalone workspace: this empty table makes cargo treat this crate as its own
 # workspace rather than attaching it to the workspace rooted at the repository
