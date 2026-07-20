@@ -1,0 +1,98 @@
+[
+	{
+		"kind": "keyHint",
+		"binding": "tui.select.confirm",
+		"description": "load/unload/download",
+		"expected": "\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m load/unload/download\u001b[39m"
+	},
+	{
+		"kind": "keyHint",
+		"binding": "tui.select.confirm",
+		"description": "select",
+		"expected": "\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m"
+	},
+	{
+		"kind": "keyHint",
+		"binding": "tui.select.cancel",
+		"description": "close",
+		"expected": "\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m close\u001b[39m"
+	},
+	{
+		"kind": "keyHint",
+		"binding": "tui.select.cancel",
+		"description": "cancel",
+		"expected": "\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m cancel\u001b[39m"
+	},
+	{
+		"kind": "keyHint",
+		"binding": "tui.select.cancel",
+		"description": "back",
+		"expected": "\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m"
+	},
+	{
+		"kind": "keyHint",
+		"binding": "tui.select.cancel",
+		"description": "stop",
+		"expected": "\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m"
+	},
+	{
+		"kind": "keyText",
+		"binding": "tui.select.confirm",
+		"description": "",
+		"expected": "enter"
+	},
+	{
+		"kind": "keyText",
+		"binding": "tui.select.cancel",
+		"description": "",
+		"expected": "escape/ctrl+c"
+	},
+	{
+		"kind": "keyText",
+		"binding": "tui.select.up",
+		"description": "",
+		"expected": "up"
+	},
+	{
+		"kind": "keyText",
+		"binding": "tui.select.down",
+		"description": "",
+		"expected": "down"
+	},
+	{
+		"kind": "rawKeyHint",
+		"key": "ctrl+c",
+		"description": "copy",
+		"expected": "\u001b[38;5;241mctrl+c\u001b[39m\u001b[38;5;244m copy\u001b[39m"
+	},
+	{
+		"kind": "rawKeyHint",
+		"key": "enter",
+		"description": "submit",
+		"expected": "\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m submit\u001b[39m"
+	},
+	{
+		"kind": "rawKeyHint",
+		"key": "escape",
+		"description": "back",
+		"expected": "\u001b[38;5;241mescape\u001b[39m\u001b[38;5;244m back\u001b[39m"
+	},
+	{
+		"kind": "formatKeyText",
+		"key": "ctrl+c",
+		"description": "",
+		"expected": "ctrl+c"
+	},
+	{
+		"kind": "formatKeyText",
+		"key": "enter/escape",
+		"description": "",
+		"expected": "enter/escape"
+	},
+	{
+		"kind": "formatKeyText",
+		"key": "escape",
+		"description": "",
+		"expected": "escape"
+	}
+]
