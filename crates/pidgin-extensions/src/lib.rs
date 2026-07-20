@@ -1,4 +1,6 @@
-//! The pidgin JavaScript extension plane.
+//! The pidgin extension planes: an embedded JavaScript engine (`deno`) and an
+//! embedded Python engine (`python`), sharing one engine-neutral registration
+//! core.
 //!
 //! pidgin runs pi's `(pi) => {}` TypeScript extensions on an embedded
 //! `deno_core` `JsRuntime`. A `JsRuntime` owns a V8 isolate and an event loop;
@@ -57,17 +59,46 @@
 //! `#[cfg(feature = "deno")]`; the default build is an empty, V8-free crate that
 //! compiles everywhere. Build the real runtime with `--features deno` (CI does
 //! this in a dedicated job where the blob download succeeds).
+//!
+//! # The `python` feature gate (the offline sibling engine)
+//!
+//! The non-default **`python`** feature compiles a second engine — a PyO3-backed
+//! host that loads pi-style extensions authored in Python (`def extension(pi):
+//! pi.register_command / register_tool / pi.on(...)`) and produces the SAME host
+//! records as the deno engine. Unlike V8, libpython is present in every sandbox,
+//! so `python` BUILDS and TESTS in-session (PyO3's `auto-initialize` embeds
+//! CPython). Both engines share the engine-neutral registration core: the
+//! [`Inventory`] plain-data records and the [`host`](crate::host) lowering onto
+//! pidgin-coding's `Registry` are gated `any(deno, python)`, so one
+//! Inventory→Registry path serves both. Only the V8/deno-specific modules
+//! (`runtime`/`JsPlaneHandle`, `api_ops`/`BOOTSTRAP_JS`, the transpiling
+//! `loader`, the async-dispatch `runner`, `oauth_login_impl`) stay deno-only.
 
+// ---------------------------------------------------------------------------
+// Engine-neutral registration core (shared by `deno` and `python`)
+// ---------------------------------------------------------------------------
+// `Inventory` is plain data and `host::lower_inventory` lowers it onto the core
+// `Registry`; neither touches V8 or libpython, so both engines reuse them.
+#[cfg(any(feature = "deno", feature = "python"))]
+mod host;
+#[cfg(any(feature = "deno", feature = "python"))]
+mod inventory;
+
+#[cfg(any(feature = "deno", feature = "python"))]
+pub use inventory::{
+    CommandRecord, FlagRecord, HookRecord, Inventory, ProviderRecord, RendererRecord,
+    ShortcutRecord, ToolRecord,
+};
+
+// ---------------------------------------------------------------------------
+// V8 / deno-specific engine (the `deno` feature)
+// ---------------------------------------------------------------------------
 #[cfg(feature = "deno")]
 mod api_ops;
 #[cfg(feature = "deno")]
 mod context;
 #[cfg(feature = "deno")]
 mod dispatch;
-#[cfg(feature = "deno")]
-mod host;
-#[cfg(feature = "deno")]
-mod inventory;
 #[cfg(feature = "deno")]
 mod loader;
 #[cfg(feature = "deno")]
@@ -86,11 +117,6 @@ pub use context::MinimalExtensionContext;
 #[cfg(feature = "deno")]
 pub use dispatch::{HookInvocation, StoredInvocation};
 #[cfg(feature = "deno")]
-pub use inventory::{
-    CommandRecord, FlagRecord, HookRecord, Inventory, ProviderRecord, RendererRecord,
-    ShortcutRecord, ToolRecord,
-};
-#[cfg(feature = "deno")]
 pub use oauth_login_impl::DenoExtensionOAuthLogin;
 #[cfg(feature = "deno")]
 pub use resource_loader_impl::{RealExtensionLoader, RealExtensionRuntime};
@@ -100,3 +126,15 @@ pub use runner::{ContextConfig, ExtensionRunner, LoadedExtension};
 pub use runner_impl::{create_deno_extension_runner, hook_event_from_str, DenoExtensionRunner};
 #[cfg(feature = "deno")]
 pub use runtime::{JsPlaneHandle, SourceLanguage};
+
+// ---------------------------------------------------------------------------
+// PyO3 / Python-specific engine (the `python` feature)
+// ---------------------------------------------------------------------------
+#[cfg(feature = "python")]
+mod python;
+
+#[cfg(feature = "python")]
+pub use python::{
+    create_python_extension_runner, LoadedPyExtension, PythonExtensionLoader,
+    PythonExtensionRunner, PythonExtensionRuntime,
+};

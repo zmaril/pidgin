@@ -41,3 +41,24 @@ jobs:
       # deno-gated tests (which really load an extension on the V8 plane) run.
       - run: cargo build -p pidgin-cli --features deno
       - run: cargo test -p pidgin-cli --features deno
+
+  python:
+    name: python engine (PyO3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      # PyO3's `auto-initialize` EMBEDS CPython: it links libpython and inits the
+      # interpreter on first `Python::with_gil`. Unlike V8 there is no blob to
+      # download — the runner's system libpython is enough — so, unlike the deno
+      # job, this engine builds and tests offline in every sandbox too.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: cargo build -p pidgin-extensions --features python
+      - run: cargo clippy -p pidgin-extensions --features python --all-targets -- -D warnings
+      - run: cargo test -p pidgin-extensions --features python

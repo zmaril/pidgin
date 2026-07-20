@@ -26,6 +26,23 @@ deno = [
     "dep:pidgin-agent",
     "dep:pidgin-ai",
 ]
+# The PyO3-backed Python extension engine — the offline sibling of the `deno`
+# engine. Unlike V8, libpython is present in every sandbox, so this feature
+# BUILDS and TESTS in-session (CI exercises it too). It EMBEDS CPython via PyO3's
+# `auto-initialize` (links libpython, inits the interpreter on first
+# `Python::with_gil`); it deliberately does NOT use `extension-module`/`abi3`
+# (those suppress libpython linking, which an embedder needs). Mirrors the
+# non-V8 deps of the `deno` list so both engines share the engine-neutral
+# Inventory -> Registry core; `default` stays empty.
+python = [
+    "dep:pyo3",
+    "dep:pidgin-coding",
+    "dep:pidgin-agent",
+    "dep:pidgin-ai",
+    "dep:serde",
+    "dep:serde_json",
+    "dep:anyhow",
+]
 
 [dependencies]
 anyhow = { workspace = true, optional = true }
@@ -35,6 +52,13 @@ deno_core = { version = "=0.408.0", optional = true }
 # TypeScript -> JavaScript transpile (type-stripping), mirroring what jiti does
 # at runtime for pi's `.ts` extensions. Same exact pin as the spike.
 deno_ast = { version = "=0.53.3", features = ["transpiling"], optional = true }
+# The PyO3-backed Python extension engine (`python` feature). `auto-initialize`
+# EMBEDS CPython: it links libpython and initializes the interpreter on the first
+# `Python::with_gil`. Optional + gated behind `python` so the default build never
+# links libpython. NOT `extension-module`/`abi3` — those are for the separate
+# `bindings/python` cdylib and suppress libpython linking an embedder requires;
+# they never build together (different crates), so there is no conflict.
+pyo3 = { version = "0.23", features = ["auto-initialize"], optional = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 tokio = { version = "1", optional = true, features = [
