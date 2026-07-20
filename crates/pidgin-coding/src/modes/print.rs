@@ -11,14 +11,17 @@
 //!
 //! [`run_print_mode`] drives an already-assembled [`AgentHarness`]. Calling
 //! [`AgentHarness::prompt`] is **the provider/model completion call**: it runs
-//! the agent turn, which routes through the harness's
+//! the full agent loop (executing any `tool_use` and feeding the `tool_result`
+//! back for another turn), which routes through the harness's
 //! [`ProviderStream`](pidgin_agent::harness::options::ProviderStream) seam to a
-//! [`Provider`](pidgin_ai::seams::Provider). [`provider_stream`] builds that
-//! seam so a registered faux provider (pi's `registerFauxProvider`, the
-//! provider the conformance suite drives) completes **offline**, while a real
-//! builtin model — which has no native HTTP transport in this workspace — falls
-//! through to the builtin registry and surfaces a provider-unavailable error
-//! faithfully (a terminal `error` assistant message).
+//! [`Provider`](pidgin_ai::seams::Provider). [`build_harness`] attaches the
+//! default coding tool set and system prompt, so the model receives real tools
+//! rather than hallucinating them. [`provider_stream`] builds the provider seam
+//! so a registered faux provider (pi's `registerFauxProvider`, the provider the
+//! conformance suite drives) completes **offline**, while a real builtin model —
+//! which has no native HTTP transport in this workspace — falls through to the
+//! builtin registry and surfaces a provider-unavailable error faithfully (a
+//! terminal `error` assistant message).
 //!
 //! # Deviations from pi
 //!
@@ -42,12 +45,19 @@ use serde_json::Value;
 
 use pidgin_agent::harness::agent_harness::{AgentHarness, AgentHarnessEvent};
 use pidgin_agent::harness::env::MemoryExecutionEnv;
-use pidgin_agent::harness::options::{AgentHarnessError, AgentHarnessOptions, ProviderStream};
+use pidgin_agent::harness::options::{
+    AgentHarnessError, AgentHarnessOptions, ProviderStream, SystemPromptSource,
+};
 use pidgin_agent::harness::session::{InMemorySessionStorage, Session};
+use pidgin_agent::types::AgentTool;
 use pidgin_agent::{CompletionOptions, Models as CompactionModels};
 use pidgin_ai::providers::registry::{create_models, Models as AiModels, MutableModels};
 use pidgin_ai::seams::AbortSignal;
 use pidgin_ai::types::{AssistantMessage, Context, Model};
+
+use crate::core::system_prompt::{build_system_prompt, BuildSystemPromptOptions};
+use crate::core::tools::index::{create_coding_tool_definitions, ToolsOptions};
+use crate::core::tools::tool_definition_wrapper::wrap_tool_definition;
 
 /// Output mode for print mode. Mirrors pi's `PrintModeOptions.mode`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -261,31 +271,86 @@ impl CompactionModels for RegistryCompaction {
     }
 }
 
+/// Assemble the default coding tool set, the active-tool-name list, and the
+/// coding system prompt that print mode attaches to its harness.
+///
+/// This mirrors pi's default coding-agent runtime, which print mode shares with
+/// interactive mode: `runPrintMode` (`modes/print-mode.ts`) drives the same
+/// `AgentSession` that `createAgentSession` (`core/sdk.ts`) builds, and that
+/// session's `defaultActiveToolNames` is `["read", "bash", "edit", "write"]`
+/// (`core/sdk.ts`) — the [`create_coding_tool_definitions`] grouping (pi's
+/// `createCodingToolDefinitions`). The per-tool prompt snippets and guidelines
+/// are gathered from the active tool definitions exactly as pi's
+/// `AgentSession._rebuildSystemPrompt` (`core/agent-session.ts`) does, then fed
+/// to [`build_system_prompt`]. The simplified offline print harness loads no
+/// resource loader, so skills, project-context files, and custom/append prompts
+/// are absent — faithful to what this harness can supply.
+fn coding_harness_setup(cwd: &str) -> (Vec<AgentTool>, Vec<String>, String) {
+    // pi's default active tool set: read, bash, edit, write.
+    let definitions = create_coding_tool_definitions(cwd, ToolsOptions::default());
+
+    // Gather active names, prompt snippets, and guidelines from the active
+    // definitions (pi's `_rebuildSystemPrompt` loop).
+    let mut active_tool_names = Vec::with_capacity(definitions.len());
+    let mut tool_snippets: Vec<(String, String)> = Vec::new();
+    let mut prompt_guidelines: Vec<String> = Vec::new();
+    for definition in &definitions {
+        active_tool_names.push(definition.name.clone());
+        if let Some(snippet) = &definition.prompt_snippet {
+            tool_snippets.push((definition.name.clone(), snippet.clone()));
+        }
+        if let Some(guidelines) = &definition.prompt_guidelines {
+            prompt_guidelines.extend(guidelines.iter().cloned());
+        }
+    }
+
+    let system_prompt = build_system_prompt(&BuildSystemPromptOptions {
+        cwd: cwd.to_string(),
+        selected_tools: Some(active_tool_names.clone()),
+        tool_snippets,
+        prompt_guidelines,
+        ..Default::default()
+    });
+
+    let tools = definitions
+        .into_iter()
+        .map(|definition| wrap_tool_definition(definition, None))
+        .collect();
+
+    (tools, active_tool_names, system_prompt)
+}
+
 /// Assemble the agent-session harness that print mode drives. `model` is the
 /// resolved model; `cwd` is the execution environment root; `registry` is the
 /// builtin `Models` collection wired into the compaction and provider seams.
 ///
-/// The harness carries the conversation in an in-memory session and the
-/// `Provider` seam ([`provider_stream`]); tools, resources, and a system prompt
-/// are not attached (a single-shot completion reaches the provider before any
-/// tool use).
+/// The harness carries the conversation in an in-memory session, the `Provider`
+/// seam ([`provider_stream`]), and the default coding tool set plus its system
+/// prompt ([`coding_harness_setup`]). Attaching the tools is what makes the
+/// outgoing request carry a `tools` array: an empty active-tool list leaves
+/// `Context.tools = Some([])`, which `build_params` omits, so the model would
+/// hallucinate tool calls instead of emitting real ones. `runPrintMode` drives
+/// [`AgentHarness::prompt`], which runs the full agent loop — it executes any
+/// `tool_use` and feeds the `tool_result` back for another turn — so print mode
+/// iterates on tool calls exactly as pi's shared `AgentSession` does.
 pub fn build_harness(
     model: Model,
     cwd: &str,
     registry: Rc<AiModels>,
 ) -> Result<AgentHarness, AgentHarnessError> {
+    let (tools, active_tool_names, system_prompt) = coding_harness_setup(cwd);
     AgentHarness::new(AgentHarnessOptions {
         env: Box::new(MemoryExecutionEnv::new(cwd)),
         session: Session::new(Rc::new(InMemorySessionStorage::new())),
         models: Box::new(RegistryCompaction::new(registry.clone())),
         stream: provider_stream(registry),
-        tools: None,
+        tools: Some(tools),
         resources: None,
-        system_prompt: None,
+        system_prompt: Some(SystemPromptSource::Static(system_prompt)),
         stream_options: None,
         model,
         thinking_level: None,
-        active_tool_names: None,
+        active_tool_names: Some(active_tool_names),
         steering_mode: None,
         follow_up_mode: None,
     })
