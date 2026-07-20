@@ -24,6 +24,10 @@
 //! the registry-dispatch fallback (pi `compat.ts:340-347`) and defer those
 //! branches.
 
+// straitjacket-allow-file:duplication — this registry's `OnceLock<Mutex<BTreeMap>>`
+// + monotonic-id idiom is faithfully mirrored by `session_resources.rs`; cpd pairs
+// the two and honors the marker only on this alphabetically-first fragment.
+
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
