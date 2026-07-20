@@ -12,18 +12,30 @@
 //! shell is not ported here (it lives in `definitions.rs`).
 //!
 //! The TUI render hooks ([`edit_render_call`]/[`edit_render_result`]) are ported
-//! here as **stateless** functions: pi's renderers thread a mutable
-//! `EditCallRenderComponent` (async file-read preview, `previewPending`,
-//! `settledError`) through `context.state`/`context.lastComponent`. That state
-//! is intentionally omitted (see [`ToolRenderContext`]), so the call render is
-//! the pending header (no async diff preview) and the result render shows the
-//! result's own `details.diff`.
+//! here as **stateless** functions that reproduce pi's *stateful* byte output.
+//! pi threads a mutable `EditCallRenderComponent` (async file-read preview,
+//! `previewPending`, `settledError`) through `context.state`/`context.lastComponent`:
+//! on settle its `ToolExecution.updateDisplay` calls `renderResult`, which folds
+//! the result diff *into* the recolored call box and returns an empty result
+//! slot — so the settled-success frame is a SINGLE recolored `Box` (header +
+//! spacer + diff). The async streaming preview is intentionally omitted (see
+//! [`ToolRenderContext`], no renderer state), so:
+//!
+//! - [`edit_render_call`] renders the header alone, its background keyed off the
+//!   context flags (pi's `getEditHeaderBg` reduced form: pending → `toolPendingBg`,
+//!   settled-error → `toolErrorBg`, settled-success → `toolSuccessBg`). The TUI
+//!   self-render shell only renders the call component while pending.
+//! - [`edit_render_result`] rebuilds pi's settled-success single `Box` purely
+//!   from `{context.args, result.details.diff, is_error, theme, cwd}`: the
+//!   recolored box holds the `format_edit_call` header, a spacer, and the
+//!   `render_diff` panel. This closes the previously-documented result-slot
+//!   deviation. (Settled-error's speculative-preview decoration is deferred; the
+//!   error frame still takes this arm but is not yet pi-exact.)
 
 use serde_json::{Map, Value};
 
 use pidgin_agent::types::AgentToolResult;
-use pidgin_ai::ContentBlock;
-use pidgin_tui::renderer::{Component, Container};
+use pidgin_tui::renderer::Component;
 use pidgin_tui::widgets::box_widget::BoxWidget;
 use pidgin_tui::widgets::text::BgFn;
 use pidgin_tui::{Spacer, Text};
@@ -214,17 +226,34 @@ fn format_edit_call(args: &Value, theme: &Theme, cwd: &str) -> String {
     )
 }
 
+/// The header background color key for the edit box, mirroring pi's
+/// `getEditHeaderBg` reduced to the stateless flags: pending (`is_partial`) →
+/// `toolPendingBg`; settled with error → `toolErrorBg`; settled success →
+/// `toolSuccessBg`.
+fn edit_header_bg(is_partial: bool, is_error: bool) -> &'static str {
+    if is_partial {
+        "toolPendingBg"
+    } else if is_error {
+        "toolErrorBg"
+    } else {
+        "toolSuccessBg"
+    }
+}
+
 /// Custom rendering for the edit tool call (pi's `renderCall`, `edit.ts:363`).
 ///
 /// Stateless port: pi computes an async diff preview into a stateful call
-/// component; without that state this renders only the pending header
-/// (`toolPendingBg`), which is the synchronous portion of pi's output.
+/// component; without that state this renders only the header, its background
+/// keyed off the context flags (pi's `getEditHeaderBg` reduced form). In the TUI
+/// self-render shell the call component is only rendered while pending, so this
+/// is normally the `toolPendingBg` header.
 pub fn edit_render_call(
     args: &Value,
     theme: &Theme,
     context: &ToolRenderContext,
 ) -> Box<dyn Component> {
-    let mut boxed = BoxWidget::new(1, 1, Some(bg_fn(theme, "toolPendingBg")));
+    let bg = edit_header_bg(context.is_partial, context.is_error);
+    let mut boxed = BoxWidget::new(1, 1, Some(bg_fn(theme, bg)));
     boxed.add_child(Box::new(Text::new(
         &format_edit_call(args, theme, context.cwd),
         0,
@@ -234,59 +263,52 @@ pub fn edit_render_call(
     Box::new(boxed)
 }
 
-/// The displayable text of a tool result's text blocks, joined by newlines
-/// (pi's `result.content.filter(text).map(c.text || "").join("\n")`).
-fn result_text(result: &AgentToolResult) -> String {
+/// The result diff string, from `result.details.diff` (pi's
+/// `result.details?.diff`); empty when absent.
+fn result_diff(result: &AgentToolResult) -> &str {
     result
-        .content
-        .iter()
-        .filter_map(|c| match c {
-            ContentBlock::Text { text, .. } => Some(text.as_str()),
-            _ => None,
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-/// Format the edit result body (pi's `formatEditResult`), stateless: the call
-/// component's async preview is unavailable, so `preview` is treated as absent.
-/// Returns `None` when there is nothing to render (pi's `undefined`).
-fn format_edit_result(result: &AgentToolResult, theme: &Theme, is_error: bool) -> Option<String> {
-    if is_error {
-        let error_text = result_text(result);
-        if error_text.is_empty() {
-            return None;
-        }
-        return Some(fg(theme, "error", &error_text));
-    }
-
-    let result_diff = result.details.get("diff").and_then(Value::as_str);
-    match result_diff {
-        Some(diff) if !diff.is_empty() => Some(render_diff(diff, theme)),
-        _ => None,
-    }
+        .details
+        .get("diff")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
 }
 
 /// Custom rendering for the edit tool result (pi's `renderResult`,
 /// `edit.ts:377`).
 ///
-/// Stateless port: pi also reconciles the call component's preview/error state
-/// as a side effect; that state is omitted here, leaving the returned
-/// container — a spacer plus the formatted body (diff panel or error text), or
-/// empty when there is nothing to show.
+/// pi's `renderResult` folds the settled diff *into* the recolored call box via
+/// renderer state and returns an empty result slot, so the visible settled frame
+/// is a SINGLE recolored `Box`. This stateless port reconstructs that box
+/// directly from `{context.args, result.details.diff, is_error, theme, cwd}`:
+/// the box (success/error bg, keyed by `is_error`) holds the `format_edit_call`
+/// header, a spacer, and the `render_diff` panel — byte-equivalent to pi's
+/// settled-success single `Box`. The TUI self-render shell renders this result
+/// component (and not the call component) once a result exists.
+///
+/// (Settled-error takes this arm too; its speculative-preview decoration is a
+/// deferred follow-up and not yet pi-exact.)
 pub fn edit_render_result(
     result: &AgentToolResult,
     _options: &ToolRenderResultOptions,
     theme: &Theme,
     context: &ToolRenderContext,
 ) -> Box<dyn Component> {
-    let mut component = Container::new();
-    let Some(output) = format_edit_result(result, theme, context.is_error) else {
-        return Box::new(component);
-    };
-    component.add_child(Box::new(Spacer::new(1)));
-    component.add_child(Box::new(Text::new(&output, 1, 0, None)));
-    Box::new(component)
+    let bg = edit_header_bg(false, context.is_error);
+    let mut boxed = BoxWidget::new(1, 1, Some(bg_fn(theme, bg)));
+    boxed.add_child(Box::new(Text::new(
+        &format_edit_call(context.args, theme, context.cwd),
+        0,
+        0,
+        None,
+    )));
+    boxed.add_child(Box::new(Spacer::new(1)));
+    boxed.add_child(Box::new(Text::new(
+        &render_diff(result_diff(result), theme),
+        0,
+        0,
+        None,
+    )));
+    Box::new(boxed)
 }
 
 #[cfg(test)]
@@ -480,6 +502,7 @@ mod tests {
 mod render_tests {
     use super::*;
     use crate::modes::interactive::theme::{create_theme, parse_theme_json, ColorMode};
+    use pidgin_ai::ContentBlock;
     use serde_json::json;
     use std::path::PathBuf;
 
@@ -526,7 +549,9 @@ mod render_tests {
     fn render_call_pending_header_byte_exact() {
         let theme = dark_theme();
         let args = sample_args();
-        let call = edit_render_call(&args, &theme, &ctx(&args, false));
+        let mut pending = ctx(&args, false);
+        pending.is_partial = true;
+        let call = edit_render_call(&args, &theme, &pending);
 
         assert_eq!(
             call.render(40),
@@ -546,9 +571,8 @@ mod render_tests {
         );
     }
 
-    #[test]
-    fn render_result_diff_panel_byte_exact() {
-        let theme = dark_theme();
+    /// Render the sample edit result box at `width`, keyed by `is_error`.
+    fn render_sample_result_box(theme: &Theme, is_error: bool, width: usize) -> Vec<String> {
         let args = sample_args();
         let opts = ToolRenderResultOptions {
             expanded: false,
@@ -558,60 +582,77 @@ mod render_tests {
             "Successfully replaced 1 block(s) in src/main.rs.",
             json!({ "diff": " 1 unchanged\n-2 old line\n+2 new line" }),
         );
-        let comp = edit_render_result(&result, &opts, &theme, &ctx(&args, false));
+        edit_render_result(&result, &opts, theme, &ctx(&args, is_error)).render(width)
+    }
 
+    #[test]
+    fn render_result_settled_success_single_box_byte_exact() {
+        let theme = dark_theme();
+
+        // A SINGLE recolored box (toolSuccessBg = 48;5;22) holding the recolored
+        // header, a spacer row, then the diff panel — pi's settled-success frame.
         assert_eq!(
-            comp.render(40),
+            render_sample_result_box(&theme, false, 40),
             vec![
-                "".to_string(),
-                " \u{1b}[38;5;244m 1 unchanged\u{1b}[39m                           ".to_string(),
-                " \u{1b}[38;5;167m-2 old line\u{1b}[39m                            ".to_string(),
-                " \u{1b}[38;5;143m+2 new line\u{1b}[39m                            ".to_string(),
+                "\u{1b}[48;5;22m                                        \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m \u{1b}[38;5;188m\u{1b}[1medit\u{1b}[22m\u{1b}[39m \u{1b}[38;5;109msrc/main.rs\u{1b}[39m                       \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m                                        \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m \u{1b}[38;5;244m 1 unchanged\u{1b}[39m                           \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m \u{1b}[38;5;167m-2 old line\u{1b}[39m                            \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m \u{1b}[38;5;143m+2 new line\u{1b}[39m                            \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m                                        \u{1b}[49m".to_string(),
             ]
         );
         assert_eq!(
-            comp.render(80),
+            render_sample_result_box(&theme, false, 80),
             vec![
-                "".to_string(),
-                " \u{1b}[38;5;244m 1 unchanged\u{1b}[39m                                                                   ".to_string(),
-                " \u{1b}[38;5;167m-2 old line\u{1b}[39m                                                                    ".to_string(),
-                " \u{1b}[38;5;143m+2 new line\u{1b}[39m                                                                    ".to_string(),
+                "\u{1b}[48;5;22m                                                                                \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m \u{1b}[38;5;188m\u{1b}[1medit\u{1b}[22m\u{1b}[39m \u{1b}[38;5;109msrc/main.rs\u{1b}[39m                                                               \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m                                                                                \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m \u{1b}[38;5;244m 1 unchanged\u{1b}[39m                                                                   \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m \u{1b}[38;5;167m-2 old line\u{1b}[39m                                                                    \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m \u{1b}[38;5;143m+2 new line\u{1b}[39m                                                                    \u{1b}[49m".to_string(),
+                "\u{1b}[48;5;22m                                                                                \u{1b}[49m".to_string(),
             ]
         );
     }
 
     #[test]
-    fn render_result_error_text_byte_exact() {
+    fn render_result_error_arm_recolors_box_error_bg() {
+        // Settled-error takes the same box arm (deferred: not yet pi-exact), but
+        // the box background must key to toolErrorBg (48;5;52) via `is_error`.
         let theme = dark_theme();
-        let args = sample_args();
-        let opts = ToolRenderResultOptions {
-            expanded: false,
-            is_partial: false,
-        };
-        let err = text_result("Could not edit file: x.", json!({}));
-        let comp = edit_render_result(&err, &opts, &theme, &ctx(&args, true));
-
-        assert_eq!(
-            comp.render(80),
-            vec![
-                "".to_string(),
-                " \u{1b}[38;5;167mCould not edit file: x.\u{1b}[39m                                                        ".to_string(),
-            ]
+        let lines = render_sample_result_box(&theme, true, 40);
+        assert!(
+            lines.iter().all(|l| l.starts_with("\u{1b}[48;5;52m")),
+            "every box row must carry toolErrorBg; got: {lines:?}"
         );
     }
 
     #[test]
-    fn render_result_no_diff_no_error_is_empty() {
+    fn render_call_header_bg_keys_on_context_flags() {
+        // pi's getEditHeaderBg reduced form: pending → toolPendingBg (48;5;17);
+        // settled-success → toolSuccessBg (48;5;22); settled-error →
+        // toolErrorBg (48;5;52).
         let theme = dark_theme();
         let args = sample_args();
-        let opts = ToolRenderResultOptions {
-            expanded: false,
-            is_partial: false,
-        };
-        // Success with no `details.diff` → nothing to render (empty container).
-        let result = text_result("done", Value::Null);
-        let comp = edit_render_result(&result, &opts, &theme, &ctx(&args, false));
-        assert!(comp.render(80).is_empty());
+
+        let mut pending = ctx(&args, false);
+        pending.is_partial = true;
+        let header = edit_render_call(&args, &theme, &pending).render(40);
+        assert!(
+            header[0].starts_with("\u{1b}[48;5;17m"),
+            "pending: {header:?}"
+        );
+
+        let success = edit_render_call(&args, &theme, &ctx(&args, false)).render(40);
+        assert!(
+            success[0].starts_with("\u{1b}[48;5;22m"),
+            "success: {success:?}"
+        );
+
+        let error = edit_render_call(&args, &theme, &ctx(&args, true)).render(40);
+        assert!(error[0].starts_with("\u{1b}[48;5;52m"), "error: {error:?}");
     }
 
     #[test]

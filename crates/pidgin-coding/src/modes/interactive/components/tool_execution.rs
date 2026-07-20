@@ -384,14 +384,26 @@ fn resolve_render_result(
 impl Component for ToolExecution {
     fn render(&self, width: usize) -> Vec<String> {
         if self.has_definition && self.render_shell == RenderShell::SelfRender {
-            // Self-render shell: a plain Container (no background) of the call +
-            // result components; render prepends a single blank line.
+            // Self-render shell: pi's `updateDisplay` always composes call +
+            // result into the container. A tool whose OWN `render_result`
+            // self-composes the settled frame (edit: its stateless full-box
+            // `edit_render_result` folds header+diff into one recolored box,
+            // reproducing pi's stateful call-box fold) emits that whole frame from
+            // the result slot, so on settle we render ONLY the result component —
+            // rendering the bare call header too would duplicate it. Tools with no
+            // custom result renderer keep pi's fallback composition (call + result
+            // fallbacks). While pending (no result) we render the call component.
             let mut content_lines: Vec<String> = Vec::new();
-            content_lines.extend(self.call_component().render(width));
-            if let Some(result) = &self.result {
-                if let Some(rc) = self.result_component(result) {
-                    content_lines.extend(rc.render(width));
+            match &self.result {
+                Some(result) => {
+                    if self.render_result.is_none() {
+                        content_lines.extend(self.call_component().render(width));
+                    }
+                    if let Some(rc) = self.result_component(result) {
+                        content_lines.extend(rc.render(width));
+                    }
                 }
+                None => content_lines.extend(self.call_component().render(width)),
             }
             if content_lines.is_empty() {
                 return Vec::new();
