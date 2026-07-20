@@ -10,13 +10,20 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$here"
 
+# cargo names the cdylib libpidgin_php.so on Linux and libpidgin_php.dylib on
+# macOS. dlopen does not care about the suffix, so accept either.
+case "$(uname -s)" in
+    Darwin) libext="dylib" ;;
+    *)      libext="so" ;;
+esac
+
 profile="${1:-debug}"
 if [[ "$profile" == "release" ]]; then
     cargo build --release
-    so="$here/target/release/libpidgin_php.so"
+    so="$here/target/release/libpidgin_php.$libext"
 else
     cargo build
-    so="$here/target/debug/libpidgin_php.so"
+    so="$here/target/debug/libpidgin_php.$libext"
 fi
 
 if [[ ! -f "$so" ]]; then

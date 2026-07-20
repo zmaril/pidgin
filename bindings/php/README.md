@@ -14,6 +14,18 @@ a PHP call reaches through the `pidgin-core` façade and back. PHP goes first
 because it is the weirdest host (synchronous, request-scoped, thread-bound); if
 the façade survives PHP, easier hosts follow.
 
+## Running pi from PHP: `Pidgin\Session` and the web demo
+
+Beyond the `Pidgin::version()` scaffold, the extension now exposes
+`class Pidgin\Session` — a real agent turn from PHP. Construct a session and call
+`->send($message)` (or `->sendStream($message)`) to run a turn through the
+pidgin engine and get the assistant reply back, offline (faux) with no API key or
+live against Anthropic with `ANTHROPIC_API_KEY` set. A plain-PHP chat webpage
+that demonstrates this end to end lives in [`demo/`](demo/) — run
+`./demo/serve.sh` and open http://127.0.0.1:8080. See
+[`demo/README.md`](demo/README.md) for the full `Pidgin\Session` API surface,
+build steps, and faux vs. live details.
+
 ## What it exposes
 
 - `class Pidgin` with a static method `Pidgin::version(): string`.
@@ -89,6 +101,39 @@ sudo apt-get update && sudo apt-get install -y \
 `php-dev` provides `php-config` and the headers under `/usr/include/php/<api>/`.
 `libclang-dev` / `clang` are required because ext-php-rs runs `bindgen` over
 `main/php.h`.
+
+## Prerequisites (macOS)
+
+CI builds and tests on Linux only; macOS works but needs four things set
+explicitly.
+
+```bash
+brew install php@8.4          # NOT plain `brew install php` — see below
+export PATH="/opt/homebrew/opt/php@8.4/bin:$PATH"
+export PHP_CONFIG=/opt/homebrew/opt/php@8.4/bin/php-config
+export LIBCLANG_PATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib
+export RUSTFLAGS="-C link-arg=-Wl,-undefined,dynamic_lookup"
+./test.sh
+```
+
+- **PHP 8.4, not 8.5.** ext-php-rs 0.13.1 accepts PHP API versions 20200930
+  through 20240924. `brew install php` currently gives 8.5 (API 20250925) and
+  the build stops with `The current version of PHP is not supported`.
+- **`LIBCLANG_PATH` must point at Xcode's libclang.** bindgen otherwise picks up
+  an x86_64 libclang under `/usr/local/lib` (wrong architecture on Apple
+  silicon), or a version that cannot parse Xcode's `arm_neon.h` and emits
+  thousands of `invalid conversion between vector type` errors.
+- **`-undefined dynamic_lookup` is required.** PHP extensions resolve PHP's own
+  symbols at load time from the hosting binary; without the flag the link fails
+  with `symbol(s) not found for architecture arm64`.
+- **The artifact is `libpidgin_php.dylib`,** not `.so`. `test.sh` and
+  `demo/serve.sh` pick the right suffix per platform; if you load the extension
+  by hand, use the `.dylib` path.
+
+If a global git `insteadOf` rewrites `https://github.com/` to SSH, cargo may
+fail to fetch the `fluessig` git dependency with
+`no authentication methods succeeded`. Build with
+`CARGO_NET_GIT_FETCH_WITH_CLI=true` to fetch over the git CLI instead.
 
 ## Build and test
 

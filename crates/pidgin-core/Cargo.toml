@@ -11,3 +11,10 @@ anyhow = { workspace = true }
 pidgin-ai = { path = "../pidgin-ai" }
 pidgin-agent = { path = "../pidgin-agent" }
 pidgin-coding = { path = "../pidgin-coding" }
+
+[features]
+# Additive façade passthrough so a binding can opt into live HTTP through
+# pidgin-core. Off by default: the default build stays reqwest-free.
+# pidgin-coding already forwards `native-http` to pidgin-ai; both are listed for
+# clarity (both expose the feature).
+native-http = ["pidgin-coding/native-http", "pidgin-ai/native-http"]
