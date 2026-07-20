@@ -66,6 +66,7 @@ use crate::utils::sanitize_unicode::sanitize_surrogates;
 
 pub mod driver;
 pub(crate) mod eventstream;
+pub(crate) mod sigv4;
 mod stream;
 mod transform_messages;
 pub use eventstream::{decode_event_stream, EventStreamError};

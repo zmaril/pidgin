@@ -16,7 +16,7 @@
 //! `ConverseStream`, the auth headers it derives from the client config, and the
 //! `vnd.amazon.eventstream` binary decode of the response.
 //!
-//! # What this port owns (BEARER-TOKEN path only)
+//! # What this port owns (bearer-token AND SigV4 auth paths)
 //!
 //! - **Request URL.** `POST {endpoint}/model/{modelId}/converse-stream` (AWS
 //!   Bedrock Runtime `ConverseStream` REST contract). `endpoint` is the resolved
@@ -25,30 +25,34 @@
 //!   SDK-standard `https://bedrock-runtime.{region}.amazonaws.com`. `modelId` is
 //!   percent-encoded exactly as the SDK's `extendedEncodeURIComponent` (the
 //!   unreserved set `A-Za-z0-9-_.~`).
-//! - **Bearer auth.** pi's Bedrock API-key bypass: `config.token = { token }` +
+//! - **Bearer auth (precedence: wins when a token resolves).** pi's Bedrock
+//!   API-key bypass: `config.token = { token }` +
 //!   `config.authSchemePreference = ["httpBearerAuth"]`
 //!   (`bedrock-converse-stream.ts:210-213`) is put on the wire by the SDK's
 //!   `httpBearerAuth` scheme as `Authorization: Bearer <token>`. The token is
 //!   resolved by [`build_client_config`](super::build_client_config) from
 //!   `options.bearerToken || options.apiKey || AWS_BEARER_TOKEN_BEDROCK`.
+//! - **SigV4 auth (non-bearer path).** When no bearer token resolves but AWS
+//!   credentials do, the SDK SigV4-signs the request. This port reproduces that
+//!   without the SDK via [`super::sigv4`]: it signs the exact `POST` body +
+//!   headers actually sent (service `bedrock`, region from the resolved config),
+//!   writing `x-amz-date` / `x-amz-content-sha256` / `host` /
+//!   `x-amz-security-token` (session token only) / `authorization`. The
+//!   `AWS_BEDROCK_SKIP_AUTH` proxy path (dummy credentials, no token) flows
+//!   through the same SigV4 path, matching pi.
 //! - **Request body.** [`build_command_input`](super::build_command_input)
-//!   serialized as JSON (`content-type: application/json`).
+//!   serialized as JSON (`content-type: application/json`). On the SigV4 path
+//!   the signature covers these exact body bytes and headers.
 //! - **Response decode.** The binary body is decoded by
 //!   [`decode_event_stream`](super::decode_event_stream) into the `Value` items
 //!   [`parse_converse_stream`](super::parse_converse_stream) accumulates.
 //!
-//! # Buffered + bearer only; SigV4 and true-incremental are follow-ups
+//! # Buffered port; true-incremental streaming is a follow-up
 //!
 //! Like the sibling ports, this is the buffered analogue of pi's async
 //! `stream()`: it drives the request, collects the whole response body, and
 //! produces the entire event sequence eagerly.
 //!
-//! - Follow-up (SigV4): the non-bearer AWS-credentials path (SigV4 request
-//!   signing over resolved access-key/secret/session credentials + region, and
-//!   the `AWS_BEDROCK_SKIP_AUTH` proxy path) is not implemented. When no bearer
-//!   token resolves, the driver returns a clean pre-start "not configured" error
-//!   rather than attempting to sign — it never panics and never sends an
-//!   unsigned request.
 //! - Follow-up (incremental): true token-by-token streaming would feed the
 //!   [`send_streaming`](crate::seams::http::HttpTransport::send_streaming) byte
 //!   chunks into the eventstream decoder incrementally (per frame) instead of
@@ -67,7 +71,7 @@ use crate::utils::provider_env::ProviderEnv;
 
 use super::{
     apply_custom_headers, build_client_config, build_command_input, custom_headers_record,
-    decode_event_stream, parse_converse_stream, BedrockModel, BedrockOptions,
+    decode_event_stream, parse_converse_stream, sigv4, BedrockModel, BedrockOptions,
 };
 
 /// Upper bound on the error-body text folded into a non-2xx error message,
@@ -103,32 +107,59 @@ fn encode_model_id(model_id: &str) -> String {
     out
 }
 
-/// The resolved endpoint + bearer token the request needs, extracted from the
-/// ported [`build_client_config`](super::build_client_config) output.
-struct ResolvedClient {
-    endpoint: String,
-    bearer_token: String,
+/// The auth scheme resolved for the request. Bearer wins if a token resolved
+/// (pi precedence); otherwise SigV4 over the resolved AWS credentials + region.
+enum ResolvedAuth {
+    Bearer(String),
+    SigV4 {
+        credentials: sigv4::AwsCredentials,
+        region: String,
+    },
 }
 
-/// Resolve the request endpoint and bearer token from the client config, or an
-/// error explaining why the bearer path is not available (no token resolved, or
-/// no endpoint/region to target). SigV4 credentials are intentionally not a
-/// fallback here (documented follow-up).
+/// The resolved endpoint + auth the request needs, extracted from the ported
+/// [`build_client_config`](super::build_client_config) output.
+struct ResolvedClient {
+    endpoint: String,
+    auth: ResolvedAuth,
+}
+
+/// Resolve the request endpoint + auth scheme from the client config, or an
+/// error explaining why neither path is available.
+///
+/// Precedence matches pi (`bedrock-converse-stream.ts`): a resolved bearer token
+/// wins; otherwise the SDK SigV4-signs with resolved AWS credentials. When
+/// neither a token nor credentials resolve, a clean pre-start error is returned
+/// rather than sending an unsigned request.
 fn resolve_client(config: &Value) -> Result<ResolvedClient, String> {
-    // pi sets `config.token = { token }` only on the bearer path; its absence
-    // means SigV4 credentials or skip-auth, neither of which this port drives.
+    // pi sets `config.token = { token }` only on the bearer path; when present
+    // it wins over any resolved credentials.
     let bearer_token = config
         .get("token")
         .and_then(|token| token.get("token"))
         .and_then(Value::as_str)
         .filter(|token| !token.is_empty());
-    let Some(bearer_token) = bearer_token else {
-        return Err(
-            "Amazon Bedrock is not configured for the bearer-token path: no bearer token \
-             resolved (set options.apiKey / options.bearerToken / AWS_BEARER_TOKEN_BEDROCK). \
-             SigV4 credential signing is a follow-up and is not attempted."
-                .to_string(),
-        );
+
+    let auth = if let Some(bearer_token) = bearer_token {
+        ResolvedAuth::Bearer(bearer_token.to_string())
+    } else if let Some(credentials) = extract_credentials(config) {
+        // pi sets `config.credentials` from the AWS_ACCESS_KEY_ID /
+        // AWS_SECRET_ACCESS_KEY (+ optional AWS_SESSION_TOKEN) env subset, or the
+        // dummy skip-auth credentials; either way the SDK SigV4-signs. The region
+        // is resolved by `build_client_config` (ARN > option > env > default).
+        let Some(region) = config.get("region").and_then(Value::as_str) else {
+            return Err(
+                "Amazon Bedrock SigV4 signing could not resolve a region (set options.region / \
+                 AWS_REGION / AWS_DEFAULT_REGION, or use a standard regional endpoint)."
+                    .to_string(),
+            );
+        };
+        ResolvedAuth::SigV4 {
+            credentials,
+            region: region.to_string(),
+        }
+    } else {
+        return Err(no_credentials_error());
     };
 
     // The SDK targets `config.endpoint` when pinned, else derives the standard
@@ -145,38 +176,106 @@ fn resolve_client(config: &Value) -> Result<ResolvedClient, String> {
         );
     };
 
-    Ok(ResolvedClient {
-        endpoint,
-        bearer_token: bearer_token.to_string(),
+    Ok(ResolvedClient { endpoint, auth })
+}
+
+/// Extract SigV4 credentials from the resolved client config's `credentials`
+/// object (the env subset `build_client_config` resolves, or the skip-auth dummy
+/// credentials). Returns `None` when no credentials object resolved.
+fn extract_credentials(config: &Value) -> Option<sigv4::AwsCredentials> {
+    let credentials = config.get("credentials")?;
+    let access_key_id = credentials
+        .get("accessKeyId")
+        .and_then(Value::as_str)?
+        .to_string();
+    let secret_access_key = credentials
+        .get("secretAccessKey")
+        .and_then(Value::as_str)?
+        .to_string();
+    let session_token = credentials
+        .get("sessionToken")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    Some(sigv4::AwsCredentials {
+        access_key_id,
+        secret_access_key,
+        session_token,
     })
 }
 
-/// Assemble the [`HttpRequest`] for the streaming `ConverseStream` call: the
-/// bearer `Authorization` header, `content-type: application/json`, and any
-/// caller headers (`apply_custom_headers` skips the reserved `authorization` /
-/// `host` / `x-amz-*` keys), plus the serialized command-input body.
+/// The pre-start error returned when no Bedrock auth resolves. Enumerates the
+/// AWS credential-resolution steps the SDK supports that this port does NOT
+/// implement, so the failure is faithful rather than silently narrow.
+//
+// Follow-up (#282): the implemented credential subset is the bearer token
+// (AWS_BEARER_TOKEN_BEDROCK) and the static env credentials
+// (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN). The following
+// AWS default-credential-chain steps the SDK also supports are DEFERRED and not
+// yet resolved here: shared config/credentials profiles (`~/.aws/credentials`,
+// AWS_PROFILE), SSO / IAM Identity Center, web-identity / AssumeRoleWithWebIdentity
+// (AWS_WEB_IDENTITY_TOKEN_FILE), ECS/EKS container credentials
+// (AWS_CONTAINER_CREDENTIALS_RELATIVE_URI / _FULL_URI), and EC2 instance metadata
+// (IMDS). Add these to the resolution chain in a follow-up.
+fn no_credentials_error() -> String {
+    "Amazon Bedrock has no usable credentials: no bearer token (options.apiKey / \
+     options.bearerToken / AWS_BEARER_TOKEN_BEDROCK) and no static AWS credentials \
+     (AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY [+ AWS_SESSION_TOKEN]) resolved. Profiles, SSO, \
+     web-identity, ECS/EKS container credentials, and EC2 instance metadata (IMDS) are not yet \
+     supported (follow-up)."
+        .to_string()
+}
+
+/// Assemble the [`HttpRequest`] for the streaming `ConverseStream` call:
+/// `content-type: application/json`, any caller headers (`apply_custom_headers`
+/// skips the reserved `authorization` / `host` / `x-amz-*` keys), the serialized
+/// command-input body, and the auth headers for the resolved scheme.
+///
+/// Bearer sets `Authorization: Bearer <token>`. SigV4 signs the exact body bytes
+/// and headers (caller headers are applied BEFORE signing, matching pi's Smithy
+/// `build`-step middleware, so the signature covers them). `timestamp` is pi's
+/// `Date.now()`, formatted as the SigV4 `x-amz-date`.
 fn assemble_request(
     model: &BedrockModel,
     resolved: &ResolvedClient,
     options: &BedrockOptions,
     body: String,
-) -> HttpRequest {
+    timestamp: i64,
+) -> Result<HttpRequest, String> {
+    let url = request_url(&resolved.endpoint, &model.id);
     let mut headers: BTreeMap<String, String> = BTreeMap::new();
     headers.insert("content-type".to_string(), "application/json".to_string());
-    headers.insert(
-        "authorization".to_string(),
-        format!("Bearer {}", resolved.bearer_token),
-    );
     if let Some(custom) = custom_headers_record(options) {
         apply_custom_headers(&mut headers, &custom);
     }
 
-    HttpRequest {
+    match &resolved.auth {
+        ResolvedAuth::Bearer(token) => {
+            headers.insert("authorization".to_string(), format!("Bearer {token}"));
+        }
+        ResolvedAuth::SigV4 {
+            credentials,
+            region,
+        } => {
+            let amz_date = sigv4::amz_date_from_epoch_ms(timestamp);
+            sigv4::sign_request(
+                "POST",
+                &url,
+                &mut headers,
+                body.as_bytes(),
+                credentials,
+                region,
+                sigv4::BEDROCK_SERVICE,
+                &amz_date,
+            )?;
+        }
+    }
+
+    Ok(HttpRequest {
         method: "POST".to_string(),
-        url: request_url(&resolved.endpoint, &model.id),
+        url,
         headers,
         body: Some(body),
-    }
+    })
 }
 
 /// Serialize the command input; only defined for a `serde_json::Value` so a
@@ -281,7 +380,16 @@ pub fn stream<T: HttpTransport + ?Sized>(
     };
 
     let command_input = build_command_input(model, context, options, process_env);
-    let request = assemble_request(model, &resolved, options, serialize_body(&command_input));
+    let request = match assemble_request(
+        model,
+        &resolved,
+        options,
+        serialize_body(&command_input),
+        timestamp,
+    ) {
+        Ok(request) => request,
+        Err(message) => return error_result(model, timestamp, message),
+    };
 
     // Drive the request over the RAW-BYTES streaming path and buffer the whole
     // body. A binary eventstream body cannot survive the String `send()`/`.text()`
@@ -507,7 +615,9 @@ mod tests {
     }
 
     #[test]
-    fn missing_bearer_token_is_a_clean_error_without_request() {
+    fn no_credentials_is_a_clean_error_without_request() {
+        // Neither a bearer token nor AWS credentials resolve: a clean pre-start
+        // error that enumerates the deferred resolution steps, and no request.
         let transport = ScriptedBytesTransport::new();
         let result = stream(
             &transport,
@@ -519,14 +629,111 @@ mod tests {
         );
 
         assert_eq!(result.message.stop_reason, StopReason::Error);
-        assert!(result
-            .message
-            .error_message
-            .as_deref()
-            .unwrap()
-            .contains("not configured for the bearer-token path"));
+        let message = result.message.error_message.as_deref().unwrap();
+        assert!(message.contains("no usable credentials"));
+        assert!(message.contains("IMDS"));
         assert_eq!(result.events.len(), 1);
         assert!(transport.requests().is_empty());
+    }
+
+    /// Scoped provider-env carrying static AWS credentials (the SigV4 path).
+    fn sigv4_env(with_session: bool) -> ProviderEnv {
+        let mut env = ProviderEnv::new();
+        env.insert("AWS_ACCESS_KEY_ID".to_string(), "AKIDEXAMPLE".to_string());
+        env.insert(
+            "AWS_SECRET_ACCESS_KEY".to_string(),
+            "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY".to_string(),
+        );
+        if with_session {
+            env.insert("AWS_SESSION_TOKEN".to_string(), "SESSIONTOKEN".to_string());
+        }
+        env
+    }
+
+    #[test]
+    fn sigv4_path_signs_the_request_when_no_bearer_token() {
+        // No bearer token, but static AWS creds in the scoped env: the request is
+        // SigV4-signed over the exact body + headers, and the decoded turn still
+        // matches the eventstream response.
+        let transport = scripted_bytes(hello_eventstream());
+        let options = BedrockOptions {
+            env: Some(sigv4_env(true)),
+            ..BedrockOptions::default()
+        };
+        let result = stream(
+            &transport,
+            &model("https://bedrock-runtime.us-east-1.amazonaws.com"),
+            &user_context(),
+            &options,
+            &ProviderEnv::new(),
+            1_440_938_160_000,
+        );
+
+        assert_eq!(result.message.stop_reason, StopReason::Stop);
+
+        let requests = transport.requests();
+        assert_eq!(requests.len(), 1);
+        let headers = &requests[0].headers;
+        // No bearer Authorization; a SigV4 one instead, over the signed header set.
+        let auth = headers.get("authorization").expect("authorization present");
+        assert!(auth.starts_with(
+            "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20150830/us-east-1/bedrock/aws4_request"
+        ));
+        assert!(auth.contains(
+            "SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date;x-amz-security-token"
+        ));
+        // The SigV4 headers are on the wire and the content hash covers the body.
+        assert_eq!(
+            headers.get("x-amz-date").map(String::as_str),
+            Some("20150830T123600Z")
+        );
+        assert_eq!(
+            headers.get("x-amz-security-token").map(String::as_str),
+            Some("SESSIONTOKEN")
+        );
+        let body = requests[0].body.as_deref().unwrap();
+        let expected_hash = {
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            hasher.update(body.as_bytes());
+            hasher
+                .finalize()
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect::<String>()
+        };
+        assert_eq!(
+            headers.get("x-amz-content-sha256").map(String::as_str),
+            Some(expected_hash.as_str())
+        );
+    }
+
+    #[test]
+    fn bearer_token_wins_over_aws_credentials() {
+        // Both a bearer token and AWS creds resolve: bearer wins (pi precedence),
+        // so the request carries a Bearer Authorization and no SigV4 headers.
+        let transport = scripted_bytes(hello_eventstream());
+        let options = BedrockOptions {
+            api_key: Some("bedrock-bearer-token".to_string()),
+            env: Some(sigv4_env(true)),
+            ..BedrockOptions::default()
+        };
+        stream(
+            &transport,
+            &model("https://bedrock-runtime.us-east-1.amazonaws.com"),
+            &user_context(),
+            &options,
+            &ProviderEnv::new(),
+            0,
+        );
+
+        let requests = transport.requests();
+        assert_eq!(
+            requests[0].headers.get("authorization").map(String::as_str),
+            Some("Bearer bedrock-bearer-token")
+        );
+        assert!(!requests[0].headers.contains_key("x-amz-date"));
+        assert!(!requests[0].headers.contains_key("x-amz-content-sha256"));
     }
 
     #[test]
