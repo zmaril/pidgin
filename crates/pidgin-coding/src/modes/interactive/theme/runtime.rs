@@ -311,29 +311,29 @@ impl Theme {
 
     /// Emit `text` bold. Mirrors pi's `chalk.bold` (SGR 1 / reset 22).
     pub fn bold(&self, text: &str) -> String {
-        format!("\x1b[1m{text}\x1b[22m")
+        chalk_style("\x1b[1m", "\x1b[22m", text)
     }
 
     /// Emit `text` italic. Mirrors pi's `chalk.italic` (SGR 3 / reset 23).
     pub fn italic(&self, text: &str) -> String {
-        format!("\x1b[3m{text}\x1b[23m")
+        chalk_style("\x1b[3m", "\x1b[23m", text)
     }
 
     /// Emit `text` underlined. Mirrors pi's `chalk.underline` (SGR 4 / reset 24).
     pub fn underline(&self, text: &str) -> String {
-        format!("\x1b[4m{text}\x1b[24m")
+        chalk_style("\x1b[4m", "\x1b[24m", text)
     }
 
     /// Emit `text` with foreground/background inverted. Mirrors pi's
     /// `chalk.inverse` (SGR 7 / reset 27).
     pub fn inverse(&self, text: &str) -> String {
-        format!("\x1b[7m{text}\x1b[27m")
+        chalk_style("\x1b[7m", "\x1b[27m", text)
     }
 
     /// Emit `text` struck through. Mirrors pi's `chalk.strikethrough`
     /// (SGR 9 / reset 29).
     pub fn strikethrough(&self, text: &str) -> String {
-        format!("\x1b[9m{text}\x1b[29m")
+        chalk_style("\x1b[9m", "\x1b[29m", text)
     }
 
     /// The pre-baked foreground ANSI escape for `color`. Mirrors pi's `getFgAnsi`.
@@ -382,6 +382,52 @@ impl Theme {
     pub fn get_bash_mode_border_color(&self, text: &str) -> Result<String, ThemeError> {
         self.fg("bashMode", text)
     }
+}
+
+/// Wrap `text` in a chalk SGR style, replicating chalk's per-newline
+/// re-encasing byte-for-byte (chalk 5.6.2, `applyStyle` +
+/// `stringEncaseCRLFWithFirstIndex`).
+///
+/// chalk closes the style before every newline and reopens it after, so a
+/// styled run never bleeds across lines. Given `open`/`close` SGR codes it
+/// produces `open + text` with each internal newline replaced by
+/// `close + <newline> + open`, then a trailing `close`. A `\r\n` is kept
+/// intact (the `close` lands before the `\r`, the `open` after the `\n`).
+/// Single-line input reduces to `open + text + close`; empty input yields an
+/// empty string, matching chalk's early return for a falsy argument.
+fn chalk_style(open: &str, close: &str, text: &str) -> String {
+    // chalk's applyStyle returns '' for an empty (falsy) string, emitting no codes.
+    if text.is_empty() {
+        return String::new();
+    }
+    // No newline: chalk skips the CRLF encase entirely -> openAll + string + closeAll.
+    let Some(first) = text.find('\n') else {
+        return format!("{open}{text}{close}");
+    };
+
+    // Port of chalk's stringEncaseCRLFWithFirstIndex, wrapped in openAll/closeAll.
+    let bytes = text.as_bytes();
+    let mut out = String::with_capacity(text.len() + (open.len() + close.len()) * 2);
+    out.push_str(open);
+    let mut end_index = 0usize;
+    let mut index = first;
+    loop {
+        // A `\n` preceded by `\r` keeps the CR on the closing side of the split.
+        let got_cr = index > 0 && bytes[index - 1] == b'\r';
+        let slice_end = if got_cr { index - 1 } else { index };
+        out.push_str(&text[end_index..slice_end]);
+        out.push_str(close);
+        out.push_str(if got_cr { "\r\n" } else { "\n" });
+        out.push_str(open);
+        end_index = index + 1;
+        match text[end_index..].find('\n') {
+            Some(rel) => index = end_index + rel,
+            None => break,
+        }
+    }
+    out.push_str(&text[end_index..]);
+    out.push_str(close);
+    out
 }
 
 /// Build a runtime [`Theme`] from parsed theme JSON. Resolves every color through
@@ -570,6 +616,108 @@ mod tests {
         // fg wraps with a 39m foreground reset.
         let wrapped = theme.fg("accent", "hi").expect("fg accent");
         assert!(wrapped.ends_with("hi\x1b[39m"), "got {wrapped:?}");
+    }
+
+    /// Byte-exact parity with pi's real chalk 5.6.2 (`chalk.bold`/`italic`/…),
+    /// which re-encases every newline (`close + <newline> + open`) so a styled
+    /// run never bleeds across lines. Every expected value below is the literal
+    /// output of `new Chalk({level:1}).<style>(input)` captured from chalk 5.6.2.
+    #[test]
+    fn chalk_style_helpers_re_encase_each_newline_like_chalk() {
+        let theme = create_theme(&base_dark_theme(), Some(ColorMode::Color256), None)
+            .expect("create_theme");
+
+        // Each row: (open, close, apply, expected-per-case) for one style.
+        // Cases, in order: single, two-line, three-line, CRLF, consecutive
+        // newlines, leading newline, trailing newline, only-newline, empty.
+        struct Style<'a> {
+            apply: fn(&Theme, &str) -> String,
+            single: &'a str,
+            two: &'a str,
+            three: &'a str,
+            crlf: &'a str,
+            consec: &'a str,
+            leading: &'a str,
+            trailing: &'a str,
+            only_nl: &'a str,
+        }
+
+        let styles = [
+            // bold: SGR 1 / reset 22
+            Style {
+                apply: Theme::bold,
+                single: "\x1b[1mA\x1b[22m",
+                two: "\x1b[1mA\x1b[22m\n\x1b[1mB\x1b[22m",
+                three: "\x1b[1mA\x1b[22m\n\x1b[1mB\x1b[22m\n\x1b[1mC\x1b[22m",
+                crlf: "\x1b[1mA\x1b[22m\r\n\x1b[1mB\x1b[22m",
+                consec: "\x1b[1mA\x1b[22m\n\x1b[1m\x1b[22m\n\x1b[1mB\x1b[22m",
+                leading: "\x1b[1m\x1b[22m\n\x1b[1mA\x1b[22m",
+                trailing: "\x1b[1mA\x1b[22m\n\x1b[1m\x1b[22m",
+                only_nl: "\x1b[1m\x1b[22m\n\x1b[1m\x1b[22m",
+            },
+            // italic: SGR 3 / reset 23
+            Style {
+                apply: Theme::italic,
+                single: "\x1b[3mA\x1b[23m",
+                two: "\x1b[3mA\x1b[23m\n\x1b[3mB\x1b[23m",
+                three: "\x1b[3mA\x1b[23m\n\x1b[3mB\x1b[23m\n\x1b[3mC\x1b[23m",
+                crlf: "\x1b[3mA\x1b[23m\r\n\x1b[3mB\x1b[23m",
+                consec: "\x1b[3mA\x1b[23m\n\x1b[3m\x1b[23m\n\x1b[3mB\x1b[23m",
+                leading: "\x1b[3m\x1b[23m\n\x1b[3mA\x1b[23m",
+                trailing: "\x1b[3mA\x1b[23m\n\x1b[3m\x1b[23m",
+                only_nl: "\x1b[3m\x1b[23m\n\x1b[3m\x1b[23m",
+            },
+            // underline: SGR 4 / reset 24
+            Style {
+                apply: Theme::underline,
+                single: "\x1b[4mA\x1b[24m",
+                two: "\x1b[4mA\x1b[24m\n\x1b[4mB\x1b[24m",
+                three: "\x1b[4mA\x1b[24m\n\x1b[4mB\x1b[24m\n\x1b[4mC\x1b[24m",
+                crlf: "\x1b[4mA\x1b[24m\r\n\x1b[4mB\x1b[24m",
+                consec: "\x1b[4mA\x1b[24m\n\x1b[4m\x1b[24m\n\x1b[4mB\x1b[24m",
+                leading: "\x1b[4m\x1b[24m\n\x1b[4mA\x1b[24m",
+                trailing: "\x1b[4mA\x1b[24m\n\x1b[4m\x1b[24m",
+                only_nl: "\x1b[4m\x1b[24m\n\x1b[4m\x1b[24m",
+            },
+            // inverse: SGR 7 / reset 27
+            Style {
+                apply: Theme::inverse,
+                single: "\x1b[7mA\x1b[27m",
+                two: "\x1b[7mA\x1b[27m\n\x1b[7mB\x1b[27m",
+                three: "\x1b[7mA\x1b[27m\n\x1b[7mB\x1b[27m\n\x1b[7mC\x1b[27m",
+                crlf: "\x1b[7mA\x1b[27m\r\n\x1b[7mB\x1b[27m",
+                consec: "\x1b[7mA\x1b[27m\n\x1b[7m\x1b[27m\n\x1b[7mB\x1b[27m",
+                leading: "\x1b[7m\x1b[27m\n\x1b[7mA\x1b[27m",
+                trailing: "\x1b[7mA\x1b[27m\n\x1b[7m\x1b[27m",
+                only_nl: "\x1b[7m\x1b[27m\n\x1b[7m\x1b[27m",
+            },
+            // strikethrough: SGR 9 / reset 29
+            Style {
+                apply: Theme::strikethrough,
+                single: "\x1b[9mA\x1b[29m",
+                two: "\x1b[9mA\x1b[29m\n\x1b[9mB\x1b[29m",
+                three: "\x1b[9mA\x1b[29m\n\x1b[9mB\x1b[29m\n\x1b[9mC\x1b[29m",
+                crlf: "\x1b[9mA\x1b[29m\r\n\x1b[9mB\x1b[29m",
+                consec: "\x1b[9mA\x1b[29m\n\x1b[9m\x1b[29m\n\x1b[9mB\x1b[29m",
+                leading: "\x1b[9m\x1b[29m\n\x1b[9mA\x1b[29m",
+                trailing: "\x1b[9mA\x1b[29m\n\x1b[9m\x1b[29m",
+                only_nl: "\x1b[9m\x1b[29m\n\x1b[9m\x1b[29m",
+            },
+        ];
+
+        for s in &styles {
+            // Single-line stays byte-identical to the old single-SGR wrap.
+            assert_eq!((s.apply)(&theme, "A"), s.single);
+            assert_eq!((s.apply)(&theme, "A\nB"), s.two);
+            assert_eq!((s.apply)(&theme, "A\nB\nC"), s.three);
+            assert_eq!((s.apply)(&theme, "A\r\nB"), s.crlf);
+            assert_eq!((s.apply)(&theme, "A\n\nB"), s.consec);
+            assert_eq!((s.apply)(&theme, "\nA"), s.leading);
+            assert_eq!((s.apply)(&theme, "A\n"), s.trailing);
+            assert_eq!((s.apply)(&theme, "\n"), s.only_nl);
+            // chalk returns '' for empty input (no SGR codes emitted).
+            assert_eq!((s.apply)(&theme, ""), "");
+        }
     }
 
     #[test]
