@@ -33,6 +33,13 @@ mod stdin_buffer;
 // module's free `#[napi]` functions register as crate-reachable. Additive.
 pub mod terminal_colors;
 
+// Coding-agent compaction-utils surface (`serializeConversation`): drives pi's
+// message-to-text serializer (`compaction/utils.ts`) natively via the Rust port
+// (`pidgin_coding::core::compaction::serialize_conversation`). The JS shim
+// re-exports the module's un-flipped file-op helpers from pi's original and
+// delegates only `serializeConversation` to Rust. Additive.
+mod compaction_utils;
+
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
 mod oauth;

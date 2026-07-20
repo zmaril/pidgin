@@ -1066,7 +1066,10 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/compaction/utils.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/compaction-serialization.test.ts"
+      ]
     },
     {
       "package": "coding-agent",
