@@ -5,7 +5,7 @@
 //! pidgin-coding defines the `ExtensionRunner` trait (PR0) and ships a no-op
 //! `StubExtensionRunner`; this module supplies the real Python-backed impl, the
 //! offline sibling of `DenoExtensionRunner`. It answers the sync queries from the
-//! loaded [`Inventory`] and runs three WIRED emitters against real Python handlers
+//! loaded [`Inventory`] and runs the WIRED emitters against real Python handlers
 //! under [`Python::with_gil`](pyo3::Python::with_gil):
 //!
 //!   1. `emit_tool_call` — runs the registered `tool_call` hook, interpreting a
@@ -16,7 +16,15 @@
 //!      ctx)`;
 //!   3. `session_start` — dispatched through the generic
 //!      [`emit`](ExtensionRunnerTrait::emit), running the registered
-//!      `session_start` hook.
+//!      `session_start` hook;
+//!   4. the three **behavior-modifying** emitters the turn dispatch already
+//!      applies — `emit_before_agent_start` (a `before_agent_start` handler
+//!      rewrites the system prompt / injects messages), `emit_input` (an `input`
+//!      handler transforms the user input or marks it handled), and
+//!      `emit_message_end` (a `message_end` handler rewrites the finalized
+//!      assistant message). Each mirrors the deno engine's shaping fold
+//!      ([`BeforeAgentStartFold`] / [`InputFold`] / the `message_end` same-role
+//!      chain) so multi-handler folds behave identically across engines.
 //!
 //! Every other emitter/method is a sanctioned no-op/None default copied from
 //! `StubExtensionRunner`. `has_handlers` returns true ONLY for an event that both
@@ -51,13 +59,16 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::anyhow;
 use pyo3::prelude::*;
-use serde_json::json;
+use serde_json::{json, Map};
 
 use pidgin_agent::types::AgentToolResult;
 use pidgin_coding::core::extensions::command::{
     CommandContext, RegisteredCommand, ResolvedCommand,
 };
-use pidgin_coding::core::extensions::dispatch::{BeforeAgentStartCombinedResult, ExtensionError};
+use pidgin_coding::core::extensions::dispatch::{
+    BeforeAgentStartCombinedResult, BeforeAgentStartFold, ExtensionError, InputFold,
+};
+use pidgin_coding::core::extensions::events::agent::BeforeAgentStartEventResult;
 use pidgin_coding::core::extensions::events::common::{
     AgentMessage, BuildSystemPromptOptions, ImageContent,
 };
@@ -70,7 +81,7 @@ use pidgin_coding::core::extensions::events::session::{
 use pidgin_coding::core::extensions::events::tool::{
     ToolCallEvent, ToolCallEventResult, ToolResultEvent, ToolResultEventResult,
 };
-use pidgin_coding::core::extensions::events::turn::MessageEndEvent;
+use pidgin_coding::core::extensions::events::turn::{MessageEndEvent, MessageEndEventResult};
 use pidgin_coding::core::extensions::loader::{Extension, ExtensionRuntime};
 use pidgin_coding::core::extensions::runner::{
     ExtensionCommandContextHost, ExtensionDispatchEvent, ExtensionEmitOutcome,
@@ -88,7 +99,13 @@ use super::loader::PythonExtensionRuntime;
 /// The snake_case hook events this runner actually dispatches (the WIRED
 /// emitters). `has_handlers` returns true only for these — every other event is a
 /// sanctioned no-op, so returning true for it would call into nothing.
-const WIRED_EVENTS: &[&str] = &["tool_call", "session_start"];
+const WIRED_EVENTS: &[&str] = &[
+    "tool_call",
+    "session_start",
+    "input",
+    "before_agent_start",
+    "message_end",
+];
 
 /// The registered `onError` listeners (pi's `onError` surface).
 #[derive(Default)]
@@ -185,29 +202,124 @@ impl ExtensionRunnerTrait for PythonExtensionRunner {
         ExtensionEmitOutcome::None
     }
 
-    // ---- dedicated emitters ----------------------------------------------
-    fn emit_message_end(&self, _event: &MessageEndEvent) -> Option<AgentMessage> {
-        None
+    // ---- WIRED: dedicated emitters ---------------------------------------
+    /// `emitMessageEnd` (`runner.ts:818`): each `message_end` handler may replace
+    /// the finalized message, but the replacement must keep the same `role`; a
+    /// role change is isolated as an `onError` record and skipped. Mirrors the deno
+    /// `emit_message_end` (`runner/dispatch_emit.rs:219`): chain the running
+    /// message so a later handler sees an earlier replacement, last valid
+    /// replacement wins, and `None` when no handler replaced.
+    fn emit_message_end(&self, event: &MessageEndEvent) -> Option<AgentMessage> {
+        let handlers = self.hook_handlers("message_end");
+        if handlers.is_empty() {
+            return None;
+        }
+        let mut current = event.message.clone();
+        let mut modified = false;
+        for handler in handlers {
+            let event_json = json!({ "type": "message_end", "message": current });
+            let Some(result) =
+                run_hook_result(&handler, &event_json, "message_end", &self.listeners)
+                    .and_then(|value| serde_json::from_value::<MessageEndEventResult>(value).ok())
+            else {
+                continue;
+            };
+            let Some(message) = result.message else {
+                continue;
+            };
+            // The replacement must keep the original role (pi's same-role guard).
+            if message.get("role") != current.get("role") {
+                self.listeners.dispatch(&ExtensionError {
+                    extension_path: String::new(),
+                    event: "message_end".to_string(),
+                    error: "message_end handlers must return a message with the same role"
+                        .to_string(),
+                    stack: None,
+                });
+                continue;
+            }
+            current = message;
+            modified = true;
+        }
+        modified.then_some(current)
     }
 
+    /// `emitInput` (`runner.ts:1174`): each `input` handler may transform the text
+    /// (optionally replacing images) or mark the input `handled`; transforms chain
+    /// (a later handler sees the running text via `event.text`) and a `handled`
+    /// result short-circuits the rest. Uses the shared [`InputFold`] for exact
+    /// parity with the deno `emit_input` shaping.
     fn emit_input(
         &self,
-        _text: &str,
-        _images: Option<&[ImageContent]>,
-        _source: InputSource,
-        _streaming_behavior: Option<StreamingBehavior>,
+        text: &str,
+        images: Option<&[ImageContent]>,
+        source: InputSource,
+        streaming_behavior: Option<StreamingBehavior>,
     ) -> InputEventResult {
-        InputEventResult::Continue
+        let mut fold = InputFold::new(text, images.map(|imgs| imgs.to_vec()));
+        for handler in self.hook_handlers("input") {
+            let mut event = Map::new();
+            event.insert("type".into(), json!("input"));
+            event.insert("text".into(), json!(fold.current_text()));
+            if let Some(images) = fold.current_images() {
+                event.insert("images".into(), json!(images));
+            }
+            if let Ok(source_value) = serde_json::to_value(source) {
+                event.insert("source".into(), source_value);
+            }
+            if let Some(behavior) = streaming_behavior {
+                if let Ok(behavior_value) = serde_json::to_value(behavior) {
+                    event.insert("streamingBehavior".into(), behavior_value);
+                }
+            }
+            let event_json = serde_json::Value::Object(event);
+            let result = run_hook_result(&handler, &event_json, "input", &self.listeners)
+                .and_then(|value| serde_json::from_value::<InputEventResult>(value).ok());
+            // A `handled` result short-circuits the remaining handlers.
+            if fold.apply(result) {
+                break;
+            }
+        }
+        fold.finish()
     }
 
+    /// `emitBeforeAgentStart` (`runner.ts:1059`): each `before_agent_start` handler
+    /// may rewrite the system prompt (chained: a later handler sees the running
+    /// value via `event.systemPrompt`) and/or inject a custom message; the injected
+    /// messages are collected in order. Uses the shared [`BeforeAgentStartFold`] for
+    /// exact parity with the deno `emit_before_agent_start` shaping. Returns `None`
+    /// when no handler contributed a prompt change or a message.
     fn emit_before_agent_start(
         &self,
-        _prompt: &str,
-        _images: Option<&[ImageContent]>,
-        _system_prompt: &str,
-        _system_prompt_options: &BuildSystemPromptOptions,
+        prompt: &str,
+        images: Option<&[ImageContent]>,
+        system_prompt: &str,
+        system_prompt_options: &BuildSystemPromptOptions,
     ) -> Option<BeforeAgentStartCombinedResult> {
-        None
+        let handlers = self.hook_handlers("before_agent_start");
+        if handlers.is_empty() {
+            return None;
+        }
+        let mut fold = BeforeAgentStartFold::new(system_prompt);
+        for handler in handlers {
+            let mut event = Map::new();
+            event.insert("type".into(), json!("before_agent_start"));
+            event.insert("prompt".into(), json!(prompt));
+            if let Some(images) = images {
+                event.insert("images".into(), json!(images));
+            }
+            // ctx.getSystemPrompt() / event.systemPrompt report the running prompt.
+            event.insert("systemPrompt".into(), json!(fold.current_system_prompt()));
+            event.insert("systemPromptOptions".into(), system_prompt_options.clone());
+            let event_json = serde_json::Value::Object(event);
+            let result =
+                run_hook_result(&handler, &event_json, "before_agent_start", &self.listeners)
+                    .and_then(|value| {
+                        serde_json::from_value::<BeforeAgentStartEventResult>(value).ok()
+                    });
+            fold.apply(result);
+        }
+        fold.finish()
     }
 
     fn emit_resources_discover(
@@ -449,29 +561,43 @@ pub fn create_python_extension_runner_from_runtime_ref(
 // Python handler dispatch (all under the GIL)
 // ---------------------------------------------------------------------------
 
-/// Run a `tool_call` handler with the event, interpreting its return: `None` ->
-/// `None`; a `{block, reason}` dict -> [`ToolCallEventResult`]. A raised exception
-/// is isolated into the error listeners and treated as `None` (never unwinds).
-fn run_tool_call_handler(
+/// Run a hook `handler(event, ctx=None)` under the GIL and read its return back
+/// into a [`Value`](serde_json::Value): `None`/no-return -> `None`, otherwise the
+/// marshalled JSON of whatever the handler returned. A raised exception is
+/// isolated into the `onError` listeners (attributed to `event_name`) and treated
+/// as `None`, so an advisory handler never unwinds the host. Each shaped emitter
+/// then `serde_json::from_value`s this into its typed result — the same
+/// marshal-then-deserialize template the deno engine uses at the JS boundary.
+fn run_hook_result(
     handler: &Py<PyAny>,
     event_json: &serde_json::Value,
+    event_name: &str,
     listeners: &ListenerRegistry,
-) -> Option<ToolCallEventResult> {
+) -> Option<serde_json::Value> {
     Python::with_gil(|py| {
         let event = json_to_py(py, event_json).ok()?;
         let ctx = py.None();
         match handler.bind(py).call1((event, ctx)) {
             Ok(ret) if ret.is_none() => None,
-            Ok(ret) => {
-                let value = py_to_json(&ret).ok()?;
-                serde_json::from_value::<ToolCallEventResult>(value).ok()
-            }
+            Ok(ret) => py_to_json(&ret).ok(),
             Err(error) => {
-                report_handler_error(py, listeners, "tool_call", error);
+                report_handler_error(py, listeners, event_name, error);
                 None
             }
         }
     })
+}
+
+/// Run a `tool_call` handler with the event, interpreting its return: `None` ->
+/// `None`; a `{block, reason}` dict -> [`ToolCallEventResult`]. Delegates to
+/// [`run_hook_result`] for the GIL/marshal template.
+fn run_tool_call_handler(
+    handler: &Py<PyAny>,
+    event_json: &serde_json::Value,
+    listeners: &ListenerRegistry,
+) -> Option<ToolCallEventResult> {
+    let value = run_hook_result(handler, event_json, "tool_call", listeners)?;
+    serde_json::from_value::<ToolCallEventResult>(value).ok()
 }
 
 /// Run a plain (result-less) hook handler with the event; a raised exception is

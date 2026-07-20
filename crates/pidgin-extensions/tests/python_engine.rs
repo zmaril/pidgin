@@ -60,12 +60,14 @@ def extension(pi):
 
     pi.on("tool_call", on_tool_call)
 
-    # A registered-but-stubbed event: `input` is not one of the wired emitters, so
-    # `has_handlers("input")` must be false even though a handler is registered.
-    def on_input(text, ctx):
+    # A registered-but-stubbed event: `context` is not one of the wired emitters,
+    # so `has_handlers("context")` must be false even though a handler is
+    # registered. (`input` is now a wired behavior-modifying emitter, so it can no
+    # longer stand in for a stubbed event here.)
+    def on_context(event, ctx):
         return None
 
-    pi.on("input", on_input)
+    pi.on("context", on_context)
 "#
     )
 }
@@ -88,8 +90,8 @@ fn python_engine_loads_and_dispatches() {
     // A registered but stubbed event -> has_handlers must be false. (This is the
     // engine-specific gate; the shipped-example twin stubs `tool_result` instead.)
     assert!(
-        !runner.has_handlers("input"),
-        "input is registered but stubbed, so has_handlers must be false"
+        !runner.has_handlers("context"),
+        "context is registered but stubbed, so has_handlers must be false"
     );
 
     // ---- WIRED emit_tool_call: block on rm -rf, None otherwise -----------
