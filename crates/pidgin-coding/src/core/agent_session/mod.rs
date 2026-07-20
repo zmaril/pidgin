@@ -53,6 +53,7 @@
 //! that require genuine in-flight concurrent streaming are structurally N/A under
 //! this model and are `#[ignore]`d with that reason rather than weakened.
 
+pub mod bash;
 pub mod compaction_turn;
 pub mod events;
 pub mod extension_turn;
@@ -65,6 +66,7 @@ pub mod turn;
 #[cfg(test)]
 pub(crate) mod test_support;
 
+pub use bash::*;
 pub use compaction_turn::*;
 pub use events::*;
 pub use host::*;

@@ -16,6 +16,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
+use tokio::sync::watch;
+
 use pidgin_agent::agent::{Agent, Subscription};
 use pidgin_agent::types::{AgentMessage, AgentTool};
 use pidgin_ai::seams::AbortSignal;
@@ -252,6 +254,22 @@ pub struct AgentSession {
     /// `Some` only for the duration of a turn whose `before_agent_start` handler
     /// supplied one. Cleared in `run_agent_prompt`'s finally block.
     pub(super) system_prompt_override: Arc<Mutex<Option<String>>>,
+
+    /// Bash execution results deferred while a run is streaming (pi
+    /// `_pendingBashMessages`). `record_bash_result` pushes here when
+    /// [`AgentSession::is_streaming`] is true (to preserve tool_use/tool_result
+    /// ordering); [`AgentSession::flush_pending_bash_messages`] drains them into
+    /// agent state + the session before the next prompt and after each run. Owned
+    /// solely by the turn thread, so a plain `Mutex` (no cross-thread handler
+    /// access) suffices. See [`super::bash`].
+    pub(super) pending_bash_messages: Mutex<Vec<AgentMessage>>,
+    /// The abort handle for the in-progress bash command (pi
+    /// `_bashAbortController`); `Some` only while [`AgentSession::execute_bash`]
+    /// runs. [`AgentSession::abort_bash`] trips it and
+    /// [`AgentSession::is_bash_running`] reads its presence. A
+    /// [`watch::Sender<bool>`] bridges the session's abort into the
+    /// [`BashOperations`](crate::core::tools::bash::BashOperations) `exec` signal.
+    pub(super) bash_abort: Mutex<Option<watch::Sender<bool>>>,
 }
 
 impl AgentSession {
@@ -381,6 +399,8 @@ impl AgentSession {
             is_aborting: AtomicBool::new(false),
             base_system_prompt,
             system_prompt_override,
+            pending_bash_messages: Mutex::new(Vec::new()),
+            bash_abort: Mutex::new(None),
         }
     }
 
