@@ -11,18 +11,25 @@
 //! # API backends
 //!
 //! pi's builtins wire concrete HTTP stream implementations (e.g.
-//! `anthropicMessagesApi()`). Those clients are not yet ported, so builtins use
-//! [`ApiRouting::Unimplemented`]: model listing, pricing, and metadata are fully
-//! available, and a stream attempt yields the "no API implementation" error.
-//! The catalog preserves each model's `api` discriminant, so routing is ready to
-//! be wired backend-by-backend without changing this construction.
+//! `anthropicMessagesApi()`), keyed by each model's `api` discriminant. The
+//! transport-less [`provider_from_catalog`] leaves every provider on
+//! [`ApiRouting::Unimplemented`] (model listing, pricing, and metadata are fully
+//! available; a stream attempt yields the "no API implementation" error). The
+//! transport-aware [`provider_from_catalog_with_transport`] instead assembles
+//! routing from an api-name -> backend registry ([`backend_for_api`]): a
+//! provider whose catalog models all share one registered api name becomes
+//! [`ApiRouting::Single`], one whose models span multiple api names becomes
+//! [`ApiRouting::ByApi`] over the api names that have a backend, and one with no
+//! registered api name stays [`ApiRouting::Unimplemented`]. Only the
+//! `anthropic-messages` dialect is ported today; every other dialect adapter
+//! plugs in by adding one arm to [`backend_for_api`].
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use pidgin_model_catalog::{catalog, Modality as CatModality, Model as CatModel};
 
-use crate::providers::anthropic_backend::AnthropicMessagesBackend;
+use crate::providers::anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
 use crate::providers::registry::{
     create_provider, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
     RefreshContext, RegistryProvider, StreamBackendRef,
@@ -206,35 +213,112 @@ pub fn provider_from_catalog(id: &str) -> RegistryProvider {
     catalog_provider(id, ApiRouting::Unimplemented)
 }
 
-/// Build a [`RegistryProvider`] for one catalog provider with a live stream
-/// backend wired for the api dialects that have a transport-aware adapter,
-/// mirroring pi's builtins wiring a concrete stream implementation per provider
+/// The api-name -> backend registry seam: resolve the [`StreamBackendRef`] that
+/// serves a dialect `api` name, binding it over the injected `transport`/`clock`.
+/// Returns `None` for an api name with no ported adapter, so a model of that api
+/// takes the registry's "no API implementation" stream path
+/// ([`RegistryProvider::stream`](crate::providers::RegistryProvider::stream)).
+///
+/// # Extension point
+///
+/// This is the single registration site for a newly-ported dialect: add one arm
+///
+/// ```ignore
+/// NEW_API_CONST => Some(Arc::new(NewBackend::new(transport.clone(), clock.clone()))),
+/// ```
+///
+/// and every builtin whose catalog models carry that api name automatically
+/// gains a live backend — a single-api provider becomes [`ApiRouting::Single`],
+/// a multi-api provider gains the entry in its [`ApiRouting::ByApi`] map — with
+/// no change to [`provider_from_catalog_with_transport`] or the assembly in
+/// [`api_routing_for`]. Today only `anthropic-messages` is registered.
+fn backend_for_api(
+    api: &str,
+    transport: &Arc<dyn HttpTransport>,
+    clock: &Arc<dyn Clock>,
+) -> Option<StreamBackendRef> {
+    match api {
+        ANTHROPIC_MESSAGES_API => Some(Arc::new(AnthropicMessagesBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ))),
+        // Follow-up (port): register the remaining ported dialects
+        // (openai_completions, openai_responses, google, bedrock, mistral, azure)
+        // here as their transport-aware `Provider` adapters land.
+        _ => None,
+    }
+}
+
+/// The distinct api-name discriminants a catalog provider's models declare, pi's
+/// set of `model.api` values for a provider. A provider with no catalog entry
+/// (or an unknown id) yields the empty set.
+fn catalog_provider_apis(id: &str) -> BTreeSet<String> {
+    catalog()
+        .provider(id)
+        .map(|entries| entries.values().map(|model| model.api.clone()).collect())
+        .unwrap_or_default()
+}
+
+/// Assemble a provider's [`ApiRouting`] from its api-name set and the
+/// [`backend_for_api`] registry, mirroring pi's `ProviderStreams | Record<TApi,
+/// ProviderStreams>` single-or-map normalization (`models.ts:570`):
+///
+/// - a single api name that resolves to a backend -> [`ApiRouting::Single`];
+/// - multiple api names with at least one backend -> [`ApiRouting::ByApi`] over
+///   exactly the api names that resolved (an unresolved api name is omitted, so
+///   its models take the registry's "no API implementation" path);
+/// - no api name resolves -> [`ApiRouting::Unimplemented`].
+///
+/// The Single-vs-ByApi choice keys on how many api names the provider declares
+/// (pi's un-mapped `ProviderStreams` for a single-dialect provider vs the keyed
+/// record for a mixed one), not on how many resolved.
+fn api_routing_for(
+    apis: &BTreeSet<String>,
+    transport: &Arc<dyn HttpTransport>,
+    clock: &Arc<dyn Clock>,
+) -> ApiRouting {
+    let resolved: BTreeMap<String, StreamBackendRef> = apis
+        .iter()
+        .filter_map(|api| {
+            backend_for_api(api, transport, clock).map(|backend| (api.clone(), backend))
+        })
+        .collect();
+
+    if resolved.is_empty() {
+        return ApiRouting::Unimplemented;
+    }
+    if apis.len() == 1 {
+        // Exactly one declared api name, and it resolved (resolved is non-empty).
+        let backend = resolved
+            .into_values()
+            .next()
+            .expect("resolved is non-empty when apis has one entry that resolved");
+        return ApiRouting::Single(backend);
+    }
+    ApiRouting::ByApi(resolved)
+}
+
+/// Build a [`RegistryProvider`] for one catalog provider with live stream
+/// backends wired for the api dialects that have a ported adapter, mirroring pi's
+/// builtins wiring a concrete stream implementation per provider
 /// (`anthropicMessagesApi()` and friends).
 ///
-/// Today only `anthropic` binds a real backend
-/// ([`AnthropicMessagesBackend`](crate::providers::AnthropicMessagesBackend),
-/// [`ApiRouting::Single`]); every other builtin falls back to
-/// [`provider_from_catalog`]'s [`ApiRouting::Unimplemented`]. The already-ported
-/// sibling dialects (openai_completions/responses, google, bedrock, mistral,
-/// azure) are a documented follow-up: each needs its own `Provider` adapter
-/// bridging the generic seam onto its typed driver, deferred here to keep this a
-/// small, focused, green change.
+/// The provider's set of catalog `model.api` names is resolved through the
+/// [`backend_for_api`] registry and assembled by [`api_routing_for`] into
+/// [`ApiRouting::Single`] (one registered api), [`ApiRouting::ByApi`] (several
+/// api names, at least one registered), or [`ApiRouting::Unimplemented`] (none
+/// registered). With only `anthropic-messages` registered today, `anthropic`
+/// binds [`ApiRouting::Single`] (unchanged), and any provider carrying
+/// `anthropic-messages` alongside other dialects binds those `anthropic-messages`
+/// models via [`ApiRouting::ByApi`] while its not-yet-ported dialects stay on the
+/// no-API-implementation path.
 pub fn provider_from_catalog_with_transport(
     id: &str,
     transport: &Arc<dyn HttpTransport>,
     clock: &Arc<dyn Clock>,
 ) -> RegistryProvider {
-    if id == "anthropic" {
-        let backend: StreamBackendRef = Arc::new(AnthropicMessagesBackend::new(
-            transport.clone(),
-            clock.clone(),
-        ));
-        return catalog_provider(id, ApiRouting::Single(backend));
-    }
-    // Follow-up (port): bind the remaining ported dialects (openai_completions,
-    // openai_responses, google, bedrock, mistral, azure) with their own
-    // transport-aware `Provider` adapters; until then they stay Unimplemented.
-    provider_from_catalog(id)
+    let apis = catalog_provider_apis(id);
+    catalog_provider(id, api_routing_for(&apis, transport, clock))
 }
 
 /// The env-API-key auth descriptor for a provider, derived from the same env-var
@@ -518,5 +602,211 @@ mod tests {
                 expected.1
             );
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // The api-name -> backend registry (backend_for_api / api_routing_for) and
+    // its transport-bound assembly. These prove the refactor preserves the
+    // anthropic drive path and the non-anthropic no-implementation path, and
+    // exercise the ByApi assembly for a mixed api set.
+    // -----------------------------------------------------------------------
+
+    use crate::api::anthropic::driver_tests::hello_sse_body;
+    use crate::seams::clock::FakeClock;
+    use crate::seams::http::ScriptedTransport;
+    use crate::types::{ContentBlock, Context, StopReason, StreamOptions};
+
+    /// A scripted transport pre-loaded with `n` copies of the shared `hello` SSE
+    /// body, plus the shared handle for later request assertions.
+    fn scripted_hellos(n: usize) -> (ScriptedTransport, Arc<dyn HttpTransport>) {
+        let scripted = ScriptedTransport::new();
+        for _ in 0..n {
+            scripted.push_ok(hello_sse_body());
+        }
+        let transport: Arc<dyn HttpTransport> = Arc::new(scripted.clone());
+        (scripted, transport)
+    }
+
+    fn fake_clock() -> Arc<dyn Clock> {
+        Arc::new(FakeClock::new(1_700_000_000_000))
+    }
+
+    fn user_context() -> Context {
+        serde_json::from_value(serde_json::json!({
+            "messages": [{ "role": "user", "content": "Hi", "timestamp": 0 }],
+        }))
+        .unwrap()
+    }
+
+    /// The first catalog model of `provider` whose api is `api`.
+    fn model_with_api(provider: &RegistryProvider, api: &str) -> Model {
+        provider
+            .get_models()
+            .into_iter()
+            .find(|m| m.api == api)
+            .unwrap_or_else(|| panic!("{} should list a {api} model", provider.id()))
+    }
+
+    // (a) The anthropic provider still resolves to a working anthropic-messages
+    // backend: build it through the real transport-aware construction and drive
+    // the shared `hello` fixture end to end, proving the registry refactor did
+    // not break the Single drive path.
+    #[test]
+    fn anthropic_resolves_single_and_drives_hello() {
+        // A single api name that resolves must assemble to Single.
+        let apis: BTreeSet<String> = catalog_provider_apis("anthropic");
+        assert_eq!(
+            apis.iter().map(String::as_str).collect::<Vec<_>>(),
+            vec![ANTHROPIC_MESSAGES_API],
+            "anthropic is a single-dialect provider"
+        );
+        let (_scripted, transport) = scripted_hellos(1);
+        assert!(
+            matches!(
+                api_routing_for(&apis, &transport, &fake_clock()),
+                ApiRouting::Single(_)
+            ),
+            "one registered api name must assemble to Single"
+        );
+
+        let (scripted, transport) = scripted_hellos(1);
+        let provider = provider_from_catalog_with_transport("anthropic", &transport, &fake_clock());
+        let model = model_with_api(&provider, ANTHROPIC_MESSAGES_API);
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+        let result = provider.stream(&model, &user_context(), Some(&options), None);
+
+        assert_eq!(result.message.stop_reason, StopReason::Stop);
+        assert_eq!(
+            result.message.content,
+            vec![ContentBlock::Text {
+                text: "Hello".to_string(),
+                text_signature: None,
+            }]
+        );
+        assert_eq!(scripted.requests().len(), 1);
+    }
+
+    // (b) A non-anthropic builtin whose dialects have no registered backend still
+    // resolves to Unimplemented: its stream yields the "no API implementation"
+    // error. `openai` carries only openai-completions/openai-responses, neither
+    // registered.
+    #[test]
+    fn openai_resolves_unimplemented_and_errors_on_stream() {
+        let apis = catalog_provider_apis("openai");
+        assert!(
+            !apis.contains(ANTHROPIC_MESSAGES_API),
+            "openai must not carry the one registered dialect"
+        );
+        let (_scripted, transport) = scripted_hellos(0);
+        assert!(
+            matches!(
+                api_routing_for(&apis, &transport, &fake_clock()),
+                ApiRouting::Unimplemented
+            ),
+            "no registered api name must assemble to Unimplemented"
+        );
+
+        let (scripted, transport) = scripted_hellos(0);
+        let provider = provider_from_catalog_with_transport("openai", &transport, &fake_clock());
+        let model = provider
+            .get_models()
+            .into_iter()
+            .next()
+            .expect("openai lists models");
+        let result = provider.stream(&model, &user_context(), None, None);
+
+        assert_eq!(result.message.stop_reason, StopReason::Error);
+        assert!(result
+            .message
+            .error_message
+            .as_deref()
+            .unwrap()
+            .contains("no API implementation"));
+        assert!(scripted.requests().is_empty());
+    }
+
+    // (c/i) A synthetic multi-api set assembles to ByApi over exactly the api
+    // names that have a registered backend; the unregistered api is omitted, and
+    // the registered one drives the `hello` fixture.
+    #[test]
+    fn multi_api_assembles_byapi_over_registered_only() {
+        let mut apis = BTreeSet::new();
+        apis.insert(ANTHROPIC_MESSAGES_API.to_string());
+        apis.insert("openai-completions".to_string());
+
+        let (scripted, transport) = scripted_hellos(1);
+        let routing = api_routing_for(&apis, &transport, &fake_clock());
+        let map = match routing {
+            ApiRouting::ByApi(map) => map,
+            _ => panic!("a multi-api set with one registered api must assemble to ByApi"),
+        };
+        assert!(map.contains_key(ANTHROPIC_MESSAGES_API));
+        assert!(
+            !map.contains_key("openai-completions"),
+            "an unregistered api name must be omitted from the ByApi map"
+        );
+
+        // The bound anthropic-messages backend drives the fixture.
+        let backend = map.get(ANTHROPIC_MESSAGES_API).unwrap().clone();
+        let model: Model = serde_json::from_value(serde_json::json!({
+            "id": "claude-haiku-4-5",
+            "name": "Claude Haiku 4.5",
+            "api": ANTHROPIC_MESSAGES_API,
+            "provider": "opencode",
+            "baseUrl": "https://api.anthropic.test",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 8000,
+        }))
+        .unwrap();
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+        let result = backend.stream(&model, &user_context(), Some(&options), None);
+        assert_eq!(result.message.stop_reason, StopReason::Stop);
+        assert_eq!(scripted.requests().len(), 1);
+    }
+
+    // (c/ii) The real multi-api `opencode` provider: its anthropic-messages models
+    // stream through the assembled ByApi backend, while a model of a not-yet-ported
+    // dialect (openai-completions) takes the "no API implementation" path.
+    #[test]
+    fn opencode_byapi_binds_anthropic_and_leaves_others_unimplemented() {
+        let apis = catalog_provider_apis("opencode");
+        assert!(apis.contains(ANTHROPIC_MESSAGES_API));
+        assert!(apis.contains("openai-completions"));
+        assert!(apis.len() > 1, "opencode is a mixed-dialect provider");
+
+        let (scripted, transport) = scripted_hellos(1);
+        let provider = provider_from_catalog_with_transport("opencode", &transport, &fake_clock());
+
+        // An anthropic-messages model drives the fixture.
+        let anthropic_model = model_with_api(&provider, ANTHROPIC_MESSAGES_API);
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+        let ok = provider.stream(&anthropic_model, &user_context(), Some(&options), None);
+        assert_eq!(ok.message.stop_reason, StopReason::Stop);
+        assert_eq!(scripted.requests().len(), 1);
+
+        // A model of a not-yet-ported dialect still errors with no request.
+        let other_model = model_with_api(&provider, "openai-completions");
+        let err = provider.stream(&other_model, &user_context(), None, None);
+        assert_eq!(err.message.stop_reason, StopReason::Error);
+        assert!(err
+            .message
+            .error_message
+            .as_deref()
+            .unwrap()
+            .contains("no API implementation"));
+        // Still exactly the one anthropic request; the not-yet-ported dialect made none.
+        assert_eq!(scripted.requests().len(), 1);
     }
 }
