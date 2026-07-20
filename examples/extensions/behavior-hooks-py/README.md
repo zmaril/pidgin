@@ -22,11 +22,12 @@ The Rust turn dispatch calls each of these emitters **and applies the return**:
 - the `message_end` handler's returned `message` replaces the finalized
   assistant message.
 
-This is different from a `tool_call` guardrail (see
-[`../task-list-py`](../task-list-py)), which is **decision-only**: the runner
-computes a block decision, but that block is not wired end-to-end through the
-turn until the AgentSession `_installAgentToolHooks` slice lands. The three hooks
-here need no such follow-up — the dispatch that consumes them is already live.
+This is like a `tool_call` guardrail (see
+[`../task-list-py`](../task-list-py)), whose block is now **enforced
+end-to-end**: the AgentSession installs the tool hooks, so a blocked tool never
+reaches `execute` and the block reason surfaces as an error tool-result. The
+three hooks here are live the same way — the dispatch that consumes them is
+already wired.
 
 ## Return shapes match a real pi handler
 

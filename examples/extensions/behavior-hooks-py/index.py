@@ -10,13 +10,13 @@ A small, self-contained pi extension that demonstrates the three
   - ``message_end``        -- rewrite the finalized assistant message (here:
     append a signature line to its first text block).
 
-Unlike the ``tool_call`` guardrail in ../task-list-py (which is *decision-only*:
-it can block a tool but the block is not yet applied end-to-end until the
-AgentSession ``_installAgentToolHooks`` slice lands), these three hooks change
-real turn behavior *today*: the Rust turn dispatch calls each emitter and applies
-its return -- the mutated system prompt goes into the model context, the
-transformed input replaces what the agent processes, and the rewritten message
-replaces the finalized one.
+Like the ``tool_call`` guardrail in ../task-list-py -- whose block is now
+enforced end-to-end (the AgentSession installs the tool hooks, so a blocked tool
+does not execute and the block reason surfaces as an error tool-result) -- these
+three hooks change real turn behavior *today*: the Rust turn dispatch calls each
+emitter and applies its return -- the mutated system prompt goes into the model
+context, the transformed input replaces what the agent processes, and the
+rewritten message replaces the finalized one.
 
 This file is loaded by pidgin's Python extension engine (build with
 ``--features python``); see ./README.md. It imports only the standard library
