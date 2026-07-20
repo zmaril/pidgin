@@ -25,6 +25,9 @@ use serde_json::{json, Map, Value};
 
 use super::google_shared::{parse_google_stream, GoogleModel, StreamOutcome};
 
+pub mod client;
+pub mod driver;
+
 /// The `google-generative-ai` API discriminant set on the output message.
 pub const API: &str = "google-generative-ai";
 
