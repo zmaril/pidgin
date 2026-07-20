@@ -17,9 +17,9 @@
 //! dispatch that follows.
 //!
 //! Faithful to pi's behaviour:
-//! - The SSE framing ([`iterate_sse_messages`]) mirrors pi's `iterateSseMessages`
-//!   line splitting, `event:`/`data:` field accumulation, comment (`:`) skipping,
-//!   and trailing-event flush.
+//! - The SSE framing (the shared [`SseFrameSplitter`](crate::utils::sse::SseFrameSplitter))
+//!   mirrors pi's `iterateSseMessages` line splitting, `event:`/`data:` field
+//!   accumulation, comment (`:`) skipping, and trailing-event flush.
 //! - The Anthropic event filter + JSON-repair parse mirrors
 //!   `iterateAnthropicEvents`, including the `event: error` throw and the
 //!   `"Anthropic stream ended before message_stop"` error reproduced byte-for-byte.
@@ -27,6 +27,8 @@
 //!   maps deltas to `text` / `thinking` / `tool_use` blocks, repairs streamed
 //!   tool-argument JSON, accumulates usage, computes cost, and maps stop reasons
 //!   exactly as pi's `stream()` inner loop does.
+
+use std::ops::ControlFlow;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -48,7 +50,7 @@ use crate::types::{
     Usage, UsageCost,
 };
 use crate::utils::json_parse::{parse_json_with_repair, parse_streaming_json};
-use crate::utils::sse::{ServerSentEvent, SseFrameSplitter};
+use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
 
 /// The Anthropic wire event names pi's `iterateAnthropicEvents` accepts; every
 /// other named SSE event (pings, proxy stats, unknown types) is ignored
@@ -71,19 +73,6 @@ pub struct AnthropicModel {
     pub api: String,
     pub provider: String,
     pub cost: ModelCost,
-}
-
-/// Frame a complete SSE body into events, mirroring pi's `iterateSseMessages`.
-///
-/// The incremental framing now lives in the shared [`SseFrameSplitter`]; the
-/// buffered path here feeds the whole body in one `feed` + `finish`, which
-/// yields the byte-identical frame sequence pi's chunked reader produced.
-fn iterate_sse_messages(body: &str) -> Vec<ServerSentEvent> {
-    let mut splitter = SseFrameSplitter::new();
-    let mut events = Vec::new();
-    splitter.feed(body.as_bytes(), &mut events);
-    splitter.finish(&mut events);
-    events
 }
 
 /// Map an Anthropic `stop_reason` (+ refusal details) to a stop reason and
@@ -176,56 +165,25 @@ pub fn parse_sse_stream(
     is_oauth: bool,
     timestamp: i64,
 ) -> StreamOutcome {
-    let mut output = AssistantMessage {
-        role: AssistantRole::Assistant,
-        content: Vec::new(),
-        api: model.api.clone(),
-        provider: model.provider.clone(),
-        model: model.id.clone(),
-        response_model: None,
-        response_id: None,
-        diagnostics: None,
-        usage: zero_usage(),
-        stop_reason: StopReason::Stop,
-        error_message: None,
-        timestamp,
+    // Single source of truth: feed the whole body through the SAME
+    // [`AnthropicSseDecoder`] the incremental driver uses, over a one-chunk
+    // iterator. The shared [`AssistantEventReader`] flushes the frame splitter
+    // and runs `finish` at EOF, so the events + terminal message are
+    // byte-identical to feeding the reader chunk-by-chunk.
+    let decoder = AnthropicSseDecoder::new(model.clone(), is_oauth, timestamp);
+    let mut reader = AssistantEventReader::new(
+        Box::new(std::iter::once(Ok(body.as_bytes().to_vec()))),
+        Box::new(decoder),
+    );
+    let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+    let message = match reader.result() {
+        Some(Ok(message)) | Some(Err(message)) => message.clone(),
+        // The reader always finalizes once drained (EOF is bounded), so a
+        // fully-collected reader has a terminal result.
+        None => unreachable!("AssistantEventReader finalizes before iteration ends"),
     };
-    let mut blocks: Vec<WorkingBlock> = Vec::new();
-    let mut events: Vec<AssistantMessageEvent> = Vec::new();
 
-    // Mirrors pi: the `start` event is emitted before the dispatch loop.
-    events.push(AssistantMessageEvent::Start {
-        partial: render_partial(&output, &blocks),
-    });
-
-    let terminal_error = run_dispatch(body, model, is_oauth, &mut output, &mut blocks, &mut events);
-
-    output.content = render_content(&blocks);
-
-    match terminal_error {
-        None => {
-            // pi's post-loop guard: an error/aborted stop is re-thrown and
-            // surfaced as an error event rather than a done event.
-            if matches!(output.stop_reason, StopReason::Aborted | StopReason::Error) {
-                let message = output
-                    .error_message
-                    .clone()
-                    .unwrap_or_else(|| "An unknown error occurred".to_string());
-                finish_with_error(&mut output, &mut events, message);
-            } else {
-                events.push(AssistantMessageEvent::Done {
-                    reason: output.stop_reason,
-                    message: output.clone(),
-                });
-            }
-        }
-        Some(message) => finish_with_error(&mut output, &mut events, message),
-    }
-
-    StreamOutcome {
-        events,
-        message: output,
-    }
+    StreamOutcome { events, message }
 }
 
 fn finish_with_error(
@@ -243,78 +201,183 @@ fn finish_with_error(
     });
 }
 
-/// Run the Anthropic event dispatch. Returns `Some(message)` when the stream
-/// terminates with a hard error (an `event: error` frame, an unparseable event,
-/// or ending before `message_stop`), matching where pi's `iterateAnthropicEvents`
-/// throws.
-fn run_dispatch(
-    body: &str,
-    model: &AnthropicModel,
+/// The incremental Anthropic Messages SSE decoder: the single source of truth
+/// for turning wire frames into assistant events and the accumulated message.
+///
+/// It carries exactly the accumulation state pi's `stream()` inner loop kept —
+/// the output message, the working blocks, and the `message_start` /
+/// `message_stop` bookkeeping — and drives it via the shared
+/// [`SseEventDecoder`] seam. The buffered [`parse_sse_stream`] and the driver's
+/// incremental reader both run this ONE decoder, so their events and final
+/// message are byte-identical.
+pub(crate) struct AnthropicSseDecoder {
+    model: AnthropicModel,
     is_oauth: bool,
-    output: &mut AssistantMessage,
-    blocks: &mut Vec<WorkingBlock>,
-    events: &mut Vec<AssistantMessageEvent>,
-) -> Option<String> {
-    let mut saw_message_start = false;
-    let mut saw_message_end = false;
+    output: AssistantMessage,
+    blocks: Vec<WorkingBlock>,
+    /// pi emits the `start` event before the dispatch loop; here it is emitted
+    /// lazily on the first `on_frame`/`finish` so it is always the first event
+    /// exactly once, whatever the chunk cadence.
+    started: bool,
+    saw_message_start: bool,
+    saw_message_end: bool,
+    /// Set when a frame triggers pi's `iterateAnthropicEvents` throw (an
+    /// `event: error` frame, an unparseable event, or an unhandled stop reason);
+    /// `finish` turns it into the terminal `error` event.
+    terminal_error: Option<String>,
+}
 
-    for sse in iterate_sse_messages(body) {
-        let name = sse.event.as_deref().unwrap_or("");
+impl AnthropicSseDecoder {
+    /// A fresh decoder for `model`, seeding the empty output shell pi builds
+    /// before streaming. `is_oauth` selects Claude-Code tool-name normalization
+    /// and `timestamp` is pi's `Date.now()` message timestamp.
+    pub(crate) fn new(model: AnthropicModel, is_oauth: bool, timestamp: i64) -> Self {
+        let output = AssistantMessage {
+            role: AssistantRole::Assistant,
+            content: Vec::new(),
+            api: model.api.clone(),
+            provider: model.provider.clone(),
+            model: model.id.clone(),
+            response_model: None,
+            response_id: None,
+            diagnostics: None,
+            usage: zero_usage(),
+            stop_reason: StopReason::Stop,
+            error_message: None,
+            timestamp,
+        };
+        Self {
+            model,
+            is_oauth,
+            output,
+            blocks: Vec::new(),
+            started: false,
+            saw_message_start: false,
+            saw_message_end: false,
+            terminal_error: None,
+        }
+    }
+
+    /// Emit pi's initial `start` event exactly once, before any frame's events.
+    fn ensure_started(&mut self, out: &mut Vec<AssistantMessageEvent>) {
+        if !self.started {
+            self.started = true;
+            out.push(AssistantMessageEvent::Start {
+                partial: render_partial(&self.output, &self.blocks),
+            });
+        }
+    }
+}
+
+impl SseEventDecoder for AnthropicSseDecoder {
+    fn on_frame(
+        &mut self,
+        frame: &ServerSentEvent,
+        out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        self.ensure_started(out);
+        let name = frame.event.as_deref().unwrap_or("");
 
         if name == "error" {
-            return Some(sse.data);
+            self.terminal_error = Some(frame.data.clone());
+            return ControlFlow::Break(frame.data.clone());
         }
         if !ANTHROPIC_MESSAGE_EVENTS.contains(&name) {
-            continue;
+            return ControlFlow::Continue(());
         }
 
-        let event = match parse_json_with_repair(&sse.data) {
+        let event = match parse_json_with_repair(&frame.data) {
             Ok(value) => value,
             Err(error) => {
-                return Some(format!(
+                let message = format!(
                     "Could not parse Anthropic SSE event {}: {}; data={}; raw={}",
-                    sse.event.as_deref().unwrap_or("null"),
+                    frame.event.as_deref().unwrap_or("null"),
                     error,
-                    sse.data,
-                    sse.raw.join("\\n"),
-                ));
+                    frame.data,
+                    frame.raw.join("\\n"),
+                );
+                self.terminal_error = Some(message.clone());
+                return ControlFlow::Break(message);
             }
         };
 
         match event.get("type").and_then(Value::as_str) {
             Some("message_start") => {
-                saw_message_start = true;
+                self.saw_message_start = true;
                 // pi emits no event for message_start beyond the initial `start`
-                // already pushed before the loop; it only captures usage.
-                let _ = &events;
-                dispatch_message_start(&event, model, output);
+                // already emitted above; it only captures usage.
+                dispatch_message_start(&event, &self.model, &mut self.output);
             }
             Some("message_stop") => {
-                saw_message_end = true;
+                self.saw_message_end = true;
             }
             Some("content_block_start") => {
-                dispatch_content_block_start(&event, is_oauth, output, blocks, events);
+                dispatch_content_block_start(
+                    &event,
+                    self.is_oauth,
+                    &mut self.output,
+                    &mut self.blocks,
+                    out,
+                );
             }
             Some("content_block_delta") => {
-                dispatch_content_block_delta(&event, output, blocks, events);
+                dispatch_content_block_delta(&event, &mut self.output, &mut self.blocks, out);
             }
             Some("content_block_stop") => {
-                dispatch_content_block_stop(&event, output, blocks, events);
+                dispatch_content_block_stop(&event, &mut self.output, &mut self.blocks, out);
             }
             Some("message_delta") => {
-                if let Err(message) = dispatch_message_delta(&event, model, output) {
-                    return Some(message);
+                if let Err(message) = dispatch_message_delta(&event, &self.model, &mut self.output)
+                {
+                    self.terminal_error = Some(message.clone());
+                    return ControlFlow::Break(message);
                 }
             }
             _ => {}
         }
+
+        ControlFlow::Continue(())
     }
 
-    if saw_message_start && !saw_message_end {
-        return Some("Anthropic stream ended before message_stop".to_string());
-    }
+    fn finish(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        self.ensure_started(out);
+        self.output.content = render_content(&self.blocks);
 
-    None
+        // pi's post-loop terminal selection: a frame-level throw wins, then the
+        // `message_stop` guard, then the error/aborted stop-reason re-throw,
+        // otherwise a `done` event.
+        let terminal_error = if self.terminal_error.is_some() {
+            self.terminal_error.clone()
+        } else if self.saw_message_start && !self.saw_message_end {
+            Some("Anthropic stream ended before message_stop".to_string())
+        } else {
+            None
+        };
+
+        match terminal_error {
+            None => {
+                if matches!(
+                    self.output.stop_reason,
+                    StopReason::Aborted | StopReason::Error
+                ) {
+                    let message = self
+                        .output
+                        .error_message
+                        .clone()
+                        .unwrap_or_else(|| "An unknown error occurred".to_string());
+                    finish_with_error(&mut self.output, out, message);
+                } else {
+                    out.push(AssistantMessageEvent::Done {
+                        reason: self.output.stop_reason,
+                        message: self.output.clone(),
+                    });
+                }
+            }
+            Some(message) => finish_with_error(&mut self.output, out, message),
+        }
+
+        self.output.clone()
+    }
 }
 
 fn dispatch_message_start(event: &Value, model: &AnthropicModel, output: &mut AssistantMessage) {

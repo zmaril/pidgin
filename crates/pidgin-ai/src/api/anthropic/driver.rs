@@ -36,12 +36,15 @@
 //! the SDK `APIError`'s `` `${status} ${message}` `` shape pi surfaces
 //! (`anthropic-messages.ts:752`), rather than discarding the response body.
 
+use std::ops::ControlFlow;
+
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::StreamResult;
 use crate::types::{
     AnthropicMessagesCompat, AssistantMessage, AssistantMessageEvent, AssistantRole,
     CacheRetention, Context, Model, StopReason, Usage, UsageCost,
 };
+use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
 
 use super::cache::resolve_cache_retention;
 use super::client::{
@@ -53,7 +56,7 @@ use super::simple_options::{
     SimpleStreamOptions,
 };
 use super::thinking::map_thinking_level_to_effort;
-use super::{parse_sse_stream, AnthropicModel};
+use super::{parse_sse_stream, AnthropicModel, AnthropicSseDecoder};
 
 /// Build the lean [`AnthropicModel`] the SSE parser needs (identity + pricing)
 /// from a full boundary model.
@@ -197,6 +200,130 @@ pub fn stream<T: HttpTransport + ?Sized>(
             format_api_error(response.status, &response.body),
         ),
         Err(error) => error_result(model, timestamp, error.to_string()),
+    }
+}
+
+/// A decoder that yields nothing per frame and emits a single terminal `error`
+/// event at `finish` -- the streaming analogue of [`error_result`] for a failure
+/// that occurs before the SSE stream starts (missing auth, a non-2xx create, a
+/// transport error). It carries pi's caught `error` message on an empty output
+/// shell so [`stream_streaming`] can return an [`AssistantEventReader`] on every
+/// path (no preceding `start`, matching pi's pre-stream catch handler).
+struct TerminalErrorDecoder {
+    error: AssistantMessage,
+}
+
+impl SseEventDecoder for TerminalErrorDecoder {
+    fn on_frame(
+        &mut self,
+        _frame: &ServerSentEvent,
+        _out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        ControlFlow::Continue(())
+    }
+
+    fn finish(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        out.push(AssistantMessageEvent::Error {
+            reason: StopReason::Error,
+            error: self.error.clone(),
+        });
+        self.error.clone()
+    }
+}
+
+/// A single-`error`-event reader over an empty chunk stream, the streaming
+/// analogue of [`error_result`]: EOF `finish` emits exactly one terminal `error`
+/// (byte-identical to the buffered pre-stream failure).
+fn error_reader<'a>(
+    model: &Model<AnthropicMessagesCompat>,
+    timestamp: i64,
+    message: String,
+) -> AssistantEventReader<'a> {
+    let mut output = empty_output(model, timestamp);
+    output.stop_reason = StopReason::Error;
+    output.error_message = Some(message);
+    AssistantEventReader::new(
+        Box::new(std::iter::empty()),
+        Box::new(TerminalErrorDecoder { error: output }),
+    )
+}
+
+/// Buffer a streaming body's chunks into a lossy UTF-8 string, stopping at the
+/// first read error -- used only for a non-2xx error body, whose diagnostic is
+/// short and which pi reads whole before throwing.
+fn drain_chunks<'a>(chunks: Box<dyn Iterator<Item = std::io::Result<Vec<u8>>> + 'a>) -> String {
+    let mut body = Vec::new();
+    for chunk in chunks {
+        match chunk {
+            Ok(bytes) => body.extend_from_slice(&bytes),
+            Err(_) => break,
+        }
+    }
+    String::from_utf8_lossy(&body).to_string()
+}
+
+/// Stream a response for `model` over the injected `transport`, delivering events
+/// incrementally through the shared [`AssistantEventReader`].
+///
+/// This mirrors [`stream`]'s request assembly and error surfacing but performs
+/// the request via [`HttpTransport::send_streaming`], so the returned reader
+/// pulls one chunk at a time and decodes it through the SAME
+/// [`AnthropicSseDecoder`] the buffered path uses -- one source of truth for the
+/// event sequence. A pre-stream failure (missing auth, a non-2xx create, a
+/// transport error) yields a single-`error` reader, mirroring pi's catch handler
+/// exactly as [`stream`] does. The buffered [`stream`] stays the default backend
+/// path until the provider seam is wired to streaming.
+pub fn stream_streaming<'a, T: HttpTransport + ?Sized>(
+    transport: &'a T,
+    model: &Model<AnthropicMessagesCompat>,
+    context: &Context,
+    options: &AnthropicOptions,
+    timestamp: i64,
+) -> AssistantEventReader<'a> {
+    let api_key = options.api_key.as_deref();
+
+    // pi asserts auth before constructing the client; a failure throws and is
+    // caught as an error event.
+    if let Err(message) = assert_request_auth(&model.provider, api_key, options.headers.as_ref()) {
+        return error_reader(model, timestamp, message);
+    }
+
+    let mode = resolve_auth_mode(&model.provider, api_key);
+    let is_oauth = matches!(mode, AuthMode::OAuth);
+
+    let cache_retention = resolve_cache_retention(options.cache_retention, options.env.as_ref());
+    let session_id = if cache_retention == CacheRetention::None {
+        None
+    } else {
+        options.session_id.as_deref()
+    };
+    let interleaved_thinking = options.interleaved_thinking.unwrap_or(true);
+
+    let body = build_params(model, context, is_oauth, options);
+    let request = assemble_request(
+        mode,
+        model,
+        context,
+        serialize_body(&body),
+        api_key,
+        options.headers.as_ref(),
+        interleaved_thinking,
+        session_id,
+    );
+
+    // Status + headers arrive up front, so the error-vs-parse decision is made
+    // before the body streams -- exactly as the buffered path decides on
+    // `response.is_ok()`.
+    match transport.send_streaming(&request) {
+        Ok(response) if (200..300).contains(&response.status) => {
+            let decoder = AnthropicSseDecoder::new(anthropic_model(model), is_oauth, timestamp);
+            AssistantEventReader::new(response.chunks, Box::new(decoder))
+        }
+        Ok(response) => {
+            let body = drain_chunks(response.chunks);
+            error_reader(model, timestamp, format_api_error(response.status, &body))
+        }
+        Err(error) => error_reader(model, timestamp, error.to_string()),
     }
 }
 
