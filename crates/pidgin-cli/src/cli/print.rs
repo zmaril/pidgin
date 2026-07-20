@@ -114,6 +114,14 @@ pub fn run_print_or_json(parsed: &Args, session_manager: &SessionManager, json: 
     let cwd = session_manager.get_cwd().to_string();
     let agent_dir = get_agent_dir();
 
+    // Consume the parsed `-e`/`--extension` (and `-ne`) args: under the `deno`
+    // feature this constructs the real extension loader, loads the requested
+    // extensions, and reports the outcome to stderr; without it, a graceful
+    // rebuild notice is printed. The report is a stderr side effect — there is
+    // no dispatch surface in print/json yet (that's #186), so it is not fed
+    // into `build_harness`. Stdout stays clean.
+    let _extensions_report = crate::cli::extensions::load_and_report_extensions(parsed, &cwd);
+
     // Build the model runtime offline (no network). The builtin catalog is the
     // resolution source; auth (if any) is read from the default auth store.
     let runtime = ModelRuntime::create(CreateModelRuntimeOptions {

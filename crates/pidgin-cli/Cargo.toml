@@ -18,9 +18,19 @@ path = "src/main.rs"
 # drops back to the reqwest-free build, whose builtins stay `Unimplemented`.
 default = ["native-http"]
 native-http = ["pidgin-coding/native-http"]
+# `deno` enables the REAL JS extension loader/runtime: `pidgin -e ./ext.ts`
+# constructs a `DefaultResourceLoader` with the deno_core-backed
+# `RealExtensionLoader` injected and loads the requested extensions. The feature
+# transitively pulls `pidgin-extensions/deno` → deno_core + V8, whose prebuilt
+# blob only downloads on open-egress runners (it 403s in the sandbox), so it is
+# NON-default and exercised only in the dedicated CI job
+# (.github/workflows/pidgin-extensions.yml). Default `--workspace` builds stay
+# V8-free; without the feature `-e` prints a graceful rebuild notice.
+deno = ["dep:pidgin-extensions", "pidgin-extensions/deno"]
 
 [dependencies]
 pidgin-core = { path = "../pidgin-core" }
 pidgin-coding = { path = "../pidgin-coding" }
 pidgin-tui = { path = "../pidgin-tui" }
+pidgin-extensions = { path = "../pidgin-extensions", optional = true }
 serde_json = { workspace = true }

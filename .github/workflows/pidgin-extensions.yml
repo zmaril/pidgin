@@ -10,10 +10,12 @@ on:
     branches: [main]
     paths:
       - "crates/pidgin-extensions/**"
+      - "crates/pidgin-cli/**"
       - ".github/workflows/pidgin-extensions.yml"
   pull_request:
     paths:
       - "crates/pidgin-extensions/**"
+      - "crates/pidgin-cli/**"
       - ".github/workflows/pidgin-extensions.yml"
 
 jobs:
@@ -33,3 +35,9 @@ jobs:
       - run: cargo build -p pidgin-extensions --features deno
       - run: cargo clippy -p pidgin-extensions --features deno --all-targets -- -D warnings
       - run: cargo test -p pidgin-extensions --features deno
+      # The `deno` feature on pidgin-cli wires the real JS extension loader into
+      # `pidgin -e ./ext.ts`. It transitively pulls the same V8 blob, so this is
+      # the only place the feature-gated CLI code is compiled and its
+      # deno-gated tests (which really load an extension on the V8 plane) run.
+      - run: cargo build -p pidgin-cli --features deno
+      - run: cargo test -p pidgin-cli --features deno

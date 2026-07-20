@@ -9,6 +9,7 @@
 
 pub mod args;
 pub mod config;
+pub mod extensions;
 pub mod list_models;
 pub mod output_guard;
 pub mod packages;
