@@ -239,6 +239,74 @@ fn api_key_path_emits_x_api_key_and_no_authorization() {
 }
 
 #[test]
+fn request_carries_sdk_injected_default_headers() {
+    // pi delegates content-type + anthropic-version to the Anthropic SDK; the
+    // raw transport must supply them or the API 400s ("anthropic-version:
+    // header is required"). Both auth modes get them; accept stays as
+    // createClient sets it (application/json).
+    for api_key in ["test-key", "sk-ant-oat-secret"] {
+        let transport = ScriptedTransport::new();
+        transport.push_ok(hello_sse_body());
+
+        let model = make_model(json!({}));
+        let context = context_with_tools(vec![]);
+        let options = api_key_options(api_key);
+
+        stream(&transport, &model, &context, &options, 0);
+
+        let request = only_request(&transport);
+        assert_eq!(
+            request.headers.get("anthropic-version").map(String::as_str),
+            Some("2023-06-01"),
+            "anthropic-version missing for key {api_key}"
+        );
+        assert_eq!(
+            request.headers.get("content-type").map(String::as_str),
+            Some("application/json"),
+            "content-type missing for key {api_key}"
+        );
+        assert_eq!(
+            request.headers.get("accept").map(String::as_str),
+            Some("application/json"),
+            "accept changed for key {api_key}"
+        );
+    }
+}
+
+#[test]
+fn caller_supplied_headers_win_over_sdk_defaults() {
+    // The SDK-injected defaults are low precedence: a caller-supplied
+    // content-type/anthropic-version (via options.headers) is preserved.
+    let transport = ScriptedTransport::new();
+    transport.push_ok(hello_sse_body());
+
+    let mut headers = std::collections::BTreeMap::new();
+    headers.insert("content-type".to_string(), "application/custom".to_string());
+    headers.insert("anthropic-version".to_string(), "2099-01-01".to_string());
+
+    let model = make_model(json!({}));
+    let context = context_with_tools(vec![]);
+    let options = AnthropicOptions {
+        api_key: Some("test-key".to_string()),
+        cache_retention: Some(CacheRetention::None),
+        headers: Some(headers),
+        ..Default::default()
+    };
+
+    stream(&transport, &model, &context, &options, 0);
+
+    let request = only_request(&transport);
+    assert_eq!(
+        request.headers.get("content-type").map(String::as_str),
+        Some("application/custom")
+    );
+    assert_eq!(
+        request.headers.get("anthropic-version").map(String::as_str),
+        Some("2099-01-01")
+    );
+}
+
+#[test]
 fn request_targets_the_v1_messages_endpoint() {
     let transport = ScriptedTransport::new();
     transport.push_ok(hello_sse_body());
@@ -486,6 +554,67 @@ fn non_2xx_status_surfaces_error_result() {
         result.events[0],
         AssistantMessageEvent::Error { .. }
     ));
+    // No body: mirror the SDK APIError "no body" marker, prefixed by status.
+    assert_eq!(
+        result.message.error_message.as_deref(),
+        Some("429 status code (no body)")
+    );
+}
+
+#[test]
+fn non_2xx_status_surfaces_json_error_body_diagnostic() {
+    // A 400 with the API's JSON error body (the `anthropic-version` failure the
+    // header fix prevents): the terminal message must carry the body's
+    // diagnostic text, not just the status, mirroring the SDK APIError shape
+    // pi surfaces (anthropic-messages.ts:752).
+    let transport = ScriptedTransport::new();
+    transport.push_response(Ok(HttpResponse {
+        status: 400,
+        headers: Default::default(),
+        body: json!({
+            "type": "error",
+            "error": {
+                "type": "invalid_request_error",
+                "message": "anthropic-version: header is required"
+            }
+        })
+        .to_string(),
+    }));
+
+    let model = make_model(json!({}));
+    let context = context_with_tools(vec![]);
+    let options = api_key_options("test-key");
+
+    let result = stream(&transport, &model, &context, &options, 0);
+
+    assert_eq!(result.message.stop_reason, StopReason::Error);
+    assert_eq!(
+        result.message.error_message.as_deref(),
+        Some("400 anthropic-version: header is required")
+    );
+}
+
+#[test]
+fn non_2xx_status_falls_back_to_raw_body_when_not_json() {
+    // A non-JSON error body (e.g. an upstream gateway) is surfaced verbatim
+    // after the status rather than discarded.
+    let transport = ScriptedTransport::new();
+    transport.push_response(Ok(HttpResponse {
+        status: 502,
+        headers: Default::default(),
+        body: "upstream connect error".to_string(),
+    }));
+
+    let model = make_model(json!({}));
+    let context = context_with_tools(vec![]);
+    let options = api_key_options("test-key");
+
+    let result = stream(&transport, &model, &context, &options, 0);
+
+    assert_eq!(
+        result.message.error_message.as_deref(),
+        Some("502 upstream connect error")
+    );
 }
 
 #[test]

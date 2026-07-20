@@ -31,7 +31,10 @@
 //! `error` event with no preceding `start`. The buffered driver reproduces that:
 //! a truncated 200 body surfaces the parser's
 //! `"Anthropic stream ended before message_stop"`; a non-2xx status, a transport
-//! error, or a missing credential yield an error-only [`StreamResult`].
+//! error, or a missing credential yield an error-only [`StreamResult`]. A non-2xx
+//! create carries the API's diagnostic through [`format_api_error`], mirroring
+//! the SDK `APIError`'s `` `${status} ${message}` `` shape pi surfaces
+//! (`anthropic-messages.ts:752`), rather than discarding the response body.
 
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::StreamResult;
@@ -110,6 +113,31 @@ fn error_result(
     }
 }
 
+/// Format a non-2xx create response into the terminal error message, mirroring
+/// the Anthropic SDK's `APIError` shape (`` `${status} ${message}` ``) that pi
+/// surfaces as the caught `error.message` (`anthropic-messages.ts:752`). The
+/// SDK derives the message from the JSON error body's `error.message`
+/// (`APIError.makeMessage`); this reproduces that, falling back to the raw body
+/// text, then to a no-body marker — so callers see the API's diagnostic instead
+/// of a bare status.
+fn format_api_error(status: u16, body: &str) -> String {
+    let trimmed = body.trim();
+    let detail = serde_json::from_str::<serde_json::Value>(trimmed)
+        .ok()
+        .and_then(|value| {
+            value
+                .get("error")
+                .and_then(|error| error.get("message"))
+                .and_then(|message| message.as_str())
+                .map(str::to_string)
+        });
+    match detail {
+        Some(message) => format!("{status} {message}"),
+        None if !trimmed.is_empty() => format!("{status} {trimmed}"),
+        None => format!("{status} status code (no body)"),
+    }
+}
+
 /// Stream a response for `model` over the injected `transport`, mirroring pi's
 /// `stream()` request assembly and SSE handling. `timestamp` is the message
 /// timestamp pi sets via `Date.now()` (threaded here for determinism, as the SSE
@@ -166,7 +194,7 @@ pub fn stream<T: HttpTransport + ?Sized>(
         Ok(response) => error_result(
             model,
             timestamp,
-            format!("Anthropic request failed with status {}", response.status),
+            format_api_error(response.status, &response.body),
         ),
         Err(error) => error_result(model, timestamp, error.to_string()),
     }

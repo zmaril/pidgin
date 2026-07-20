@@ -25,11 +25,25 @@
 //! - the auth credential header (`x-api-key` for API-key, `authorization: Bearer`
 //!   for OAuth/copilot), which the Anthropic SDK derives from `apiKey`/`authToken`.
 //!
-//! What it deliberately leaves to the transport/SDK layer (not set by pi's
-//! `createClient`, so not invented here): `content-type`, `anthropic-version`,
-//! and the non-OAuth `user-agent`. github-copilot dynamic vision headers
-//! (`buildCopilotDynamicHeaders`) are a sibling concern and are not assembled
-//! here; the copilot branch reproduces only the static header set.
+//! The SDK-equivalent defaults pi delegates to the official Anthropic TS SDK
+//! (pi's `createClient` never writes them because the SDK injects them before
+//! the request hits the wire; our raw transport has no such layer, so they are
+//! supplied here to reproduce the same wire request): `content-type:
+//! application/json` and `anthropic-version: 2023-06-01` (the SDK's
+//! `DEFAULT_ANTHROPIC_VERSION`; the API rejects a request without it with
+//! `400 anthropic-version: header is required`). Both are added at low
+//! precedence so a caller-supplied `content-type`/`anthropic-version` still
+//! wins. `accept: application/json` stays exactly as `createClient` sets it
+//! (`anthropic-messages.ts:860/882/901`): the Messages API selects SSE from the
+//! body's `stream: true`, not the `accept` header, so the SDK does not override
+//! it for streaming.
+//!
+//! Still left to the SDK and not reproduced here: the non-OAuth `user-agent`
+//! (cosmetic — the API does not require it, and the SDK's exact
+//! `@anthropic-ai/sdk/<version>` string is not load-bearing). github-copilot
+//! dynamic vision headers (`buildCopilotDynamicHeaders`) are a sibling concern
+//! and are not assembled here; the copilot branch reproduces only the static
+//! header set.
 
 use std::collections::BTreeMap;
 
@@ -42,6 +56,10 @@ use super::compat::get_anthropic_compat;
 
 /// `anthropic-messages.ts:74`.
 const CLAUDE_CODE_VERSION: &str = "2.1.75";
+/// The Anthropic SDK's `DEFAULT_ANTHROPIC_VERSION`. pi delegates this to the SDK
+/// (`createClient` never sets it); supplied here so the raw request carries the
+/// header the API requires.
+const ANTHROPIC_VERSION: &str = "2023-06-01";
 /// `anthropic-messages.ts:168`.
 const FINE_GRAINED_TOOL_STREAMING_BETA: &str = "fine-grained-tool-streaming-2025-05-14";
 /// `anthropic-messages.ts:169`.
@@ -256,12 +274,29 @@ pub fn assemble_request(
         }
     }
 
+    apply_sdk_default_headers(&mut headers);
+
     HttpRequest {
         method: "POST".to_string(),
         url: request_url(&model.base_url),
         headers,
         body: Some(body),
     }
+}
+
+/// Supply the SDK-equivalent defaults pi's `createClient` leaves to the official
+/// Anthropic TS SDK (see the module-level boundary note): `content-type:
+/// application/json` and `anthropic-version` (`DEFAULT_ANTHROPIC_VERSION`). Both
+/// are inserted only when absent, so a caller-supplied header (already merged
+/// from `model.headers`/`optionsHeaders`) keeps precedence — matching the SDK,
+/// whose built-in defaults sit below `defaultHeaders`.
+fn apply_sdk_default_headers(headers: &mut BTreeMap<String, String>) {
+    headers
+        .entry("anthropic-version".to_string())
+        .or_insert_with(|| ANTHROPIC_VERSION.to_string());
+    headers
+        .entry("content-type".to_string())
+        .or_insert_with(|| "application/json".to_string());
 }
 
 /// Set `authorization: Bearer <token>` from the credential unless a caller
