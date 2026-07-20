@@ -23,6 +23,7 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use indexmap::IndexMap;
 use serde::de::{self, Visitor};
@@ -437,6 +438,9 @@ pub struct RgbColor {
 /// Where a terminal-theme decision came from.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DetectionSource {
+    /// Parsed from an OSC 11 background-color query response (pi's
+    /// `source: "terminal background"`).
+    TerminalBackground,
     /// Parsed from the `COLORFGBG` environment variable.
     ColorFgBg,
     /// No hint was found; the default was used.
@@ -549,6 +553,76 @@ pub fn detect_terminal_background_from_env(
         detail: "no terminal background hint found".to_string(),
         confidence: Confidence::Low,
     }
+}
+
+// ============================================================================
+// Terminal-query theme detection (synchronous port of pi's async detectors)
+// ============================================================================
+
+/// A source that can query the terminal's background color, mirroring pi's
+/// `TerminalBackgroundThemeDetector` interface (`ui.queryTerminalBackgroundColor`).
+///
+/// pi's method is `async` and returns a promise; pidgin's TUI stack is fully
+/// synchronous (a poll-based run loop, no async reactor), so this is a blocking
+/// call that drives the input pump with a `timeout` deadline. The async in pi is
+/// a JS-runtime artifact — the bytes written, the query semantics, and the
+/// timeout are identical.
+pub trait TerminalBackgroundThemeDetector {
+    /// Query the terminal background color via OSC 11, returning the parsed color
+    /// or `None` on timeout / parse failure. Blocks for at most `timeout`.
+    fn query_terminal_background_color(&mut self, timeout: Duration) -> Option<RgbColor>;
+}
+
+/// A source that can additionally query the terminal's color-scheme preference,
+/// mirroring pi's `TerminalAutoThemeDetector` (`ui.queryTerminalColorScheme`).
+/// In pi the color-scheme method is optional; here it is a required method whose
+/// `None` return models both "unsupported" and "timed out".
+pub trait TerminalAutoThemeDetector: TerminalBackgroundThemeDetector {
+    /// Query the terminal color scheme via DSR (`CSI ? 996 n`), returning the
+    /// reported theme or `None` when unsupported / timed out. Blocks at most
+    /// `timeout`.
+    fn query_terminal_color_scheme(&mut self, timeout: Duration) -> Option<TerminalTheme>;
+}
+
+/// Detect the terminal theme by querying its background color, falling back to
+/// the environment. Synchronous port of pi's `detectTerminalBackgroundTheme`:
+/// query OSC 11; on a color, classify by luminance and report
+/// `source: "terminal background"` with high confidence; otherwise fall back to
+/// [`detect_terminal_background_from_env`].
+///
+/// The intentional divergence from pi is that this is synchronous rather than
+/// `async`: pi's `await ui.queryTerminalBackgroundColor(...)` is a JS-runtime
+/// concern; the detection behavior, the `detail` string, the source, and the
+/// confidence are byte-identical.
+pub fn detect_terminal_background_theme(
+    ui: &mut impl TerminalBackgroundThemeDetector,
+    timeout: Duration,
+    env: &HashMap<String, String>,
+) -> TerminalThemeDetection {
+    if let Some(rgb) = ui.query_terminal_background_color(timeout) {
+        return TerminalThemeDetection {
+            theme: get_theme_for_rgb_color(rgb),
+            source: DetectionSource::TerminalBackground,
+            detail: format!("OSC 11 background rgb({}, {}, {})", rgb.r, rgb.g, rgb.b),
+            confidence: Confidence::High,
+        };
+    }
+    detect_terminal_background_from_env(env)
+}
+
+/// Detect the effective terminal theme for automatic light/dark theming.
+/// Synchronous port of pi's `detectTerminalThemeForAuto`: prefer the DSR
+/// color-scheme report; if unavailable, fall back to
+/// [`detect_terminal_background_theme`] and use its theme.
+pub fn detect_terminal_theme_for_auto(
+    ui: &mut impl TerminalAutoThemeDetector,
+    timeout: Duration,
+    env: &HashMap<String, String>,
+) -> TerminalTheme {
+    if let Some(scheme) = ui.query_terminal_color_scheme(timeout) {
+        return scheme;
+    }
+    detect_terminal_background_theme(ui, timeout, env).theme
 }
 
 // ============================================================================
@@ -742,6 +816,112 @@ mod tests {
                 g: 250,
                 b: 250
             }),
+            TerminalTheme::Light
+        );
+    }
+
+    /// A mock terminal-query source for the synchronous detectors. `bg` is the
+    /// OSC 11 background color to report (or `None` to model timeout / failure);
+    /// `scheme` is the DSR color-scheme reply (or `None` for unsupported).
+    struct MockQuerier {
+        bg: Option<RgbColor>,
+        scheme: Option<TerminalTheme>,
+    }
+
+    impl TerminalBackgroundThemeDetector for MockQuerier {
+        fn query_terminal_background_color(&mut self, _timeout: Duration) -> Option<RgbColor> {
+            self.bg
+        }
+    }
+
+    impl TerminalAutoThemeDetector for MockQuerier {
+        fn query_terminal_color_scheme(&mut self, _timeout: Duration) -> Option<TerminalTheme> {
+            self.scheme
+        }
+    }
+
+    #[test]
+    fn detect_background_theme_prefers_osc11_then_falls_back_to_env() {
+        let timeout = Duration::from_millis(50);
+
+        // OSC 11 reports a dark color: high-confidence "terminal background".
+        let mut ui = MockQuerier {
+            bg: Some(RgbColor { r: 8, g: 8, b: 8 }),
+            scheme: None,
+        };
+        let detection = detect_terminal_background_theme(&mut ui, timeout, &env_of(&[]));
+        assert_eq!(detection.theme, TerminalTheme::Dark);
+        assert_eq!(detection.source, DetectionSource::TerminalBackground);
+        assert_eq!(detection.confidence, Confidence::High);
+        assert_eq!(detection.detail, "OSC 11 background rgb(8, 8, 8)");
+
+        // OSC 11 reports a light color.
+        let mut ui = MockQuerier {
+            bg: Some(RgbColor {
+                r: 250,
+                g: 250,
+                b: 250,
+            }),
+            scheme: None,
+        };
+        let detection = detect_terminal_background_theme(&mut ui, timeout, &env_of(&[]));
+        assert_eq!(detection.theme, TerminalTheme::Light);
+        assert_eq!(detection.source, DetectionSource::TerminalBackground);
+        assert_eq!(detection.detail, "OSC 11 background rgb(250, 250, 250)");
+
+        // No OSC 11 color: fall back to the COLORFGBG env path (light here).
+        let mut ui = MockQuerier {
+            bg: None,
+            scheme: None,
+        };
+        let detection =
+            detect_terminal_background_theme(&mut ui, timeout, &env_of(&[("COLORFGBG", "0;15")]));
+        assert_eq!(detection.theme, TerminalTheme::Light);
+        assert_eq!(detection.source, DetectionSource::ColorFgBg);
+        assert_eq!(detection.confidence, Confidence::High);
+
+        // No OSC 11 color and no env hint: the low-confidence dark fallback.
+        let mut ui = MockQuerier {
+            bg: None,
+            scheme: None,
+        };
+        let detection = detect_terminal_background_theme(&mut ui, timeout, &env_of(&[]));
+        assert_eq!(detection.theme, TerminalTheme::Dark);
+        assert_eq!(detection.source, DetectionSource::Fallback);
+        assert_eq!(detection.confidence, Confidence::Low);
+    }
+
+    #[test]
+    fn detect_theme_for_auto_prefers_color_scheme_then_osc11_then_env() {
+        let timeout = Duration::from_millis(50);
+
+        // Color-scheme report wins outright.
+        let mut ui = MockQuerier {
+            bg: Some(RgbColor { r: 8, g: 8, b: 8 }),
+            scheme: Some(TerminalTheme::Light),
+        };
+        assert_eq!(
+            detect_terminal_theme_for_auto(&mut ui, timeout, &env_of(&[])),
+            TerminalTheme::Light
+        );
+
+        // No color scheme: fall through to the OSC 11 background theme.
+        let mut ui = MockQuerier {
+            bg: Some(RgbColor { r: 8, g: 8, b: 8 }),
+            scheme: None,
+        };
+        assert_eq!(
+            detect_terminal_theme_for_auto(&mut ui, timeout, &env_of(&[])),
+            TerminalTheme::Dark
+        );
+
+        // No color scheme and no OSC 11: fall through to the env path.
+        let mut ui = MockQuerier {
+            bg: None,
+            scheme: None,
+        };
+        assert_eq!(
+            detect_terminal_theme_for_auto(&mut ui, timeout, &env_of(&[("COLORFGBG", "0;15")])),
             TerminalTheme::Light
         );
     }

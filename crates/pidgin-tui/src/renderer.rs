@@ -27,13 +27,40 @@ use std::rc::Rc;
 
 use crate::overlay::{ComponentId, OverlayFocusRestoreState, OverlayStackEntry, ReactionAction};
 use crate::terminal::Terminal;
-use crate::terminal_colors::TerminalColorScheme;
+use crate::terminal_colors::{RgbColor, TerminalColorScheme};
 use crate::{normalize_terminal_output, visible_width};
 
 /// A registered terminal-color-scheme listener (pi's
 /// `(scheme: TerminalColorScheme) => void`). Invoked when the terminal reports a
 /// light/dark scheme change via a DEC private mode 2031 color-scheme report.
 pub type TerminalColorSchemeListener = Box<dyn FnMut(TerminalColorScheme)>;
+
+/// Single-slot synchronous analogue of pi's `PendingOsc11BackgroundQuery`
+/// (`{ settled, resolve, timer }`). pidgin's TUI stack is fully synchronous, so
+/// instead of a JS promise resolver + timer this records only whether the query
+/// has settled and the parsed reply (if any). Driven by
+/// [`RunLoop::query_terminal_background_color`](crate::RunLoop::query_terminal_background_color).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(crate) struct PendingOsc11BackgroundQuery {
+    /// Whether the query has been resolved (by a consumed response or a timeout).
+    pub(crate) settled: bool,
+    /// The parsed background color, once a response has been consumed. `None`
+    /// while unsettled and after a timeout.
+    pub(crate) reply: Option<RgbColor>,
+}
+
+/// Single-slot synchronous analogue of pi's `queryTerminalColorScheme` pending
+/// state. pi subscribes a temporary `onTerminalColorSchemeChange` listener and
+/// settles on the first report; the sync port records the pending resolution in
+/// this slot, filled by `consume_terminal_color_scheme_report`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(crate) struct PendingColorSchemeQuery {
+    /// Whether the query has been resolved (by a consumed report or a timeout).
+    pub(crate) settled: bool,
+    /// The reported color scheme, once a report has been consumed. `None` while
+    /// unsettled and after a timeout.
+    pub(crate) reply: Option<TerminalColorScheme>,
+}
 
 /// Cursor position marker: a zero-width APC sequence terminals ignore.
 /// Focusable components emit this at the cursor position when focused; the
@@ -355,6 +382,19 @@ pub struct Tui<T: Terminal> {
     /// (pi's `terminalColorSchemeNotificationsEnabled`). Gates the `\x1b[?2031h`
     /// / `\x1b[?2031l` writes on start/stop and toggle.
     pub(crate) terminal_color_scheme_notifications_enabled: bool,
+    /// Count of OSC 11 background-color queries awaiting a response (pi's
+    /// `pendingOsc11BackgroundReplies`). Gates `consume_osc11_background_response`
+    /// so stray OSC 11 frames are only intercepted while a query is in flight.
+    pub(crate) pending_osc11_background_replies: usize,
+    /// The single in-flight OSC 11 background query slot (pi keeps a queue; the
+    /// synchronous port needs only one). Armed by
+    /// [`Tui::write_terminal_background_query`], settled in
+    /// `consume_osc11_background_response`.
+    pub(crate) pending_osc11_background_query: Option<PendingOsc11BackgroundQuery>,
+    /// The single in-flight DSR color-scheme query slot. Armed by
+    /// [`Tui::write_terminal_color_scheme_query`], settled in
+    /// `consume_terminal_color_scheme_report`.
+    pub(crate) pending_color_scheme_query: Option<PendingColorSchemeQuery>,
 }
 
 impl<T: Terminal> Tui<T> {
@@ -393,6 +433,9 @@ impl<T: Terminal> Tui<T> {
             input_listeners: Vec::new(),
             terminal_color_scheme_listeners: Vec::new(),
             terminal_color_scheme_notifications_enabled: false,
+            pending_osc11_background_replies: 0,
+            pending_osc11_background_query: None,
+            pending_color_scheme_query: None,
         }
     }
 
@@ -440,6 +483,78 @@ impl<T: Terminal> Tui<T> {
                 "\x1b[?2031l"
             });
         }
+    }
+
+    /// Write the OSC 11 background-color query (`ESC ] 11 ; ? BEL`) and arm a
+    /// pending reply slot. This is the write-and-arm half of pi's
+    /// `queryTerminalBackgroundColor`; the synchronous pump
+    /// ([`RunLoop::query_terminal_background_color`](crate::RunLoop::query_terminal_background_color))
+    /// drives input until the response is consumed (settling the slot) or a
+    /// deadline elapses. The exact bytes match pi's
+    /// `this.terminal.write("\x1b]11;?\x07")`.
+    pub fn write_terminal_background_query(&mut self) {
+        self.pending_osc11_background_replies += 1;
+        self.pending_osc11_background_query = Some(PendingOsc11BackgroundQuery::default());
+        self.terminal.write("\x1b]11;?\x07");
+    }
+
+    /// Whether the in-flight OSC 11 background query has been settled, either by a
+    /// consumed response or a timeout ([`Tui::settle_terminal_background_timeout`]).
+    pub fn terminal_background_query_settled(&self) -> bool {
+        self.pending_osc11_background_query
+            .map(|q| q.settled)
+            .unwrap_or(false)
+    }
+
+    /// Mark the in-flight OSC 11 background query as settled with no reply,
+    /// mirroring pi's query timer resolving `undefined`. A late response arriving
+    /// afterwards is consumed and discarded (the slot is already settled).
+    pub fn settle_terminal_background_timeout(&mut self) {
+        if let Some(query) = self.pending_osc11_background_query.as_mut() {
+            query.settled = true;
+        }
+    }
+
+    /// Take the parsed OSC 11 background reply, clearing the pending slot. Returns
+    /// `None` if the query timed out before a response was consumed. Mirrors the
+    /// value pi's `queryTerminalBackgroundColor` promise resolves to.
+    pub fn take_terminal_background_reply(&mut self) -> Option<RgbColor> {
+        self.pending_osc11_background_query
+            .take()
+            .and_then(|q| q.reply)
+    }
+
+    /// Write the DSR color-scheme query (`CSI ? 996 n`) and arm a pending reply
+    /// slot. This is the write-and-arm half of pi's `queryTerminalColorScheme`;
+    /// the pump drives input until a DEC 2031 report is consumed (settling the
+    /// slot) or a deadline elapses. The exact bytes match pi's
+    /// `this.terminal.write("\x1b[?996n")`.
+    pub fn write_terminal_color_scheme_query(&mut self) {
+        self.pending_color_scheme_query = Some(PendingColorSchemeQuery::default());
+        self.terminal.write("\x1b[?996n");
+    }
+
+    /// Whether the in-flight DSR color-scheme query has been settled, either by a
+    /// consumed report or a timeout ([`Tui::settle_terminal_color_scheme_timeout`]).
+    pub fn terminal_color_scheme_query_settled(&self) -> bool {
+        self.pending_color_scheme_query
+            .map(|q| q.settled)
+            .unwrap_or(false)
+    }
+
+    /// Mark the in-flight DSR color-scheme query as settled with no reply,
+    /// mirroring pi's query timer resolving `undefined`.
+    pub fn settle_terminal_color_scheme_timeout(&mut self) {
+        if let Some(query) = self.pending_color_scheme_query.as_mut() {
+            query.settled = true;
+        }
+    }
+
+    /// Take the reported color scheme, clearing the pending slot. Returns `None`
+    /// if the query timed out before a report was consumed. Mirrors the value
+    /// pi's `queryTerminalColorScheme` promise resolves to.
+    pub fn take_terminal_color_scheme_reply(&mut self) -> Option<TerminalColorScheme> {
+        self.pending_color_scheme_query.take().and_then(|q| q.reply)
     }
 
     /// Invalidate every component's cached render state, ported from pi's
@@ -1414,5 +1529,80 @@ mod tests {
         assert_eq!(tui.input_deliveries()[0], (id, "a".to_string()));
         // ...and did not spuriously fire a color-scheme listener.
         assert_eq!(seen.borrow().len(), 2);
+    }
+
+    #[test]
+    fn terminal_query_methods_emit_exact_bytes() {
+        // The write-and-arm halves of pi's queryTerminal* methods emit the exact
+        // OSC 11 background query and DSR color-scheme query bytes.
+        let mut tui = Tui::new(LoggingTerminal::new(20, 5), false);
+
+        tui.write_terminal_background_query();
+        assert_eq!(tui.take_writes(), "\x1b]11;?\x07");
+
+        tui.write_terminal_color_scheme_query();
+        assert_eq!(tui.take_writes(), "\x1b[?996n");
+    }
+
+    #[test]
+    fn osc11_background_response_settles_pending_query() {
+        // With a query in flight, an OSC 11 response is consumed (not delivered)
+        // and settles the pending slot with the parsed color.
+        let mut tui = Tui::new(LoggingTerminal::new(20, 5), false);
+        let focusable: Rc<RefCell<dyn Component>> = Rc::new(RefCell::new(SharedLines::new()));
+        let id = tui.register_component(focusable);
+        tui.set_focus(Some(id));
+
+        // No query armed yet: an OSC 11 frame is NOT intercepted (pi's
+        // `pendingOsc11BackgroundReplies <= 0` guard) and reaches the component.
+        tui.handle_input("\x1b]11;rgb:ffff/ffff/ffff\x07");
+        assert_eq!(tui.input_deliveries().len(), 1);
+
+        tui.write_terminal_background_query();
+        let _ = tui.take_writes();
+        assert!(!tui.terminal_background_query_settled());
+
+        // The response is consumed (no new delivery) and settles the slot.
+        tui.handle_input("\x1b]11;rgb:ffff/0000/8080\x07");
+        assert_eq!(tui.input_deliveries().len(), 1, "response must be consumed");
+        assert!(tui.terminal_background_query_settled());
+        assert_eq!(
+            tui.take_terminal_background_reply(),
+            Some(RgbColor {
+                r: 255,
+                g: 0,
+                b: 128
+            })
+        );
+        // Slot cleared after taking.
+        assert!(!tui.terminal_background_query_settled());
+    }
+
+    #[test]
+    fn osc11_background_timeout_yields_no_reply() {
+        // A settled-by-timeout query returns None; a late response is then
+        // consumed and discarded (the slot is already settled).
+        let mut tui = Tui::new(LoggingTerminal::new(20, 5), false);
+        tui.write_terminal_background_query();
+        tui.settle_terminal_background_timeout();
+        assert!(tui.terminal_background_query_settled());
+        assert_eq!(tui.take_terminal_background_reply(), None);
+    }
+
+    #[test]
+    fn color_scheme_query_settles_from_report() {
+        // A DSR color-scheme query is settled by the next DEC 2031 report,
+        // resolving the reported scheme.
+        let mut tui = Tui::new(LoggingTerminal::new(20, 5), false);
+        tui.write_terminal_color_scheme_query();
+        let _ = tui.take_writes();
+        assert!(!tui.terminal_color_scheme_query_settled());
+
+        tui.handle_input("\x1b[?997;1n");
+        assert!(tui.terminal_color_scheme_query_settled());
+        assert_eq!(
+            tui.take_terminal_color_scheme_reply(),
+            Some(TerminalColorScheme::Dark)
+        );
     }
 }

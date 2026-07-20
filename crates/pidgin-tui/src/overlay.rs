@@ -11,7 +11,10 @@ use std::rc::Rc;
 
 use crate::renderer::{Component, Tui, SEGMENT_RESET};
 use crate::terminal::Terminal;
-use crate::terminal_colors::parse_terminal_color_scheme_report;
+use crate::terminal_colors::{
+    is_osc11_background_color_response, parse_osc11_background_color,
+    parse_terminal_color_scheme_report,
+};
 use crate::{
     extract_segments, is_image_line, is_key_release, slice_by_column, slice_with_width,
     visible_width,
@@ -739,6 +742,39 @@ impl<T: Terminal> Tui<T> {
         for listener in self.terminal_color_scheme_listeners.iter_mut() {
             listener(scheme);
         }
+        // Settle an in-flight synchronous color-scheme query. pi's
+        // `queryTerminalColorScheme` registers a temporary
+        // `onTerminalColorSchemeChange` listener that resolves on the first
+        // report; the sync port records that resolution in the pending slot.
+        if let Some(query) = self.pending_color_scheme_query.as_mut() {
+            if !query.settled {
+                query.settled = true;
+                query.reply = Some(scheme);
+            }
+        }
+        true
+    }
+
+    /// Consume an OSC 11 background-color response, ported from pi's
+    /// `TUI.consumeOsc11BackgroundResponse`. Only intercepts a response while an
+    /// OSC 11 query is in flight (`pending_osc11_background_replies > 0`); when it
+    /// does, the parsed color settles the pending query slot and the input is
+    /// consumed (`true`) rather than delivered to the focused component.
+    fn consume_osc11_background_response(&mut self, data: &str) -> bool {
+        if self.pending_osc11_background_replies == 0 {
+            return false;
+        }
+        if !is_osc11_background_color_response(data) {
+            return false;
+        }
+        let rgb = parse_osc11_background_color(data);
+        self.pending_osc11_background_replies -= 1;
+        if let Some(query) = self.pending_osc11_background_query.as_mut() {
+            if !query.settled {
+                query.settled = true;
+                query.reply = rgb;
+            }
+        }
         true
     }
 
@@ -754,17 +790,23 @@ impl<T: Terminal> Tui<T> {
         }
     }
 
-    /// Handle terminal input. Ported from `TUI.handleInput` (`tui.ts`): first a
-    /// DEC 2031 color-scheme report is consumed and fanned out to the
-    /// color-scheme listeners; then the registered input listeners get a chance to
-    /// consume or rewrite the input; then the overlay focus-restore reconciliation
-    /// runs, and finally the input is delivered to the focused component. The
-    /// remaining OSC/cell-size/debug interceptors pi runs before the listeners are
-    /// not part of this port (the run loop feeds already-decoded
-    /// [`crate::TerminalInput`]s, so those terminal query replies are handled
-    /// inside [`crate::ProcessTerminal::feed`]).
+    /// Handle terminal input. Ported from `TUI.handleInput` (`tui.ts`): first an
+    /// OSC 11 background-color response for an in-flight query is consumed, then a
+    /// DEC 2031 color-scheme report is consumed and fanned out to the color-scheme
+    /// listeners; then the registered input listeners get a chance to consume or
+    /// rewrite the input; then the overlay focus-restore reconciliation runs, and
+    /// finally the input is delivered to the focused component. The remaining
+    /// cell-size/debug interceptors pi runs are not part of this port (the run
+    /// loop feeds already-decoded [`crate::TerminalInput`]s, so those terminal
+    /// query replies are handled inside [`crate::ProcessTerminal::feed`]).
     pub fn handle_input(&mut self, data: &str) {
-        // pi's `consumeTerminalColorSchemeReport` runs first: a DEC 2031
+        // pi's `consumeOsc11BackgroundResponse` runs first: an OSC 11
+        // background-color response for an in-flight query is consumed (never
+        // delivered to the focused component) and settles the pending query slot.
+        if self.consume_osc11_background_response(data) {
+            return;
+        }
+        // pi's `consumeTerminalColorSchemeReport` runs next: a DEC 2031
         // color-scheme report is consumed (never delivered to the focused
         // component) and fanned out to the registered listeners.
         if self.consume_terminal_color_scheme_report(data) {
