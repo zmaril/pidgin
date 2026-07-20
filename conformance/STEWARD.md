@@ -112,3 +112,13 @@ The human merges in this order (rebasing each onto the prior as needed):
 | core/tools/edit | coding-agent | pending | — | no | hybrid port (later batch) |
 | agent session modules | coding-agent | pending | — | no | later batch |
 | utils/abort-signals | ai | deferred | — | no | abort-signals.ts deferred: sole consumer openai-codex-responses.ts unported; event-driven combinator has no faithful poll-seam mapping; port alongside consumer |
+
+## Shim audit (2026-07-20)
+
+Audited all 40 shim override files (3286 LOC) + 2 `_bridge/` helpers. One over-count found and resolved; two documented hybrids observed and accepted.
+
+- **fuzzy.ts — resolved.** `fuzzyFilter`'s orchestration (tokenize, multi-token AND gate, score-sum, sort/rank) originally ran in the TS shim while only per-pair `fuzzyMatch` was native, yet the row counted `test/fuzzy.test.ts` as rust-backed. Fixed by porting the whole orchestration to Rust (`fuzzy_filter_indices` + napi `fuzzyFilter`, PR #223); the shim now delegates fully, so the row is honestly rust-backed (14 cases).
+- **path-utils.ts — observed and accepted.** `resolveReadPath` re-authors a fallback ladder in TS (native transforms + an injected filesystem-exists probe), documented; the Rust port intentionally takes an injected `exists` closure. No action.
+- **faux.ts — observed and accepted.** ~7 lines of pacing math in TS (token estimate + delay), disclosed; the streamed content and accounting run in Rust. No action.
+
+Everything else classified as pure marshaling or documented hybrid — the overlay is honest.

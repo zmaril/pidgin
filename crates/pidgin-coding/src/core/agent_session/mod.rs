@@ -17,8 +17,12 @@
 //! backoff (`is_retryable_error`/`prepare_retry`/`abort_retry`/`is_retrying` and
 //! the `will_retry` helpers the turn handler calls). [`compaction_turn`] carries
 //! the compaction integration (`check_compaction`/`run_auto_compaction`/the manual
-//! `compact`), wired into the turn spine's pre-send and post-run checks. The
-//! tree-nav / stats wiring lands in later PRs.
+//! `compact`), wired into the turn spine's pre-send and post-run checks.
+//! [`tree`] carries session-tree navigation (`navigate_tree`), branch
+//! summarization through the compaction seam, the `session_before_tree` /
+//! `session_tree` extension dispatch, and the fork-selector accessor
+//! (`get_user_messages_for_forking`). The stats / export wiring lands in a later
+//! PR.
 //!
 //! # Owning an `AgentSession`
 //!
@@ -61,6 +65,7 @@ pub mod host;
 pub mod queue;
 pub mod retry;
 pub mod session;
+pub mod tree;
 pub mod turn;
 
 #[cfg(test)]
@@ -72,4 +77,5 @@ pub use events::*;
 pub use host::*;
 pub use queue::*;
 pub use session::*;
+pub use tree::*;
 pub use turn::*;

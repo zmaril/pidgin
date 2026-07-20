@@ -115,6 +115,19 @@ impl HttpResponse {
     }
 }
 
+/// A streaming HTTP response: status + headers are known up front (so the
+/// driver can decide error-vs-parse before the body arrives), then the body
+/// is delivered as a lazy iterator of byte chunks.
+pub struct HttpStreamResponse<'a> {
+    /// HTTP status code, known before the body is read.
+    pub status: u16,
+    /// Response headers, lowercased keys by convention, known before the body.
+    pub headers: BTreeMap<String, String>,
+    /// The body, delivered lazily as byte chunks. Each `next()` may block until
+    /// the next chunk arrives, which is what supplies inter-chunk timing.
+    pub chunks: Box<dyn Iterator<Item = std::io::Result<Vec<u8>>> + 'a>,
+}
+
 /// A single WebSocket frame the ported code exchanges. Text and binary mirror
 /// the two `WebSocket` message payload kinds.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -148,6 +161,22 @@ pub trait WebSocket: Send {
 pub trait HttpTransport: Send + Sync {
     /// Perform `request` and return the response (pi's `fetch`).
     fn send(&self, request: &HttpRequest) -> io::Result<HttpResponse>;
+    /// Perform `request` and return a streaming response: status + headers up
+    /// front, then the body as a lazy iterator of byte chunks.
+    ///
+    /// Compatibility shim: the default buffers via `send()` and yields the whole
+    /// body as a SINGLE chunk -- this is NOT incremental streaming. A transport
+    /// that only implements `send` is safe to use in the streaming path but
+    /// delivers no inter-chunk timing. Real streaming requires overriding this
+    /// method (see `ReqwestTransport`).
+    fn send_streaming(&self, request: &HttpRequest) -> io::Result<HttpStreamResponse<'_>> {
+        let r = self.send(request)?;
+        Ok(HttpStreamResponse {
+            status: r.status,
+            headers: r.headers,
+            chunks: Box::new(std::iter::once(Ok(r.body.into_bytes()))),
+        })
+    }
     /// Open a WebSocket to `url`. The default rejects the WebSocket path for
     /// transports that do not implement it, so a request-only transport is still
     /// a valid [`HttpTransport`].
@@ -425,5 +454,46 @@ mod tests {
             Err(e) => assert_eq!(e.kind(), io::ErrorKind::Unsupported),
             Ok(_) => panic!("expected Unsupported error"),
         }
+    }
+
+    #[test]
+    fn default_send_streaming_yields_whole_body_as_single_chunk() {
+        // The default `send_streaming` is the compatibility shim: it buffers via
+        // `send()` and delivers the entire body as ONE chunk. This proves a
+        // transport implementing only `send` (ScriptedTransport) is usable in the
+        // streaming path, just without incremental delivery.
+        let body = "event: message_start\ndata: {\"a\":1}\n\nevent: message_stop\n\n";
+        let transport = ScriptedTransport::new();
+        transport.push_response(Ok(HttpResponse {
+            status: 201,
+            headers: BTreeMap::from([(
+                "content-type".to_string(),
+                "text/event-stream".to_string(),
+            )]),
+            body: body.to_string(),
+        }));
+
+        let stream = transport
+            .send_streaming(&HttpRequest::post(
+                "https://api.example/v1",
+                "{\"stream\":true}",
+            ))
+            .unwrap();
+
+        assert_eq!(stream.status, 201);
+        assert_eq!(
+            stream.headers.get("content-type").map(String::as_str),
+            Some("text/event-stream")
+        );
+
+        let chunks: Vec<Vec<u8>> = stream.chunks.map(|c| c.unwrap()).collect();
+        // Exactly one chunk, holding the whole body -- the non-streaming shim.
+        assert_eq!(chunks.len(), 1);
+        assert_eq!(chunks[0], body.as_bytes());
+
+        // The request was still recorded, exactly as `send` would.
+        let requests = transport.requests();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].method, "POST");
     }
 }
