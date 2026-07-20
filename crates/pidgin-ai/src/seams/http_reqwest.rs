@@ -15,21 +15,30 @@
 //! its `reqwest` dependency live behind the non-default `native-http` feature.
 //! The default `cargo build/test --workspace` never pulls reqwest.
 //!
-//! # Buffered, not streaming
+//! # Buffered `send`, incremental `send_streaming`
 //!
 //! The [`HttpTransport::send`] signature returns a whole [`HttpResponse`] whose
-//! `body` is a complete `String`, so this transport reads the entire response
-//! body to end before returning — correct for one-shot (`-p`) and conformance
-//! runs, where the driver hands the full SSE body to the parser. Live token
-//! streaming would require an incremental variant of the seam (a chunk callback
-//! or iterator on `send`); that does not exist yet and is out of scope here.
+//! `body` is a complete `String`, so that method reads the entire response body
+//! to end before returning — correct for one-shot (`-p`) and conformance runs,
+//! where the driver hands the full SSE body to the parser.
+//!
+//! This transport additionally overrides [`HttpTransport::send_streaming`] to
+//! deliver the body incrementally: status + headers are read up front, then the
+//! body is exposed as a lazy iterator that performs one blocking `read()` per
+//! step over reqwest's [`std::io::Read`], so each chunk arrives with real
+//! inter-chunk timing rather than the default's single buffered chunk. No
+//! driver/consumer is wired to `send_streaming` yet; this is the transport-side
+//! capability only.
 
 use std::io;
 use std::time::Duration;
 
-use reqwest::blocking::Client;
+use std::collections::BTreeMap;
+use std::io::Read;
 
-use super::http::{HttpRequest, HttpResponse, HttpTransport};
+use reqwest::blocking::{Client, RequestBuilder, Response};
+
+use super::http::{HttpRequest, HttpResponse, HttpStreamResponse, HttpTransport};
 
 /// Builder for [`ReqwestTransport`], configuring the underlying blocking client.
 ///
@@ -113,9 +122,12 @@ impl Default for ReqwestTransport {
     }
 }
 
-impl HttpTransport for ReqwestTransport {
-    fn send(&self, request: &HttpRequest) -> io::Result<HttpResponse> {
-        // 1. Method (uppercased, per the seam convention).
+impl ReqwestTransport {
+    /// Translate an [`HttpRequest`] into a reqwest [`RequestBuilder`] (method +
+    /// headers + body), shared by `send` and `send_streaming` so both build the
+    /// wire request identically.
+    fn build_request(&self, request: &HttpRequest) -> io::Result<RequestBuilder> {
+        // Method (uppercased, per the seam convention).
         let method = reqwest::Method::from_bytes(request.method.to_uppercase().as_bytes())
             .map_err(|e| {
                 io::Error::new(
@@ -124,35 +136,48 @@ impl HttpTransport for ReqwestTransport {
                 )
             })?;
 
-        // 2. Headers (BTreeMap -> request headers, keys as-is).
+        // Headers (BTreeMap -> request headers, keys as-is).
         let mut builder = self.client.request(method, &request.url);
         for (name, value) in &request.headers {
             builder = builder.header(name.as_str(), value.as_str());
         }
 
-        // 3. Body, if any, as the raw string bytes.
+        // Body, if any, as the raw string bytes.
         if let Some(body) = &request.body {
             builder = builder.body(body.clone());
         }
+        Ok(builder)
+    }
+}
 
-        // 4. Execute (blocking). A non-2xx status is NOT an error here (no
-        //    `.error_for_status()`); only transport failures are.
-        let response = builder.send().map_err(map_reqwest_err)?;
+/// Collect a reqwest response's headers into the seam's lowercased-key map.
+fn collect_headers(response: &Response) -> BTreeMap<String, String> {
+    response
+        .headers()
+        .iter()
+        .map(|(name, value)| {
+            (
+                name.as_str().to_ascii_lowercase(),
+                value.to_str().unwrap_or("").to_string(),
+            )
+        })
+        .collect()
+}
+
+impl HttpTransport for ReqwestTransport {
+    fn send(&self, request: &HttpRequest) -> io::Result<HttpResponse> {
+        // Execute (blocking). A non-2xx status is NOT an error here (no
+        // `.error_for_status()`); only transport failures are.
+        let response = self
+            .build_request(request)?
+            .send()
+            .map_err(map_reqwest_err)?;
 
         let status = response.status().as_u16();
-        let headers = response
-            .headers()
-            .iter()
-            .map(|(name, value)| {
-                (
-                    name.as_str().to_ascii_lowercase(),
-                    value.to_str().unwrap_or("").to_string(),
-                )
-            })
-            .collect();
+        let headers = collect_headers(&response);
 
-        // 5. Read the WHOLE body to a String. `text()` decodes per the response
-        //    charset and consumes the response.
+        // Read the WHOLE body to a String. `text()` decodes per the response
+        // charset and consumes the response.
         let body = response.text().map_err(map_reqwest_err)?;
 
         Ok(HttpResponse {
@@ -160,6 +185,57 @@ impl HttpTransport for ReqwestTransport {
             headers,
             body,
         })
+    }
+
+    /// Real incremental streaming: read status + headers up front, then hand
+    /// back a [`ReadChunks`] iterator that performs one blocking `read()` per
+    /// step over reqwest's [`Read`], so each chunk carries genuine inter-chunk
+    /// timing. gzip stays transparent -- the `Read` yields decoded plaintext.
+    fn send_streaming(&self, request: &HttpRequest) -> io::Result<HttpStreamResponse<'_>> {
+        let response = self
+            .build_request(request)?
+            .send()
+            .map_err(map_reqwest_err)?;
+
+        let status = response.status().as_u16();
+        let headers = collect_headers(&response);
+
+        // Do NOT call `.text()`: keep the Response and read its body in chunks.
+        Ok(HttpStreamResponse {
+            status,
+            headers,
+            chunks: Box::new(ReadChunks::new(response)),
+        })
+    }
+}
+
+/// A lazy iterator over a reqwest [`Response`] body: each `next()` performs one
+/// blocking `read()` into a reused buffer and yields the bytes read, ending at
+/// EOF. The per-`read()` block is what supplies real inter-chunk timing in the
+/// streaming path.
+struct ReadChunks {
+    response: Response,
+    buf: Vec<u8>,
+}
+
+impl ReadChunks {
+    fn new(response: Response) -> Self {
+        Self {
+            response,
+            buf: vec![0u8; 8192],
+        }
+    }
+}
+
+impl Iterator for ReadChunks {
+    type Item = io::Result<Vec<u8>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.response.read(&mut self.buf) {
+            Ok(0) => None,
+            Ok(n) => Some(Ok(self.buf[..n].to_vec())),
+            Err(e) => Some(Err(e)),
+        }
     }
 }
 
@@ -285,6 +361,36 @@ mod tests {
         })
     }
 
+    /// The SSE frames the chunked-streaming tests serve, each written as its own
+    /// `Transfer-Encoding: chunked` write so chunk boundaries fall between frames.
+    const SSE_PIECES: [&str; 5] = [
+        "event: message_start\n",
+        "data: {\"a\":1}\n\n",
+        "event: content_block_delta\n",
+        "data: {\"b\":2}\n\n",
+        "event: message_stop\n\n",
+    ];
+
+    /// Spawn a one-shot loopback server that writes [`SSE_PIECES`] as separate
+    /// chunked writes, sleeping `delay` between them (so the frames arrive with
+    /// real inter-write timing), then terminates the chunked body. Shared by the
+    /// buffered-reassembly and the incremental-streaming tests.
+    fn spawn_chunked_sse_server(delay: Duration) -> String {
+        spawn_server(move |_served, stream| {
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n")
+                .unwrap();
+            for piece in SSE_PIECES {
+                let chunk = format!("{:X}\r\n{piece}\r\n", piece.len());
+                stream.write_all(chunk.as_bytes()).unwrap();
+                stream.flush().unwrap();
+                thread::sleep(delay);
+            }
+            stream.write_all(b"0\r\n\r\n").unwrap();
+            stream.flush().unwrap();
+        })
+    }
+
     /// A server that never reads/responds until after `delay`, then closes —
     /// used to exercise the client timeout path. Accepts the connection so the
     /// failure is a read timeout, not a connect refusal.
@@ -404,35 +510,63 @@ mod tests {
     #[test]
     fn chunked_multi_write_body_is_fully_reassembled() {
         // Server writes an SSE-shaped body across several TCP writes with a tiny
-        // sleep between them, using Transfer-Encoding: chunked. The transport
-        // must return the full concatenated body regardless of chunk boundaries.
-        let pieces = [
-            "event: message_start\n",
-            "data: {\"a\":1}\n\n",
-            "event: content_block_delta\n",
-            "data: {\"b\":2}\n\n",
-            "event: message_stop\n\n",
-        ];
-        let url = spawn_server(move |_served, stream| {
-            stream
-                .write_all(b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nTransfer-Encoding: chunked\r\n\r\n")
-                .unwrap();
-            for piece in pieces {
-                let chunk = format!("{:X}\r\n{piece}\r\n", piece.len());
-                stream.write_all(chunk.as_bytes()).unwrap();
-                stream.flush().unwrap();
-                thread::sleep(Duration::from_millis(5));
-            }
-            stream.write_all(b"0\r\n\r\n").unwrap();
-            stream.flush().unwrap();
-        });
+        // sleep between them, using Transfer-Encoding: chunked. The buffered
+        // `send` must return the full concatenated body regardless of boundaries.
+        let url = spawn_chunked_sse_server(Duration::from_millis(5));
 
         let response = transport()
             .send(&HttpRequest::get(format!("{url}/sse")))
             .unwrap();
 
         assert_eq!(response.status, 200);
-        assert_eq!(response.body, pieces.concat());
+        assert_eq!(response.body, SSE_PIECES.concat());
+    }
+
+    #[test]
+    fn send_streaming_delivers_body_incrementally_with_timing() {
+        use std::time::Instant;
+
+        // Same delayed chunked-server shape as the buffered test, but here we
+        // drive `send_streaming` and observe the body arriving across MULTIPLE
+        // iterator steps with real wall-clock spread -- proving incremental
+        // delivery rather than the one-chunk buffered default.
+        let url = spawn_chunked_sse_server(Duration::from_millis(10));
+
+        let transport = transport();
+        let stream = transport
+            .send_streaming(&HttpRequest::get(format!("{url}/sse")))
+            .unwrap();
+
+        assert_eq!(stream.status, 200);
+        assert_eq!(
+            stream.headers.get("content-type").map(String::as_str),
+            Some("text/event-stream")
+        );
+
+        // Drain the iterator, timestamping each chunk's arrival.
+        let start = Instant::now();
+        let mut assembled = Vec::new();
+        let mut arrivals = Vec::new();
+        for chunk in stream.chunks {
+            let bytes = chunk.expect("chunk read");
+            arrivals.push(start.elapsed());
+            assembled.extend_from_slice(&bytes);
+        }
+
+        // (a) Correctness: the reassembled bytes equal the full body.
+        assert_eq!(assembled, SSE_PIECES.concat().as_bytes());
+
+        // (b) Incremental delivery: more than one chunk arrived, and the spread
+        // between the first and last arrival is non-zero (the server's inter-
+        // write sleeps show through -- the buffered one-chunk default could not
+        // produce this).
+        assert!(
+            arrivals.len() > 1,
+            "expected multiple chunks, got {}",
+            arrivals.len()
+        );
+        let spread = arrivals.last().unwrap().saturating_sub(arrivals[0]);
+        assert!(spread > Duration::ZERO, "expected non-zero arrival spread");
     }
 
     #[test]
