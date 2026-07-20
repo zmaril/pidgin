@@ -45,7 +45,7 @@ pub mod compaction_utils;
 // drives pi's `terminal-image.ts` graphics helpers natively. Every export the
 // suite touches runs in Rust; only `detectCapabilities` (which takes a JS
 // closure) stays in pi's TS. Additive.
-mod terminal_image;
+pub mod terminal_image;
 
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
