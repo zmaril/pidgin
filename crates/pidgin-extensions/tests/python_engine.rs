@@ -2,26 +2,21 @@
 //!
 //! Writes a small pi-style Python extension to a tempdir, loads it through the
 //! [`PythonExtensionLoader`], asserts the produced host records mirror the deno
-//! engine's, then builds a [`PythonExtensionRunner`] from the loader's runtime (no
+//! engine's, then builds a `PythonExtensionRunner` from the loader's runtime (no
 //! re-import) and drives the three wired paths: `emit_tool_call` (block on `rm
 //! -rf`, `None` otherwise), the `task` command handler, and the `session_start`
 //! hook. The handlers write sentinel files so the test can prove they actually ran.
+//!
+//! The load/registration/guardrail scaffolding it shares with
+//! [`task_list_example`](../task_list_example) lives in the [`python_support`]
+//! module; this file keeps only its unique tempdir fixture and sentinel checks.
 //!
 //! No network, no API key, no V8 — libpython is embedded via PyO3's
 //! `auto-initialize`, so the whole file builds and runs in-sandbox. Gated on the
 //! `python` feature (the crate is empty without a feature).
 #![cfg(feature = "python")]
 
-use serde_json::json;
-
-use pidgin_coding::core::event_bus::EventBus;
-use pidgin_coding::core::extensions::command::CommandContext;
-use pidgin_coding::core::extensions::events::session::{SessionStartEvent, SessionStartReason};
-use pidgin_coding::core::extensions::events::tool::ToolCallEvent;
-use pidgin_coding::core::extensions::loader::ExtensionLoader;
-use pidgin_coding::core::extensions::runner::ExtensionDispatchEvent;
-
-use pidgin_extensions::{create_python_extension_runner, PythonExtensionLoader};
+mod python_support;
 
 /// The pi-style Python extension fixture. `{marker_dir}` is interpolated with the
 /// tempdir path so the `session_start` and `task` handlers can drop sentinel files
@@ -86,104 +81,31 @@ fn python_engine_loads_and_dispatches() {
     std::fs::write(&ext_path, fixture(marker_dir.to_str().unwrap())).unwrap();
     let ext_path_str = ext_path.to_str().unwrap().to_string();
 
-    // ---- load through the ExtensionLoader seam ---------------------------
-    let loader = PythonExtensionLoader::new();
-    let bus = EventBus::new();
-    let result = loader.load_extensions_cached(
-        std::slice::from_ref(&ext_path_str),
-        dir.to_str().unwrap(),
-        &bus,
-        None,
-    );
+    // ---- load + build the runner + assert registration parity ------------
+    let runner = python_support::load_runner(&ext_path_str, dir.to_str().unwrap());
+    python_support::assert_registration_parity(runner.as_ref(), "List tasks");
 
-    assert!(
-        result.errors.is_empty(),
-        "unexpected load errors: {:?}",
-        result.errors
-    );
-    assert_eq!(result.extensions.len(), 1, "one extension loaded");
-    let extension = &result.extensions[0];
-    assert_eq!(extension.path, ext_path_str);
-    assert!(
-        extension.tool_names().any(|name| name == "list_tasks"),
-        "tool list_tasks present, got {:?}",
-        extension.tools
-    );
-    assert!(
-        extension.commands.iter().any(|name| name == "task"),
-        "command task present, got {:?}",
-        extension.commands
-    );
-
-    let runtime = result.runtime.expect("loader mints a runtime");
-
-    // ---- build the runner via the factory, reusing the runtime -----------
-    let runner = create_python_extension_runner(
-        result.extensions.clone(),
-        runtime,
-        dir.to_str().unwrap().to_string(),
-    );
-
-    // Inventory-backed queries.
-    let tools = runner.get_all_registered_tools();
-    assert_eq!(tools.len(), 1);
-    assert_eq!(tools[0].tool.name, "list_tasks");
-    assert_eq!(tools[0].tool.label, "List tasks");
-
-    let commands = runner.get_registered_commands();
-    assert_eq!(commands.len(), 1);
-    assert_eq!(commands[0].invocation_name, "task");
-
-    // has_handlers gating: wired events with a handler -> true; a registered but
-    // stubbed event -> false.
-    assert!(runner.has_handlers("tool_call"), "tool_call is wired");
-    assert!(
-        runner.has_handlers("session_start"),
-        "session_start is wired"
-    );
+    // A registered but stubbed event -> has_handlers must be false. (This is the
+    // engine-specific gate; the shipped-example twin stubs `tool_result` instead.)
     assert!(
         !runner.has_handlers("input"),
         "input is registered but stubbed, so has_handlers must be false"
     );
 
     // ---- WIRED emit_tool_call: block on rm -rf, None otherwise -----------
-    let dangerous = ToolCallEvent {
-        tool_call_id: "call-1".to_string(),
-        tool_name: "bash".to_string(),
-        input: json!({ "command": "rm -rf /" }),
-    };
-    let decision = runner
-        .emit_tool_call(&dangerous)
-        .expect("a block decision for rm -rf");
-    assert_eq!(decision.block, Some(true));
-    assert_eq!(
-        decision.reason.as_deref(),
-        Some("refusing to run a destructive command")
-    );
-
-    let benign = ToolCallEvent {
-        tool_call_id: "call-2".to_string(),
-        tool_name: "bash".to_string(),
-        input: json!({ "command": "ls -la" }),
-    };
-    assert!(
-        runner.emit_tool_call(&benign).is_none(),
-        "benign command is not blocked"
+    python_support::assert_tool_call_guardrail(
+        runner.as_ref(),
+        "refusing to run a destructive command",
     );
 
     // ---- WIRED command handler: invoking `task` runs task_handler --------
-    let command = runner.get_command("task").expect("task command resolves");
-    let ctx: Box<dyn CommandContext> = runner.create_command_context();
-    (command.command.handler)("add milk", ctx.as_ref()).expect("task handler runs");
+    python_support::run_task_command(runner.as_ref(), "add milk");
     let task_marker = std::fs::read_to_string(marker_dir.join("task.txt"))
         .expect("task handler wrote its sentinel");
     assert_eq!(task_marker, "add milk");
 
     // ---- WIRED session_start hook via the generic emit -------------------
-    runner.emit(&ExtensionDispatchEvent::SessionStart(SessionStartEvent {
-        reason: SessionStartReason::Startup,
-        previous_session_file: None,
-    }));
+    python_support::emit_session_start(runner.as_ref());
     let session_marker = std::fs::read_to_string(marker_dir.join("session_start.txt"))
         .expect("session_start handler wrote its sentinel");
     assert_eq!(session_marker, "startup");
