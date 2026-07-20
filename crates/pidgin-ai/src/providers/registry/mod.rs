@@ -478,6 +478,7 @@ fn merge_request_env(
 /// [`stream`](RegistryProvider::stream). The auth-application step is gated
 /// through the injected [`AuthContext`], the same seam pi's `ModelsImpl` reaches
 /// through `getAuth`/`applyAuth`.
+#[derive(Clone)]
 pub struct Models {
     providers: Vec<Arc<RegistryProvider>>,
     /// Environment access for provider auth resolution, pi's `ModelsImpl`
