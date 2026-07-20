@@ -29,9 +29,11 @@
 //! `/compile` and `/value` subpaths and the `@earendil-works/*` packages) to
 //! bundled modules. This loader mirrors the **`typebox` / `@sinclair/typebox`
 //! root** slice of that map (a single vendored, pinned TypeBox 1.1.38 ESM) plus
-//! two small hand-written faithful shims for the extension-facing VALUE surface
-//! of the `@earendil-works/pi-ai` and `@earendil-works/pi-coding-agent` packages,
-//! so real upstream `defineTool` tool extensions load, register, and invoke.
+//! small hand-written faithful shims for the extension-facing VALUE surface of the
+//! `@earendil-works/pi-ai` and `@earendil-works/pi-coding-agent` packages and a
+//! render-stub shim of `@earendil-works/pi-tui`, so real upstream `defineTool`
+//! tool extensions — including ones whose display hooks import pi-tui UI
+//! components — load, register, and invoke.
 //!
 //! # Specifier classes
 //!
@@ -50,17 +52,25 @@
 //!       `Type`'s identity is shared) plus `StringEnum`.
 //!     * `@earendil-works/pi-coding-agent` → a shim exporting the identity
 //!       `defineTool`.
+//!     * `@earendil-works/pi-tui` → a render-stub shim: the UI component classes
+//!       (`Text`, `Box`, `Container`, `Spacer`, `Markdown`) are display-time
+//!       markers (extensions touch them only in `renderResult` / `renderCall`,
+//!       which the headless plane never calls, so display is a documented no-op),
+//!       plus the pure `Key` helper. Faithful for load / register / invoke.
 //! * **Relative / URL specifier** — starts with `.` or `/`, or already has a URL
 //!   scheme (`file:`, `http:`, …): delegated to [`deno_core::resolve_import`],
 //!   which handles the extension entry module itself (loaded under
 //!   `file:///pidgin-extension/…`) and any sibling relative import.
 //! * **Any other bare specifier** — e.g. `typebox/compile`, `typebox/value`,
-//!   `@earendil-works/pi-tui`, `node:fs`: rejected with a clear
-//!   [`ModuleLoaderError`] naming the unresolvable specifier. These are the
-//!   deliberate scope boundary: pi's full alias map also serves the `/compile` +
-//!   `/value` subpaths, the pi-tui package (`Text` etc.), and the host-backed
-//!   tool factories (`createBashTool`'s family); wiring those (and a `node:`
-//!   shim) is a larger pi-runtime / pi-tui shim follow-up.
+//!   `node:fs`: rejected with a clear [`ModuleLoaderError`] naming the
+//!   unresolvable specifier. These are the deliberate scope boundary: pi's full
+//!   alias map also serves the `/compile` + `/value` subpaths and the host-backed
+//!   tool factories (`createBashTool`'s family); wiring those (and a `node:` shim)
+//!   is a larger follow-up. pi-tui's non-display utilities that carry heavy or
+//!   host-coupled dependencies (`truncateToWidth`, which imports the external
+//!   `get-east-asian-width` package; `matchesKey`, which reads `process.env`) are
+//!   likewise deferred — they are display / input-time code the headless plane
+//!   never runs, and no bundled example imports them.
 
 use deno_core::error::ModuleLoaderError;
 use deno_core::{
@@ -141,6 +151,18 @@ const PI_CODING_AGENT_SHIM_SRC: &str = include_str!("vendor/pi-coding-agent-shim
 /// The synthetic URL the pi-coding-agent shim loads under.
 const PI_CODING_AGENT_SHIM_URL: &str = "file:///pidgin-vendor/pi-coding-agent-shim.mjs";
 
+/// Render-stub shim of `@earendil-works/pi-tui`. The UI component classes
+/// (`Text`, `Box`, `Container`, `Spacer`, `Markdown`) an example imports are
+/// touched ONLY in display hooks (`renderResult` / `renderCall`), which the
+/// headless plane never calls, so the shim serves them as marker classes (store
+/// constructor args; `render()` returns a `{ __piTuiStub }` marker) plus the pure
+/// `Key` helper. That is behavior-faithful for load / register / invoke; display
+/// is a documented no-op. See `vendor/NOTICE`.
+const PI_TUI_SHIM_SRC: &str = include_str!("vendor/pi-tui-shim.mjs");
+
+/// The synthetic URL the pi-tui render-stub shim loads under.
+const PI_TUI_SHIM_URL: &str = "file:///pidgin-vendor/pi-tui-shim.mjs";
+
 /// One embedded module the loader can resolve and serve for a set of bare
 /// specifiers. Refactoring the resolve/load pair around this table lets N
 /// specifiers scale cleanly rather than growing hardcoded `if` arms.
@@ -160,7 +182,8 @@ struct ModuleTableEntry {
 }
 
 /// The embedded modules pidgin's loader resolves, mirroring the `typebox` root +
-/// `@earendil-works/*` value slice of pi's jiti `virtualModules` alias map.
+/// `@earendil-works/*` slice of pi's jiti `virtualModules` alias map (the pi-ai /
+/// pi-coding-agent value shims plus the pi-tui render-stub shim).
 const MODULE_TABLE: &[ModuleTableEntry] = &[
     ModuleTableEntry {
         specifiers: &["typebox", "@sinclair/typebox"],
@@ -180,14 +203,20 @@ const MODULE_TABLE: &[ModuleTableEntry] = &[
         source: PI_CODING_AGENT_SHIM_SRC,
         prelude: None,
     },
+    ModuleTableEntry {
+        specifiers: &["@earendil-works/pi-tui"],
+        url: PI_TUI_SHIM_URL,
+        source: PI_TUI_SHIM_SRC,
+        prelude: None,
+    },
 ];
 
 /// pidgin's [`deno_core::ModuleLoader`]: resolves the vendored/shimmed bare
-/// specifiers in [`MODULE_TABLE`] (the `typebox` root plus the
-/// `@earendil-works/pi-ai` / `@earendil-works/pi-coding-agent` value shims),
-/// delegates relative/URL specifiers to deno_core's default resolution, and
-/// rejects every other bare specifier with a clear error. See the module docs for
-/// the full rationale and specifier-class table.
+/// specifiers in [`MODULE_TABLE`] (the `typebox` root, the `@earendil-works/pi-ai`
+/// / `@earendil-works/pi-coding-agent` value shims, and the `@earendil-works/pi-tui`
+/// render-stub shim), delegates relative/URL specifiers to deno_core's default
+/// resolution, and rejects every other bare specifier with a clear error. See the
+/// module docs for the full rationale and specifier-class table.
 pub struct PidginModuleLoader;
 
 impl PidginModuleLoader {
@@ -213,8 +242,9 @@ impl ModuleLoader for PidginModuleLoader {
         _kind: ResolutionKind,
     ) -> Result<ModuleSpecifier, ModuleLoaderError> {
         // 1. A vendored/shimmed bare specifier from the module table: TypeBox's
-        //    root export and the `@earendil-works/*` value shims, aliased exactly
-        //    as pi's jiti virtualModules map does (loader.ts:47-57).
+        //    root export, the `@earendil-works/*` value shims, and the pi-tui
+        //    render-stub shim, aliased exactly as pi's jiti virtualModules map
+        //    does (loader.ts:47-57).
         for entry in MODULE_TABLE {
             if entry.specifiers.contains(&specifier) {
                 return ModuleSpecifier::parse(entry.url).map_err(ModuleLoaderError::from_err);
@@ -239,9 +269,10 @@ impl ModuleLoader for PidginModuleLoader {
         //    "module loading is not supported".
         Err(ModuleLoaderError::generic(format!(
             "cannot resolve bare specifier {specifier:?}: pidgin's extension module loader only \
-             vendors `typebox` (and its `@sinclair/typebox` alias) and the value shims for \
+             vendors `typebox` (and its `@sinclair/typebox` alias), the value shims for \
              `@earendil-works/pi-ai` (Type, StringEnum) and `@earendil-works/pi-coding-agent` \
-             (defineTool). Subpaths like `typebox/compile` / `typebox/value`, `@earendil-works/pi-tui`, \
+             (defineTool), and the render-stub shim for `@earendil-works/pi-tui` (marker \
+             component classes + Key). Subpaths like `typebox/compile` / `typebox/value`, \
              `node:` builtins, and host-backed tool factories are not yet available on the plane."
         )))
     }
