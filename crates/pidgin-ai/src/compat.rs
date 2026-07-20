@@ -329,6 +329,12 @@ pub fn stream(
     }
 }
 
+// Follow-up (PR4b): compat incremental entry point. A `stream_incremental` here
+// would need to outlive the owned `ApiProvider` that `get_api_provider` clones
+// out of the process-global registry (a real backend's reader borrows the
+// provider), so a truly-incremental compat surface needs registry-ownership
+// changes rather than a trivial sibling of `stream`; deferred to the compat lane.
+
 /// Stream to completion, returning the final message. pi's `complete`
 /// (`compat.ts:266-273`), i.e. `stream(...).result()`; the dispatch error is
 /// propagated as an `Err`, mirroring pi's rejected promise.

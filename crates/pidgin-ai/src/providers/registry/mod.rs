@@ -38,6 +38,7 @@ use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
     StopReason, StreamOptions, Usage, UsageCost,
 };
+use crate::utils::sse::AssistantEventReader;
 
 mod models_runtime;
 
@@ -326,6 +327,25 @@ impl RegistryProvider {
         match self.api.backend_for(&model.api) {
             Some(backend) => backend.stream(model, context, options, signal),
             None => no_api_implementation(&self.id, model),
+        }
+    }
+
+    /// The incremental counterpart to [`stream`](Self::stream): dispatch to the
+    /// backend for `model.api` via its
+    /// [`stream_incremental`](StreamBackend::stream_incremental) and return the
+    /// pull reader. A model whose api has no backend yields the "no API
+    /// implementation" error, replayed through
+    /// [`AssistantEventReader::from_buffered`].
+    pub fn stream_incremental<'a>(
+        &'a self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> AssistantEventReader<'a> {
+        match self.api.backend_for(&model.api) {
+            Some(backend) => backend.stream_incremental(model, context, options, signal),
+            None => AssistantEventReader::from_buffered(no_api_implementation(&self.id, model)),
         }
     }
 }
@@ -690,6 +710,41 @@ impl Models {
             Err(message) => return error_result(model, message),
         };
         provider.stream(&request_model, context, Some(&request_options), signal)
+    }
+
+    /// The incremental counterpart to [`stream`](Self::stream): resolve the
+    /// owning provider and apply auth exactly as [`stream`](Self::stream) does,
+    /// then delegate to the provider's
+    /// [`stream_incremental`](RegistryProvider::stream_incremental) and return the
+    /// pull reader. A pre-dispatch failure (unknown provider, unconfigured auth)
+    /// becomes a single-`error` reader replayed through
+    /// [`AssistantEventReader::from_buffered`], matching [`stream`](Self::stream)'s
+    /// error shape byte for byte.
+    ///
+    /// This is the resolved entry point the future agent-loop wiring will call;
+    /// it is additive and not yet on any hot path. The reader borrows `self`
+    /// (through the resolved backend's transport), so a streaming backend yields
+    /// per-frame timing while the buffered [`stream`](Self::stream) is untouched.
+    pub fn stream_incremental<'a>(
+        &'a self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> AssistantEventReader<'a> {
+        let provider = match self.require_provider(model) {
+            Ok(provider) => provider,
+            Err(message) => {
+                return AssistantEventReader::from_buffered(error_result(model, message))
+            }
+        };
+        let (request_model, request_options) = match self.apply_auth(model, options) {
+            Ok(resolved) => resolved,
+            Err(message) => {
+                return AssistantEventReader::from_buffered(error_result(model, message))
+            }
+        };
+        provider.stream_incremental(&request_model, context, Some(&request_options), signal)
     }
 
     /// Stream and resolve the final message, pi's `Models.complete`

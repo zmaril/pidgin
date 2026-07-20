@@ -41,6 +41,7 @@ use std::sync::Arc;
 use serde::Serialize;
 
 use crate::types::{AssistantMessage, AssistantMessageEvent, Context, Model, StreamOptions};
+use crate::utils::sse::AssistantEventReader;
 
 /// The eager result of a provider stream: the full event sequence and the final
 /// accumulated message.
@@ -113,6 +114,30 @@ pub trait Provider: Send + Sync {
         options: Option<&StreamOptions>,
         signal: Option<&AbortSignal>,
     ) -> StreamResult;
+
+    /// Stream a response for `model` as an incremental pull reader, the additive
+    /// per-frame counterpart to [`stream`](Self::stream).
+    ///
+    /// # Compatibility default: not incremental
+    ///
+    /// The default runs the eager [`stream`](Self::stream) and replays its
+    /// materialized [`StreamResult`] through
+    /// [`AssistantEventReader::from_buffered`], so a non-overriding provider (the
+    /// faux provider and every seam-only backend) keeps its exact buffered
+    /// behavior with ~0 inter-event spread. Real backends override this to stream
+    /// per frame off the wire (see
+    /// [`AnthropicMessagesBackend`](crate::providers::AnthropicMessagesBackend)),
+    /// where the inter-frame timing becomes observable. Nothing on the hot path
+    /// calls this yet; the agent-loop consumer wiring is a follow-up.
+    fn stream_incremental<'a>(
+        &'a self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> AssistantEventReader<'a> {
+        AssistantEventReader::from_buffered(self.stream(model, context, options, signal))
+    }
 }
 
 #[cfg(test)]
