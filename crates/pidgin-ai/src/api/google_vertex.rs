@@ -37,6 +37,7 @@ use super::google_shared::{parse_google_stream, GoogleModel, GoogleStreamDecoder
 use crate::types::{AssistantMessage, AssistantMessageEvent};
 use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
 
+pub mod adc;
 pub mod client;
 pub mod driver;
 
@@ -137,6 +138,30 @@ pub fn resolve_location(options: &GoogleVertexClientOptions) -> Result<String, S
 fn build_google_auth_options(env: &ProviderEnv) -> Option<Value> {
     get_provider_env_value("GOOGLE_APPLICATION_CREDENTIALS", env)
         .map(|key_filename| json!({ "keyFilename": key_filename }))
+}
+
+/// The service-account keyfile path pi hands the SDK as
+/// `googleAuthOptions.keyFilename` — the `GOOGLE_APPLICATION_CREDENTIALS` env
+/// value, when set. The one ADC source the Vertex runtime wires (see
+/// [`adc`]); the backend reads this file to mint the Bearer token.
+pub(crate) fn resolve_credentials_path(options: &GoogleVertexClientOptions) -> Option<String> {
+    get_provider_env_value("GOOGLE_APPLICATION_CREDENTIALS", &options.env).map(str::to_string)
+}
+
+/// The credential the driver assembles a Vertex request with, already resolved by
+/// the backend to concrete request inputs: either the Express API key (the
+/// `x-goog-api-key` path, unchanged from the Express port) or a service-account
+/// Bearer token plus the project/location that place the regional ADC endpoint.
+pub enum VertexRequestCredential<'a> {
+    /// The Vertex Express (API-key) path: `x-goog-api-key: <key>`.
+    ApiKey(&'a str),
+    /// The ADC / service-account path: `Authorization: Bearer <token>` against
+    /// `https://{location}-aiplatform.googleapis.com/.../projects/{project}/...`.
+    Bearer {
+        token: &'a str,
+        project: &'a str,
+        location: &'a str,
+    },
 }
 
 /// `google-vertex.ts:387` — a usable custom base URL: `None` if empty or if it

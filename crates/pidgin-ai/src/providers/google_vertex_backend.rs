@@ -14,12 +14,20 @@
 //!
 //! # Auth scope
 //!
-//! This PR wires the **Vertex Express (API-key) path** only. The resolved
+//! This backend wires **both** Vertex auth paths. The resolved
 //! `StreamOptions.api_key` is run through
-//! [`resolve_api_key`](crate::api::google_vertex::resolve_api_key), so the
-//! `gcp-vertex-credentials` marker and `<placeholder>` keys collapse to the ADC
-//! path — the service-account OAuth2 token acquisition, a documented follow-up —
-//! which the driver surfaces as a pre-start error rather than a live request.
+//! [`resolve_api_key`](crate::api::google_vertex::resolve_api_key); a real key
+//! drives the **Vertex Express (API-key) path** (`x-goog-api-key`). When it
+//! resolves to nothing — an empty key, the `gcp-vertex-credentials` marker, or a
+//! `<placeholder>` — the backend falls back to the **ADC / service-account path**:
+//! it reads the `GOOGLE_APPLICATION_CREDENTIALS` keyfile, mints (and caches) a
+//! Google OAuth2 access token via [`adc`], and drives the regional
+//! `projects/{project}/locations/{location}` endpoint with
+//! `Authorization: Bearer <token>`. Only that one ADC source is wired (the one
+//! pi's Vertex runtime reads); the broader ADC chain is deferred (see
+//! [`GoogleVertexBackend::resolve_adc`]). When neither an API key nor a
+//! service-account keyfile (+ project + location) resolves, the driver surfaces a
+//! pre-start "No API key" error rather than a live request.
 
 // straitjacket-allow-file:duplication — the pre-start error-shell scaffolding
 // (empty `AssistantMessage` + zeroed `Usage`) and the `reserialize_model` /
@@ -30,8 +38,10 @@
 use std::sync::Arc;
 
 use crate::api::google_shared::{GoogleModel, GoogleRequestOptions};
-use crate::api::google_vertex::driver;
-use crate::api::google_vertex::{resolve_api_key, GoogleVertexClientOptions, API};
+use crate::api::google_vertex::{
+    adc, driver, resolve_api_key, resolve_credentials_path, resolve_location, resolve_project,
+    GoogleVertexClientOptions, VertexRequestCredential, API,
+};
 use crate::seams::clock::Clock;
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
@@ -44,9 +54,9 @@ use crate::utils::sse::AssistantEventReader;
 /// The api id this backend serves, pi's `google-vertex` [`Api`] discriminant.
 pub const GOOGLE_VERTEX_API: &str = API;
 
-/// A [`Provider`] backend that runs a Google Vertex AI (Express, API-key) turn
-/// over an injected [`HttpTransport`], sourcing the request timestamp from an
-/// injected [`Clock`].
+/// A [`Provider`] backend that runs a Google Vertex AI turn — Express (API-key)
+/// or ADC / service-account (Bearer) — over an injected [`HttpTransport`],
+/// sourcing the request timestamp from an injected [`Clock`].
 ///
 /// Constructed via [`GoogleVertexBackend::new`] and installed as
 /// [`ApiRouting::Single`](crate::providers::ApiRouting::Single) by
@@ -54,6 +64,10 @@ pub const GOOGLE_VERTEX_API: &str = API;
 pub struct GoogleVertexBackend {
     transport: Arc<dyn HttpTransport>,
     clock: Arc<dyn Clock>,
+    /// The ADC / service-account access-token cache, reused across turns so a
+    /// minted Bearer token is re-minted only as it nears expiry
+    /// ([`adc::TokenCache`]). Idle on the Express (API-key) path.
+    token_cache: adc::TokenCache,
 }
 
 impl GoogleVertexBackend {
@@ -61,7 +75,11 @@ impl GoogleVertexBackend {
     /// message with `clock.now_ms()` (pi's `Date.now()`, taken through the clock
     /// seam rather than the wall clock).
     pub fn new(transport: Arc<dyn HttpTransport>, clock: Arc<dyn Clock>) -> Self {
-        Self { transport, clock }
+        Self {
+            transport,
+            clock,
+            token_cache: adc::TokenCache::new(),
+        }
     }
 }
 
@@ -99,23 +117,28 @@ impl Provider for GoogleVertexBackend {
             typed_model.base_url = base_url.clone();
         }
 
-        // Vertex Express authenticates with `x-goog-api-key`, not a Bearer token;
-        // the resolved key threads into that header inside the driver's request
-        // assembler. `resolve_api_key` discards the `gcp-vertex-credentials`
-        // marker / `<placeholder>` to the ADC path (a deferred follow-up).
+        // Resolve the credential: a Vertex Express key drives the `x-goog-api-key`
+        // path; absent that, a service-account keyfile (+ project + location)
+        // drives the ADC Bearer path (the token minted/cached here, then threaded
+        // into the driver's request assembler).
+        let timestamp = self.clock.now_ms();
         let api_key = resolve_api_key_from(options);
+        let adc = match self.resolve_adc(&api_key, options, timestamp) {
+            Ok(adc) => adc,
+            Err(message) => return error_result(model, timestamp, message),
+        };
+        let credential = credential_ref(&api_key, &adc);
         let headers = options.and_then(|o| o.headers.clone()).unwrap_or_default();
         let request_options = request_options_from(model, options);
 
         // The buffered driver performs a single synchronous request with no
         // in-flight window to observe an abort against (pi aborts an async SSE
         // read); `signal` is accepted for seam parity and left unobserved here.
-        let timestamp = self.clock.now_ms();
         driver::stream(
             self.transport.as_ref(),
             &typed_model,
             context,
-            api_key.as_deref(),
+            credential,
             &headers,
             &request_options,
             timestamp,
@@ -150,20 +173,127 @@ impl Provider for GoogleVertexBackend {
             typed_model.base_url = base_url.clone();
         }
 
+        let timestamp = self.clock.now_ms();
         let api_key = resolve_api_key_from(options);
+        let adc = match self.resolve_adc(&api_key, options, timestamp) {
+            Ok(adc) => adc,
+            // Mirror `stream`'s pre-start error shape as a replayed reader.
+            Err(message) => {
+                return AssistantEventReader::from_buffered(error_result(model, timestamp, message))
+            }
+        };
+        let credential = credential_ref(&api_key, &adc);
         let headers = options.and_then(|o| o.headers.clone()).unwrap_or_default();
         let request_options = request_options_from(model, options);
 
-        let timestamp = self.clock.now_ms();
         driver::stream_streaming(
             self.transport.as_ref(),
             &typed_model,
             context,
-            api_key.as_deref(),
+            credential,
             &headers,
             &request_options,
             timestamp,
         )
+    }
+}
+
+/// A resolved ADC / service-account credential: the minted Bearer token plus the
+/// project + location that place the regional Vertex endpoint.
+struct AdcResolved {
+    token: String,
+    project: String,
+    location: String,
+}
+
+impl GoogleVertexBackend {
+    /// Resolve the ADC / service-account credential when no Express API key is
+    /// present, minting (and caching) a Bearer token from the
+    /// `GOOGLE_APPLICATION_CREDENTIALS` service-account keyfile.
+    ///
+    /// Returns `Ok(None)` — deferring to the driver's "No API key" error — when an
+    /// API key is present (Express wins), or when the ADC inputs are not fully
+    /// configured (no keyfile path, or no project/location). Returns `Err` when
+    /// the configured keyfile cannot be read/parsed or the token mint fails, so a
+    /// misconfigured service account surfaces a real diagnostic rather than a bare
+    /// "No API key".
+    ///
+    // Follow-up (#297): only the GOOGLE_APPLICATION_CREDENTIALS
+    // service-account keyfile is resolved here — the one ADC source pi's Vertex
+    // runtime wires (`buildGoogleAuthOptions`). google-auth-library's broader ADC
+    // chain is NOT ported and is deferred: the gcloud well-known ADC file
+    // (~/.config/gcloud/application_default_credentials.json), the GCE/GKE
+    // metadata server, workload-identity federation, and service-account
+    // impersonation. When none of the supported inputs resolve, the caller
+    // surfaces pi's "No API key for provider" error rather than silently
+    // attempting one of those sources.
+    fn resolve_adc(
+        &self,
+        api_key: &Option<String>,
+        options: Option<&StreamOptions>,
+        now_ms: i64,
+    ) -> Result<Option<AdcResolved>, String> {
+        if api_key.is_some() {
+            return Ok(None);
+        }
+        let client_options = client_options_from(options);
+        let keyfile_path = match resolve_credentials_path(&client_options) {
+            Some(path) => path,
+            None => return Ok(None),
+        };
+        let project = match resolve_project(&client_options) {
+            Ok(project) => project,
+            Err(_) => return Ok(None),
+        };
+        let location = match resolve_location(&client_options) {
+            Ok(location) => location,
+            Err(_) => return Ok(None),
+        };
+        // pi hands the SDK the keyFilename and the SDK's node fs reads it; read the
+        // same keyfile here (the credential acquisition sits outside pi's seam).
+        let contents = std::fs::read_to_string(&keyfile_path).map_err(|error| {
+            format!("failed to read GOOGLE_APPLICATION_CREDENTIALS ({keyfile_path}): {error}")
+        })?;
+        let key = adc::parse_service_account_key(&contents)?;
+        let token = self
+            .token_cache
+            .get_or_mint(self.transport.as_ref(), &key, now_ms)?;
+        Ok(Some(AdcResolved {
+            token,
+            project,
+            location,
+        }))
+    }
+}
+
+/// Borrow the resolved credentials into the driver's [`VertexRequestCredential`]:
+/// an Express API key wins; else a resolved ADC Bearer token; else `None` (the
+/// driver's "No API key" error).
+fn credential_ref<'a>(
+    api_key: &'a Option<String>,
+    adc: &'a Option<AdcResolved>,
+) -> Option<VertexRequestCredential<'a>> {
+    if let Some(api_key) = api_key {
+        return Some(VertexRequestCredential::ApiKey(api_key));
+    }
+    if let Some(adc) = adc {
+        return Some(VertexRequestCredential::Bearer {
+            token: &adc.token,
+            project: &adc.project,
+            location: &adc.location,
+        });
+    }
+    None
+}
+
+/// Build the [`GoogleVertexClientOptions`] the resolution helpers read, carrying
+/// the request's `api_key` and the scoped `env` (pi's `ProviderEnv`) the Vertex
+/// project/location/credentials resolution consults.
+fn client_options_from(options: Option<&StreamOptions>) -> GoogleVertexClientOptions {
+    GoogleVertexClientOptions {
+        api_key: options.and_then(|o| o.api_key.clone()),
+        env: options.and_then(|o| o.env.clone()).unwrap_or_default(),
+        ..GoogleVertexClientOptions::default()
     }
 }
 
@@ -173,11 +303,7 @@ impl Provider for GoogleVertexBackend {
 /// `None` (the ADC path). Only `options.api_key` participates — project/location
 /// are ADC inputs and are not read on the Express path.
 fn resolve_api_key_from(options: Option<&StreamOptions>) -> Option<String> {
-    let client_options = GoogleVertexClientOptions {
-        api_key: options.and_then(|o| o.api_key.clone()),
-        ..GoogleVertexClientOptions::default()
-    };
-    resolve_api_key(&client_options)
+    resolve_api_key(&client_options_from(options))
 }
 
 /// Map [`StreamOptions`] onto the driver's [`GoogleRequestOptions`], threading the
@@ -479,10 +605,12 @@ mod tests {
         assert!(scripted.requests().is_empty());
     }
 
-    // The `gcp-vertex-credentials` ADC marker resolves to no Express key, so the
-    // Express path errors (the ADC/service-account path is a deferred follow-up).
+    // The `gcp-vertex-credentials` ADC marker resolves to no Express key, and with
+    // no `GOOGLE_APPLICATION_CREDENTIALS` keyfile in the env the ADC / service-
+    // account path has nothing to resolve, so the backend surfaces the same "No
+    // API key" error with no request on the wire.
     #[test]
-    fn backend_adc_marker_takes_deferred_adc_path() {
+    fn backend_adc_marker_without_keyfile_errors_without_request() {
         let scripted = ScriptedTransport::new();
         let transport: Arc<dyn HttpTransport> = Arc::new(scripted.clone());
         let backend = GoogleVertexBackend::new(transport, fake_clock());

@@ -21,6 +21,19 @@ getrandom = "0.4.3"
 # (api/bedrock/sigv4.rs): HMAC-SHA256 signing-key derivation over the sha2
 # digest already vendored below. digest-0.11-compatible.
 hmac = "0.13.0"
+# RS256 JWT signing for the google-vertex ADC / service-account OAuth2 token
+# mint (api/google_vertex/adc.rs): pi delegates Vertex ADC auth to
+# @google/genai -> google-auth-library, which signs an RFC 7523 JWT assertion
+# with the service-account RSA private key and exchanges it for an access token.
+# jsonwebtoken 10 selects its signing backend by feature: `rust_crypto` installs
+# the pure-Rust RustCrypto CryptoProvider (rsa + sha2 for our RS256, plus its
+# bundled ecdsa/eddsa/hmac primitives) and never pulls ring/aws-lc, so the
+# default build stays C-toolchain-free. `use_pem` keeps `EncodingKey::from_rsa_pem`
+# for the service-account PEM key.
+jsonwebtoken = { version = "10", default-features = false, features = [
+    "rust_crypto",
+    "use_pem",
+] }
 # Context-overflow detection (utils/overflow.rs) compiles pi's provider error
 # patterns as case-insensitive regexes.
 regex = "1"
