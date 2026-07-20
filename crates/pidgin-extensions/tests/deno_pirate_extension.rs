@@ -90,20 +90,22 @@ async fn vendored_pirate_command_toggles_flag_that_before_agent_start_hook_reads
     //    runs the handler body on the live plane: `pirateMode = !pirateMode`
     //    executes and flips the module-scoped flag both closures capture.
     //
-    //    The handler then calls `ctx.ui.notify(...)`. The command-dispatch path
-    //    does not thread a `ctx` through invoke_stored yet (see
-    //    `runner_impl/queries.rs::registered_command`, whose unit5 deferral note
-    //    has it invoke with `json!([args])` only), so `ctx` is undefined and that
-    //    call throws, surfacing as an `ok == false` envelope. Crucially, the flag
-    //    toggle ran
-    //    BEFORE the throw, so the shared state the hook reads is already mutated —
-    //    which step 5 proves. `.expect` only asserts the call itself returned an
-    //    envelope (the runtime is never unwound).
-    runner
+    //    The handler then calls `ctx.ui.notify(...)`. invoke_stored now threads a
+    //    real JS `ctx` into the command handler (built by the shared makeContext,
+    //    whose `ui.notify` is a faithful no-op sink), so `ctx.ui.notify(...)`
+    //    returns without throwing and the envelope is `ok == true`. The flag
+    //    toggle also ran, so the shared state the hook reads is mutated — which
+    //    step 5 proves end-to-end.
+    let inv = runner
         .plane()
         .invoke_stored("command", "pirate", &json!([""]))
         .await
         .expect("the /pirate command dispatches through the plane and returns an envelope");
+    assert!(
+        inv.ok,
+        "ctx.ui.notify now exists and does not throw: {:?}",
+        inv.error
+    );
 
     // 5. Fire before_agent_start again. The hook now reads pirateMode == true and
     //    appends its pirate-speak block — proving the command executed, mutated
