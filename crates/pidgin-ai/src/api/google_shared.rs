@@ -1013,55 +1013,79 @@ enum CurrentBlock {
     Thinking,
 }
 
-/// Decode an already-parsed sequence of Google `GenerateContentResponse` chunks
-/// into the uniform event stream and final message for `model`, under the given
-/// `api` (`"google-generative-ai"` or `"google-vertex"`).
+/// The incremental Google `generateContentStream` decoder core: the single
+/// source of truth for turning parsed `GenerateContentResponse` chunks into
+/// assistant events and the accumulated message.
 ///
-/// This reproduces the shared inner loop of pi's `stream()` for both Google
-/// drivers (`google-generative-ai.ts:93-266` == `google-vertex.ts:111-283`,
-/// byte-identical): walk `candidates[0].content.parts[]`, emitting text /
-/// thinking / tool-call events, synthesizing function-call ids from `now_ms` + a
-/// counter when missing or duplicated, mapping finish reasons, and computing
-/// usage/cost. The HTTP transport, client construction, and abort-signal wiring
-/// live in the per-driver modules; here the chunks are already obtained (exactly
-/// what pi's `for await (chunk of googleStream)` yields).
-pub fn parse_google_stream(
-    chunks: &[Value],
-    model: &GoogleModel,
-    api: &str,
+/// It carries exactly the accumulation state the shared inner loop of pi's
+/// `stream()` kept — the output message, the currently-open text/thinking block,
+/// and the synthetic-id counter — and exposes it as a chunk-at-a-time seam so
+/// both the buffered [`parse_google_stream`] and the direct-Gemini incremental
+/// SSE decoder run this ONE core, producing byte-identical events + message.
+pub struct GoogleStreamDecoder {
+    model: GoogleModel,
     now_ms: i64,
-) -> StreamOutcome {
-    let mut output = AssistantMessage {
-        role: AssistantRole::Assistant,
-        content: Vec::new(),
-        api: api.to_string(),
-        provider: model.provider.clone(),
-        model: model.id.clone(),
-        response_model: None,
-        response_id: None,
-        diagnostics: None,
-        usage: zero_usage(),
-        stop_reason: StopReason::Stop,
-        error_message: None,
-        timestamp: now_ms,
-    };
-    let mut events: Vec<AssistantMessageEvent> = Vec::new();
-    // Scoped per call for deterministic ids (pi keeps a module-level counter, but
-    // the observable synthesis is `${name}_${now}_${n}` and tests supply ids or a
-    // fixed clock; a per-call counter keeps output reproducible).
-    let mut tool_call_counter: u64 = 0;
+    output: AssistantMessage,
+    current: Option<CurrentBlock>,
+    /// Scoped per decoder for deterministic ids (pi keeps a module-level counter,
+    /// but the observable synthesis is `${name}_${now}_${n}` and tests supply ids
+    /// or a fixed clock; a per-decoder counter keeps output reproducible).
+    tool_call_counter: u64,
+    /// pi pushes the `start` event before the chunk loop; here it is emitted
+    /// lazily on the first `process_chunk`/`finish` so it is always the first
+    /// event exactly once, whatever the chunk cadence.
+    started: bool,
+}
 
-    events.push(AssistantMessageEvent::Start {
-        partial: output.clone(),
-    });
+impl GoogleStreamDecoder {
+    /// A fresh decoder for `model` under `api` (`"google-generative-ai"` or
+    /// `"google-vertex"`), seeding the empty output shell pi builds before
+    /// streaming.
+    pub fn new(model: GoogleModel, api: &str, now_ms: i64) -> Self {
+        let output = AssistantMessage {
+            role: AssistantRole::Assistant,
+            content: Vec::new(),
+            api: api.to_string(),
+            provider: model.provider.clone(),
+            model: model.id.clone(),
+            response_model: None,
+            response_id: None,
+            diagnostics: None,
+            usage: zero_usage(),
+            stop_reason: StopReason::Stop,
+            error_message: None,
+            timestamp: now_ms,
+        };
+        Self {
+            model,
+            now_ms,
+            output,
+            current: None,
+            tool_call_counter: 0,
+            started: false,
+        }
+    }
 
-    let mut current: Option<CurrentBlock> = None;
+    /// Emit pi's initial `start` event exactly once, before any chunk's events.
+    pub fn ensure_started(&mut self, events: &mut Vec<AssistantMessageEvent>) {
+        if !self.started {
+            self.started = true;
+            events.push(AssistantMessageEvent::Start {
+                partial: self.output.clone(),
+            });
+        }
+    }
 
-    for chunk in chunks {
-        if output.response_id.is_none() {
+    /// Decode ONE parsed `GenerateContentResponse` chunk, updating the
+    /// accumulation and pushing its events. Mirrors the body of pi's
+    /// `for await (chunk of googleStream)` loop.
+    pub fn process_chunk(&mut self, chunk: &Value, events: &mut Vec<AssistantMessageEvent>) {
+        self.ensure_started(events);
+
+        if self.output.response_id.is_none() {
             if let Some(id) = chunk.get("responseId").and_then(Value::as_str) {
                 if !id.is_empty() {
-                    output.response_id = Some(id.to_string());
+                    self.output.response_id = Some(id.to_string());
                 }
             }
         }
@@ -1080,52 +1104,88 @@ pub fn parse_google_stream(
                 for part in parts {
                     decode_part(
                         part,
-                        &mut output,
-                        &mut events,
-                        &mut current,
-                        &mut tool_call_counter,
-                        now_ms,
+                        &mut self.output,
+                        events,
+                        &mut self.current,
+                        &mut self.tool_call_counter,
+                        self.now_ms,
                     );
                 }
             }
 
             if let Some(reason) = candidate.get("finishReason").and_then(Value::as_str) {
-                output.stop_reason = map_stop_reason(reason);
-                if output
+                self.output.stop_reason = map_stop_reason(reason);
+                if self
+                    .output
                     .content
                     .iter()
                     .any(|b| matches!(b, ContentBlock::ToolCall { .. }))
                 {
-                    output.stop_reason = StopReason::ToolUse;
+                    self.output.stop_reason = StopReason::ToolUse;
                 }
             }
         }
 
         if let Some(usage_meta) = chunk.get("usageMetadata") {
-            apply_usage(&mut output, usage_meta, model);
+            apply_usage(&mut self.output, usage_meta, &self.model);
         }
     }
 
-    // Flush a trailing open block.
-    flush_current(&mut output, &mut events, &mut current);
+    /// The chunk stream ended: flush a trailing open block, push the terminal
+    /// `done`/`error`, and return the final accumulated message.
+    pub fn finish(&mut self, events: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        self.ensure_started(events);
 
-    if matches!(output.stop_reason, StopReason::Aborted | StopReason::Error) {
-        finish_with_error(
-            &mut output,
-            &mut events,
-            "An unknown error occurred".to_string(),
-        );
-    } else {
-        events.push(AssistantMessageEvent::Done {
-            reason: output.stop_reason,
-            message: output.clone(),
-        });
-    }
+        // Flush a trailing open block.
+        flush_current(&mut self.output, events, &mut self.current);
 
-    StreamOutcome {
-        events,
-        message: output,
+        if matches!(
+            self.output.stop_reason,
+            StopReason::Aborted | StopReason::Error
+        ) {
+            finish_with_error(
+                &mut self.output,
+                events,
+                "An unknown error occurred".to_string(),
+            );
+        } else {
+            events.push(AssistantMessageEvent::Done {
+                reason: self.output.stop_reason,
+                message: self.output.clone(),
+            });
+        }
+
+        self.output.clone()
     }
+}
+
+/// Decode an already-parsed sequence of Google `GenerateContentResponse` chunks
+/// into the uniform event stream and final message for `model`, under the given
+/// `api` (`"google-generative-ai"` or `"google-vertex"`).
+///
+/// This reproduces the shared inner loop of pi's `stream()` for both Google
+/// drivers (`google-generative-ai.ts:93-266` == `google-vertex.ts:111-283`,
+/// byte-identical): walk `candidates[0].content.parts[]`, emitting text /
+/// thinking / tool-call events, synthesizing function-call ids from `now_ms` + a
+/// counter when missing or duplicated, mapping finish reasons, and computing
+/// usage/cost. The HTTP transport, client construction, and abort-signal wiring
+/// live in the per-driver modules; here the chunks are already obtained (exactly
+/// what pi's `for await (chunk of googleStream)` yields). Runs the shared
+/// [`GoogleStreamDecoder`] so its output is byte-identical to the direct-Gemini
+/// incremental SSE path.
+pub fn parse_google_stream(
+    chunks: &[Value],
+    model: &GoogleModel,
+    api: &str,
+    now_ms: i64,
+) -> StreamOutcome {
+    let mut decoder = GoogleStreamDecoder::new(model.clone(), api, now_ms);
+    let mut events: Vec<AssistantMessageEvent> = Vec::new();
+    for chunk in chunks {
+        decoder.process_chunk(chunk, &mut events);
+    }
+    let message = decoder.finish(&mut events);
+    StreamOutcome { events, message }
 }
 
 fn u64_field(value: &Value, key: &str) -> u64 {
