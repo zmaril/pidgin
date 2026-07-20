@@ -1,0 +1,19 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "pidgin"
+version = "0.1.0"
+description = "Python native extension bridging the pidgin engine (sibling of bindings/php)."
+requires-python = ">=3.9"
+readme = "README.md"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[tool.maturin]
+# abi3 wheel: one artifact for CPython 3.9+ (matches the pyo3 abi3-py39 feature).
+features = ["pyo3/extension-module"]
