@@ -208,8 +208,14 @@ impl SessionContextHost for SessionHostBridge {
     }
 
     fn get_context_usage(&self) -> Option<Value> {
-        // unit5: `getContextUsage` reads token/cache stats (stats slice).
-        None
+        // pi's `getContextUsage: () => this.getContextUsage()` seam (L2402). The
+        // bridge holds the raw agent handle, so it maps the "unknown" model
+        // sentinel to `None` itself before delegating to the shared computation.
+        let model = super::stats::model_or_none(self.agent.model());
+        let messages = self.agent.messages();
+        let branch = self.session_manager.lock().unwrap().get_branch(None);
+        super::stats::compute_context_usage(model.as_ref(), &messages, &branch)
+            .and_then(|usage| serde_json::to_value(usage).ok())
     }
 
     fn compact(&self) {
