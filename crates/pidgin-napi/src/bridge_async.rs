@@ -275,7 +275,11 @@ impl AsyncChannel {
     /// Dispatch one seam envelope and `.await` its JS-resolved result. Unlike the
     /// blocking `call`, this yields the current TASK (not the OS thread), so other
     /// concurrent `call_async`s keep making progress on the same worker runtime.
-    async fn call_async(&self, kind: &str, payload: Value) -> std::result::Result<Value, BridgeError> {
+    async fn call_async(
+        &self,
+        kind: &str,
+        payload: Value,
+    ) -> std::result::Result<Value, BridgeError> {
         // Deadlock guard (release hard-fail, loud Err not silent no-op): a
         // `call_async` awaited on the JS thread could never be resolved.
         let current = std::thread::current().id();
@@ -462,7 +466,10 @@ impl AsyncBridge {
                 // spawn_local: the futures are !Send-friendly and run cooperatively
                 // on the current-thread runtime's LocalSet.
                 handles.push(tokio::task::spawn_local(async move {
-                    (i, ch.call_async("echoConcurrent", json!({ "index": i })).await)
+                    (
+                        i,
+                        ch.call_async("echoConcurrent", json!({ "index": i })).await,
+                    )
                 }));
             }
             let mut results: Vec<Value> = vec![Value::Null; n as usize];

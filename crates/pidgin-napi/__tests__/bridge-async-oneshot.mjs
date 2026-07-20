@@ -1,3 +1,10 @@
+// straitjacket-allow-file:duplication — this proof harness mirrors the
+// `agent-bridge-primitive.mjs` envelope-protocol scaffold (the `drive`
+// dispatcher + `assert`/`assertEq` helpers + per-condition test shape) on
+// purpose, exactly as the sibling `agent-bridge-{loop,tools,hooks}.mjs`
+// harnesses do; keeping each harness self-contained reads better than a shared
+// helper module, at the cost of this intentional mirror duplication.
+//
 // Async-oneshot bridge — PROOF HARNESS: the `call_async` variant, in isolation.
 //
 // Proves the NonBlocking-TSFN + tokio::sync::oneshot round-trip works from a
