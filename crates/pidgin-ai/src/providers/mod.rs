@@ -8,6 +8,7 @@
 
 pub mod anthropic_backend;
 pub mod azure_openai_responses_backend;
+pub mod bedrock_backend;
 pub mod builtins;
 pub mod composer;
 pub mod faux;
@@ -19,6 +20,7 @@ pub mod registry;
 
 pub use anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
 pub use azure_openai_responses_backend::{AzureOpenAIResponsesBackend, AZURE_OPENAI_RESPONSES_API};
+pub use bedrock_backend::{BedrockBackend, BEDROCK_CONVERSE_STREAM_API};
 pub use builtins::{
     builtin_models, builtin_providers, builtin_providers_with_transport, catalog_model_to_ai,
     provider_from_catalog, provider_from_catalog_with_transport, radius_provider,

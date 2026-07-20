@@ -34,6 +34,7 @@ use crate::providers::anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_ME
 use crate::providers::azure_openai_responses_backend::{
     AzureOpenAIResponsesBackend, AZURE_OPENAI_RESPONSES_API,
 };
+use crate::providers::bedrock_backend::{BedrockBackend, BEDROCK_CONVERSE_STREAM_API};
 use crate::providers::google_generative_ai_backend::{
     GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API,
 };
@@ -276,8 +277,12 @@ fn backend_for_api(
             transport.clone(),
             clock.clone(),
         ))),
+        BEDROCK_CONVERSE_STREAM_API => Some(Arc::new(BedrockBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ))),
         // Follow-up (port): register the remaining ported dialects
-        // (google_vertex, bedrock) here as their transport-aware `Provider`
+        // (google_vertex) here as their transport-aware `Provider`
         // adapters land.
         _ => None,
     }
