@@ -43,8 +43,8 @@ use std::rc::Rc;
 use crate::core::extensions::types::{ExtensionContext, NotifyLevel, UiError};
 
 use super::client::{LlamaClient, LlamaListOptions, LlamaModelInfo, LlamaModelStatus};
-use super::provider::LlamaProviderController;
 use super::mount::show_llama_ui;
+use super::provider::LlamaProviderController;
 use super::ui::{ConnectionErrorChoice, LlamaManagerAction, LlamaUi, LlamaView};
 
 /// An owned notification sink for the loop's informational `ctx.ui.notify` calls
