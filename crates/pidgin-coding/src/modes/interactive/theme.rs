@@ -840,52 +840,51 @@ mod tests {
         }
     }
 
+    /// Build a mock querier from an OSC 11 color and an optional color scheme,
+    /// keeping the detector tests free of repeated struct literals.
+    fn mock(bg: Option<RgbColor>, scheme: Option<TerminalTheme>) -> MockQuerier {
+        MockQuerier { bg, scheme }
+    }
+
+    /// A dark RGB background (luminance below the light threshold).
+    const DARK_RGB: RgbColor = RgbColor { r: 8, g: 8, b: 8 };
+
     #[test]
     fn detect_background_theme_prefers_osc11_then_falls_back_to_env() {
-        let timeout = Duration::from_millis(50);
+        let t = Duration::from_millis(50);
 
         // OSC 11 reports a dark color: high-confidence "terminal background".
-        let mut ui = MockQuerier {
-            bg: Some(RgbColor { r: 8, g: 8, b: 8 }),
-            scheme: None,
-        };
-        let detection = detect_terminal_background_theme(&mut ui, timeout, &env_of(&[]));
+        let detection =
+            detect_terminal_background_theme(&mut mock(Some(DARK_RGB), None), t, &env_of(&[]));
         assert_eq!(detection.theme, TerminalTheme::Dark);
         assert_eq!(detection.source, DetectionSource::TerminalBackground);
         assert_eq!(detection.confidence, Confidence::High);
         assert_eq!(detection.detail, "OSC 11 background rgb(8, 8, 8)");
 
         // OSC 11 reports a light color.
-        let mut ui = MockQuerier {
-            bg: Some(RgbColor {
-                r: 250,
-                g: 250,
-                b: 250,
-            }),
-            scheme: None,
+        let light = RgbColor {
+            r: 250,
+            g: 250,
+            b: 250,
         };
-        let detection = detect_terminal_background_theme(&mut ui, timeout, &env_of(&[]));
+        let detection =
+            detect_terminal_background_theme(&mut mock(Some(light), None), t, &env_of(&[]));
         assert_eq!(detection.theme, TerminalTheme::Light);
         assert_eq!(detection.source, DetectionSource::TerminalBackground);
         assert_eq!(detection.detail, "OSC 11 background rgb(250, 250, 250)");
 
         // No OSC 11 color: fall back to the COLORFGBG env path (light here).
-        let mut ui = MockQuerier {
-            bg: None,
-            scheme: None,
-        };
-        let detection =
-            detect_terminal_background_theme(&mut ui, timeout, &env_of(&[("COLORFGBG", "0;15")]));
+        let detection = detect_terminal_background_theme(
+            &mut mock(None, None),
+            t,
+            &env_of(&[("COLORFGBG", "0;15")]),
+        );
         assert_eq!(detection.theme, TerminalTheme::Light);
         assert_eq!(detection.source, DetectionSource::ColorFgBg);
         assert_eq!(detection.confidence, Confidence::High);
 
         // No OSC 11 color and no env hint: the low-confidence dark fallback.
-        let mut ui = MockQuerier {
-            bg: None,
-            scheme: None,
-        };
-        let detection = detect_terminal_background_theme(&mut ui, timeout, &env_of(&[]));
+        let detection = detect_terminal_background_theme(&mut mock(None, None), t, &env_of(&[]));
         assert_eq!(detection.theme, TerminalTheme::Dark);
         assert_eq!(detection.source, DetectionSource::Fallback);
         assert_eq!(detection.confidence, Confidence::Low);
@@ -893,37 +892,27 @@ mod tests {
 
     #[test]
     fn detect_theme_for_auto_prefers_color_scheme_then_osc11_then_env() {
-        let timeout = Duration::from_millis(50);
+        let t = Duration::from_millis(50);
 
         // Color-scheme report wins outright.
-        let mut ui = MockQuerier {
-            bg: Some(RgbColor { r: 8, g: 8, b: 8 }),
-            scheme: Some(TerminalTheme::Light),
-        };
-        assert_eq!(
-            detect_terminal_theme_for_auto(&mut ui, timeout, &env_of(&[])),
-            TerminalTheme::Light
+        let auto = detect_terminal_theme_for_auto(
+            &mut mock(Some(DARK_RGB), Some(TerminalTheme::Light)),
+            t,
+            &env_of(&[]),
         );
+        assert_eq!(auto, TerminalTheme::Light);
 
         // No color scheme: fall through to the OSC 11 background theme.
-        let mut ui = MockQuerier {
-            bg: Some(RgbColor { r: 8, g: 8, b: 8 }),
-            scheme: None,
-        };
-        assert_eq!(
-            detect_terminal_theme_for_auto(&mut ui, timeout, &env_of(&[])),
-            TerminalTheme::Dark
-        );
+        let auto = detect_terminal_theme_for_auto(&mut mock(Some(DARK_RGB), None), t, &env_of(&[]));
+        assert_eq!(auto, TerminalTheme::Dark);
 
         // No color scheme and no OSC 11: fall through to the env path.
-        let mut ui = MockQuerier {
-            bg: None,
-            scheme: None,
-        };
-        assert_eq!(
-            detect_terminal_theme_for_auto(&mut ui, timeout, &env_of(&[("COLORFGBG", "0;15")])),
-            TerminalTheme::Light
+        let auto = detect_terminal_theme_for_auto(
+            &mut mock(None, None),
+            t,
+            &env_of(&[("COLORFGBG", "0;15")]),
         );
+        assert_eq!(auto, TerminalTheme::Light);
     }
 
     #[test]

@@ -18,6 +18,7 @@ pub mod keys;
 pub mod kill_ring;
 pub mod markdown;
 pub mod overlay;
+pub mod query_terminal;
 pub mod renderer;
 pub mod terminal;
 pub mod terminal_colors;
