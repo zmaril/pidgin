@@ -1,0 +1,37 @@
+[package]
+name = "pidgin-tui"
+description = "Bit-exact Rust port of pi's TUI width and key-parsing modules."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+unicode-segmentation = "1.12"
+# base64 decode/encode for terminal_image.rs (image-dimension header parsing and
+# the iTerm2 `name=` field), matching pi's `Buffer.from(..., "base64")` usage.
+base64 = "0.22"
+# ICU4X word segmentation. Backs the word segmenter used by word-navigation;
+# reconciled to pi's ICU4C `Intl.Segmenter` via a colon tailoring in
+# text_util.rs (see that module and tests/word_segmentation.json).
+icu_segmenter = "2"
+# crossterm is used strictly as the OS backend for the real terminal
+# (CrosstermTerminal / ProcessTerminal): raw mode, terminal size, event source.
+# All key decoding stays in keys.rs; all diff/layout logic is our own port.
+crossterm = "0.29"
+fancy-regex = "0.18"
+
+# macOS-only: replaces pi's darwin-modifiers.c native addon. Used to poll live
+# modifier flags for the Apple Terminal Shift+Enter path (see terminal/modifiers.rs).
+[target.'cfg(target_os = "macos")'.dependencies]
+core-graphics = "0.25"
+
+# Windows-only: replaces pi's win32-console-mode.c native addon. Used to set
+# ENABLE_VIRTUAL_TERMINAL_INPUT on the stdin console (see terminal/console_mode.rs).
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Console"] }
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+proptest = "1"

@@ -1,5 +1,5 @@
-// Native shim for packages/agent/src/agent-loop.ts, backed by the atilla Rust
-// addon (`atilla-napi`) via the slice-1 callback bridge. Installed by
+// Native shim for packages/agent/src/agent-loop.ts, backed by the pidgin Rust
+// addon (`pidgin-napi`) via the slice-1 callback bridge. Installed by
 // conformance/codegen.mjs when the module is marked `native` in
 // conformance/manifest.json: the original pi file is preserved alongside as
 // `agent-loop.__pi_original__.ts` and this shim takes its place, so pi's tests
@@ -14,7 +14,7 @@
 // `emitToolUpdate`. Slice 3 wires the eight loop hooks (`transformContext`,
 // `getApiKey`, `shouldStopAfterTurn`, `prepareNextTurn`, `getSteeringMessages`,
 // `getFollowUpMessages`, `beforeToolCall`, `afterToolCall`) as blocking bridge
-// round-trips (see crates/atilla-napi/src/agent_bridge.rs and _bridge/
+// round-trips (see crates/pidgin-napi/src/agent_bridge.rs and _bridge/
 // dispatcher). For those shapes the loop runs on a dedicated Rust thread and
 // calls the test's live JS closures back mid-run; the assembled `AgentMessage[]`
 // and the `agent_start … agent_end` event sequence are Rust-produced.

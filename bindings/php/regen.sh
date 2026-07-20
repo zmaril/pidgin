@@ -15,7 +15,7 @@ pinned_rev="fb70926e037bed3a374445f8f19b62868cd66ba3"
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Resolve the fluessig checkout: first arg, then $FLUESSIG_DIR, then the
-# conventional sibling location next to the atilla repo.
+# conventional sibling location next to the pidgin repo.
 fluessig_dir="${1:-${FLUESSIG_DIR:-$here/../../../fluessig}}"
 
 if [[ ! -d "$fluessig_dir" ]]; then

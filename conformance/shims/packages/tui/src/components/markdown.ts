@@ -1,11 +1,11 @@
-// Native shim for packages/tui/src/components/markdown.ts, backed by the atilla
-// Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when the
+// Native shim for packages/tui/src/components/markdown.ts, backed by the pidgin
+// Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when the
 // module is marked `native` in conformance/manifest.json: the original pi file
 // is preserved alongside as `markdown.__pi_original__.ts` and this shim takes
 // its place, so pi's tests import `../src/components/markdown.ts` unchanged.
 //
 // Scope of the native flip: the Markdown terminal renderer ported bit-exactly
-// in `crates/atilla-tui` (validated against the vectors extracted from pi's
+// in `crates/pidgin-tui` (validated against the vectors extracted from pi's
 // markdown.test.ts). The native entry `markdownRender(source, width)` bakes in
 // pi's `defaultMarkdownTheme` at chalk level 3, zero padding, no default text
 // style, and no options. This shim re-implements pi's `Markdown` class by
@@ -20,7 +20,7 @@ export * from "./markdown.__pi_original__.ts";
 
 import { getCapabilities } from "../terminal-image.ts";
 import type { Component } from "../tui.ts";
-import { markdownRender as nativeMarkdownRender } from "atilla-napi";
+import { markdownRender as nativeMarkdownRender } from "pidgin-napi";
 import {
 	type DefaultTextStyle,
 	Markdown as OriginalMarkdown,

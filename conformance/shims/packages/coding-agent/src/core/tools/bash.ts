@@ -5,13 +5,13 @@
 // mirrors pi's own parallel tool factories and is intentional/load-bearing.
 //
 // Native shim for packages/coding-agent/src/core/tools/bash.ts, backed by the
-// atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
+// pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: pi's original file
 // is preserved alongside as `bash.__pi_original__.ts` and this shim takes its
 // place.
 //
 // Scope of the native flip (HYBRID / default-path only): the bash tool's DEFAULT
-// (local-shell) `execute` runs through `atilla_coding::core::tools::bash`'s
+// (local-shell) `execute` runs through `pidgin_coding::core::tools::bash`'s
 // `BashTool` with the local-shell operations, streaming into the
 // truncation/temp-file layer. The addon returns pi's `{ content, details:
 // { truncation?, fullOutputPath? } }`; non-zero exit / timeout / abort cross as
@@ -32,7 +32,7 @@
 export * from "./bash.__pi_original__.ts";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { bashToolExecute } from "atilla-napi";
+import { bashToolExecute } from "pidgin-napi";
 import type { ToolDefinition } from "../extensions/types.ts";
 import {
 	type BashToolDetails,

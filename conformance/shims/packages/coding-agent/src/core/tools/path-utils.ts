@@ -6,14 +6,14 @@
 // with the preserved pi original is intentional and load-bearing.
 //
 // Native shim for packages/coding-agent/src/core/tools/path-utils.ts, backed by
-// the atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs
+// the pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs
 // when the module is marked `native` in conformance/manifest.json: the original
 // pi file is preserved alongside as `path-utils.__pi_original__.ts` and this
 // shim takes its place, so pi's tools (and test/path-utils.test.ts, which
 // deep-imports this module and probes real temp dirs) hit Rust.
 //
 // Scope of the native flip (HYBRID / partial): the pure `expandPath` and
-// `resolveToCwd`, ported to `atilla_coding::core::tools::path_utils`. The Rust
+// `resolveToCwd`, ported to `pidgin_coding::core::tools::path_utils`. The Rust
 // port returns a `Result`; the addon maps `Err` to a thrown JS error, which
 // preserves pi's string-return + throw-on-bad-input contract. `resolveReadPath`
 // is rebuilt here: the Rust port takes an injected `exists` closure rather than
@@ -32,7 +32,7 @@ import {
 	pathTryMacosScreenshotPath as nativeTryMacosScreenshotPath,
 	pathTryNfdVariant as nativeTryNfdVariant,
 	resolveToCwd as nativeResolveToCwd,
-} from "atilla-napi";
+} from "pidgin-napi";
 
 export function expandPath(filePath: string): string {
 	return nativeExpandPath(filePath);

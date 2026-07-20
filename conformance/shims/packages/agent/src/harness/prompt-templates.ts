@@ -1,5 +1,5 @@
 // Native shim for packages/agent/src/harness/prompt-templates.ts, backed by the
-// atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
+// pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: the original pi
 // file is preserved alongside as `prompt-templates.__pi_original__.ts` and this
 // shim takes its place, so pi's tests hit the Rust-backed loading + formatting.
@@ -27,7 +27,7 @@ import {
 	formatPromptTemplateInvocation as nativeFormatPromptTemplateInvocation,
 	parseCommandArgs as nativeParseCommandArgs,
 	substituteArgs as nativeSubstituteArgs,
-} from "atilla-napi";
+} from "pidgin-napi";
 import { nativeExecutionCore } from "./env/nodejs.ts";
 import { loadPromptTemplates as piLoadPromptTemplates } from "./prompt-templates.__pi_original__.ts";
 import type { PromptTemplateDiagnostic } from "./prompt-templates.__pi_original__.ts";

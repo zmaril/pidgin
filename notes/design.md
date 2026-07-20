@@ -1,10 +1,10 @@
-# atilla — design
+# pidgin — design
 
 The one-page picture of what this project is and the decisions that govern it. The research behind every statement here lives in `startup/` (see its `index.md`); where an old note disagrees with this file, this file wins.
 
 ## What we are building
 
-atilla is a continually updating Rust mirror of [pi](https://github.com/earendil-works/pi) — Mario Zechner's self-extensible coding agent and the libraries beneath it — re-exposed as first-class native extensions in the major host languages. The Rust core replaces pi's Node runtime; the languages get real native extensions (a PECL-style `.so` for PHP, napi-rs packages for Node, PyO3 wheels for Python, and so on), not subprocess wrappers or a C-ABI dlopen.
+pidgin is a continually updating Rust mirror of [pi](https://github.com/earendil-works/pi) — Mario Zechner's self-extensible coding agent and the libraries beneath it — re-exposed as first-class native extensions in the major host languages. The Rust core replaces pi's Node runtime; the languages get real native extensions (a PECL-style `.so` for PHP, napi-rs packages for Node, PyO3 wheels for Python, and so on), not subprocess wrappers or a C-ABI dlopen.
 
 Upstream is pinned at commit `3da591ab` (v0.80.10) and tracked continuously: a machine-readable pin, a file-to-crate correspondence map, and a scheduled drift job that turns new upstream commits into tracked porting work.
 
@@ -12,7 +12,7 @@ Upstream is pinned at commit `3da591ab` (v0.80.10) and tracked continuously: a m
 
 Correctness is defined as passing pi's own test suite, literally — pi's 3,777 test cases run unmodified against the Rust core.
 
-The mechanism: napi-rs shim packages present pi's exact TypeScript module surface (pi's own `.d.ts` files front the Rust runtime exports, since types erase at runtime), and a generated `src`-tree swap intercepts the 93 percent of pi's test files that deep-import relative `../src/*` paths. A module manifest marks each pi module `native` (Rust-backed) or `original` (still pi's TS), and doubles as the porting ledger. pi's four black-box CLI test files (15 cases) repoint at the `atilla` binary and run as a separate signal — CLI conformance is 15/15. The conformance dashboard's headline is deliberately **rust-backed**: it counts passing cases only in files whose module-under-test is a native (Rust addon) module, so raw all-pass — inflated by unflipped TypeScript that passes without touching any Rust — is reported only as a secondary number. That headline currently reads 258 of 3,777 rust-backed (6.8 percent), with raw all-pass at 2,919 of 3,777; CI fails on regression.
+The mechanism: napi-rs shim packages present pi's exact TypeScript module surface (pi's own `.d.ts` files front the Rust runtime exports, since types erase at runtime), and a generated `src`-tree swap intercepts the 93 percent of pi's test files that deep-import relative `../src/*` paths. A module manifest marks each pi module `native` (Rust-backed) or `original` (still pi's TS), and doubles as the porting ledger. pi's four black-box CLI test files (15 cases) repoint at the `pidgin` binary and run as a separate signal — CLI conformance is 15/15. The conformance dashboard's headline is deliberately **rust-backed**: it counts passing cases only in files whose module-under-test is a native (Rust addon) module, so raw all-pass — inflated by unflipped TypeScript that passes without touching any Rust — is reported only as a secondary number. That headline currently reads 258 of 3,777 rust-backed (6.8 percent), with raw all-pass at 2,919 of 3,777; CI fails on regression.
 
 We aim for 100 percent eventually; until then, the irreducibly-Node residue (worker_threads, clipboard, environment-shaped tests) lives on a documented, CI-tracked exclusion list that shrinks over time rather than being silently ignored.
 
@@ -20,7 +20,7 @@ Because roughly 58 of pi's test files mock internal collaborators and roughly 68
 
 ## Architecture
 
-- **Workspace.** A Cargo workspace whose crates mirror pi's five packages (`ai`, `agent`, `coding-agent`, `tui`, `orchestrator`), funneled through one `atilla-core` façade crate. Every language binding depends only on the façade, which absorbs async-to-sync bridging, opaque handles, and error normalization once, so each binding stays a thin mechanical translation of the same surface. Module boundaries and naming stay deliberately close to pi's so upstream diffs map to tractable atilla diffs.
+- **Workspace.** A Cargo workspace whose crates mirror pi's five packages (`ai`, `agent`, `coding-agent`, `tui`, `orchestrator`), funneled through one `pidgin-core` façade crate. Every language binding depends only on the façade, which absorbs async-to-sync bridging, opaque handles, and error normalization once, so each binding stays a thin mechanical translation of the same surface. Module boundaries and naming stay deliberately close to pi's so upstream diffs map to tractable pidgin diffs.
 - **Rewrite mode.** AI-accelerated hand-rewrite: idiomatic-first, big-bang, no transpiler and no strangler-fig. pi's TypeScript and its test suite are the executable spec.
 - **Providers.** Hand-rolled thin clients, one per wire dialect, on `reqwest` + `eventsource-stream`, all converging on pi's `AssistantMessageEvent` union. Order: Anthropic, then the OpenAI-compatible client (reused across compatible vendors), then Google, then Mistral, with Bedrock last (SigV4 via the AWS SDK). No multi-provider crate — we own the wire.
 - **Sessions.** A byte-exact mirror of pi's version-3 JSONL session-tree format, read and write.
@@ -34,7 +34,7 @@ One Rust extension registry (`Tool` / `Hook` / `Command`) is the successor to pi
 - **pi's own TypeScript extensions** run unchanged on an embedded `deno_core` runtime with a Node-compat layer; passing pi's extension tests is part of the bar.
 - **Host languages** get the same `(pi) => {}` shape: a handle with `registerTool` / `on` / `registerCommand` that wraps PHP/Python/JS closures as registry entries. Dispatch follows the two-flavor model in `startup/deep-hooks.md`: a direct trampoline for hosts with a `Send` handle (Python under the GIL, Node via threadsafe functions), a thread-bound reentrant rendezvous pump for hosts without one (PHP, Ruby). Only JSON crosses the boundary; VM handles never enter the tokio world.
 - **Hook exposure policy: implemented-only.** Each binding exposes exactly the hook events the core has actually implemented at that point — the surface grows with the port, and no binding advertises events that are stubs.
-- **Discovery.** pi discovers extensions as TypeScript entrypoint files (project-level `.pi/extensions/*.ts` and configured paths), each default-exporting a factory `(pi) => void` that pi loads in-process via jiti and calls with the live API object — there is no separate manifest file in pi today; the filesystem convention is the manifest. atilla mirrors that convention for TS extensions, and extends it for host languages with a small per-extension declaration (language plus entrypoint) so a PHP or Python extension can be discovered the same way. The inventory of what is loaded — every registered tool, hook, and command, whatever language it came from — lives in Rust: the core registry is the single source of truth, and bindings query it rather than keeping their own lists.
+- **Discovery.** pi discovers extensions as TypeScript entrypoint files (project-level `.pi/extensions/*.ts` and configured paths), each default-exporting a factory `(pi) => void` that pi loads in-process via jiti and calls with the live API object — there is no separate manifest file in pi today; the filesystem convention is the manifest. pidgin mirrors that convention for TS extensions, and extends it for host languages with a small per-extension declaration (language plus entrypoint) so a PHP or Python extension can be discovered the same way. The inventory of what is loaded — every registered tool, hook, and command, whatever language it came from — lives in Rust: the core registry is the single source of truth, and bindings query it rather than keeping their own lists.
 
 ## Languages
 
@@ -42,7 +42,7 @@ All major languages, eventually; ordering matters less than proving the model. P
 
 ## TUI
 
-Shadow pi faithfully. pi's TUI is an inline line-diff renderer with a crash-on-mismatch width contract, both pinned by its tests — so atilla ports `tui.ts` and the width module exactly rather than rebuilding on another render model. crossterm serves as the ANSI sink and event source, ratatui-image handles images, and that is the extent of the ratatui footprint. No new surfaces are planned.
+Shadow pi faithfully. pi's TUI is an inline line-diff renderer with a crash-on-mismatch width contract, both pinned by its tests — so pidgin ports `tui.ts` and the width module exactly rather than rebuilding on another render model. crossterm serves as the ANSI sink and event source, ratatui-image handles images, and that is the extent of the ratatui footprint. No new surfaces are planned.
 
 ## Sequencing
 

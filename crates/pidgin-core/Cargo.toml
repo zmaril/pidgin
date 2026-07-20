@@ -1,0 +1,13 @@
+[package]
+name = "pidgin-core"
+description = "The pidgin engine — the library the CLI drives."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+pidgin-ai = { path = "../pidgin-ai" }
+pidgin-agent = { path = "../pidgin-agent" }
+pidgin-coding = { path = "../pidgin-coding" }

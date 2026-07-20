@@ -6,7 +6,7 @@ use serde_json::Value;
 
 const HELLO_TS: &str = include_str!("../extensions/hello.ts");
 
-/// The hub thread: a normal multi-thread tokio runtime, representing atilla's
+/// The hub thread: a normal multi-thread tokio runtime, representing pidgin's
 /// tokio core. It never touches the JsRuntime directly -- only channels.
 #[tokio::main(flavor = "multi_thread", worker_threads = 2)]
 async fn main() {

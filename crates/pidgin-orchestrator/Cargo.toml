@@ -1,0 +1,38 @@
+[package]
+name = "pidgin-orchestrator"
+description = "Rust mirror of @earendil-works/pi-orchestrator — the multi-instance orchestrator."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# Mirrors pi's `orchestrator` binary (packages/orchestrator/src/cli.ts). Named
+# following the pidgin CLI convention (cf. pidgin-cli's `[[bin]]`).
+[[bin]]
+name = "pidgin-orchestrator"
+path = "src/main.rs"
+
+[dependencies]
+pidgin-agent = { path = "../pidgin-agent" }
+pidgin-ai = { path = "../pidgin-ai", features = ["native-http"] }
+pidgin-coding = { path = "../pidgin-coding" }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { version = "1", features = [
+    "rt",
+    "rt-multi-thread",
+    "macros",
+    "process",
+    "io-util",
+    "io-std",
+    "sync",
+    "net",
+    "signal",
+] }
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.29", features = ["hostname"] }
+
+[dev-dependencies]
+tempfile = "3"

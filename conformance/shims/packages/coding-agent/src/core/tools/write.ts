@@ -5,14 +5,14 @@
 // mirrors pi's own parallel tool factories and is intentional/load-bearing.
 //
 // Native shim for packages/coding-agent/src/core/tools/write.ts, backed by the
-// atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
+// pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: pi's original file
 // is preserved alongside as `write.__pi_original__.ts` and this shim takes its
 // place.
 //
 // Scope of the native flip (HYBRID / default-path only): the write tool's
 // DEFAULT (local-filesystem) `execute` runs through
-// `atilla_coding::core::tools::write::run_write` with the local operations and
+// `pidgin_coding::core::tools::write::run_write` with the local operations and
 // the native file-mutation queue (`mkdir` → `write_file`, abort re-checked after
 // each await). The addon returns pi's `Successfully wrote N bytes to <path>`
 // result with `details: undefined`; errors cross as thrown JS `Error`s.
@@ -32,7 +32,7 @@
 export * from "./write.__pi_original__.ts";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import { writeToolExecute } from "atilla-napi";
+import { writeToolExecute } from "pidgin-napi";
 import type { ToolDefinition } from "../extensions/types.ts";
 import {
 	createWriteToolDefinition as originalCreateWriteToolDefinition,

@@ -108,7 +108,7 @@ function attributionSection(lines) {
 /**
  * Append the black-box CLI conformance section. This is a distinct signal from
  * the module smoke table above: it reports the four repointed coding-agent CLI
- * test files run against the compiled atilla binary, and is never folded into
+ * test files run against the compiled pidgin binary, and is never folded into
  * the per-package Native count. Renders nothing when the run produced no
  * cli_conformance block (older results or a run that skipped it).
  */
@@ -116,13 +116,13 @@ function cliSection(lines, current, baseline) {
   const cli = current?.cli_conformance;
   if (!cli) return;
   lines.push("");
-  lines.push("### CLI conformance (black-box, against the atilla binary)");
+  lines.push("### CLI conformance (black-box, against the pidgin binary)");
   lines.push("");
-  // Show the repo-relative binary path (target/release/atilla) when possible.
+  // Show the repo-relative binary path (target/release/pidgin) when possible.
   const binTail = cli.bin && cli.bin.includes("/target/")
     ? "target/" + cli.bin.split("/target/").pop()
     : cli.bin;
-  const bin = binTail ? `\`${binTail}\`` : "the atilla binary";
+  const bin = binTail ? `\`${binTail}\`` : "the pidgin binary";
   if (cli.status !== "ok") {
     lines.push(`- CLI conformance: env-blocked — ${cli.note || "binary unavailable"}.`);
     lines.push("");
@@ -147,8 +147,8 @@ function cliSection(lines, current, baseline) {
   }
   lines.push("");
   lines.push(
-    "The four repointed coding-agent CLI test files spawn the compiled atilla " +
-      "binary via `$ATILLA_BIN` instead of pi's own `cli.ts`. This is a separate " +
+    "The four repointed coding-agent CLI test files spawn the compiled pidgin " +
+      "binary via `$PIDGIN_BIN` instead of pi's own `cli.ts`. This is a separate " +
       "signal from the module smoke table and is never folded into the per-package " +
       "Native count.",
   );

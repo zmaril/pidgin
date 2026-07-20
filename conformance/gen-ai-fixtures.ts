@@ -2,7 +2,7 @@
 // boundary-type sample; their object shapes necessarily rhyme (they share the pi
 // content-block/message field vocabulary) but every one is load-bearing.
 //
-// Fixture generator for crates/atilla-ai boundary-type round-trip tests.
+// Fixture generator for crates/pidgin-ai boundary-type round-trip tests.
 //
 // Run with:  bun run conformance/gen-ai-fixtures.ts
 //
@@ -17,7 +17,7 @@
 //      literals annotated with pi's own exported types from vendor/pi's
 //      src/types.ts, so `bun`/`tsc` validate their field names and shapes.
 //
-// Output lands in crates/atilla-ai/tests/fixtures/ and is committed.
+// Output lands in crates/pidgin-ai/tests/fixtures/ and is committed.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,7 +44,7 @@ import type {
 } from "../vendor/pi/packages/ai/src/types.ts";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
-const outDir = join(here, "..", "crates", "atilla-ai", "tests", "fixtures");
+const outDir = join(here, "..", "crates", "pidgin-ai", "tests", "fixtures");
 
 function write(name: string, value: unknown): void {
 	const path = join(outDir, name);

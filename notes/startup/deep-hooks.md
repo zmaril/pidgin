@@ -355,7 +355,7 @@ completes, reentrantly:
 
 ```rust
 #[php_function]
-fn atilla_run(session: Zval) -> Zval {
+fn pidgin_run(session: Zval) -> Zval {
     let core = process_core();                 // lazy, post-fork
     let (tx, rx) = mpsc::channel::<HookRequest>();
     let handle = core.spawn_run(session.into(), HostDispatch::Rendezvous(tx));
@@ -381,7 +381,7 @@ fn pump_until_done(rx: &mpsc::Receiver<HookRequest>, handle: &RunHandle)
 }
 ```
 
-If `cb.try_call` reenters `atilla_*` and that call reaches another hook,
+If `cb.try_call` reenters `pidgin_*` and that call reaches another hook,
 the inner FFI call runs its own `pump_until_done`, so the nested request is
 serviced on this same thread. The pump is a stack.
 

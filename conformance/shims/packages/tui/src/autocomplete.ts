@@ -1,5 +1,5 @@
-// Native shim for packages/tui/src/autocomplete.ts, backed by the atilla Rust
-// addon (`atilla-napi`). Installed by conformance/codegen.mjs when the module is
+// Native shim for packages/tui/src/autocomplete.ts, backed by the pidgin Rust
+// addon (`pidgin-napi`). Installed by conformance/codegen.mjs when the module is
 // marked `native` in conformance/manifest.json: the original pi file is preserved
 // alongside as `autocomplete.__pi_original__.ts` and this shim takes its place, so
 // pi's tests import `../src/autocomplete.ts` unchanged and hit Rust.
@@ -7,7 +7,7 @@
 // Scope of the native flip: the whole `CombinedAutocompleteProvider` — slash-command
 // filtering, `@` fuzzy file walk, `./`/quoted path completion, prefix extraction,
 // `applyCompletion`, and `shouldTriggerFileCompletion` — is ported bit-exactly in
-// `crates/atilla-tui` and validated against pi's autocomplete.test.ts. pi's provider
+// `crates/pidgin-tui` and validated against pi's autocomplete.test.ts. pi's provider
 // reaches the filesystem/process world through four host seams (`readdirSync`,
 // `statSync`, `homedir`, `spawn(fd, args)`); the Rust core abstracts those behind a
 // `FileProvider` trait, and `AutocompleteCore` supplies a native implementation over
@@ -22,7 +22,7 @@
 
 export * from "./autocomplete.__pi_original__.ts";
 
-import { AutocompleteCore } from "atilla-napi";
+import { AutocompleteCore } from "pidgin-napi";
 import {
 	CombinedAutocompleteProvider as OriginalCombinedAutocompleteProvider,
 	type AutocompleteItem,

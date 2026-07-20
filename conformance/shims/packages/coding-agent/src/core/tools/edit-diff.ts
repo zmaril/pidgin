@@ -1,5 +1,5 @@
 // Native shim for packages/coding-agent/src/core/tools/edit-diff.ts, backed by
-// the atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs
+// the pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs
 // when the module is marked `native` in conformance/manifest.json: the original
 // pi file is preserved alongside as `edit-diff.__pi_original__.ts` and this shim
 // takes its place, so pi's edit tool (src/core/tools/edit.ts) and the
@@ -11,7 +11,7 @@
 // `normalizeToLF`, `restoreLineEndings`, `normalizeForFuzzyMatch`,
 // `fuzzyFindText`, `stripBom`, `applyReplacementsPreservingUnchangedLines`,
 // `applyEditsToNormalizedContent`, `generateUnifiedPatch`, `generateDiffString`,
-// ported to `atilla_coding::core::tools::edit_diff`. The async
+// ported to `pidgin_coding::core::tools::edit_diff`. The async
 // `computeEditsDiff`/`computeEditDiff` are NOT ported and are re-exported
 // unchanged from the original (they call the original file's own internal pure
 // helpers, so they keep running pi's TypeScript).
@@ -37,7 +37,7 @@ import {
 	normalizeToLf as nativeNormalizeToLf,
 	restoreLineEndings as nativeRestoreLineEndings,
 	stripBom as nativeStripBom,
-} from "atilla-napi";
+} from "pidgin-napi";
 import type {
 	AppliedEditsResult,
 	Edit,

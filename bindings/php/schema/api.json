@@ -4,17 +4,17 @@
     "emitter": "0.0.0",
     "compiler": "1.14.0"
   },
-  "source": "atilla.tsp",
+  "source": "pidgin.tsp",
   "models": [],
   "unions": [],
   "interfaces": [
     {
-      "name": "Atilla",
+      "name": "Pidgin",
       "doc": null,
       "ops": [
         {
           "name": "version",
-          "doc": "The atilla engine version, as reported by the atilla-core facade.",
+          "doc": "The pidgin engine version, as reported by the pidgin-core facade.",
           "shape": "unary",
           "readonly": true,
           "params": [],

@@ -86,15 +86,15 @@ jobs:
       # --- napi addon ----------------------------------------------------
       # The native shims delegate to this addon, so it must be current before
       # the conformance run materializes the module tree. Mirrors conformance.yml.
-      - name: Build atilla-napi crate
-        run: cargo build -p atilla-napi
+      - name: Build pidgin-napi crate
+        run: cargo build -p pidgin-napi
 
       - name: Build + load napi addon
-        working-directory: crates/atilla-napi
+        working-directory: crates/pidgin-napi
         run: |
           npm install
           npx napi build --platform
-          node -e "const { atillaNativeVersion } = require('./index.js'); const v = atillaNativeVersion(); if (typeof v !== 'string' || v.length === 0) { throw new Error('atillaNativeVersion() returned ' + JSON.stringify(v)); } console.log('atillaNativeVersion() =>', v);"
+          node -e "const { pidginNativeVersion } = require('./index.js'); const v = pidginNativeVersion(); if (typeof v !== 'string' || v.length === 0) { throw new Error('pidginNativeVersion() returned ' + JSON.stringify(v)); } console.log('pidginNativeVersion() =>', v);"
 
       # System libs for canvas (a packages/ai devDependency pulled in by the
       # workspace install). Present before the setup step's npm install. Mirrors

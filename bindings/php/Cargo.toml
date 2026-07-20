@@ -1,6 +1,6 @@
 [package]
-name = "atilla-php"
-description = "PHP native extension (ext-php-rs cdylib) bridging the atilla engine into PHP."
+name = "pidgin-php"
+description = "PHP native extension (ext-php-rs cdylib) bridging the pidgin engine into PHP."
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
@@ -8,15 +8,15 @@ repository = "https://github.com/zmaril/atilla"
 publish = false
 
 [lib]
-name = "atilla_php"
+name = "pidgin_php"
 crate-type = ["cdylib"]
 
 [dependencies]
 # Pinned exactly: ext-php-rs is pre-1.0 and its attribute macros churn between
 # minors (see throwaway/php-hello findings). 0.13.1 is proven on PHP 8.4 NTS.
 ext-php-rs = "=0.13.1"
-# The façade crate is the only atilla dependency a binding is allowed to reach.
-atilla-core = { path = "../../crates/atilla-core" }
+# The façade crate is the only pidgin dependency a binding is allowed to reach.
+pidgin-core = { path = "../../crates/pidgin-core" }
 # The generated binding routes fallible ops through `anyhow::Result`.
 anyhow = "1"
 # The shared streaming contract (Poll/PollStream) the generated binding imports.

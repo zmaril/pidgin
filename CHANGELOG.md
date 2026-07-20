@@ -8,12 +8,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Cargo workspace scaffold: `atilla-core` (library) and `atilla-cli` (the
-  `atilla` binary), with an `atilla run` placeholder command.
+- Cargo workspace scaffold: `pidgin-core` (library) and `pidgin-cli` (the
+  `pidgin` binary), with an `pidgin run` placeholder command.
 - CI (fmt, clippy, test), Dependabot, CODEOWNERS, and the fleet housekeeping,
   Straitjacket, conventional-commits, codespell, and vale workflows.
 - PHP binding scaffold (M0): `bindings/php`, an ext-php-rs cdylib exposing
-  `Atilla::version()` through the `atilla-core` façade, plus its build/test
+  `Pidgin::version()` through the `pidgin-core` façade, plus its build/test
   harness and a dedicated `php` CI job.
-- `atilla_core::version()`, surfacing the workspace version through the façade
+- `pidgin_core::version()`, surfacing the workspace version through the façade
   for bindings to report.

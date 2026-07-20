@@ -3,8 +3,8 @@
 #
 # Conformance workflow. Two responsibilities, deliberately split by severity:
 #
-#   1. napi build GATE (fails the job): the atilla-napi cdylib must compile and
-#      the resulting addon must load in Node and answer atillaNativeVersion().
+#   1. napi build GATE (fails the job): the pidgin-napi cdylib must compile and
+#      the resulting addon must load in Node and answer pidginNativeVersion().
 #      A broken addon is a real regression, so this step is allowed to go red.
 #
 #   2. conformance runner (NON-gating): runs the vendored pi suites against the
@@ -28,7 +28,7 @@
 # the setup step continue-on-error rather than trying to prune the install.
 #
 # Black-box CLI conformance runs regardless of the package subset: the runner
-# builds the atilla binary (cargo build -p atilla-cli --release) and spawns four
+# builds the pidgin binary (cargo build -p pidgin-cli --release) and spawns four
 # repointed coding-agent CLI test files against it, reporting a SEPARATE
 # cli_conformance metric (its own sticky-comment section). It is not folded into
 # any per-package native count.
@@ -91,15 +91,15 @@ jobs:
           node-version: "22"  # matches pi engines (>=22.19)
 
       # --- napi build GATE (allowed to fail the job) ---------------------
-      - name: Build atilla-napi crate
-        run: cargo build -p atilla-napi
+      - name: Build pidgin-napi crate
+        run: cargo build -p pidgin-napi
 
       - name: Build + load napi addon
-        working-directory: crates/atilla-napi
+        working-directory: crates/pidgin-napi
         run: |
           npm install
           npx napi build --platform
-          node -e "const { atillaNativeVersion } = require('./index.js'); const v = atillaNativeVersion(); if (typeof v !== 'string' || v.length === 0) { throw new Error('atillaNativeVersion() returned ' + JSON.stringify(v)); } console.log('atillaNativeVersion() =>', v);"
+          node -e "const { pidginNativeVersion } = require('./index.js'); const v = pidginNativeVersion(); if (typeof v !== 'string' || v.length === 0) { throw new Error('pidginNativeVersion() returned ' + JSON.stringify(v)); } console.log('pidginNativeVersion() =>', v);"
 
       # --- conformance smoke (NON-gating) --------------------------------
       # System libs for canvas (a packages/ai devDependency pulled in by the

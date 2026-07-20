@@ -1,4 +1,4 @@
-// straitjacket-allow-file:duplication — byte-faithful mirror of pi's CLI test file, repointed only at the atilla binary (ATILLA_BIN); the shared temp-dir/spawn boilerplate is pi's own parallel test structure.
+// straitjacket-allow-file:duplication — byte-faithful mirror of pi's CLI test file, repointed only at the pidgin binary (PIDGIN_BIN); the shared temp-dir/spawn boilerplate is pi's own parallel test structure.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { ENV_AGENT_DIR } from "../src/config.ts";
 
-const ATILLA_BIN = process.env.ATILLA_BIN;
+const PIDGIN_BIN = process.env.PIDGIN_BIN;
 
 const tempDirs: string[] = [];
 
@@ -55,7 +55,7 @@ async function runCli(args: string[]): Promise<{ stdout: string; stderr: string;
 	);
 
 	return await new Promise((resolvePromise, reject) => {
-		const child = spawn(ATILLA_BIN, [...args], {
+		const child = spawn(PIDGIN_BIN, [...args], {
 			cwd: projectDir,
 			env: {
 				...process.env,

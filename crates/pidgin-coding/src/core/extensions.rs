@@ -1,0 +1,45 @@
+//! Mirror of pi-coding-agent's extensions subsystem
+//! (`packages/coding-agent/src/core/extensions`).
+//!
+//! Ported so far:
+//! - [`types`] — the tool-registry critical-path types
+//!   ([`types::ToolDefinition`], [`types::ExtensionContext`]).
+//! - [`loader`] — the extension-loader trait seam the resource-loader
+//!   orchestrator calls (the dynamic extension engine itself, pi's `jiti` host,
+//!   is owned by the extension-plane session and lands later).
+//! - [`events`] — the faithful port of pi's 33 hook-event payload and result
+//!   types (the `ExtensionEvent` union), split into a directory module.
+//! - [`hook`] — the [`hook::Hook`] trait, the [`hook::HookEvent`] event-name
+//!   enum, and the [`hook::HookOutcome`] / [`hook::Affinity`] design types.
+//! - [`command`] — the [`command::Command`] trait and the
+//!   [`command::RegisteredCommand`] descriptor.
+//! - [`registry`] — the [`registry::ExtensionHost`] registration surface and the
+//!   [`registry::Registry`] inventory.
+//! - [`discovery`] — the filesystem-convention scan that locates extensions and
+//!   resolves each declared entrypoint into a [`discovery::DiscoveredExtension`]
+//!   inventory (pure Rust, no JS execution).
+//! - [`dispatch`] — the pure result-shaping folds (chain / merge / short-circuit
+//!   / replace) that mirror pi's `ExtensionRunner.emit*` shaping, factored out of
+//!   the JS runtime so they are unit-testable in the default (V8-free) build.
+//! - [`runner`] — the [`runner::ExtensionRunner`] trait seam `AgentSession`
+//!   consumes (pi's `runner.ts` façade), plus the net-new types, the four
+//!   `bindCore` host traits, and the always-compiled no-op
+//!   [`runner::StubExtensionRunner`]. PR0 = trait + stub only; the deno-backed
+//!   impl lives in `pidgin-extensions`.
+//!
+//! The JS-execution plane (running each discovered entrypoint on the embedded
+//! `deno_core` runtime) and the live `ExtensionRunner` that drives the hooks over
+//! the off-thread rendezvous live in `pidgin-extensions` (behind its `deno`
+//! feature); this crate provides the pure types, traits, and shaping folds those
+//! bindings lower onto. Apart from [`discovery`], these modules are pure — no
+//! runtime, no `deno_core`, no JS.
+
+pub mod command;
+pub mod discovery;
+pub mod dispatch;
+pub mod events;
+pub mod hook;
+pub mod loader;
+pub mod registry;
+pub mod runner;
+pub mod types;

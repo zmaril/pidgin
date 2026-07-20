@@ -1,5 +1,5 @@
 // Native shim for packages/agent/src/harness/env/nodejs.ts, backed by the
-// atilla Rust addon (`atilla-napi`). Installed by conformance/codegen.mjs when
+// pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when
 // the module is marked `native` in conformance/manifest.json: the original pi
 // file is preserved alongside as `nodejs.__pi_original__.ts` and this shim takes
 // its place, so pi's tests hit the Rust-backed `NodeExecutionEnv`.
@@ -22,7 +22,7 @@
 export * from "./nodejs.__pi_original__.ts";
 
 import { NodeExecutionEnv as PiNodeExecutionEnv } from "./nodejs.__pi_original__.ts";
-import { NodeExecutionEnvCore } from "atilla-napi";
+import { NodeExecutionEnvCore } from "pidgin-napi";
 import {
 	type ExecutionEnv,
 	ExecutionError,

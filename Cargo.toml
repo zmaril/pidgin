@@ -1,16 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/atilla-core",
-    "crates/atilla-cli",
-    "crates/atilla-ai",
-    "crates/atilla-agent",
-    "crates/atilla-coding",
-    "crates/atilla-extensions",
-    "crates/atilla-model-catalog",
-    "crates/atilla-orchestrator",
-    "crates/atilla-napi",
-    "crates/atilla-tui",
+    "crates/pidgin-core",
+    "crates/pidgin-cli",
+    "crates/pidgin-ai",
+    "crates/pidgin-agent",
+    "crates/pidgin-coding",
+    "crates/pidgin-extensions",
+    "crates/pidgin-model-catalog",
+    "crates/pidgin-orchestrator",
+    "crates/pidgin-napi",
+    "crates/pidgin-tui",
 ]
 
 [workspace.package]

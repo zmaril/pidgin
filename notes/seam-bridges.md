@@ -1,8 +1,8 @@
-# atilla — seam bridges
+# pidgin — seam bridges
 
-How a pi test's JavaScript-side mock reaches a Rust seam. This is the contract the ported-consumer threads (auth, exec tools) and the shim maintainer build against. It extends the one-way JSON boundary that PR #35 established for the faux provider (`crates/atilla-ai/src/providers/faux.rs` → `crates/atilla-napi/src/faux.rs` `FauxCore` → `conformance/shims/packages/ai/src/providers/faux.ts`) to the other four seams.
+How a pi test's JavaScript-side mock reaches a Rust seam. This is the contract the ported-consumer threads (auth, exec tools) and the shim maintainer build against. It extends the one-way JSON boundary that PR #35 established for the faux provider (`crates/pidgin-ai/src/providers/faux.rs` → `crates/pidgin-napi/src/faux.rs` `FauxCore` → `conformance/shims/packages/ai/src/providers/faux.ts`) to the other four seams.
 
-The seam traits already exist in `crates/atilla-ai/src/seams/` with a production impl and a scripted test double each. What this doc adds is the rule that decides, for any given seam, where the JS/Rust line falls — so that pi's existing `vi.*` mock lands on the effect it already targets, with no change to pi's test.
+The seam traits already exist in `crates/pidgin-ai/src/seams/` with a production impl and a scripted test double each. What this doc adds is the rule that decides, for any given seam, where the JS/Rust line falls — so that pi's existing `vi.*` mock lands on the effect it already targets, with no change to pi's test.
 
 ## The boundary rule
 
@@ -74,7 +74,7 @@ if (!state.valid) { /* run the refresh exchange (Bridge 2) */ }
 
 For a single request that is one of each. For a multi-step flow (OAuth authorization poll, refresh-then-retry), `consumeResponse` returns a next-action tag — `done`, `request` with the next request descriptor, or `error` — and the shim loops. The loop, the `await fetch`, and any `setTimeout` between attempts live in JS; the decision of what to send and what a response means lives in Rust.
 
-**Streaming (SSE):** already solved for anthropic in this shape — the shim reads the response body stream and Rust parses each chunk (`anthropicParseSseStream`, `crates/atilla-napi/src/lib.rs`). A retry on a streamed 429 combines with Bridge 1: Rust computes the delay, the shim schedules it.
+**Streaming (SSE):** already solved for anthropic in this shape — the shim reads the response body stream and Rust parses each chunk (`anthropicParseSseStream`, `crates/pidgin-napi/src/lib.rs`). A retry on a streamed 429 combines with Bridge 1: Rust computes the delay, the shim schedules it.
 
 **WebSocket:** JS owns the socket object; Rust builds the connect parameters and outgoing frames and parses incoming frames. The `connect_websocket` method on `HttpTransport` is for a future pure-Rust transport; the bridged path keeps the socket in JS, matching how `openai-codex-stream.test.ts` drives a mock WebSocket.
 
@@ -244,7 +244,7 @@ expect(JSON.parse(written).access).toBe("access-token");
 
 Each bridge is proven in three steps, and the first two are gate-free:
 
-1. **Rust half** — a unit or integration test in `crates/atilla-ai` over the injectable double (`FakeClock`, `ScriptedTransport`, `ScriptedCommandRunner`, `MemoryEnv`). Owned by this thread.
+1. **Rust half** — a unit or integration test in `crates/pidgin-ai` over the injectable double (`FakeClock`, `ScriptedTransport`, `ScriptedCommandRunner`, `MemoryEnv`). Owned by this thread.
 2. **FFI half** — once the napi core exists, a focused JS test through the shim that injects a value and asserts it reached Rust and back. Run with the shim maintainer's single-file harness. Owned jointly with the shim maintainer.
 3. **Real pi file** — flips native when the consumer module is ported; the pi test then runs unchanged against Rust. Owned by the consumer thread (auth, exec tools).
 
@@ -253,9 +253,9 @@ Each bridge is proven in three steps, and the first two are gate-free:
 From the shim maintainer, verified end to end. Rebuild the addon every time — do not trust an existing `.node`:
 
 ```bash
-cd /workspace/atilla; REPO_ROOT="$(pwd)"; PI_ROOT="$REPO_ROOT/vendor/pi"
-( cd crates/atilla-napi && npx napi build --platform --release )
-ln -sfn "$REPO_ROOT/crates/atilla-napi" "$PI_ROOT/node_modules/atilla-napi"
+cd /workspace/pidgin; REPO_ROOT="$(pwd)"; PI_ROOT="$REPO_ROOT/vendor/pi"
+( cd crates/pidgin-napi && npx napi build --platform --release )
+ln -sfn "$REPO_ROOT/crates/pidgin-napi" "$PI_ROOT/node_modules/pidgin-napi"
 node "$REPO_ROOT/conformance/codegen.mjs"                       # must print "missing": 0
 ( cd "$PI_ROOT/packages/ai" && npx vitest run test/<file>.test.ts --reporter=dot )
 find "$PI_ROOT/packages" -name '*.__pi_original__.ts' -delete && git -C "$PI_ROOT" checkout -- packages
@@ -265,6 +265,6 @@ Gotchas: codegen aborts on manifest drift (a new module file needs a manifest ro
 
 ## Ownership
 
-- **Seam traits and doubles** — `crates/atilla-ai/src/seams/` — this thread.
+- **Seam traits and doubles** — `crates/pidgin-ai/src/seams/` — this thread.
 - **napi cores, shim glue, manifest flips** — the shim maintainer.
 - **Ported consumers (the build/consume splits)** — the auth thread and the exec-tools thread. Code to the per-bridge contract above; the seam types you cross are stable.

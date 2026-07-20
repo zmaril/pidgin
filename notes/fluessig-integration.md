@@ -1,8 +1,8 @@
 # Fluessig integration plan
 
 This note scopes connecting
-[`fluessig`](https://github.com/zmaril/fluessig) and atilla. The direction
-is decided: **A, fluessig generates atilla's bindings.** This note records
+[`fluessig`](https://github.com/zmaril/fluessig) and pidgin. The direction
+is decided: **A, fluessig generates pidgin's bindings.** This note records
 that decision, the concrete work it implies on each side, the milestone
 that gates it, and the decisions and questions still open. It is grounded
 in fluessig's code and commit history, not its README, which is stale (see
@@ -13,7 +13,7 @@ application, so there is no `php.ini`, no `.so` to load, and no NTS/ZTS or
 PHP-version match to worry about at fluessig's edge. fluessig is a Rust
 plus Node build-time schema and code-generation tool with no runtime. The
 integration is therefore not extension-loading; it is teaching fluessig to
-generate the binding layer that atilla writes by hand.
+generate the binding layer that pidgin writes by hand.
 
 ---
 
@@ -41,7 +41,7 @@ Facts that matter for integration:
 - No runtime. No Dockerfile, no server, no HTTP client, no LLM SDK, no
   async runtime, no queue. It runs at other projects' codegen time and is
   pinned by git ref. On this point the README is accurate.
-- It is Rust at the core. atilla's façade crate `atilla-core` is also
+- It is Rust at the core. pidgin's façade crate `pidgin-core` is also
   Rust, so a Rust-to-Rust link needs no FFI binding at all. And with the
   front end going Rust-first, describing a model is itself becoming a
   Rust-derive exercise rather than a TypeSpec one.
@@ -51,7 +51,7 @@ Facts that matter for integration:
   `tests/mcp.rs`. Op shapes are `ctor | unary | stream | manual`.
 - It has no PHP back-end. The back ends present are node, python, and ruby
   (plus the MCP projection); there is no `src/bindgen/php.rs`, and no
-  "php" token anywhere in the tree. atilla is PHP-first, so this gap is
+  "php" token anywhere in the tree. pidgin is PHP-first, so this gap is
   real and is the critical-path change (section 3).
 - Its consumers are [`entl`](https://github.com/zmaril/entl) (the
   committed fixture) and `disponent` (a second consumer named in code and
@@ -82,17 +82,17 @@ divergences, each confirmed against the code:
 ## 2. Why direction A
 
 Both projects are built on "one Rust core, exposed as native extensions
-per language." The difference is who writes the binding layer: atilla
-hand-writes it (`bindings/php` via ext-php-rs, `crates/atilla-napi` via
+per language." The difference is who writes the binding layer: pidgin
+hand-writes it (`bindings/php` via ext-php-rs, `crates/pidgin-napi` via
 napi-rs), and fluessig generates it from a schema. Direction A puts those
-together: atilla describes its façade surface once and fluessig emits the
+together: pidgin describes its façade surface once and fluessig emits the
 per-language bindings, so the ext-php-rs and napi glue stop being
 hand-maintained.
 
-The alternative, B (atilla as an agent driving a fluessig-described engine
+The alternative, B (pidgin as an agent driving a fluessig-described engine
 such as entl or disponent), is not the path chosen. It is recorded only so
-the decision is legible: B would need atilla's agent loop (M3) and tool
-plane (M6) plus an in-process bridge, since atilla has no MCP client by
+the decision is legible: B would need pidgin's agent loop (M3) and tool
+plane (M6) plus an in-process bridge, since pidgin has no MCP client by
 design. A is a build-time codegen relationship and can start against
 today's surface.
 
@@ -105,36 +105,36 @@ On the fluessig side, the changes this needs:
 1. Add a PHP back-end. fluessig has `src/bindgen/{node,python,ruby}.rs`
    and no `php.rs`. A new `src/bindgen/php.rs` (ext-php-rs templates), a
    `php` language slug, and PHP type-map entries are the critical-path
-   change, because atilla is PHP-first.
-2. Cover atilla's op shapes. fluessig's op layer (`api.json`, the `Shape`
+   change, because pidgin is PHP-first.
+2. Cover pidgin's op shapes. fluessig's op layer (`api.json`, the `Shape`
    enum `ctor | unary | stream | manual`) is entity and data-model
-   centric. atilla's façade is behavioral: `version()` is a plain unary
+   centric. pidgin's façade is behavioral: `version()` is a plain unary
    call, `Session::open` returns an opaque handle (a `ctor`-shaped op),
    and agent runs emit a streaming event union (a `stream`-shaped op).
    Confirming, and where needed extending, the shape model and type map to
    carry opaque handles and event-union streams is a core design risk.
 3. Reproduce pi's Node return shapes exactly. This is a large piece of the
-   work and has its own section, because atilla's Node binding is also its
+   work and has its own section, because pidgin's Node binding is also its
    conformance harness (section 4).
 4. Emit pi's package and module layout. fluessig produces one flat binding
    per catalog; pi's conformance surface is five packages with pi-exact
    names and deep module paths. Multi-package, multi-module output is a new
    fluessig capability (section 5).
 
-On the atilla side:
+On the pidgin side:
 
 1. Provide a describable surface. Today the façade is only
-   `atilla_core::version()`; `Session::open` and the agent loop are not
+   `pidgin_core::version()`; `Session::open` and the agent loop are not
    built yet, so the surface fluessig would generate from grows with
-   atilla's milestones (section 6).
+   pidgin's milestones (section 6).
 2. Choose the source of truth. Because fluessig's front end is going
    Rust-first, the natural model is to annotate the façade types in
-   `atilla-core` with fluessig derives, or to keep a small schema crate
-   that describes them. Either couples atilla to a pinned fluessig ref;
+   `pidgin-core` with fluessig derives, or to keep a small schema crate
+   that describes them. Either couples pidgin to a pinned fluessig ref;
    pick deliberately.
 3. Retire the hand-written bindings as generation takes over. `bindings/php`
-   and `crates/atilla-napi` become generated output. The napi binding is
-   also atilla's conformance harness (it fronts pi's test suite), so a
+   and `crates/pidgin-napi` become generated output. The napi binding is
+   also pidgin's conformance harness (it fronts pi's test suite), so a
    generated napi surface must stay a drop-in that keeps pi's tests
    passing; the swap cannot regress conformance.
 
@@ -143,18 +143,18 @@ On the atilla side:
 ## 4. Reproducing pi's Node return shapes
 
 Direction A's harder half is not the PHP back-end; it is making fluessig's
-Node back-end emit pi's Node API return shapes exactly, because atilla's
+Node back-end emit pi's Node API return shapes exactly, because pidgin's
 Node binding is also its conformance harness and must pass pi's own test
 suite unmodified. Two facts frame this:
 
 - No Arrow, either side of the real surface. pi returns only plain JS
   objects and JSON-like values; there is no columnar, Arrow, or IPC
-  representation anywhere in pi or in atilla's design (session data is
+  representation anywhere in pi or in pidgin's design (session data is
   version-3 JSONL; cross-FFI events are a small struct or a JSON string).
   fluessig does use Arrow, but only for one thing: a DTO field typed
   `ArrowBatch` (its columnar data-plane carrier, for example entl's
   `ChangeBatch.ipc`), surfaced in Node as lazy Arrow-IPC `Buffer` bytes.
-  So Arrow is a fluessig feature atilla's surface must stay off: atilla
+  So Arrow is a fluessig feature pidgin's surface must stay off: pidgin
   ops must avoid the `ArrowBatch` and `bytes` carriers and ride fluessig's
   plain-`#[napi(object)]` path. The Arrow question resolves to "do not use
   it here," not "wire it up."
@@ -216,14 +216,14 @@ catalog: its node emitter loops every interface into a single generated
 file, the CLI writes one file per language, and the schema (`api.json`)
 has no package, module, or scope field at all, with `deny_unknown_fields`
 blocking any data-side addition. pi's conformance surface is the opposite.
-atilla mirrors pi's five packages (`ai`, `agent`, `coding-agent`, `tui`,
-`orchestrator`) as crates funneled through the `atilla-core` façade, and
+pidgin mirrors pi's five packages (`ai`, `agent`, `coding-agent`, `tui`,
+`orchestrator`) as crates funneled through the `pidgin-core` façade, and
 pi's tests import by pi's exact package names (`@earendil-works/pi-ai`,
 `pi-agent-core`, and so on) and by hundreds of deep `../src/*` module
 paths, each an independently tracked shim in the conformance module
 manifest. Names are load-bearing: a near-miss is a silent import mismatch.
 
-So describing atilla's whole façade as one fluessig catalog would collapse
+So describing pidgin's whole façade as one fluessig catalog would collapse
 it into one flat output and could not recreate pi's breakdown. Recreating
 it needs three things fluessig lacks today: a schema-level package and
 module grouping concept, an output fan-out in the emitter and CLI
@@ -232,45 +232,45 @@ README), and caller-specified package names with nested module paths. This
 is a distinct capability from the name pinning in section 4: that pins a
 symbol's name, this pins where the symbol lives.
 
-The `atilla-core` façade being one Rust crate does not force the collapse.
+The `pidgin-core` façade being one Rust crate does not force the collapse.
 The façade is the internal seam; the schema can tag each op and type with
 its target pi package and module regardless of where the derive
 definitions live. The grouping metadata is what matters, not whether the
-schema sits in `atilla-core` or a separate crate.
+schema sits in `pidgin-core` or a separate crate.
 
 ---
 
 ## 6. Milestone gate and a sequencing that de-risks A
 
-The link itself is buildable today, and the payoff grows with atilla's
+The link itself is buildable today, and the payoff grows with pidgin's
 façade:
 
-| Step | atilla surface | fluessig work | Gated at |
+| Step | pidgin surface | fluessig work | Gated at |
 | --- | --- | --- | --- |
-| Regenerate today's `Atilla::version()` from a schema, byte-comparable to the hand-written binding | `atilla_core::version()` | `src/bindgen/php.rs` MVP | M0 (today) |
+| Regenerate today's `Pidgin::version()` from a schema, byte-comparable to the hand-written binding | `pidgin_core::version()` | `src/bindgen/php.rs` MVP | M0 (today) |
 | First non-trivial generated binding | `Session::open(path)` -> messages plus stats | handle plus struct lowering; Node name pinning (section 4); package and module targeting (section 5) | M1 |
 | Generate over the agent surface | agent loop, event stream | union-as-object projection, async-iterable stream, dual error model (section 4) | M3 |
 | Replace the hand-written napi harness with generated napi | napi conformance surface | node back-end parity with pi's `.d.ts` fronting, plus multi-package and multi-module output (section 5) | M7 |
 
 Recommended first move, doable now: build the PHP back-end far enough to
-regenerate the existing M0 `Atilla::version()` binding and diff it against
+regenerate the existing M0 `Pidgin::version()` binding and diff it against
 the hand-written one. That proves the direction end-to-end against a
-trivial surface before atilla's API grows, and it is the concrete answer
-to "what needs to happen with fluessig to enable atilla": a `php.rs` back
+trivial surface before pidgin's API grows, and it is the concrete answer
+to "what needs to happen with fluessig to enable pidgin": a `php.rs` back
 end is step one, and the Node and package-layout work in sections 4 and 5
 is the larger follow-on.
 
 ---
 
-## 7. What atilla exposes today versus what is needed
+## 7. What pidgin exposes today versus what is needed
 
-Today (M0, merged): `atilla_core::version()` and PHP `Atilla::version():
+Today (M0, merged): `pidgin_core::version()` and PHP `Pidgin::version():
 string` via ext-php-rs `=0.13.1` targeting PHP 8.4 NTS. `Session::open`
 exists only as an M1 placeholder marker in `bindings/php/src/lib.rs`; the
-mirror crates (`atilla-agent`, `atilla-ai`, `atilla-coding`) are empty
+mirror crates (`pidgin-agent`, `pidgin-ai`, `pidgin-coding`) are empty
 scaffolds.
 
-So any generated binding beyond a version call is blocked on atilla
+So any generated binding beyond a version call is blocked on pidgin
 roadmap work, not on fluessig. The dependency list is short and
 milestone-shaped: M1 for sessions, M3 for the agent surface, M7 for the
 napi harness swap.
@@ -282,16 +282,16 @@ napi harness swap.
 Recorded decisions from the project owner, who owns both repos:
 
 - Op model: fluessig's shape model and type map will likely need extending
-  to carry atilla's opaque handles and event unions (question 1 below).
+  to carry pidgin's opaque handles and event unions (question 1 below).
 - Node capabilities: the four section-4 gaps are grown into fluessig's
   generic back-end, not left behind the `@manual` escape hatch.
-- Ownership: atilla drives the fluessig-side work; a shared owner means the
+- Ownership: pidgin drives the fluessig-side work; a shared owner means the
   repo boundary is not a blocker.
 - Harness swap: generated napi replaces the hand-written harness when it
   makes sense and can, not on a fixed milestone.
 - Package layout: recreating pi's package breakdown is required and is a
   new fluessig capability (section 5), not recoverable by schema placement
-  alone. "All in `atilla-core`" is fine as the internal seam as long as the
+  alone. "All in `pidgin-core`" is fine as the internal seam as long as the
   schema carries package and module grouping.
 
 Still open:
@@ -299,8 +299,8 @@ Still open:
 1. Op-model fit: exactly which extensions the shape model and type map need
    to carry opaque session handles and streaming event unions.
 2. Source of truth: do the fluessig derives live on the façade types in
-   `atilla-core`, or in a separate schema crate? Either supports the
-   package grouping above; the trade is coupling `atilla-core` to a
+   `pidgin-core`, or in a separate schema crate? Either supports the
+   package grouping above; the trade is coupling `pidgin-core` to a
    fluessig ref versus carrying an extra crate.
 3. Multi-package emission: the shape of the schema-level grouping concept
    and the emitter and CLI fan-out that section 5 requires is undecided.

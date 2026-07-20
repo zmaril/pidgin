@@ -1,6 +1,6 @@
 # Conformance flip ledger (shim maintainer)
 
-Tracks which pi modules are backed by the Rust engine (`atilla-napi`) vs still
+Tracks which pi modules are backed by the Rust engine (`pidgin-napi`) vs still
 running pi's own TypeScript. "Native" = a hand-written shim in
 `conformance/shims/` overlays pi's source and delegates to the addon; the
 manifest row's `status` is `native` and codegen preserves pi's original beside

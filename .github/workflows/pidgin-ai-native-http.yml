@@ -1,0 +1,33 @@
+name: pidgin-ai-native-http
+
+# The pidgin-ai crate gates the native reqwest-backed HttpTransport (and thus
+# reqwest + rustls) behind the non-default `native-http` feature, so the shared
+# workspace CI (ci.yml) never builds reqwest. This dedicated job is the ONLY
+# place the native transport is compiled and tested. Path-filtered so it runs
+# only when the crate or this workflow changes. Tests bind an in-process
+# TcpListener on loopback with `.no_proxy()`, so no real network is needed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/pidgin-ai/**"
+      - ".github/workflows/pidgin-ai-native-http.yml"
+  pull_request:
+    paths:
+      - "crates/pidgin-ai/**"
+      - ".github/workflows/pidgin-ai-native-http.yml"
+
+jobs:
+  native-http:
+    name: native http transport (reqwest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build -p pidgin-ai --features native-http
+      - run: cargo clippy -p pidgin-ai --features native-http --all-targets -- -D warnings
+      - run: cargo test -p pidgin-ai --features native-http

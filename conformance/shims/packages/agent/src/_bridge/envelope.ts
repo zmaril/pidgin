@@ -2,7 +2,7 @@
 //
 // Every seam the Rust agent loop calls back into JS multiplexes through a single
 // dispatcher function via a tagged JSON envelope. The Rust side
-// (crates/atilla-napi/src/agent_bridge.rs) owns the id allocation and the
+// (crates/pidgin-napi/src/agent_bridge.rs) owns the id allocation and the
 // blocking resolve channel; this file names the wire shapes the two sides agree
 // on. JSON is the boundary — nothing rich crosses.
 
