@@ -64,8 +64,10 @@ use crate::utils::headers::{provider_headers_to_record, ProviderHeaders};
 use crate::utils::provider_env::ProviderEnv;
 use crate::utils::sanitize_unicode::sanitize_surrogates;
 
+mod eventstream;
 mod stream;
 mod transform_messages;
+pub use eventstream::{decode_event_stream, EventStreamError};
 pub use stream::{parse_converse_stream, parse_converse_stream_to_json, StreamOutcome};
 use transform_messages::{transform_messages as transform_messages_impl, ModelIdentity};
 
