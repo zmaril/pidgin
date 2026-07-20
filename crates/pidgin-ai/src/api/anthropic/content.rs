@@ -20,17 +20,11 @@ use crate::types::{
 
 use super::tools::{normalize_tool_name, to_claude_code_name};
 
-/// Remove unpaired Unicode surrogate characters, mirroring pi's
-/// `sanitizeSurrogates` (`utils/sanitize-unicode.ts`). Rust `String`s are always
-/// valid UTF-8, so lone surrogates cannot occur and this is the identity on
-/// every input Rust can represent; it exists to keep the port's call sites
-/// aligned with pi's.
-// Follow-up (#N): provenance is pi's third file `utils/sanitize-unicode.ts`, not
-// anthropic-messages.ts; it lives here beside its only caller. A future
-// micro-split to a `sanitize_unicode.rs` sibling is possible but out of scope.
-pub fn sanitize_surrogates(text: &str) -> String {
-    text.to_string()
-}
+/// Re-exported from the shared [`crate::utils::sanitize_unicode`] module, which
+/// owns pi's `utils/sanitize-unicode.ts` port. The anthropic call sites (and
+/// [`super::request`]) reach it through this `content::` path, matching how pi
+/// threads `sanitizeSurrogates` in from the sibling util.
+pub use crate::utils::sanitize_unicode::sanitize_surrogates;
 
 /// Normalize a tool-call id to Anthropic's `^[a-zA-Z0-9_-]+$` pattern and 64-char
 /// cap, mirroring pi's `normalizeToolCallId` (`anthropic-messages.ts:1050`).
