@@ -13,7 +13,7 @@
 // (`pidgin_agent::harness::session::build_session_context`) through the BLOCKING
 // `call` bridge seam (`AgentBridge::spikeSession`).
 //
-// This is the sibling of what #253 did for `call_async`: it proves the blocking
+// This is the sibling of what PR 253 did for `call_async`: it proves the blocking
 // `call` seam on a real agent-core session case. The Rust `build_context_entries`
 // invokes each JS-supplied `ContextEntryTransform`, and
 // `session_entry_to_context_messages` invokes each JS-supplied
