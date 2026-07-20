@@ -38,6 +38,7 @@ use crate::types::{
     ToolExecutionMode,
 };
 
+mod incremental;
 mod steering;
 mod supplementary;
 

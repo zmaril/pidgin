@@ -64,7 +64,7 @@ use pidgin_ai::seams::clock::{Clock, SystemClock};
 use pidgin_ai::seams::AbortSignal;
 use pidgin_ai::Model;
 
-use crate::agent_loop::run_agent_loop;
+use crate::agent_loop::run_agent_loop_incremental;
 use crate::harness::compaction::Models;
 use crate::harness::env::ExecutionEnv;
 use crate::harness::events::{
@@ -74,9 +74,9 @@ use crate::harness::events::{
 };
 use crate::harness::options::PendingMessage;
 use crate::harness::options::{
-    AgentHarnessError, AgentHarnessErrorCode, AgentHarnessOptions, PendingActiveToolsChange,
-    PendingModelChange, PendingSessionWrite, PendingThinkingLevelChange, ProviderStream,
-    SystemPromptSource,
+    AgentHarnessError, AgentHarnessErrorCode, AgentHarnessOptions, IncrementalProviderStream,
+    PendingActiveToolsChange, PendingModelChange, PendingSessionWrite, PendingThinkingLevelChange,
+    ProviderStream, SystemPromptSource,
 };
 use crate::harness::prompt_templates::format_prompt_template_invocation;
 use crate::harness::session::Session;
@@ -99,7 +99,7 @@ mod tests;
 /// `Send + Sync` closure bounds while capturing the harness's single-threaded
 /// `Rc<HarnessInner>`.
 ///
-/// Sound because the harness never crosses a thread: [`run_agent_loop`] invokes
+/// Sound because the harness never crosses a thread: [`run_agent_loop_incremental`] invokes
 /// the sink, stream function, and every config hook synchronously on the calling
 /// thread, and the wrapper is dropped when the run returns. It is never sent to
 /// or shared with another thread.
@@ -366,6 +366,7 @@ pub(super) struct HarnessInner {
     pub(super) session: Session,
     pub(super) models: Box<dyn Models>,
     pub(super) stream: ProviderStream,
+    pub(super) stream_incremental: Option<IncrementalProviderStream>,
     pub(super) system_prompt: Option<SystemPromptSource>,
     pub(super) clock: Arc<dyn Clock>,
 
@@ -446,6 +447,7 @@ impl AgentHarness {
             session: options.session,
             models: options.models,
             stream: options.stream,
+            stream_incremental: options.stream_incremental,
             system_prompt: options.system_prompt,
             clock,
             phase: Cell::new(AgentHarnessPhase::Idle),
@@ -722,10 +724,18 @@ impl AgentHarness {
 
         let sink = inner.make_sink(&signal);
         let stream_fn = inner.make_stream_fn();
+        let incremental_stream_fn = inner.make_incremental_stream_fn();
         let config = inner.make_loop_config();
 
-        let new_messages =
-            run_agent_loop(messages, context, config, &sink, Some(&signal), &stream_fn);
+        let new_messages = run_agent_loop_incremental(
+            messages,
+            context,
+            config,
+            &sink,
+            Some(&signal),
+            &stream_fn,
+            incremental_stream_fn.as_ref(),
+        );
 
         // Resolve the outcome. A recorded in-loop error means the whole run is
         // replaced by a synthesized failure message (pi's `emitRunFailure`).

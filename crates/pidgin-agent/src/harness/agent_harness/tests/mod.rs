@@ -149,6 +149,7 @@ pub(super) fn base_options(
         session,
         models: Box::new(FauxModels::new()),
         stream: passthrough_stream(faux),
+        stream_incremental: None,
         tools: None,
         resources: None,
         system_prompt: None,
