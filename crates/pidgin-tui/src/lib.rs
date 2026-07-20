@@ -42,7 +42,7 @@ pub use editor::{
     word_wrap_line, AutocompleteProvider, Cursor, Editor, EditorOptions, EditorTheme,
     SuggestionOutcome, TextChunk,
 };
-pub use fuzzy::{fuzzy_filter, fuzzy_match, FuzzyMatch};
+pub use fuzzy::{fuzzy_filter, fuzzy_filter_indices, fuzzy_match, FuzzyMatch};
 pub use keybindings::{
     tui_keybindings, KeybindingConflict, KeybindingDefinition, KeybindingsManager,
 };
