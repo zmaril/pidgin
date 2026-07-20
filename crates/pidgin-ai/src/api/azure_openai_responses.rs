@@ -20,12 +20,20 @@
 //! SDK client construction. [`resolve_azure_config`] and
 //! [`resolve_deployment_name`] therefore take their inputs explicitly.
 
+use std::collections::BTreeMap;
+
 use serde_json::{json, Map, Value};
 
 use crate::api::openai_prompt_cache::clamp_openai_prompt_cache_key;
 use crate::api::openai_responses::OpenAIResponsesModel;
 use crate::api::openai_responses_shared::{convert_responses_messages, convert_responses_tools};
 use crate::types::{Context, ModelThinkingLevel};
+
+/// The transport-driving request assembler + stream driver (pi's `createClient` /
+/// `stream` for Azure), kept in a sibling module so this file stays within the
+/// straitjacket line ceiling while faithfully mirroring the openai-responses
+/// `driver.rs` split it reuses the shared SSE decoder from.
+pub mod driver;
 
 /// pi's `AZURE_TOOL_CALL_PROVIDERS` (`azure-openai-responses.ts:20`).
 pub const AZURE_TOOL_CALL_PROVIDERS: [&str; 4] = [
@@ -56,6 +64,16 @@ pub struct AzureOpenAIResponsesOptions {
     pub azure_deployment_name: Option<String>,
     /// Explicit `AZURE_OPENAI_DEPLOYMENT_NAME_MAP` contents (`modelId=deployment,...`).
     pub deployment_name_map: Option<String>,
+    /// The provider credential the Azure SDK turns into the `api-key` header
+    /// (pi's `options.apiKey`, read by `stream` before `createClient`). Azure
+    /// requires a truthy key: an absent/empty value is the pre-start
+    /// `No API key for provider: <provider>` failure — there is no caller-header
+    /// sentinel fallback (unlike openai-responses' `getClientApiKey`).
+    pub api_key: Option<String>,
+    /// Caller-supplied request headers merged over `model.headers` (pi's
+    /// `createClient`: `Object.assign(headers, options.headers)`). A caller value
+    /// wins over the SDK-injected `api-key` / `content-type` defaults.
+    pub headers: Option<BTreeMap<String, String>>,
 }
 
 /// Parse the `AZURE_OPENAI_DEPLOYMENT_NAME_MAP` string (`modelId=deployment,...`)
