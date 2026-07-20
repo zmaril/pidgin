@@ -30,7 +30,7 @@ use crate::cli::output_guard::err_line;
 /// fallback, so mark them dead-code-exempt there; under `deno` and in tests
 /// they are read.
 #[derive(Default, Debug)]
-#[cfg_attr(not(feature = "deno"), allow(dead_code))]
+#[cfg_attr(not(any(feature = "deno", feature = "python")), allow(dead_code))]
 pub(crate) struct ExtensionsReport {
     /// Loaded extension names (derived from the file stem of each path).
     pub names: Vec<String>,
@@ -44,7 +44,7 @@ pub(crate) struct ExtensionsReport {
 
 /// Derive a display name for an extension from its path, using the file stem
 /// (e.g. `.../task-list/index.ts` → `index`, `.../foo.ts` → `foo`).
-#[cfg(feature = "deno")]
+#[cfg(any(feature = "deno", feature = "python"))]
 fn extension_name(path: &str) -> String {
     std::path::Path::new(path)
         .file_stem()
@@ -53,9 +53,13 @@ fn extension_name(path: &str) -> String {
 }
 
 /// Loads any extensions requested via `-e`/`--extension` (honoring
-/// `-ne`/`--no-extensions`) using the REAL deno_core-backed loader, reporting
-/// the outcome to stderr. Returns a small report so tests can assert.
-#[cfg(feature = "deno")]
+/// `-ne`/`--no-extensions`) using the REAL combined deno+python loader, reporting
+/// the outcome to stderr. Returns a small report so tests can assert. Which
+/// engines are live is derived from the compiled feature set: a `.ts`/`.js` path
+/// loads through the deno engine (`--features deno`), a `.py` path through the
+/// python engine (`--features python`), and both together under
+/// `--features deno,python`.
+#[cfg(any(feature = "deno", feature = "python"))]
 pub(crate) fn load_and_report_extensions(parsed: &Args, cwd: &str) -> ExtensionsReport {
     use pidgin_coding::core::resource_loader_orchestrator::{
         DefaultResourceLoader, DefaultResourceLoaderOptions, ReloadOptions,
@@ -67,7 +71,14 @@ pub(crate) fn load_and_report_extensions(parsed: &Args, cwd: &str) -> Extensions
         cwd: cwd.to_string(),
         additional_extension_paths: paths,
         no_extensions: parsed.no_extensions,
-        extension_loader: Some(Box::new(pidgin_extensions::RealExtensionLoader::spawn())),
+        // `spawn` returns a boxed trait object; auto-enable each engine that is
+        // compiled in via `cfg!` so a `--features deno,python` build runs both.
+        extension_loader: Some(pidgin_extensions::CombinedExtensionLoader::spawn(
+            pidgin_extensions::EngineSelection {
+                deno: cfg!(feature = "deno"),
+                python: cfg!(feature = "python"),
+            },
+        )),
         ..Default::default()
     };
 
@@ -113,14 +124,16 @@ pub(crate) fn load_and_report_extensions(parsed: &Args, cwd: &str) -> Extensions
     report
 }
 
-/// V8-free fallback: this build has no JS extension runtime. If the user asked
-/// to load extensions, print a graceful notice to stderr (matching pi's UX
-/// honesty) and return an empty report.
-#[cfg(not(feature = "deno"))]
+/// Engine-free fallback: this build compiled in no extension engine. If the user
+/// asked to load extensions, print a graceful notice to stderr (matching pi's UX
+/// honesty) and return an empty report. Both cfg arms flip together — a build
+/// with EITHER engine reaches the real loader above, so this notice only shows on
+/// a build with neither.
+#[cfg(not(any(feature = "deno", feature = "python")))]
 pub(crate) fn load_and_report_extensions(parsed: &Args, _cwd: &str) -> ExtensionsReport {
     if parsed.extensions.as_ref().is_some_and(|v| !v.is_empty()) {
         err_line(
-            "note: this build has no JS extension support; rebuild with `--features deno` to load extensions",
+            "note: this build has no extension support; rebuild with `--features deno` (JS/TS) or `--features python` to load extensions",
         );
     }
     ExtensionsReport::default()
@@ -139,10 +152,10 @@ mod tests {
         assert!(report.errors.is_empty());
     }
 
-    /// Without the `deno` feature, requesting `-e foo.ts` yields an empty report
-    /// and does not panic (the graceful-notice path). This asserts the
-    /// arg→behavior contract with no V8.
-    #[cfg(not(feature = "deno"))]
+    /// With NO extension engine compiled in, requesting `-e foo.ts` yields an
+    /// empty report and does not panic (the graceful-notice path). This asserts
+    /// the arg→behavior contract on the engine-free build.
+    #[cfg(not(any(feature = "deno", feature = "python")))]
     #[test]
     fn no_deno_build_returns_empty_report_for_requested_extension() {
         let parsed = Args {

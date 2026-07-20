@@ -25,4 +25,7 @@ mod runner;
 
 pub use engine::LoadedPyExtension;
 pub use loader::{PythonExtensionLoader, PythonExtensionRuntime};
-pub use runner::{create_python_extension_runner, PythonExtensionRunner};
+pub use runner::{
+    create_python_extension_runner, create_python_extension_runner_from_runtime_ref,
+    PythonExtensionRunner,
+};

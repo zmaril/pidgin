@@ -27,6 +27,14 @@ native-http = ["pidgin-coding/native-http"]
 # (.github/workflows/pidgin-extensions.yml). Default `--workspace` builds stay
 # V8-free; without the feature `-e` prints a graceful rebuild notice.
 deno = ["dep:pidgin-extensions", "pidgin-extensions/deno"]
+# `python` enables the REAL PyO3-backed Python extension engine: `pidgin -e
+# ./ext.py` constructs a `DefaultResourceLoader` with the combined loader (its
+# python inner live) and loads the requested `.py` extensions. Parallel to
+# `deno`, but — unlike V8 — libpython is present in every sandbox, so this
+# feature BUILDS and TESTS in-session (CI exercises it too, and the offline
+# python-only slice of the combined loader is verified locally). Combine with
+# `deno` (`--features deno,python`) to run both engines through one loader.
+python = ["dep:pidgin-extensions", "pidgin-extensions/python"]
 
 [dependencies]
 pidgin-core = { path = "../pidgin-core" }

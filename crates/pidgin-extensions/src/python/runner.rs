@@ -400,6 +400,25 @@ pub fn create_python_extension_runner(
     runtime: Box<dyn ExtensionRuntime>,
     cwd: impl Into<String>,
 ) -> Box<dyn ExtensionRunnerTrait> {
+    // The owned-`Box` entry point is unchanged (its callers — #169 and the python
+    // engine tests — depend on this signature): it borrows the box and shares the
+    // by-ref body below. The factory only ever *reads* the runtime (downcast_ref
+    // in the reuse path; the fallback ignores it), so a borrow suffices.
+    create_python_extension_runner_from_runtime_ref(extensions, runtime.as_ref(), cwd)
+}
+
+/// The by-**reference** twin of [`create_python_extension_runner`], built for the
+/// combined (deno+python) runner factory: it constructs the python inner runner
+/// from a *borrowed* inner runtime, because the combined runtime owns each inner
+/// `Box<dyn ExtensionRuntime>` behind a shared handle and cannot move it out.
+///
+/// Additive only — [`create_python_extension_runner`] delegates here, so both
+/// share this one body and the owned-box signature stays intact.
+pub fn create_python_extension_runner_from_runtime_ref(
+    extensions: Vec<Extension>,
+    runtime: &dyn ExtensionRuntime,
+    cwd: impl Into<String>,
+) -> Box<dyn ExtensionRunnerTrait> {
     let cwd = cwd.into();
 
     // Preferred: the loader handed us its real runtime. Reuse the extensions it
