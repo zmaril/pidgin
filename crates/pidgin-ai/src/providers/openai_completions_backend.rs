@@ -30,6 +30,7 @@ use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model,
     OpenAICompletionsCompat, StopReason, StreamOptions, Usage, UsageCost,
 };
+use crate::utils::sse::AssistantEventReader;
 
 /// The api id this backend serves, pi's `openai-completions` [`Api`] discriminant.
 ///
@@ -94,25 +95,7 @@ impl Provider for OpenAICompletionsBackend {
             typed_model.base_url = base_url.clone();
         }
 
-        let openai_options = OpenAICompletionsOptions {
-            // Follow-up (#192): thread StreamOptions.temperature/max_tokens/metadata
-            // once merged; the base branch's StreamOptions carries none of them yet,
-            // so max_tokens is populated from the MODEL and temperature is left unset.
-            max_tokens: Some(typed_model.max_tokens),
-            temperature: None,
-            cache_retention: options.and_then(|o| o.cache_retention),
-            session_id: options.and_then(|o| o.session_id.clone()),
-            api_key: options.and_then(|o| o.api_key.clone()),
-            headers: options.and_then(|o| o.headers.clone()),
-            // pi's `getProviderEnvValue("PI_CACHE_RETENTION", env)` — the only env
-            // value the request shaper reads.
-            cache_retention_env: options.and_then(|o| {
-                o.env
-                    .as_ref()
-                    .and_then(|env| env.get("PI_CACHE_RETENTION").cloned())
-            }),
-            ..OpenAICompletionsOptions::default()
-        };
+        let openai_options = map_options(&typed_model, options);
 
         // The buffered driver performs a single synchronous request with no
         // in-flight window to observe an abort against; `signal` is accepted for
@@ -125,6 +108,87 @@ impl Provider for OpenAICompletionsBackend {
             &openai_options,
             timestamp,
         )
+    }
+
+    fn stream_incremental<'a>(
+        &'a self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        _signal: Option<&AbortSignal>,
+    ) -> AssistantEventReader<'a> {
+        // Same model/options assembly as `stream`, but the request runs through the
+        // driver's incremental `stream_streaming` entry point: the returned reader
+        // pulls one chunk at a time off the transport, so a streaming transport
+        // surfaces real per-frame timing while the buffered `stream` path is left
+        // untouched. Mirrors the anthropic backend's override.
+        let mut typed_model: Model<OpenAICompletionsCompat> = match reserialize_model(model) {
+            Ok(typed_model) => typed_model,
+            Err(error) => {
+                // Mirror `stream`'s pre-start error shape as a replayed reader.
+                return AssistantEventReader::from_buffered(error_result(
+                    model,
+                    self.clock.now_ms(),
+                    format!("OpenAI model is not compatible with openai-completions: {error}"),
+                ));
+            }
+        };
+
+        if let Some(base_url) = options.and_then(|o| o.base_url.as_ref()) {
+            typed_model.base_url = base_url.clone();
+        }
+
+        let openai_options = map_options(&typed_model, options);
+
+        let timestamp = self.clock.now_ms();
+        driver::stream_streaming(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            &openai_options,
+            timestamp,
+        )
+    }
+}
+
+/// Map the generic [`StreamOptions`] onto the driver's typed
+/// [`OpenAICompletionsOptions`], shared by both `stream` and `stream_incremental` so
+/// the two paths thread identical request-shaping inputs.
+///
+/// # `#192` precedence
+///
+/// - `max_tokens`: an explicit [`StreamOptions::max_tokens`] wins; otherwise the
+///   model's own `max_tokens` is the default. pi writes `max_tokens` /
+///   `max_completion_tokens` only from `options?.maxTokens`, and this port keeps the
+///   model default as the floor so a caller that supplies none still bounds output.
+/// - `temperature`: threaded straight from [`StreamOptions::temperature`] when set;
+///   pi writes `temperature` only when `options?.temperature !== undefined`, so a
+///   `None` here (as before) emits no `temperature` field at all.
+/// - `metadata`: pi's `openai-completions` request shaper reads no `metadata`
+///   fields (only `anthropic-messages` maps `metadata.user_id`), so it is
+///   intentionally NOT threaded here -- emitting it would diverge from pi and break
+///   conformance.
+fn map_options(
+    typed_model: &Model<OpenAICompletionsCompat>,
+    options: Option<&StreamOptions>,
+) -> OpenAICompletionsOptions {
+    OpenAICompletionsOptions {
+        max_tokens: options
+            .and_then(|o| o.max_tokens)
+            .or(Some(typed_model.max_tokens)),
+        temperature: options.and_then(|o| o.temperature),
+        cache_retention: options.and_then(|o| o.cache_retention),
+        session_id: options.and_then(|o| o.session_id.clone()),
+        api_key: options.and_then(|o| o.api_key.clone()),
+        headers: options.and_then(|o| o.headers.clone()),
+        // pi's `getProviderEnvValue("PI_CACHE_RETENTION", env)` — the only env value
+        // the request shaper reads.
+        cache_retention_env: options.and_then(|o| {
+            o.env
+                .as_ref()
+                .and_then(|env| env.get("PI_CACHE_RETENTION").cloned())
+        }),
+        ..OpenAICompletionsOptions::default()
     }
 }
 
@@ -179,8 +243,11 @@ mod tests {
     use serde_json::{json, Value};
 
     use crate::seams::clock::FakeClock;
-    use crate::seams::http::ScriptedTransport;
+    use crate::seams::http::{HttpRequest, HttpResponse, HttpStreamResponse, ScriptedTransport};
     use crate::types::{ContentBlock, StopReason};
+    use std::collections::BTreeMap;
+    use std::io;
+    use std::time::{Duration, Instant};
 
     /// A minimal OpenAI-style streaming completion body: a text delta then a
     /// `stop` finish with usage, terminated by `[DONE]`. The frame shape is
@@ -376,6 +443,206 @@ mod tests {
         ));
         assert!(scripted.requests().is_empty());
     }
+
+    /// A transport whose `send_streaming` splits the SSE body into one chunk per
+    /// frame and sleeps `delay` before yielding each, so the reader's per-frame PULL
+    /// timing is observable. Its buffered `send` returns the whole body. Mirrors the
+    /// anthropic backend's `SleepingStreamTransport`.
+    struct SleepingStreamTransport {
+        body: String,
+        delay: Duration,
+    }
+
+    struct SleepingChunks {
+        frames: std::vec::IntoIter<Vec<u8>>,
+        delay: Duration,
+    }
+
+    impl Iterator for SleepingChunks {
+        type Item = io::Result<Vec<u8>>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let bytes = self.frames.next()?;
+            std::thread::sleep(self.delay);
+            Some(Ok(bytes))
+        }
+    }
+
+    impl HttpTransport for SleepingStreamTransport {
+        fn send(&self, _request: &HttpRequest) -> io::Result<HttpResponse> {
+            Ok(HttpResponse::ok(self.body.clone()))
+        }
+
+        fn send_streaming(&self, _request: &HttpRequest) -> io::Result<HttpStreamResponse<'_>> {
+            let frames: Vec<Vec<u8>> = self
+                .body
+                .split("\n\n")
+                .filter(|part| !part.is_empty())
+                .map(|part| format!("{part}\n\n").into_bytes())
+                .collect();
+            Ok(HttpStreamResponse {
+                status: 200,
+                headers: BTreeMap::new(),
+                chunks: Box::new(SleepingChunks {
+                    frames: frames.into_iter(),
+                    delay: self.delay,
+                }),
+            })
+        }
+    }
+
+    // Incremental over the one-chunk ScriptedTransport (default `send_streaming`)
+    // yields the SAME events and final message as the buffered `stream`, and builds
+    // the same threaded request -- proving the buffered and streaming paths share one
+    // decoder and are byte-identical.
+    #[test]
+    fn backend_stream_incremental_matches_buffered_over_scripted() {
+        let model = openai_model("https://api.openai.test/v1");
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (_scripted_buffered, transport_buffered) = scripted_hello();
+        let backend_buffered = OpenAICompletionsBackend::new(transport_buffered, fake_clock());
+        let buffered = backend_buffered.stream(&model, &user_context(), Some(&options), None);
+
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAICompletionsBackend::new(transport, fake_clock());
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        assert_eq!(events, buffered.events);
+        assert_eq!(
+            reader.result().and_then(|r| r.as_ref().ok()),
+            Some(&buffered.message)
+        );
+
+        let requests = scripted.requests();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(
+            requests[0].url,
+            "https://api.openai.test/v1/chat/completions"
+        );
+        assert_eq!(
+            requests[0].headers.get("authorization").map(String::as_str),
+            Some("Bearer sk-test-key")
+        );
+    }
+
+    // Over a per-frame sleeping transport, the yielded events span multiple sleeping
+    // chunks -- non-zero inter-event spread -- while resolving to the same "Hello"
+    // message as the buffered path.
+    #[test]
+    fn backend_stream_incremental_streams_with_inter_event_spread() {
+        let delay = Duration::from_millis(12);
+        let transport: Arc<dyn HttpTransport> = Arc::new(SleepingStreamTransport {
+            body: hello_sse_body(),
+            delay,
+        });
+        let backend = OpenAICompletionsBackend::new(transport, fake_clock());
+        let model = openai_model("https://api.openai.test/v1");
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let start = Instant::now();
+        let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
+        for event in reader.by_ref() {
+            stamped.push((start.elapsed(), event));
+        }
+
+        assert!(matches!(
+            stamped.last().map(|(_, e)| e),
+            Some(AssistantMessageEvent::Done { .. })
+        ));
+        assert_eq!(
+            reader
+                .result()
+                .and_then(|r| r.as_ref().ok())
+                .map(|m| m.content.clone()),
+            Some(vec![ContentBlock::Text {
+                text: "Hello".to_string(),
+                text_signature: None,
+            }])
+        );
+
+        assert!(stamped.len() >= 2);
+        let spread = stamped.last().unwrap().0 - stamped.first().unwrap().0;
+        assert!(
+            spread >= delay,
+            "expected non-zero inter-event spread from per-frame streaming, got {spread:?}",
+        );
+    }
+
+    // #192: an explicit StreamOptions `temperature` and `max_tokens` thread into the
+    // outgoing request body (temperature verbatim, max_tokens overriding the model
+    // default). `metadata` is NOT threaded -- pi's openai-completions shaper reads
+    // none, so the request carries no `metadata` field.
+    #[test]
+    fn stream_options_thread_temperature_and_max_tokens_into_request_body() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAICompletionsBackend::new(transport, fake_clock());
+
+        // The model default is maxTokens: 4096; StreamOptions overrides it with 512.
+        let model = openai_model("https://api.openai.test/v1");
+        let mut metadata = BTreeMap::new();
+        metadata.insert("user_id".to_string(), json!("u-123"));
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            temperature: Some(0.42),
+            max_tokens: Some(512),
+            metadata: Some(metadata),
+            ..StreamOptions::default()
+        };
+        backend.stream(&model, &user_context(), Some(&options), None);
+
+        let requests = scripted.requests();
+        assert_eq!(requests.len(), 1);
+        let body: Value = serde_json::from_str(
+            requests[0]
+                .body
+                .as_deref()
+                .expect("request carries a JSON body"),
+        )
+        .expect("request body is valid JSON");
+
+        // gpt-4o-mini's compat uses `max_completion_tokens`; StreamOptions.max_tokens
+        // (512) overrides the model default (4096).
+        assert_eq!(
+            body.get("max_completion_tokens").and_then(Value::as_u64),
+            Some(512)
+        );
+        assert!(body.get("max_tokens").is_none());
+        assert_eq!(body.get("temperature").and_then(Value::as_f64), Some(0.42));
+        // Metadata is intentionally not mapped for openai-completions (pi parity).
+        assert!(body.get("metadata").is_none());
+    }
+
+    // #192: with no StreamOptions overrides, max_tokens falls back to the model
+    // default and no `temperature` is emitted -- the pre-#192 buffered behaviour.
+    #[test]
+    fn request_body_falls_back_to_model_max_tokens_without_stream_options() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAICompletionsBackend::new(transport, fake_clock());
+
+        let model = openai_model("https://api.openai.test/v1");
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+        backend.stream(&model, &user_context(), Some(&options), None);
+
+        let requests = scripted.requests();
+        let body: Value = serde_json::from_str(requests[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            body.get("max_completion_tokens").and_then(Value::as_u64),
+            Some(4096)
+        );
+        assert!(body.get("temperature").is_none());
+    }
 }
 
 /// A loopback integration test over the real `reqwest`-backed transport, gated
@@ -390,6 +657,7 @@ mod native_http_tests {
     use std::io::{Read, Write};
     use std::net::{TcpListener, TcpStream};
     use std::thread;
+    use std::time::{Duration, Instant};
 
     use serde_json::json;
 
@@ -499,6 +767,97 @@ mod native_http_tests {
                 text: "Hello".to_string(),
                 text_signature: None,
             }]
+        );
+    }
+
+    // Drives `stream_incremental` over the real reqwest transport against a server
+    // that writes each SSE frame with a bounded sleep between flushes: the events the
+    // consumer pulls off the reader arrive spaced (non-zero inter-event spread),
+    // proving the streaming path delivers per-frame rather than all-at-once, while
+    // resolving to the same "Hello" message.
+    #[test]
+    fn backend_stream_incremental_over_reqwest_loopback_has_spread() {
+        let delay = Duration::from_millis(20);
+        let frames: Vec<String> = hello_sse_body()
+            .split_inclusive("\n\n")
+            .filter(|part| !part.trim().is_empty())
+            .map(str::to_string)
+            .collect();
+        let total: usize = frames.iter().map(String::len).sum();
+
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind loopback");
+        let base_url = format!("http://{}/v1", listener.local_addr().expect("local addr"));
+
+        let handle = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("accept");
+            drain_request(&mut stream);
+            let head = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {total}\r\n\r\n",
+            );
+            stream.write_all(head.as_bytes()).expect("write head");
+            stream.flush().ok();
+            for frame in &frames {
+                thread::sleep(delay);
+                stream.write_all(frame.as_bytes()).expect("write frame");
+                stream.flush().ok();
+            }
+        });
+
+        let transport: Arc<dyn HttpTransport> =
+            Arc::new(ReqwestTransport::builder().no_proxy().build());
+        let clock: Arc<dyn Clock> = Arc::new(FakeClock::new(1_700_000_000_000));
+        let backend = OpenAICompletionsBackend::new(transport, clock);
+
+        let model: Model = serde_json::from_value(json!({
+            "id": "gpt-4o-mini",
+            "name": "GPT-4o mini",
+            "api": "openai-completions",
+            "provider": "openai",
+            "baseUrl": base_url,
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000,
+            "maxTokens": 4096,
+        }))
+        .unwrap();
+        let context: Context = serde_json::from_value(json!({
+            "messages": [{ "role": "user", "content": "Hi", "timestamp": 0 }],
+        }))
+        .unwrap();
+        let options = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let mut reader = backend.stream_incremental(&model, &context, Some(&options), None);
+        let start = Instant::now();
+        let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
+        for event in reader.by_ref() {
+            stamped.push((start.elapsed(), event));
+        }
+        handle.join().expect("server thread");
+
+        assert!(matches!(
+            stamped.last().map(|(_, e)| e),
+            Some(AssistantMessageEvent::Done { .. })
+        ));
+        assert_eq!(
+            reader
+                .result()
+                .and_then(|r| r.as_ref().ok())
+                .map(|m| m.content.clone()),
+            Some(vec![ContentBlock::Text {
+                text: "Hello".to_string(),
+                text_signature: None,
+            }])
+        );
+
+        assert!(stamped.len() >= 2);
+        let spread = stamped.last().unwrap().0 - stamped.first().unwrap().0;
+        assert!(
+            spread >= delay,
+            "expected non-zero inter-event spread from delayed chunked streaming, got {spread:?}",
         );
     }
 }

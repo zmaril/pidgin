@@ -29,6 +29,7 @@
 //! transforms around them.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::ops::ControlFlow;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
@@ -43,6 +44,7 @@ use crate::types::{
     VercelGatewayRouting,
 };
 use crate::utils::json_parse::{parse_json_with_repair, parse_streaming_json};
+use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
 
 /// The transport-driving request assembler + stream driver (pi's `createClient` /
 /// `stream`), kept in a sibling module so this file stays within the straitjacket
@@ -1595,68 +1597,106 @@ fn render_partial(output: &AssistantMessage, blocks: &[WorkingBlock]) -> Assista
     partial
 }
 
-/// Walk the decoded OpenAI-completions chunk stream into the uniform event stream
-/// and final message, reproducing pi's `stream()` inner loop.
+/// The incremental OpenAI chat-completions SSE decoder: the single source of truth
+/// for turning wire chunks into assistant events and the accumulated message.
 ///
-/// Terminates with a `done` event on success, or an `error` event (stop reason
-/// [`StopReason::Error`]) when the stream reports an error/aborted stop or ends
-/// without a `finish_reason` — never a Rust `Err`, matching pi's contract.
-pub fn walk_chunks(
-    chunks: &[Value],
-    model: &OpenAICompletionsModel,
-    _options: &OpenAICompletionsOptions,
-    timestamp: i64,
-) -> StreamOutcome {
-    let mut output = AssistantMessage {
-        role: AssistantRole::Assistant,
-        content: Vec::new(),
-        api: model.api.clone(),
-        provider: model.provider.clone(),
-        model: model.id.clone(),
-        response_model: None,
-        response_id: None,
-        diagnostics: None,
-        usage: zero_usage(),
-        stop_reason: StopReason::Stop,
-        error_message: None,
-        timestamp,
-    };
-    let mut blocks: Vec<WorkingBlock> = Vec::new();
-    let mut events: Vec<AssistantMessageEvent> = Vec::new();
+/// It carries exactly the accumulation state pi's `stream()` inner loop kept — the
+/// output message, the working blocks, and the text/thinking/tool coalescing maps —
+/// and drives it via the shared [`SseEventDecoder`] seam. The buffered
+/// [`walk_chunks`] / [`parse_sse_stream`] and the driver's incremental reader all
+/// run this ONE decoder, so their events and final message are byte-identical.
+pub(crate) struct OpenAICompletionsSseDecoder {
+    model: OpenAICompletionsModel,
+    output: AssistantMessage,
+    blocks: Vec<WorkingBlock>,
+    /// pi pushes the `start` event before the dispatch loop; here it is emitted
+    /// lazily on the first `on_frame`/`finish` so it is always the first event
+    /// exactly once, whatever the chunk cadence.
+    started: bool,
+    text_pos: Option<usize>,
+    thinking_pos: Option<usize>,
+    tool_by_index: HashMap<i64, usize>,
+    tool_by_id: HashMap<String, usize>,
+    pending_reasoning: HashMap<String, String>,
+    has_finish_reason: bool,
+    /// Set once the `[DONE]` sentinel is seen; subsequent frames are ignored,
+    /// mirroring [`parse_sse_chunks`]'s `break` at `[DONE]`.
+    done_seen: bool,
+}
 
-    let mut text_pos: Option<usize> = None;
-    let mut thinking_pos: Option<usize> = None;
-    let mut tool_by_index: HashMap<i64, usize> = HashMap::new();
-    let mut tool_by_id: HashMap<String, usize> = HashMap::new();
-    let mut pending_reasoning: HashMap<String, String> = HashMap::new();
-    let mut has_finish_reason = false;
+impl OpenAICompletionsSseDecoder {
+    /// A fresh decoder for `model`, seeding the empty output shell pi builds before
+    /// streaming. `timestamp` is pi's `Date.now()` message timestamp.
+    pub(crate) fn new(model: OpenAICompletionsModel, timestamp: i64) -> Self {
+        let output = AssistantMessage {
+            role: AssistantRole::Assistant,
+            content: Vec::new(),
+            api: model.api.clone(),
+            provider: model.provider.clone(),
+            model: model.id.clone(),
+            response_model: None,
+            response_id: None,
+            diagnostics: None,
+            usage: zero_usage(),
+            stop_reason: StopReason::Stop,
+            error_message: None,
+            timestamp,
+        };
+        Self {
+            model,
+            output,
+            blocks: Vec::new(),
+            started: false,
+            text_pos: None,
+            thinking_pos: None,
+            tool_by_index: HashMap::new(),
+            tool_by_id: HashMap::new(),
+            pending_reasoning: HashMap::new(),
+            has_finish_reason: false,
+            done_seen: false,
+        }
+    }
 
-    events.push(AssistantMessageEvent::Start {
-        partial: render_partial(&output, &blocks),
-    });
+    /// Emit pi's initial `start` event exactly once, before any chunk's events.
+    fn ensure_started(&mut self, out: &mut Vec<AssistantMessageEvent>) {
+        if !self.started {
+            self.started = true;
+            out.push(AssistantMessageEvent::Start {
+                partial: render_partial(&self.output, &self.blocks),
+            });
+        }
+    }
 
-    for chunk in chunks {
+    /// Dispatch ONE decoded `ChatCompletionChunk` value into `out`, updating the
+    /// accumulation — pi's `stream()` inner-loop body.
+    fn process_chunk(&mut self, chunk: &Value, out: &mut Vec<AssistantMessageEvent>) {
         if !chunk.is_object() {
-            continue;
+            return;
         }
 
         // responseId ||= chunk.id
-        if output.response_id.as_deref().unwrap_or("").is_empty() {
+        if self.output.response_id.as_deref().unwrap_or("").is_empty() {
             if let Some(id) = chunk.get("id").and_then(Value::as_str) {
-                output.response_id = Some(id.to_string());
+                self.output.response_id = Some(id.to_string());
             }
         }
         // responseModel ||= chunk.model when it differs from the requested id.
-        if output.response_model.as_deref().unwrap_or("").is_empty() {
+        if self
+            .output
+            .response_model
+            .as_deref()
+            .unwrap_or("")
+            .is_empty()
+        {
             if let Some(chunk_model) = chunk.get("model").and_then(Value::as_str) {
-                if !chunk_model.is_empty() && chunk_model != model.id {
-                    output.response_model = Some(chunk_model.to_string());
+                if !chunk_model.is_empty() && chunk_model != self.model.id {
+                    self.output.response_model = Some(chunk_model.to_string());
                 }
             }
         }
         let chunk_has_usage = chunk.get("usage").is_some_and(|u| !u.is_null());
         if chunk_has_usage {
-            output.usage = parse_chunk_usage(chunk.get("usage").unwrap(), &model.cost);
+            self.output.usage = parse_chunk_usage(chunk.get("usage").unwrap(), &self.model.cost);
         }
 
         let choice = chunk
@@ -1664,13 +1704,13 @@ pub fn walk_chunks(
             .and_then(Value::as_array)
             .and_then(|c| c.first());
         let Some(choice) = choice.filter(|c| !c.is_null()) else {
-            continue;
+            return;
         };
 
         // Fallback: some providers return usage in choice.usage.
         if !chunk_has_usage {
             if let Some(choice_usage) = choice.get("usage").filter(|u| !u.is_null()) {
-                output.usage = parse_chunk_usage(choice_usage, &model.cost);
+                self.output.usage = parse_chunk_usage(choice_usage, &self.model.cost);
             }
         }
 
@@ -1680,15 +1720,15 @@ pub fn walk_chunks(
             .filter(|s| !s.is_empty())
         {
             let (stop_reason, error_message) = map_stop_reason(Some(finish_reason));
-            output.stop_reason = stop_reason;
+            self.output.stop_reason = stop_reason;
             if let Some(error_message) = error_message {
-                output.error_message = Some(error_message);
+                self.output.error_message = Some(error_message);
             }
-            has_finish_reason = true;
+            self.has_finish_reason = true;
         }
 
         let Some(delta) = choice.get("delta").filter(|d| !d.is_null()) else {
-            continue;
+            return;
         };
 
         // Text content.
@@ -1697,12 +1737,12 @@ pub fn walk_chunks(
             .and_then(Value::as_str)
             .filter(|s| !s.is_empty())
         {
-            let pos = ensure_text_block(&mut blocks, &mut text_pos, &output, &mut events);
-            if let ContentBlock::Text { text, .. } = &mut blocks[pos].block {
+            let pos = ensure_text_block(&mut self.blocks, &mut self.text_pos, &self.output, out);
+            if let ContentBlock::Text { text, .. } = &mut self.blocks[pos].block {
                 text.push_str(content);
             }
-            let partial = render_partial(&output, &blocks);
-            events.push(AssistantMessageEvent::TextDelta {
+            let partial = render_partial(&self.output, &self.blocks);
+            out.push(AssistantMessageEvent::TextDelta {
                 content_index: pos as u32,
                 delta: content.to_string(),
                 partial,
@@ -1719,23 +1759,23 @@ pub fn walk_chunks(
         });
         if let Some(field) = found {
             let reasoning_delta = delta.get(field).and_then(Value::as_str).unwrap_or("");
-            let signature = if model.provider == "opencode-go" && field == "reasoning" {
+            let signature = if self.model.provider == "opencode-go" && field == "reasoning" {
                 "reasoning_content".to_string()
             } else {
                 field.to_string()
             };
             let pos = ensure_thinking_block(
-                &mut blocks,
-                &mut thinking_pos,
+                &mut self.blocks,
+                &mut self.thinking_pos,
                 &signature,
-                &output,
-                &mut events,
+                &self.output,
+                out,
             );
-            if let ContentBlock::Thinking { thinking, .. } = &mut blocks[pos].block {
+            if let ContentBlock::Thinking { thinking, .. } = &mut self.blocks[pos].block {
                 thinking.push_str(reasoning_delta);
             }
-            let partial = render_partial(&output, &blocks);
-            events.push(AssistantMessageEvent::ThinkingDelta {
+            let partial = render_partial(&self.output, &self.blocks);
+            out.push(AssistantMessageEvent::ThinkingDelta {
                 content_index: pos as u32,
                 delta: reasoning_delta.to_string(),
                 partial,
@@ -1747,12 +1787,12 @@ pub fn walk_chunks(
             for tc in tool_calls {
                 let pos = ensure_tool_call_block(
                     tc,
-                    &mut blocks,
-                    &mut tool_by_index,
-                    &mut tool_by_id,
-                    &mut pending_reasoning,
-                    &output,
-                    &mut events,
+                    &mut self.blocks,
+                    &mut self.tool_by_index,
+                    &mut self.tool_by_id,
+                    &mut self.pending_reasoning,
+                    &self.output,
+                    out,
                 );
 
                 // Backfill id/name from later deltas.
@@ -1765,11 +1805,11 @@ pub fn walk_chunks(
                     .and_then(|f| f.get("name"))
                     .and_then(Value::as_str)
                     .filter(|s| !s.is_empty());
-                if let ContentBlock::ToolCall { id, name, .. } = &mut blocks[pos].block {
+                if let ContentBlock::ToolCall { id, name, .. } = &mut self.blocks[pos].block {
                     if id.is_empty() {
                         if let Some(new_id) = tc_id {
                             *id = new_id.to_string();
-                            tool_by_id.insert(new_id.to_string(), pos);
+                            self.tool_by_id.insert(new_id.to_string(), pos);
                         }
                     }
                     if name.is_empty() {
@@ -1787,14 +1827,14 @@ pub fn walk_chunks(
                     .filter(|s| !s.is_empty())
                 {
                     delta_str = args.to_string();
-                    blocks[pos].partial_args.push_str(args);
-                    let parsed = parse_streaming_json(Some(&blocks[pos].partial_args));
-                    if let ContentBlock::ToolCall { arguments, .. } = &mut blocks[pos].block {
+                    self.blocks[pos].partial_args.push_str(args);
+                    let parsed = parse_streaming_json(Some(&self.blocks[pos].partial_args));
+                    if let ContentBlock::ToolCall { arguments, .. } = &mut self.blocks[pos].block {
                         *arguments = parsed;
                     }
                 }
-                let partial = render_partial(&output, &blocks);
-                events.push(AssistantMessageEvent::ToolcallDelta {
+                let partial = render_partial(&self.output, &self.blocks);
+                out.push(AssistantMessageEvent::ToolcallDelta {
                     content_index: pos as u32,
                     delta: delta_str,
                     partial,
@@ -1808,89 +1848,171 @@ pub fn walk_chunks(
                 if is_encrypted_reasoning_detail(detail) {
                     let serialized = serde_json::to_string(detail).unwrap_or_default();
                     let id = detail.get("id").and_then(Value::as_str).unwrap_or("");
-                    if let Some(&pos) = tool_by_id.get(id) {
+                    if let Some(&pos) = self.tool_by_id.get(id) {
                         if let ContentBlock::ToolCall {
                             thought_signature, ..
-                        } = &mut blocks[pos].block
+                        } = &mut self.blocks[pos].block
                         {
                             *thought_signature = Some(serialized);
                         }
                     } else {
-                        pending_reasoning.insert(id.to_string(), serialized);
+                        self.pending_reasoning.insert(id.to_string(), serialized);
                     }
                 }
             }
         }
     }
 
-    // Finalize each block, emitting its terminal event.
-    for pos in 0..blocks.len() {
-        match &blocks[pos].block {
-            ContentBlock::Text { text, .. } => {
-                let content = text.clone();
-                let partial = render_partial(&output, &blocks);
-                events.push(AssistantMessageEvent::TextEnd {
-                    content_index: pos as u32,
-                    content,
-                    partial,
-                });
-            }
-            ContentBlock::Thinking { thinking, .. } => {
-                let content = thinking.clone();
-                let partial = render_partial(&output, &blocks);
-                events.push(AssistantMessageEvent::ThinkingEnd {
-                    content_index: pos as u32,
-                    content,
-                    partial,
-                });
-            }
-            ContentBlock::ToolCall { .. } => {
-                let parsed = parse_streaming_json(Some(&blocks[pos].partial_args));
-                if let ContentBlock::ToolCall { arguments, .. } = &mut blocks[pos].block {
-                    *arguments = parsed;
+    /// Finalize every open block (emitting its terminal event) and select pi's
+    /// post-loop terminal outcome, pushing the `done`/`error` event into `out`.
+    fn finalize(&mut self, out: &mut Vec<AssistantMessageEvent>) {
+        // Finalize each block, emitting its terminal event.
+        for pos in 0..self.blocks.len() {
+            match &self.blocks[pos].block {
+                ContentBlock::Text { text, .. } => {
+                    let content = text.clone();
+                    let partial = render_partial(&self.output, &self.blocks);
+                    out.push(AssistantMessageEvent::TextEnd {
+                        content_index: pos as u32,
+                        content,
+                        partial,
+                    });
                 }
-                let tool_call = blocks[pos].block.clone();
-                let partial = render_partial(&output, &blocks);
-                events.push(AssistantMessageEvent::ToolcallEnd {
-                    content_index: pos as u32,
-                    tool_call,
-                    partial,
-                });
+                ContentBlock::Thinking { thinking, .. } => {
+                    let content = thinking.clone();
+                    let partial = render_partial(&self.output, &self.blocks);
+                    out.push(AssistantMessageEvent::ThinkingEnd {
+                        content_index: pos as u32,
+                        content,
+                        partial,
+                    });
+                }
+                ContentBlock::ToolCall { .. } => {
+                    let parsed = parse_streaming_json(Some(&self.blocks[pos].partial_args));
+                    if let ContentBlock::ToolCall { arguments, .. } = &mut self.blocks[pos].block {
+                        *arguments = parsed;
+                    }
+                    let tool_call = self.blocks[pos].block.clone();
+                    let partial = render_partial(&self.output, &self.blocks);
+                    out.push(AssistantMessageEvent::ToolcallEnd {
+                        content_index: pos as u32,
+                        tool_call,
+                        partial,
+                    });
+                }
+                ContentBlock::Image { .. } | ContentBlock::Unknown => {}
             }
-            ContentBlock::Image { .. } | ContentBlock::Unknown => {}
+        }
+
+        self.output.content = render_content(&self.blocks);
+
+        // Post-loop guards, matching pi's throw order (no abort signal is modeled).
+        let terminal: Option<String> = if self.output.stop_reason == StopReason::Aborted {
+            Some("Request was aborted".to_string())
+        } else if self.output.stop_reason == StopReason::Error {
+            Some(
+                self.output
+                    .error_message
+                    .clone()
+                    .unwrap_or_else(|| "Provider returned an error stop reason".to_string()),
+            )
+        } else if !self.has_finish_reason {
+            Some("Stream ended without finish_reason".to_string())
+        } else {
+            None
+        };
+
+        match terminal {
+            None => out.push(AssistantMessageEvent::Done {
+                reason: self.output.stop_reason,
+                message: self.output.clone(),
+            }),
+            Some(message) => finish_with_error(&mut self.output, out, message),
         }
     }
+}
 
-    output.content = render_content(&blocks);
+impl SseEventDecoder for OpenAICompletionsSseDecoder {
+    fn on_frame(
+        &mut self,
+        frame: &ServerSentEvent,
+        out: &mut Vec<AssistantMessageEvent>,
+    ) -> ControlFlow<String> {
+        self.ensure_started(out);
+        // `[DONE]` is the terminal sentinel; ignore it and any trailing frames,
+        // mirroring [`parse_sse_chunks`]'s `break`. Unparseable payloads are
+        // silently dropped, exactly as the buffered chunk splitter drops them.
+        if self.done_seen {
+            return ControlFlow::Continue(());
+        }
+        if frame.data == "[DONE]" {
+            self.done_seen = true;
+            return ControlFlow::Continue(());
+        }
+        if let Ok(value) = parse_json_with_repair(&frame.data) {
+            self.process_chunk(&value, out);
+        }
+        ControlFlow::Continue(())
+    }
 
-    // Post-loop guards, matching pi's throw order (no abort signal is modeled).
-    let terminal: Option<String> = if output.stop_reason == StopReason::Aborted {
-        Some("Request was aborted".to_string())
-    } else if output.stop_reason == StopReason::Error {
-        Some(
-            output
-                .error_message
-                .clone()
-                .unwrap_or_else(|| "Provider returned an error stop reason".to_string()),
-        )
-    } else if !has_finish_reason {
-        Some("Stream ended without finish_reason".to_string())
-    } else {
-        None
+    fn finish(&mut self, out: &mut Vec<AssistantMessageEvent>) -> AssistantMessage {
+        self.ensure_started(out);
+        self.finalize(out);
+        self.output.clone()
+    }
+}
+
+/// Walk the decoded OpenAI-completions chunk stream into the uniform event stream
+/// and final message, reproducing pi's `stream()` inner loop.
+///
+/// Terminates with a `done` event on success, or an `error` event (stop reason
+/// [`StopReason::Error`]) when the stream reports an error/aborted stop or ends
+/// without a `finish_reason` — never a Rust `Err`, matching pi's contract. Runs the
+/// pre-decoded chunk values through the single-source-of-truth
+/// [`OpenAICompletionsSseDecoder`], so its output is byte-identical to the driver's
+/// incremental reader over the same chunks.
+pub fn walk_chunks(
+    chunks: &[Value],
+    model: &OpenAICompletionsModel,
+    _options: &OpenAICompletionsOptions,
+    timestamp: i64,
+) -> StreamOutcome {
+    let mut decoder = OpenAICompletionsSseDecoder::new(model.clone(), timestamp);
+    let mut events: Vec<AssistantMessageEvent> = Vec::new();
+    decoder.ensure_started(&mut events);
+    for chunk in chunks {
+        decoder.process_chunk(chunk, &mut events);
+    }
+    let message = decoder.finish(&mut events);
+    StreamOutcome { events, message }
+}
+
+/// Parse a raw OpenAI chat-completions SSE `body` into the uniform event stream and
+/// final message for `model`, mirroring [`crate::api::anthropic::parse_sse_stream`].
+///
+/// Feeds the whole body through the SAME [`OpenAICompletionsSseDecoder`] the
+/// incremental driver uses, over a one-chunk iterator: the shared
+/// [`AssistantEventReader`] runs the [`SseFrameSplitter`](crate::utils::sse::SseFrameSplitter)
+/// for line-buffering and `finish` at EOF, so the events + terminal message are
+/// byte-identical to feeding the reader chunk-by-chunk.
+pub fn parse_sse_stream(
+    body: &str,
+    model: &OpenAICompletionsModel,
+    timestamp: i64,
+) -> StreamOutcome {
+    let decoder = OpenAICompletionsSseDecoder::new(model.clone(), timestamp);
+    let mut reader = AssistantEventReader::new(
+        Box::new(std::iter::once(Ok(body.as_bytes().to_vec()))),
+        Box::new(decoder),
+    );
+    let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+    let message = match reader.result() {
+        Some(Ok(message)) | Some(Err(message)) => message.clone(),
+        // The reader always finalizes once drained (EOF is bounded), so a
+        // fully-collected reader has a terminal result.
+        None => unreachable!("AssistantEventReader finalizes before iteration ends"),
     };
-
-    match terminal {
-        None => events.push(AssistantMessageEvent::Done {
-            reason: output.stop_reason,
-            message: output.clone(),
-        }),
-        Some(message) => finish_with_error(&mut output, &mut events, message),
-    }
-
-    StreamOutcome {
-        events,
-        message: output,
-    }
+    StreamOutcome { events, message }
 }
 
 fn finish_with_error(
@@ -2097,17 +2219,19 @@ pub fn walk_chunks_from_json(
 }
 
 /// Parse a raw SSE `body` for `model_json` and return the [`StreamOutcome`] as a
-/// JSON string: [`parse_sse_chunks`] then [`walk_chunks`].
+/// JSON string, via the single-source-of-truth [`parse_sse_stream`] (the shared
+/// [`SseFrameSplitter`](crate::utils::sse::SseFrameSplitter) plus the
+/// [`OpenAICompletionsSseDecoder`]). `options` is accepted for boundary-signature
+/// parity; the SSE walk reads none of its fields (as [`walk_chunks`] already did).
 pub fn parse_sse_stream_to_json(
     body: &str,
     model_json: &str,
-    options: &OpenAICompletionsOptions,
+    _options: &OpenAICompletionsOptions,
     timestamp: i64,
 ) -> Result<String, String> {
     let model: OpenAICompletionsModel =
         serde_json::from_str(model_json).map_err(|e| format!("invalid model json: {e}"))?;
-    let chunks = parse_sse_chunks(body);
-    let outcome = walk_chunks(&chunks, &model, options, timestamp);
+    let outcome = parse_sse_stream(body, &model, timestamp);
     serde_json::to_string(&outcome).map_err(|e| e.to_string())
 }
 
