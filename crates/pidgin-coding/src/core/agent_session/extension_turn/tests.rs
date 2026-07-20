@@ -434,27 +434,9 @@ fn message_end_replacement_is_applied_to_state_and_persistence() {
 // ---------------------------------------------------------------------------
 // model-extension suite cases deferred to a later slice (structurally not
 // reachable by this extension-turn slice) — represented with a precise reason.
+// The model-management cases (setModel / cycleModel / thinking cycling) are
+// ported in `super::super::model::tests`.
 // ---------------------------------------------------------------------------
-
-#[test]
-#[ignore = "unit5: model-management slice — setModel + model_select emit + model_change session entry are not ported by the extension-turn slice"]
-fn set_model_saves_the_model_and_emits_model_select() {}
-
-#[test]
-#[ignore = "unit5: model-management slice — cycleModel + scoped-model cycling + scoped thinking preference are not ported by the extension-turn slice"]
-fn cycles_through_scoped_models_and_preserves_the_scoped_thinking_preference() {}
-
-#[test]
-#[ignore = "unit5: model-management slice — thinking-level clamping to model capabilities is not ported by the extension-turn slice"]
-fn clamps_thinking_levels_to_model_capabilities_and_cycles_available_levels() {}
-
-#[test]
-#[ignore = "unit5: model-management slice — thinking-level cycling (xhigh before max) is not ported by the extension-turn slice"]
-fn cycles_xhigh_before_max_when_both_are_supported() {}
-
-#[test]
-#[ignore = "unit5: model-management slice — setModel's configured-auth gate is not ported by the extension-turn slice"]
-fn throws_when_set_model_is_called_without_configured_auth() {}
 
 #[test]
 #[ignore = "unit5: runtime tool-hooks slice — agent tool_call hooks (_installAgentToolHooks) are not installed by the extension-turn slice, so tool_call blocking is unreachable"]
