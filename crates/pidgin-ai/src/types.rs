@@ -51,6 +51,21 @@ pub enum ModelThinkingLevel {
 /// unsupported, so the value is `Option<String>` (`types.ts:79`).
 pub type ThinkingLevelMap = BTreeMap<ModelThinkingLevel, Option<String>>;
 
+/// Per-thinking-level token budgets, for token-based providers only
+/// (`types.ts:91`). Every field is an optional token count.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ThinkingBudgets {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub minimal: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub low: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub medium: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub high: Option<u64>,
+}
+
 /// Prompt-cache retention preference (`types.ts:99`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -58,6 +73,22 @@ pub enum CacheRetention {
     None,
     Short,
     Long,
+}
+
+/// Preferred transport for providers that support multiple transports
+/// (`types.ts:101`). Providers that do not support a given transport ignore it.
+///
+/// Modeled as an enum, mirroring the other provider-boundary string unions
+/// (`StopReason`, `CacheRetention`). Not yet wired into [`StreamOptions`]: the
+/// per-request `transport` field is deferred to the providers lane (see the
+/// port-deferral note on [`StreamOptions`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Transport {
+    Sse,
+    Websocket,
+    WebsocketCached,
+    Auto,
 }
 
 /// Input/output modality of a model (`types.ts:718`).
@@ -112,6 +143,30 @@ pub enum ContentBlock {
     /// Catch-all for provider block types not modelled here.
     #[serde(other)]
     Unknown,
+}
+
+/// The phase a [`TextSignatureV1`] applies to (`types.ts:324`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TextSignaturePhase {
+    Commentary,
+    FinalAnswer,
+}
+
+/// The structured form of a `textSignature` payload (`types.ts:321`).
+///
+/// When a provider's text-block signature is not a legacy id string it is the
+/// JSON encoding of this shape (see [`ContentBlock::Text::text_signature`]).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TextSignatureV1 {
+    /// Schema version. pi types this as the literal `1`; kept as a plain integer
+    /// because the port avoids a `serde_repr` dependency for a lone numeric
+    /// literal.
+    pub v: u8,
+    pub id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub phase: Option<TextSignaturePhase>,
 }
 
 // ---------------------------------------------------------------------------
@@ -265,12 +320,27 @@ pub struct AssistantMessage {
 // Request context & stream options (`types.ts:450`, `types.ts:113`)
 // ---------------------------------------------------------------------------
 
+/// A tool a model may call (`types.ts:444`).
+///
+/// pi's `Tool` is generic over a TypeBox `TSchema` for `parameters`; the port
+/// keeps `parameters` as opaque [`serde_json::Value`] (the JSON-Schema document)
+/// since TypeBox has no faithful Rust analog and the schema round-trips verbatim.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Tool {
+    pub name: String,
+    pub description: String,
+    pub parameters: Value,
+}
+
 /// The conversation a provider is asked to continue (`types.ts:450`).
 ///
-/// `tools` is kept as opaque JSON (pi's `Tool[]`, a TypeBox-schema-carrying
-/// shape not yet ported) so it round-trips verbatim and serializes exactly as
-/// pi's `JSON.stringify(context.tools)` for the faux provider's prompt
-/// accounting.
+/// `tools` is kept as opaque JSON (pi's `Tool[]`) so it round-trips verbatim and
+/// serializes exactly as pi's `JSON.stringify(context.tools)` for the faux
+/// provider's prompt accounting. The faithful [`Tool`] type now exists, but
+/// migrating this field to `Option<Vec<Tool>>` reshapes [`Context`] (a
+/// serialization-affecting change other lanes depend on) and is deferred to a
+/// follow-up so this PR stays purely additive.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Context {
@@ -283,13 +353,15 @@ pub struct Context {
 
 /// Per-request stream controls (`types.ts:113`).
 ///
-/// This is the subset of pi's `StreamOptions` the ported seams read today: the
-/// session/cache fields the faux provider uses for its prompt-cache accounting,
-/// plus the request-auth fields (`apiKey`, `headers`, `env`) that `Models`'s
-/// `applyAuth` (`models.ts:463`) threads into the provider request. The remaining
-/// pi fields (temperature, maxTokens, transport, callbacks, retry/timeout tuning,
-/// metadata) are additive future work; every field here is optional and skips
-/// serialization when absent so the wire shape stays a strict subset of pi's.
+/// The session/cache fields the faux provider uses for prompt-cache accounting,
+/// the request-auth fields (`apiKey`, `headers`, `env`) that `Models`'s
+/// `applyAuth` (`models.ts:463`) threads into the provider request, and the
+/// plain-data request tuning fields (`temperature`, `maxTokens`, `timeoutMs`,
+/// `websocketConnectTimeoutMs`, `maxRetries`, `maxRetryDelayMs`, `metadata`).
+/// Every field is optional and skips serialization when absent, so the wire
+/// shape stays a strict subset of pi's. The `transport`, callback (`onPayload`,
+/// `onResponse`) and `signal` fields are deliberately not ported here — see the
+/// port-deferral note below the struct.
 ///
 /// # Port additions / deviations
 ///
@@ -333,6 +405,78 @@ pub struct StreamOptions {
     /// for provider configuration (pi's `StreamOptions.env`, `types.ts:270`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub env: Option<BTreeMap<String, String>>,
+    /// Sampling temperature (pi's `StreamOptions.temperature`, `types.ts:114`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f64>,
+    /// Maximum output tokens (pi's `StreamOptions.maxTokens`, `types.ts:115`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<u64>,
+    /// HTTP request timeout in milliseconds, for providers/SDKs that support it
+    /// (pi's `StreamOptions.timeoutMs`, `types.ts:157`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeout_ms: Option<u64>,
+    /// WebSocket connect-handshake timeout in milliseconds, for providers with
+    /// WebSocket transports (pi's `StreamOptions.websocketConnectTimeoutMs`,
+    /// `types.ts:163`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub websocket_connect_timeout_ms: Option<u64>,
+    /// Maximum client-side retry attempts (pi's `StreamOptions.maxRetries`,
+    /// `types.ts:168`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_retries: Option<u32>,
+    /// Cap in milliseconds on a server-requested retry delay; `0` disables the
+    /// cap (pi's `StreamOptions.maxRetryDelayMs`, `types.ts:176`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_retry_delay_ms: Option<u64>,
+    /// Request metadata; providers extract the fields they understand (pi's
+    /// `StreamOptions.metadata`, `types.ts:182`). pi types the values as
+    /// `unknown`, kept as opaque [`serde_json::Value`] here.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<BTreeMap<String, Value>>,
+}
+
+// PORT DEFERRAL (`types.ts` StreamOptions / provider seam):
+// The following pi symbols are intentionally NOT ported as data types here.
+//   - `transport` (`StreamOptions.transport`, types.ts:122): owned by the
+//     providers/* lane, which injects the HTTP transport and centralizes
+//     per-request transport-override precedence. The `Transport` string union
+//     itself is ported above; only the StreamOptions field is deferred to that
+//     lane. (Field itself deferred.)
+//   - `signal` (`AbortSignal`, types.ts:116): no synchronous-Rust analog; ties
+//     to the not-yet-ported `abort-signals.ts` cancellation surface.
+//   - `onPayload` / `onResponse` callbacks (types.ts:138, 143): function-type
+//     aliases, not data; represented by the `seams/provider.rs` trait seam.
+//   - `ProviderResponse` (types.ts:108): the callback argument shape, deferred
+//     with the callbacks it serves.
+//   - Function/callback aliases `ProviderResponse`, `ProviderStreams`,
+//     `ProviderImages`, `StreamFunction`, `ImagesFunction` (types.ts:108-244,
+//     309-319): behavior contracts modeled by the provider trait seams, not by
+//     serializable data.
+//   - Mapped/conditional type aliases `ApiOptionsMap`, `ApiStreamOptions`,
+//     `ProviderStreamOptions` (types.ts:191-217): TypeScript mapped/conditional
+//     types keyed by API string with no faithful Rust analog; the per-provider
+//     option seam already carries this distinction structurally.
+
+/// [`StreamOptions`] plus the unified reasoning controls passed to pi's
+/// `streamSimple()` / `completeSimple()` (`types.ts:295`).
+///
+/// pi expresses this as `interface SimpleStreamOptions extends StreamOptions`;
+/// Rust has no struct inheritance, so the base options are embedded via
+/// `#[serde(flatten)]` — the JSON stays a flat object identical to pi's.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct SimpleStreamOptions {
+    /// The shared [`StreamOptions`] fields, flattened into this object.
+    #[serde(flatten)]
+    pub base: StreamOptions,
+    /// Requested reasoning/thinking level (`types.ts:296`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reasoning: Option<ThinkingLevel>,
+    /// Custom token budgets per thinking level, for token-based providers only
+    /// (`types.ts:298`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thinking_budgets: Option<ThinkingBudgets>,
 }
 
 // ---------------------------------------------------------------------------
@@ -595,6 +739,49 @@ pub struct VercelGatewayRouting {
     pub order: Option<Vec<String>>,
 }
 
+/// The pi-controlled `$var` sentinel used inside `chat_template_kwargs`
+/// (`types.ts:85`). When a kwarg value is this object, pi substitutes the live
+/// thinking state at request time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ChatTemplateVar {
+    #[serde(rename = "thinking.enabled")]
+    ThinkingEnabled,
+    #[serde(rename = "thinking.effort")]
+    ThinkingEffort,
+}
+
+/// The object form of a [`ChatTemplateKwargValue`] (`types.ts:85`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatTemplateKwargVar {
+    #[serde(rename = "$var")]
+    pub var: ChatTemplateVar,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub omit_when_off: Option<bool>,
+}
+
+/// A single `chat_template_kwargs` value (`types.ts:80`).
+///
+/// pi's union is `string | number | boolean | null | { $var, omitWhenOff? }`.
+/// The `$var` sentinel object is ported as the typed [`ChatTemplateKwargVar`];
+/// the scalar arms (`string | number | boolean | null`) are kept as opaque
+/// [`serde_json::Value`] so integer/float/null distinctions round-trip verbatim
+/// without a `serde_repr` dependency. Deserialization tries the sentinel object
+/// first, then falls back to the scalar.
+///
+/// This type is not yet wired into [`OpenAICompletionsCompat::chat_template_kwargs`]
+/// (still `BTreeMap<String, Value>`): that field is read by the openai-completions
+/// compat-detection path in the api lane, and retyping it would reshape that
+/// shared surface. Migrating the field is deferred to keep this PR additive.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ChatTemplateKwargValue {
+    /// The pi-controlled `{ "$var": ... }` sentinel object.
+    Var(ChatTemplateKwargVar),
+    /// A JSON scalar (`string | number | boolean | null`), kept wire-exact.
+    Scalar(Value),
+}
+
 /// Compat settings for OpenAI-compatible completions APIs (`types.ts:482`).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -675,4 +862,138 @@ pub struct AnthropicMessagesCompat {
     pub allow_empty_signature: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub supports_tool_references: Option<bool>,
+}
+
+// ---------------------------------------------------------------------------
+// Image generation (`types.ts:30-33`, `types.ts:73-75`, `types.ts:421-440`,
+// `types.ts:733-738`)
+// ---------------------------------------------------------------------------
+
+/// pi's `ImagesApi` string union (`KnownImagesApi | (string & {})`,
+/// `types.ts:32`; known value: `"openrouter-images"`). Modeled as a plain
+/// `String`, matching how the core `Api`/`ProviderId` unions are inlined.
+pub type ImagesApi = String;
+
+/// pi's `ImagesProviderId` string union (`KnownImagesProvider | string`,
+/// `types.ts:75`; known value: `"openrouter"`). Modeled as a plain `String`,
+/// matching how the core `Api`/`ProviderId` unions are inlined.
+pub type ImagesProviderId = String;
+
+/// A content block accepted as image-generation input (`ImagesInputContent`,
+/// `types.ts:421`): pi's `TextContent | ImageContent`.
+///
+/// A closed two-variant projection of [`ContentBlock`] (text and image only),
+/// internally tagged by `type` with the same wire shape.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(
+    tag = "type",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
+pub enum ImagesInputContent {
+    /// `types.ts:327` — plain text, optionally carrying a provider signature.
+    Text {
+        text: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        text_signature: Option<String>,
+    },
+    /// `types.ts:343` — a base64-encoded image with its MIME type.
+    Image { data: String, mime_type: String },
+}
+
+/// A content block produced as image-generation output (`ImagesOutputContent`,
+/// `types.ts:422`). Identical union to [`ImagesInputContent`] in pi.
+pub type ImagesOutputContent = ImagesInputContent;
+
+/// The input handed to an image-generation call (`types.ts:424`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ImagesContext {
+    pub input: Vec<ImagesInputContent>,
+}
+
+/// Why an image-generation call stopped (`types.ts:428`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ImagesStopReason {
+    Stop,
+    Error,
+    Aborted,
+}
+
+/// The result of an image-generation call (`types.ts:430`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssistantImages {
+    pub api: ImagesApi,
+    pub provider: ImagesProviderId,
+    pub model: String,
+    pub output: Vec<ImagesOutputContent>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usage: Option<Usage>,
+    pub stop_reason: ImagesStopReason,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    pub timestamp: i64,
+}
+
+/// An image-generation model (`types.ts:733`).
+///
+/// pi derives this as `Omit<Model, "api" | "provider" | "reasoning" |
+/// "contextWindow" | "maxTokens" | "compat">` plus image-specific `api`,
+/// `provider`, and `output`. The dropped fields are transcribed out here rather
+/// than reusing [`Model`], matching pi's structural `Omit`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImagesModel {
+    pub id: String,
+    pub name: String,
+    pub api: ImagesApi,
+    pub provider: ImagesProviderId,
+    pub base_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thinking_level_map: Option<ThinkingLevelMap>,
+    pub input: Vec<Modality>,
+    pub cost: ModelCost,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub headers: Option<BTreeMap<String, String>>,
+    pub output: Vec<Modality>,
+}
+
+/// Per-request controls for an image-generation call (`types.ts:246`).
+///
+/// The plain-data subset of pi's `ImagesOptions`; every field is optional and
+/// skips serialization when absent. The `signal`, `onPayload`, and `onResponse`
+/// members are function/`AbortSignal` types with no serializable analog and are
+/// deferred (see the StreamOptions port-deferral note above).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+#[non_exhaustive]
+pub struct ImagesOptions {
+    /// The provider credential to send with the request (`types.ts:248`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+    /// Provider-scoped environment values, taking precedence over `process.env`
+    /// (`types.ts:253`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub env: Option<BTreeMap<String, String>>,
+    /// Custom request headers merged over provider defaults (`types.ts:268`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub headers: Option<BTreeMap<String, String>>,
+    /// HTTP request timeout in milliseconds (`types.ts:272`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timeout_ms: Option<u64>,
+    /// Maximum client-side retry attempts (`types.ts:276`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_retries: Option<u32>,
+    /// Cap in milliseconds on a server-requested retry delay; `0` disables the
+    /// cap (`types.ts:284`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_retry_delay_ms: Option<u64>,
+    /// Request metadata; providers extract the fields they understand
+    /// (`types.ts:289`). pi types the values as `unknown`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<BTreeMap<String, Value>>,
 }
