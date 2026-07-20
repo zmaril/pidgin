@@ -13,10 +13,12 @@
 //     must also contain an empty `anchor.js` used to anchor the lookup:
 //         cd <dir> && printf '{"type":"module"}' > package.json && : > anchor.js
 //         npm i chalk@5.6.2 typebox@1.1.38 get-east-asian-width@1.6.0 \
-//               marked@18.0.5 cross-spawn@7.0.6 semver yaml hosted-git-info
-//   * stubs `highlight.js` / `diff` (imported by the transitive tool stack but
-//     never called on these render paths) and the heavy/dynamic-only deps
-//     photon-node / jiti / hosted-git-info.
+//               marked@18.0.5 cross-spawn@7.0.6 diff@8.0.4 semver yaml \
+//               hosted-git-info
+//   * stubs `highlight.js` (imported by the transitive tool stack but never
+//     called on these render paths) and the heavy/dynamic-only deps
+//     photon-node / jiti / hosted-git-info. `diff` is NOT stubbed: the real
+//     `edit` renderer's `renderDiff` calls `diffWords`/`diffLines`.
 //
 // Run (chalk MUST be at level 3 so bold/italic emit SGR, matching the Rust
 // runtime Theme):
@@ -38,9 +40,11 @@ const PI_SRC = {
     "@earendil-works/pi-ai": join(piPackages, "ai", "src", "index.ts"),
 };
 
-const STUBS = {
-    diff: join(here, "stubs", "diff.mjs"),
-};
+// No import stubs remain: the interactive tool-execution vectors now run the
+// REAL `edit` renderer, whose `renderDiff` calls the `diff` package
+// (`diffWords`/`diffLines`) — so `diff` must resolve to the pinned npm build,
+// not an inert stub. (`highlight.js` is still short-circuited below.)
+const STUBS = {};
 
 // Heavy/dynamic-only deps the message-render paths never execute — stubbed.
 const STUB_BASES = new Set(["@silvia-odwyer/photon-node", "jiti", "hosted-git-info"]);
