@@ -3,19 +3,21 @@ name: pidgin-extensions
 # The pidgin-extensions crate gates deno_core (and therefore V8) behind the
 # non-default `deno` feature, so the shared workspace CI never builds V8. This
 # dedicated job is the ONLY place the real runtime is compiled and tested, and
-# thus the sole V8-in-CI probe. Path-filtered so it only runs when the crate or
-# this workflow changes.
+# thus the sole V8-in-CI probe. Path-filtered so it only runs when the crate,
+# the vendored examples its tests load, or this workflow changes.
 on:
   push:
     branches: [main]
     paths:
       - "crates/pidgin-extensions/**"
       - "crates/pidgin-cli/**"
+      - "examples/**"
       - ".github/workflows/pidgin-extensions.yml"
   pull_request:
     paths:
       - "crates/pidgin-extensions/**"
       - "crates/pidgin-cli/**"
+      - "examples/**"
       - ".github/workflows/pidgin-extensions.yml"
 
 jobs:
