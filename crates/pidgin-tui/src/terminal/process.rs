@@ -494,6 +494,15 @@ impl<W: Write> Terminal for ProcessTerminal<W> {
 mod tests {
     use super::*;
 
+    /// Serializes tests that read or write the process-global
+    /// `KITTY_PROTOCOL_ACTIVE` flag (see `keys.rs`). Under `cargo test`'s
+    /// default parallel execution these tests otherwise interleave their
+    /// activate/assert/reset of the shared global and race each other. Every
+    /// such test holds this guard for its whole body and resets the global to
+    /// its default at the start, making them order-independent. Poisoning is
+    /// tolerated so one failing test does not cascade into the rest.
+    static KITTY_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     /// A `ProcessTerminal` writing into an in-memory buffer with raw-mode
     /// management off, so protocol byte streams are deterministic on CI.
     fn test_terminal() -> ProcessTerminal<Vec<u8>> {
@@ -514,6 +523,8 @@ mod tests {
 
     #[test]
     fn stop_after_start_disables_paste_and_kitty() {
+        let _guard = KITTY_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        keys::set_kitty_protocol_active(false);
         let mut term = test_terminal();
         term.start();
         term.out.clear();
@@ -557,6 +568,8 @@ mod tests {
 
     #[test]
     fn kitty_flags_reply_activates_protocol_and_is_swallowed() {
+        let _guard = KITTY_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        keys::set_kitty_protocol_active(false);
         let mut term = test_terminal();
         // A complete Kitty flags reply is consumed (not forwarded) and turns on
         // the protocol.
@@ -601,6 +614,8 @@ mod tests {
 
     #[test]
     fn kitty_reply_split_across_reads_activates_protocol() {
+        let _guard = KITTY_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        keys::set_kitty_protocol_active(false);
         let mut term = test_terminal();
         // First chunk is incomplete at the StdinBuffer level (no CSI final byte).
         assert!(term.feed("\x1b[?7").is_empty());
