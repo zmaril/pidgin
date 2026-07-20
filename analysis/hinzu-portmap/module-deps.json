@@ -1,0 +1,1615 @@
+{
+  "_meta": {
+    "description": "Intra-repo source-module dependency adjacency. key depends on each listed value.",
+    "derived_from": "src-<pkg>.graph.json .file_edges (file-level, one edge per importing/calling file pair)",
+    "edge_field": ".file_edges[] {from, to}; direction from -> to means 'from depends on to'",
+    "filter": "kept only edges where BOTH endpoints start with 'src/' (src->src). Dropped edges whose 'from' was under test/ or examples/ (tests/examples importing source); zero src->non-src edges exist, so no source-module dependency is lost. All external / node_module deps are absent from .file_edges by construction (they live in each file's external_packages field, which was not used).",
+    "path_normalization": "graph paths are package-relative (e.g. 'src/foo.ts'); normalized to manifest 'src' format as 'packages/<pkg>/<path>' so keys/values join directly to manifest.json .modules[].src",
+    "packages": [
+      "ai",
+      "agent",
+      "coding-agent",
+      "orchestrator",
+      "tui"
+    ]
+  },
+  "packages/agent/src/agent-loop.ts": [
+    "packages/agent/src/types.ts"
+  ],
+  "packages/agent/src/agent.ts": [
+    "packages/agent/src/agent-loop.ts",
+    "packages/agent/src/types.ts"
+  ],
+  "packages/agent/src/harness/agent-harness.ts": [
+    "packages/agent/src/agent-loop.ts",
+    "packages/agent/src/harness/compaction/branch-summarization.ts",
+    "packages/agent/src/harness/compaction/compaction.ts",
+    "packages/agent/src/harness/prompt-templates.ts",
+    "packages/agent/src/harness/session/session.ts",
+    "packages/agent/src/harness/skills.ts",
+    "packages/agent/src/harness/types.ts",
+    "packages/agent/src/types.ts"
+  ],
+  "packages/agent/src/harness/compaction/branch-summarization.ts": [
+    "packages/agent/src/harness/compaction/compaction.ts",
+    "packages/agent/src/harness/compaction/utils.ts",
+    "packages/agent/src/harness/messages.ts",
+    "packages/agent/src/harness/session/session.ts",
+    "packages/agent/src/harness/types.ts",
+    "packages/agent/src/types.ts"
+  ],
+  "packages/agent/src/harness/compaction/compaction.ts": [
+    "packages/agent/src/harness/compaction/utils.ts",
+    "packages/agent/src/harness/messages.ts",
+    "packages/agent/src/harness/session/session.ts",
+    "packages/agent/src/harness/types.ts",
+    "packages/agent/src/types.ts"
+  ],
+  "packages/agent/src/harness/compaction/utils.ts": [
+    "packages/agent/src/types.ts"
+  ],
+  "packages/agent/src/harness/env/nodejs.ts": [
+    "packages/agent/src/harness/types.ts"
+  ],
+  "packages/agent/src/harness/messages.ts": [
+    "packages/agent/src/types.ts"
+  ],
+  "packages/agent/src/harness/prompt-templates.ts": [
+    "packages/agent/src/harness/types.ts"
+  ],
+  "packages/agent/src/harness/session/jsonl-repo.ts": [
+    "packages/agent/src/harness/session/jsonl-storage.ts",
+    "packages/agent/src/harness/session/repo-utils.ts",
+    "packages/agent/src/harness/session/session.ts",
+    "packages/agent/src/harness/types.ts"
+  ],
+  "packages/agent/src/harness/session/jsonl-storage.ts": [
+    "packages/agent/src/harness/session/repo-utils.ts",
+    "packages/agent/src/harness/session/uuid.ts",
+    "packages/agent/src/harness/types.ts"
+  ],
+  "packages/agent/src/harness/session/memory-repo.ts": [
+    "packages/agent/src/harness/session/memory-storage.ts",
+    "packages/agent/src/harness/session/repo-utils.ts",
+    "packages/agent/src/harness/session/session.ts",
+    "packages/agent/src/harness/types.ts"
+  ],
+  "packages/agent/src/harness/session/memory-storage.ts": [
+    "packages/agent/src/harness/session/uuid.ts",
+    "packages/agent/src/harness/types.ts"
+  ],
+  "packages/agent/src/harness/session/repo-utils.ts": [
+    "packages/agent/src/harness/session/session.ts",
+    "packages/agent/src/harness/session/uuid.ts",
+    "packages/agent/src/harness/types.ts"
+  ],
+  "packages/agent/src/harness/session/session.ts": [
+    "packages/agent/src/harness/messages.ts",
+    "packages/agent/src/harness/types.ts",
+    "packages/agent/src/types.ts"
+  ],
+  "packages/agent/src/harness/skills.ts": [
+    "packages/agent/src/harness/types.ts"
+  ],
+  "packages/agent/src/harness/system-prompt.ts": [
+    "packages/agent/src/harness/types.ts"
+  ],
+  "packages/agent/src/harness/utils/shell-output.ts": [
+    "packages/agent/src/harness/types.ts",
+    "packages/agent/src/harness/utils/truncate.ts"
+  ],
+  "packages/ai/src/api/anthropic-messages.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/anthropic-messages.ts": [
+    "packages/ai/src/api/github-copilot-headers.ts",
+    "packages/ai/src/api/simple-options.ts",
+    "packages/ai/src/api/transform-messages.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/deferred-tools.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/json-parse.ts",
+    "packages/ai/src/utils/provider-env.ts",
+    "packages/ai/src/utils/sanitize-unicode.ts"
+  ],
+  "packages/ai/src/api/azure-openai-responses.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/azure-openai-responses.ts": [
+    "packages/ai/src/api/openai-prompt-cache.ts",
+    "packages/ai/src/api/openai-responses-shared.ts",
+    "packages/ai/src/api/simple-options.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/error-body.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/provider-env.ts"
+  ],
+  "packages/ai/src/api/bedrock-converse-stream.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/bedrock-converse-stream.ts": [
+    "packages/ai/src/api/simple-options.ts",
+    "packages/ai/src/api/transform-messages.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/error-body.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/json-parse.ts",
+    "packages/ai/src/utils/node-http-proxy.ts",
+    "packages/ai/src/utils/provider-env.ts",
+    "packages/ai/src/utils/sanitize-unicode.ts"
+  ],
+  "packages/ai/src/api/github-copilot-headers.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/google-generative-ai.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/google-generative-ai.ts": [
+    "packages/ai/src/api/google-shared.ts",
+    "packages/ai/src/api/simple-options.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/error-body.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/sanitize-unicode.ts"
+  ],
+  "packages/ai/src/api/google-shared.ts": [
+    "packages/ai/src/api/transform-messages.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/sanitize-unicode.ts"
+  ],
+  "packages/ai/src/api/google-vertex.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/google-vertex.ts": [
+    "packages/ai/src/api/google-shared.ts",
+    "packages/ai/src/api/simple-options.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/error-body.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/provider-env.ts",
+    "packages/ai/src/utils/sanitize-unicode.ts"
+  ],
+  "packages/ai/src/api/lazy.ts": [
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/event-stream.ts"
+  ],
+  "packages/ai/src/api/mistral-conversations.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/mistral-conversations.ts": [
+    "packages/ai/src/api/simple-options.ts",
+    "packages/ai/src/api/transform-messages.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/hash.ts",
+    "packages/ai/src/utils/json-parse.ts",
+    "packages/ai/src/utils/sanitize-unicode.ts"
+  ],
+  "packages/ai/src/api/openai-codex-responses.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/openai-codex-responses.ts": [
+    "packages/ai/src/api/openai-prompt-cache.ts",
+    "packages/ai/src/api/openai-responses-shared.ts",
+    "packages/ai/src/api/simple-options.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/session-resources.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/abort-signals.ts",
+    "packages/ai/src/utils/deferred-tools.ts",
+    "packages/ai/src/utils/diagnostics.ts",
+    "packages/ai/src/utils/error-body.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/node-http-proxy.ts"
+  ],
+  "packages/ai/src/api/openai-completions.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/openai-completions.ts": [
+    "packages/ai/src/api/github-copilot-headers.ts",
+    "packages/ai/src/api/openai-prompt-cache.ts",
+    "packages/ai/src/api/simple-options.ts",
+    "packages/ai/src/api/transform-messages.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/error-body.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/json-parse.ts",
+    "packages/ai/src/utils/provider-env.ts",
+    "packages/ai/src/utils/sanitize-unicode.ts"
+  ],
+  "packages/ai/src/api/openai-responses-shared.ts": [
+    "packages/ai/src/api/transform-messages.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/hash.ts",
+    "packages/ai/src/utils/json-parse.ts",
+    "packages/ai/src/utils/sanitize-unicode.ts"
+  ],
+  "packages/ai/src/api/openai-responses.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/openai-responses.ts": [
+    "packages/ai/src/api/github-copilot-headers.ts",
+    "packages/ai/src/api/openai-prompt-cache.ts",
+    "packages/ai/src/api/openai-responses-shared.ts",
+    "packages/ai/src/api/simple-options.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/deferred-tools.ts",
+    "packages/ai/src/utils/error-body.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/provider-env.ts"
+  ],
+  "packages/ai/src/api/openrouter-images.lazy.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/openrouter-images.ts": [
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/error-body.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/sanitize-unicode.ts"
+  ],
+  "packages/ai/src/api/pi-messages.lazy.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/api/pi-messages.ts": [
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/diagnostics.ts",
+    "packages/ai/src/utils/event-stream.ts",
+    "packages/ai/src/utils/headers.ts",
+    "packages/ai/src/utils/json-parse.ts",
+    "packages/ai/src/utils/provider-env.ts"
+  ],
+  "packages/ai/src/api/simple-options.ts": [
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/estimate.ts"
+  ],
+  "packages/ai/src/api/transform-messages.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/auth/context.ts": [
+    "packages/ai/src/auth/types.ts"
+  ],
+  "packages/ai/src/auth/credential-store.ts": [
+    "packages/ai/src/auth/types.ts"
+  ],
+  "packages/ai/src/auth/helpers.ts": [
+    "packages/ai/src/auth/types.ts"
+  ],
+  "packages/ai/src/auth/oauth/anthropic.ts": [
+    "packages/ai/src/auth/oauth/oauth-page.ts",
+    "packages/ai/src/auth/oauth/pkce.ts",
+    "packages/ai/src/auth/types.ts",
+    "packages/ai/src/utils/provider-env.ts"
+  ],
+  "packages/ai/src/auth/oauth/github-copilot.ts": [
+    "packages/ai/src/auth/oauth/device-code.ts",
+    "packages/ai/src/auth/types.ts"
+  ],
+  "packages/ai/src/auth/oauth/load.ts": [
+    "packages/ai/src/auth/types.ts"
+  ],
+  "packages/ai/src/auth/oauth/openai-codex.ts": [
+    "packages/ai/src/auth/oauth/device-code.ts",
+    "packages/ai/src/auth/oauth/oauth-page.ts",
+    "packages/ai/src/auth/oauth/pkce.ts",
+    "packages/ai/src/auth/types.ts",
+    "packages/ai/src/utils/provider-env.ts"
+  ],
+  "packages/ai/src/auth/oauth/radius.ts": [
+    "packages/ai/src/auth/oauth/device-code.ts",
+    "packages/ai/src/auth/oauth/oauth-page.ts",
+    "packages/ai/src/auth/oauth/pkce.ts",
+    "packages/ai/src/auth/types.ts",
+    "packages/ai/src/providers/radius-config.ts"
+  ],
+  "packages/ai/src/auth/oauth/xai.ts": [
+    "packages/ai/src/auth/oauth/device-code.ts",
+    "packages/ai/src/auth/types.ts"
+  ],
+  "packages/ai/src/auth/resolve.ts": [
+    "packages/ai/src/auth/types.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/bun-oauth.ts": [
+    "packages/ai/src/auth/oauth/load.ts",
+    "packages/ai/src/auth/oauth/radius.ts"
+  ],
+  "packages/ai/src/cli.ts": [
+    "packages/ai/src/auth/types.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/providers/all.ts"
+  ],
+  "packages/ai/src/compat.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/api/azure-openai-responses.lazy.ts",
+    "packages/ai/src/api/bedrock-converse-stream.lazy.ts",
+    "packages/ai/src/api/google-generative-ai.lazy.ts",
+    "packages/ai/src/api/google-vertex.lazy.ts",
+    "packages/ai/src/api/mistral-conversations.lazy.ts",
+    "packages/ai/src/api/openai-codex-responses.lazy.ts",
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/api/openai-responses.lazy.ts",
+    "packages/ai/src/api/pi-messages.lazy.ts",
+    "packages/ai/src/env-api-keys.ts",
+    "packages/ai/src/providers/all.ts",
+    "packages/ai/src/providers/faux.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/event-stream.ts"
+  ],
+  "packages/ai/src/env-api-keys.ts": [
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/provider-env.ts"
+  ],
+  "packages/ai/src/image-models.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/images-api-registry.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/images-models.ts": [
+    "packages/ai/src/auth/context.ts",
+    "packages/ai/src/auth/credential-store.ts",
+    "packages/ai/src/auth/resolve.ts",
+    "packages/ai/src/auth/types.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/images.ts": [
+    "packages/ai/src/images-api-registry.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/legacy-api-aliases.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/api/azure-openai-responses.lazy.ts",
+    "packages/ai/src/api/google-generative-ai.lazy.ts",
+    "packages/ai/src/api/google-vertex.lazy.ts",
+    "packages/ai/src/api/mistral-conversations.lazy.ts",
+    "packages/ai/src/api/openai-codex-responses.lazy.ts",
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/api/openai-responses.lazy.ts"
+  ],
+  "packages/ai/src/models.ts": [
+    "packages/ai/src/api/lazy.ts",
+    "packages/ai/src/auth/context.ts",
+    "packages/ai/src/auth/credential-store.ts",
+    "packages/ai/src/auth/resolve.ts",
+    "packages/ai/src/auth/types.ts",
+    "packages/ai/src/models-store.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/event-stream.ts"
+  ],
+  "packages/ai/src/providers/all.ts": [
+    "packages/ai/src/images-models.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/providers/amazon-bedrock.ts",
+    "packages/ai/src/providers/ant-ling.ts",
+    "packages/ai/src/providers/anthropic.ts",
+    "packages/ai/src/providers/azure-openai-responses.ts",
+    "packages/ai/src/providers/cerebras.ts",
+    "packages/ai/src/providers/cloudflare-ai-gateway.ts",
+    "packages/ai/src/providers/cloudflare-workers-ai.ts",
+    "packages/ai/src/providers/deepseek.ts",
+    "packages/ai/src/providers/fireworks.ts",
+    "packages/ai/src/providers/github-copilot.ts",
+    "packages/ai/src/providers/google-vertex.ts",
+    "packages/ai/src/providers/google.ts",
+    "packages/ai/src/providers/groq.ts",
+    "packages/ai/src/providers/huggingface.ts",
+    "packages/ai/src/providers/kimi-coding.ts",
+    "packages/ai/src/providers/minimax-cn.ts",
+    "packages/ai/src/providers/minimax.ts",
+    "packages/ai/src/providers/mistral.ts",
+    "packages/ai/src/providers/moonshotai-cn.ts",
+    "packages/ai/src/providers/moonshotai.ts",
+    "packages/ai/src/providers/nvidia.ts",
+    "packages/ai/src/providers/openai-codex.ts",
+    "packages/ai/src/providers/openai.ts",
+    "packages/ai/src/providers/opencode-go.ts",
+    "packages/ai/src/providers/opencode.ts",
+    "packages/ai/src/providers/openrouter-images.ts",
+    "packages/ai/src/providers/openrouter.ts",
+    "packages/ai/src/providers/radius.ts",
+    "packages/ai/src/providers/together.ts",
+    "packages/ai/src/providers/vercel-ai-gateway.ts",
+    "packages/ai/src/providers/xai.ts",
+    "packages/ai/src/providers/xiaomi-token-plan-ams.ts",
+    "packages/ai/src/providers/xiaomi-token-plan-cn.ts",
+    "packages/ai/src/providers/xiaomi-token-plan-sgp.ts",
+    "packages/ai/src/providers/xiaomi.ts",
+    "packages/ai/src/providers/zai-coding-cn.ts",
+    "packages/ai/src/providers/zai.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/providers/amazon-bedrock.ts": [
+    "packages/ai/src/api/bedrock-converse-stream.lazy.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/ant-ling.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/anthropic.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/azure-openai-responses.ts": [
+    "packages/ai/src/api/azure-openai-responses.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/cerebras.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/cloudflare-ai-gateway.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/api/openai-responses.lazy.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/providers/cloudflare-auth.ts",
+    "packages/ai/src/providers/cloudflare-stream.ts"
+  ],
+  "packages/ai/src/providers/cloudflare-auth.ts": [
+    "packages/ai/src/auth/types.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/providers/cloudflare-stream.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/providers/cloudflare-workers-ai.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/providers/cloudflare-auth.ts",
+    "packages/ai/src/providers/cloudflare-stream.ts"
+  ],
+  "packages/ai/src/providers/deepseek.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/faux.ts": [
+    "packages/ai/src/models.ts",
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/event-stream.ts"
+  ],
+  "packages/ai/src/providers/fireworks.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/github-copilot.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/api/openai-responses.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/google-vertex.ts": [
+    "packages/ai/src/api/google-vertex.lazy.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/google.ts": [
+    "packages/ai/src/api/google-generative-ai.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/groq.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/huggingface.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/images/register-builtins.ts": [
+    "packages/ai/src/images-api-registry.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/providers/kimi-coding.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/minimax-cn.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/minimax.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/mistral.ts": [
+    "packages/ai/src/api/mistral-conversations.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/moonshotai-cn.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/moonshotai.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/nvidia.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/openai-codex.ts": [
+    "packages/ai/src/api/openai-codex-responses.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/openai.ts": [
+    "packages/ai/src/api/openai-responses.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/opencode-go.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/opencode.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/api/google-generative-ai.lazy.ts",
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/api/openai-responses.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/openrouter-images.ts": [
+    "packages/ai/src/api/openrouter-images.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/images-models.ts"
+  ],
+  "packages/ai/src/providers/openrouter.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/radius-config.ts": [
+    "packages/ai/src/auth/types.ts",
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/providers/radius.ts": [
+    "packages/ai/src/api/pi-messages.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/auth/oauth/load.ts",
+    "packages/ai/src/models.ts",
+    "packages/ai/src/providers/radius-config.ts"
+  ],
+  "packages/ai/src/providers/together.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/vercel-ai-gateway.ts": [
+    "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/xai.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/api/openai-responses.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/xiaomi-token-plan-ams.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/xiaomi-token-plan-cn.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/xiaomi-token-plan-sgp.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/xiaomi.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/zai-coding-cn.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/providers/zai.ts": [
+    "packages/ai/src/api/openai-completions.lazy.ts",
+    "packages/ai/src/auth/helpers.ts",
+    "packages/ai/src/models.ts"
+  ],
+  "packages/ai/src/utils/deferred-tools.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/utils/estimate.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/utils/event-stream.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/utils/headers.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/utils/node-http-proxy.ts": [
+    "packages/ai/src/types.ts",
+    "packages/ai/src/utils/provider-env.ts"
+  ],
+  "packages/ai/src/utils/overflow.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/utils/provider-env.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/utils/retry.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/ai/src/utils/validation.ts": [
+    "packages/ai/src/types.ts"
+  ],
+  "packages/coding-agent/src/bun/cli.ts": [
+    "packages/coding-agent/src/bun/restore-sandbox-env.ts"
+  ],
+  "packages/coding-agent/src/cli.ts": [
+    "packages/coding-agent/src/core/http-dispatcher.ts",
+    "packages/coding-agent/src/main.ts"
+  ],
+  "packages/coding-agent/src/cli/args.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts"
+  ],
+  "packages/coding-agent/src/cli/config-selector.ts": [
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/config-selector.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/cli/file-processor.ts": [
+    "packages/coding-agent/src/core/tools/path-utils.ts",
+    "packages/coding-agent/src/utils/image-process.ts",
+    "packages/coding-agent/src/utils/mime.ts"
+  ],
+  "packages/coding-agent/src/cli/list-models.ts": [
+    "packages/coding-agent/src/core/auth-guidance.ts",
+    "packages/coding-agent/src/core/model-runtime.ts"
+  ],
+  "packages/coding-agent/src/cli/project-trust.ts": [
+    "packages/coding-agent/src/cli/startup-ui.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/project-trust.ts",
+    "packages/coding-agent/src/core/settings-manager.ts"
+  ],
+  "packages/coding-agent/src/cli/session-picker.ts": [
+    "packages/coding-agent/src/cli/startup-ui.ts",
+    "packages/coding-agent/src/core/keybindings.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/session-selector.ts"
+  ],
+  "packages/coding-agent/src/cli/startup-ui.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/experimental.ts",
+    "packages/coding-agent/src/core/keybindings.ts",
+    "packages/coding-agent/src/core/package-manager.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/extension-input.ts",
+    "packages/coding-agent/src/modes/interactive/components/extension-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/first-time-setup.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/config.ts": [
+    "packages/coding-agent/src/utils/child-process.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/agent-session-runtime.ts": [
+    "packages/coding-agent/src/core/agent-session-services.ts",
+    "packages/coding-agent/src/core/agent-session.ts",
+    "packages/coding-agent/src/core/extensions/runner.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/session-cwd.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/agent-session-services.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/resource-loader.ts",
+    "packages/coding-agent/src/core/sdk.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/agent-session.ts": [
+    "packages/coding-agent/src/core/auth-guidance.ts",
+    "packages/coding-agent/src/core/bash-executor.ts",
+    "packages/coding-agent/src/core/compaction/branch-summarization.ts",
+    "packages/coding-agent/src/core/compaction/compaction.ts",
+    "packages/coding-agent/src/core/export-html/index.ts",
+    "packages/coding-agent/src/core/export-html/tool-renderer.ts",
+    "packages/coding-agent/src/core/extensions/runner.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/extensions/wrapper.ts",
+    "packages/coding-agent/src/core/messages.ts",
+    "packages/coding-agent/src/core/model-registry.ts",
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/prompt-templates.ts",
+    "packages/coding-agent/src/core/resource-loader.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/core/slash-commands.ts",
+    "packages/coding-agent/src/core/source-info.ts",
+    "packages/coding-agent/src/core/system-prompt.ts",
+    "packages/coding-agent/src/core/tools/bash.ts",
+    "packages/coding-agent/src/core/tools/index.ts",
+    "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/frontmatter.ts",
+    "packages/coding-agent/src/utils/paths.ts",
+    "packages/coding-agent/src/utils/sleep.ts"
+  ],
+  "packages/coding-agent/src/core/auth-guidance.ts": [
+    "packages/coding-agent/src/config.ts"
+  ],
+  "packages/coding-agent/src/core/auth-storage.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/resolve-config-value.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/bash-executor.ts": [
+    "packages/coding-agent/src/core/tools/bash.ts",
+    "packages/coding-agent/src/core/tools/truncate.ts",
+    "packages/coding-agent/src/utils/ansi.ts",
+    "packages/coding-agent/src/utils/shell.ts"
+  ],
+  "packages/coding-agent/src/core/cache-stats.ts": [
+    "packages/coding-agent/src/core/session-manager.ts"
+  ],
+  "packages/coding-agent/src/core/compaction/branch-summarization.ts": [
+    "packages/coding-agent/src/core/compaction/compaction.ts",
+    "packages/coding-agent/src/core/compaction/utils.ts",
+    "packages/coding-agent/src/core/messages.ts",
+    "packages/coding-agent/src/core/session-manager.ts"
+  ],
+  "packages/coding-agent/src/core/compaction/compaction.ts": [
+    "packages/coding-agent/src/core/compaction/utils.ts",
+    "packages/coding-agent/src/core/messages.ts",
+    "packages/coding-agent/src/core/session-manager.ts"
+  ],
+  "packages/coding-agent/src/core/exec.ts": [
+    "packages/coding-agent/src/utils/child-process.ts"
+  ],
+  "packages/coding-agent/src/core/export-html/index.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/export-html/tool-renderer.ts": [
+    "packages/coding-agent/src/core/export-html/ansi-to-html.ts",
+    "packages/coding-agent/src/core/extensions/types.ts"
+  ],
+  "packages/coding-agent/src/core/extensions/loader.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/event-bus.ts",
+    "packages/coding-agent/src/core/exec.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/source-info.ts",
+    "packages/coding-agent/src/core/timings.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/extensions/runner.ts": [
+    "packages/coding-agent/src/core/diagnostics.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/model-registry.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/core/system-prompt.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/core/extensions/wrapper.ts": [
+    "packages/coding-agent/src/core/extensions/runner.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts"
+  ],
+  "packages/coding-agent/src/core/footer-data-provider.ts": [
+    "packages/coding-agent/src/utils/fs-watch.ts"
+  ],
+  "packages/coding-agent/src/core/keybindings.ts": [
+    "packages/coding-agent/src/config.ts"
+  ],
+  "packages/coding-agent/src/core/model-config.ts": [
+    "packages/coding-agent/src/utils/json.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/model-registry.ts": [
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/provider-composer.ts"
+  ],
+  "packages/coding-agent/src/core/model-resolver.ts": [
+    "packages/coding-agent/src/cli/args.ts",
+    "packages/coding-agent/src/core/model-runtime.ts"
+  ],
+  "packages/coding-agent/src/core/model-runtime.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/auth-storage.ts",
+    "packages/coding-agent/src/core/model-config.ts",
+    "packages/coding-agent/src/core/models-store.ts",
+    "packages/coding-agent/src/core/provider-composer.ts",
+    "packages/coding-agent/src/core/remote-catalog-provider.ts",
+    "packages/coding-agent/src/core/runtime-credentials.ts"
+  ],
+  "packages/coding-agent/src/core/models-store.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/auth-storage.ts"
+  ],
+  "packages/coding-agent/src/core/package-manager.ts": [
+    "packages/coding-agent/src/core/output-guard.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/utils/child-process.ts",
+    "packages/coding-agent/src/utils/git.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/project-trust.ts": [
+    "packages/coding-agent/src/core/extensions/runner.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/trust-manager.ts"
+  ],
+  "packages/coding-agent/src/core/prompt-templates.ts": [
+    "packages/coding-agent/src/core/source-info.ts",
+    "packages/coding-agent/src/utils/frontmatter.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/provider-attribution.ts": [
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/core/telemetry.ts"
+  ],
+  "packages/coding-agent/src/core/provider-composer.ts": [
+    "packages/coding-agent/src/core/model-config.ts",
+    "packages/coding-agent/src/core/resolve-config-value.ts"
+  ],
+  "packages/coding-agent/src/core/remote-catalog-provider.ts": [
+    "packages/coding-agent/src/utils/pi-user-agent.ts"
+  ],
+  "packages/coding-agent/src/core/resolve-config-value.ts": [
+    "packages/coding-agent/src/utils/shell.ts"
+  ],
+  "packages/coding-agent/src/core/resource-loader.ts": [
+    "packages/coding-agent/src/core/diagnostics.ts",
+    "packages/coding-agent/src/core/event-bus.ts",
+    "packages/coding-agent/src/core/extensions/loader.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/package-manager.ts",
+    "packages/coding-agent/src/core/prompt-templates.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/core/skills.ts",
+    "packages/coding-agent/src/core/source-info.ts",
+    "packages/coding-agent/src/core/timings.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/sdk.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/agent-session.ts",
+    "packages/coding-agent/src/core/auth-guidance.ts",
+    "packages/coding-agent/src/core/extensions/runner.ts",
+    "packages/coding-agent/src/core/messages.ts",
+    "packages/coding-agent/src/core/model-resolver.ts",
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/provider-attribution.ts",
+    "packages/coding-agent/src/core/resource-loader.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/core/timings.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/session-manager.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/messages.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/settings-manager.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/http-dispatcher.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/skills.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/diagnostics.ts",
+    "packages/coding-agent/src/core/source-info.ts",
+    "packages/coding-agent/src/utils/frontmatter.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/source-info.ts": [
+    "packages/coding-agent/src/core/package-manager.ts"
+  ],
+  "packages/coding-agent/src/core/system-prompt.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/skills.ts"
+  ],
+  "packages/coding-agent/src/core/telemetry.ts": [
+    "packages/coding-agent/src/core/settings-manager.ts"
+  ],
+  "packages/coding-agent/src/core/tools/bash.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/tools/output-accumulator.ts",
+    "packages/coding-agent/src/core/tools/render-utils.ts",
+    "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+    "packages/coding-agent/src/core/tools/truncate.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/components/visual-truncate.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/child-process.ts",
+    "packages/coding-agent/src/utils/shell.ts"
+  ],
+  "packages/coding-agent/src/core/tools/edit-diff.ts": [
+    "packages/coding-agent/src/core/tools/path-utils.ts"
+  ],
+  "packages/coding-agent/src/core/tools/edit.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/tools/edit-diff.ts",
+    "packages/coding-agent/src/core/tools/file-mutation-queue.ts",
+    "packages/coding-agent/src/core/tools/path-utils.ts",
+    "packages/coding-agent/src/core/tools/render-utils.ts",
+    "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+    "packages/coding-agent/src/modes/interactive/components/diff.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/core/tools/find.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/tools/path-utils.ts",
+    "packages/coding-agent/src/core/tools/render-utils.ts",
+    "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+    "packages/coding-agent/src/core/tools/truncate.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/tools-manager.ts"
+  ],
+  "packages/coding-agent/src/core/tools/grep.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/tools/path-utils.ts",
+    "packages/coding-agent/src/core/tools/render-utils.ts",
+    "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+    "packages/coding-agent/src/core/tools/truncate.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/tools-manager.ts"
+  ],
+  "packages/coding-agent/src/core/tools/index.ts": [
+    "packages/coding-agent/src/core/tools/bash.ts",
+    "packages/coding-agent/src/core/tools/edit.ts",
+    "packages/coding-agent/src/core/tools/find.ts",
+    "packages/coding-agent/src/core/tools/grep.ts",
+    "packages/coding-agent/src/core/tools/ls.ts",
+    "packages/coding-agent/src/core/tools/read.ts",
+    "packages/coding-agent/src/core/tools/write.ts"
+  ],
+  "packages/coding-agent/src/core/tools/ls.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/tools/path-utils.ts",
+    "packages/coding-agent/src/core/tools/render-utils.ts",
+    "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+    "packages/coding-agent/src/core/tools/truncate.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/core/tools/output-accumulator.ts": [
+    "packages/coding-agent/src/core/tools/truncate.ts"
+  ],
+  "packages/coding-agent/src/core/tools/path-utils.ts": [
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/tools/read.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/tools/path-utils.ts",
+    "packages/coding-agent/src/core/tools/render-utils.ts",
+    "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+    "packages/coding-agent/src/core/tools/truncate.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/image-process.ts",
+    "packages/coding-agent/src/utils/mime.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/core/tools/render-utils.ts": [
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/ansi.ts",
+    "packages/coding-agent/src/utils/paths.ts",
+    "packages/coding-agent/src/utils/shell.ts"
+  ],
+  "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts"
+  ],
+  "packages/coding-agent/src/core/tools/write.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/tools/file-mutation-queue.ts",
+    "packages/coding-agent/src/core/tools/path-utils.ts",
+    "packages/coding-agent/src/core/tools/render-utils.ts",
+    "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/core/trust-manager.ts": [
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/extensions/index.ts": [
+    "packages/coding-agent/src/extensions/llama/index.ts"
+  ],
+  "packages/coding-agent/src/extensions/llama/index.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/model-registry.ts",
+    "packages/coding-agent/src/extensions/llama/client.ts",
+    "packages/coding-agent/src/extensions/llama/huggingface.ts",
+    "packages/coding-agent/src/extensions/llama/provider.ts",
+    "packages/coding-agent/src/extensions/llama/ui.ts"
+  ],
+  "packages/coding-agent/src/extensions/llama/provider.ts": [
+    "packages/coding-agent/src/extensions/llama/client.ts"
+  ],
+  "packages/coding-agent/src/extensions/llama/ui.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/keybindings.ts",
+    "packages/coding-agent/src/extensions/llama/client.ts",
+    "packages/coding-agent/src/extensions/llama/huggingface.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/main.ts": [
+    "packages/coding-agent/src/cli/args.ts",
+    "packages/coding-agent/src/cli/file-processor.ts",
+    "packages/coding-agent/src/cli/initial-message.ts",
+    "packages/coding-agent/src/cli/list-models.ts",
+    "packages/coding-agent/src/cli/project-trust.ts",
+    "packages/coding-agent/src/cli/session-picker.ts",
+    "packages/coding-agent/src/cli/startup-ui.ts",
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/agent-session-runtime.ts",
+    "packages/coding-agent/src/core/agent-session-services.ts",
+    "packages/coding-agent/src/core/agent-session.ts",
+    "packages/coding-agent/src/core/auth-guidance.ts",
+    "packages/coding-agent/src/core/export-html/index.ts",
+    "packages/coding-agent/src/core/http-dispatcher.ts",
+    "packages/coding-agent/src/core/model-resolver.ts",
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/output-guard.ts",
+    "packages/coding-agent/src/core/project-trust.ts",
+    "packages/coding-agent/src/core/sdk.ts",
+    "packages/coding-agent/src/core/session-cwd.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/core/timings.ts",
+    "packages/coding-agent/src/core/trust-manager.ts",
+    "packages/coding-agent/src/migrations.ts",
+    "packages/coding-agent/src/modes/interactive/interactive-mode.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/modes/print-mode.ts",
+    "packages/coding-agent/src/modes/rpc/rpc-mode.ts",
+    "packages/coding-agent/src/package-manager-cli.ts",
+    "packages/coding-agent/src/utils/paths.ts",
+    "packages/coding-agent/src/utils/windows-self-update.ts"
+  ],
+  "packages/coding-agent/src/migrations.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/keybindings.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/armin.ts": [
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/assistant-message.ts": [
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/bash-execution.ts": [
+    "packages/coding-agent/src/core/tools/truncate.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/components/visual-truncate.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/ansi.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/bordered-loader.ts": [
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/branch-summary-message.ts": [
+    "packages/coding-agent/src/core/messages.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/compaction-summary-message.ts": [
+    "packages/coding-agent/src/core/messages.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/config-selector.ts": [
+    "packages/coding-agent/src/core/package-manager.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/custom-editor.ts": [
+    "packages/coding-agent/src/core/keybindings.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/custom-entry.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/custom-message.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/messages.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/daxnuts.ts": [
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/diff.ts": [
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts": [
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/earendil-announcement.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/extension-editor.ts": [
+    "packages/coding-agent/src/core/keybindings.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/extension-input.ts": [
+    "packages/coding-agent/src/modes/interactive/components/countdown-timer.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/extension-selector.ts": [
+    "packages/coding-agent/src/modes/interactive/components/countdown-timer.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/first-time-setup.ts": [
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/footer.ts": [
+    "packages/coding-agent/src/core/agent-session.ts",
+    "packages/coding-agent/src/core/experimental.ts",
+    "packages/coding-agent/src/core/footer-data-provider.ts",
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts": [
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/login-dialog.ts": [
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/open-browser.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/model-selector.ts": [
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/model-search.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/oauth-selector.ts": [
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts": [
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/model-search.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/session-selector-search.ts": [
+    "packages/coding-agent/src/core/session-manager.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/session-selector.ts": [
+    "packages/coding-agent/src/core/keybindings.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/components/session-selector-search.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/settings-selector.ts": [
+    "packages/coding-agent/src/core/http-dispatcher.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/show-images-selector.ts": [
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/skill-invocation-message.ts": [
+    "packages/coding-agent/src/core/agent-session.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/status-indicator.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/modes/interactive/components/countdown-timer.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/theme-selector.ts": [
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/thinking-selector.ts": [
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/tool-execution.ts": [
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/tools/index.ts",
+    "packages/coding-agent/src/core/tools/render-utils.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/image-convert.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/tree-selector.ts": [
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/trust-selector.ts": [
+    "packages/coding-agent/src/core/trust-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/user-message-selector.ts": [
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/components/user-message.ts": [
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/interactive-mode.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/agent-session-runtime.ts",
+    "packages/coding-agent/src/core/agent-session.ts",
+    "packages/coding-agent/src/core/cache-stats.ts",
+    "packages/coding-agent/src/core/diagnostics.ts",
+    "packages/coding-agent/src/core/extensions/runner.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/footer-data-provider.ts",
+    "packages/coding-agent/src/core/http-dispatcher.ts",
+    "packages/coding-agent/src/core/keybindings.ts",
+    "packages/coding-agent/src/core/messages.ts",
+    "packages/coding-agent/src/core/model-resolver.ts",
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/package-manager.ts",
+    "packages/coding-agent/src/core/session-cwd.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/core/source-info.ts",
+    "packages/coding-agent/src/core/telemetry.ts",
+    "packages/coding-agent/src/core/trust-manager.ts",
+    "packages/coding-agent/src/modes/interactive/components/armin.ts",
+    "packages/coding-agent/src/modes/interactive/components/assistant-message.ts",
+    "packages/coding-agent/src/modes/interactive/components/bash-execution.ts",
+    "packages/coding-agent/src/modes/interactive/components/bordered-loader.ts",
+    "packages/coding-agent/src/modes/interactive/components/branch-summary-message.ts",
+    "packages/coding-agent/src/modes/interactive/components/compaction-summary-message.ts",
+    "packages/coding-agent/src/modes/interactive/components/custom-editor.ts",
+    "packages/coding-agent/src/modes/interactive/components/custom-entry.ts",
+    "packages/coding-agent/src/modes/interactive/components/custom-message.ts",
+    "packages/coding-agent/src/modes/interactive/components/daxnuts.ts",
+    "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "packages/coding-agent/src/modes/interactive/components/earendil-announcement.ts",
+    "packages/coding-agent/src/modes/interactive/components/extension-editor.ts",
+    "packages/coding-agent/src/modes/interactive/components/extension-input.ts",
+    "packages/coding-agent/src/modes/interactive/components/extension-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/footer.ts",
+    "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "packages/coding-agent/src/modes/interactive/components/login-dialog.ts",
+    "packages/coding-agent/src/modes/interactive/components/model-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/oauth-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/session-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/settings-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/skill-invocation-message.ts",
+    "packages/coding-agent/src/modes/interactive/components/status-indicator.ts",
+    "packages/coding-agent/src/modes/interactive/components/tool-execution.ts",
+    "packages/coding-agent/src/modes/interactive/components/tree-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/trust-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/user-message-selector.ts",
+    "packages/coding-agent/src/modes/interactive/components/user-message.ts",
+    "packages/coding-agent/src/modes/interactive/model-search.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme-controller.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/utils/changelog.ts",
+    "packages/coding-agent/src/utils/clipboard-image.ts",
+    "packages/coding-agent/src/utils/clipboard.ts",
+    "packages/coding-agent/src/utils/git.ts",
+    "packages/coding-agent/src/utils/paths.ts",
+    "packages/coding-agent/src/utils/pi-user-agent.ts",
+    "packages/coding-agent/src/utils/shell.ts",
+    "packages/coding-agent/src/utils/tools-manager.ts",
+    "packages/coding-agent/src/utils/version-check.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/theme/theme-controller.ts": [
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts"
+  ],
+  "packages/coding-agent/src/modes/interactive/theme/theme.ts": [
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/source-info.ts",
+    "packages/coding-agent/src/utils/fs-watch.ts",
+    "packages/coding-agent/src/utils/syntax-highlight.ts"
+  ],
+  "packages/coding-agent/src/modes/print-mode.ts": [
+    "packages/coding-agent/src/core/agent-session-runtime.ts",
+    "packages/coding-agent/src/core/agent-session.ts",
+    "packages/coding-agent/src/core/output-guard.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/utils/shell.ts"
+  ],
+  "packages/coding-agent/src/modes/rpc/rpc-client.ts": [
+    "packages/coding-agent/src/core/agent-session.ts",
+    "packages/coding-agent/src/core/bash-executor.ts",
+    "packages/coding-agent/src/core/compaction/compaction.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/modes/rpc/jsonl.ts",
+    "packages/coding-agent/src/modes/rpc/rpc-types.ts"
+  ],
+  "packages/coding-agent/src/modes/rpc/rpc-mode.ts": [
+    "packages/coding-agent/src/core/agent-session-runtime.ts",
+    "packages/coding-agent/src/core/agent-session.ts",
+    "packages/coding-agent/src/core/extensions/runner.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/output-guard.ts",
+    "packages/coding-agent/src/core/session-manager.ts",
+    "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "packages/coding-agent/src/modes/rpc/jsonl.ts",
+    "packages/coding-agent/src/modes/rpc/rpc-types.ts",
+    "packages/coding-agent/src/utils/shell.ts"
+  ],
+  "packages/coding-agent/src/package-manager-cli.ts": [
+    "packages/coding-agent/src/cli/config-selector.ts",
+    "packages/coding-agent/src/cli/project-trust.ts",
+    "packages/coding-agent/src/config.ts",
+    "packages/coding-agent/src/core/extensions/types.ts",
+    "packages/coding-agent/src/core/model-runtime.ts",
+    "packages/coding-agent/src/core/package-manager.ts",
+    "packages/coding-agent/src/core/project-trust.ts",
+    "packages/coding-agent/src/core/resource-loader.ts",
+    "packages/coding-agent/src/core/settings-manager.ts",
+    "packages/coding-agent/src/core/trust-manager.ts",
+    "packages/coding-agent/src/utils/child-process.ts",
+    "packages/coding-agent/src/utils/version-check.ts",
+    "packages/coding-agent/src/utils/windows-self-update.ts"
+  ],
+  "packages/coding-agent/src/rpc-entry.ts": [
+    "packages/coding-agent/src/core/http-dispatcher.ts",
+    "packages/coding-agent/src/main.ts"
+  ],
+  "packages/coding-agent/src/utils/clipboard-image.ts": [
+    "packages/coding-agent/src/utils/photon.ts"
+  ],
+  "packages/coding-agent/src/utils/clipboard.ts": [
+    "packages/coding-agent/src/utils/clipboard-image.ts"
+  ],
+  "packages/coding-agent/src/utils/image-convert.ts": [
+    "packages/coding-agent/src/utils/exif-orientation.ts",
+    "packages/coding-agent/src/utils/photon.ts"
+  ],
+  "packages/coding-agent/src/utils/image-process.ts": [
+    "packages/coding-agent/src/utils/image-convert.ts",
+    "packages/coding-agent/src/utils/image-resize.ts"
+  ],
+  "packages/coding-agent/src/utils/image-resize-core.ts": [
+    "packages/coding-agent/src/utils/exif-orientation.ts",
+    "packages/coding-agent/src/utils/photon.ts"
+  ],
+  "packages/coding-agent/src/utils/image-resize-worker.ts": [
+    "packages/coding-agent/src/utils/image-resize-core.ts"
+  ],
+  "packages/coding-agent/src/utils/image-resize.ts": [
+    "packages/coding-agent/src/utils/image-resize-core.ts"
+  ],
+  "packages/coding-agent/src/utils/paths.ts": [
+    "packages/coding-agent/src/utils/child-process.ts"
+  ],
+  "packages/coding-agent/src/utils/shell.ts": [
+    "packages/coding-agent/src/config.ts"
+  ],
+  "packages/coding-agent/src/utils/syntax-highlight.ts": [
+    "packages/coding-agent/src/utils/html.ts"
+  ],
+  "packages/coding-agent/src/utils/tools-manager.ts": [
+    "packages/coding-agent/src/config.ts"
+  ],
+  "packages/coding-agent/src/utils/version-check.ts": [
+    "packages/coding-agent/src/utils/pi-user-agent.ts"
+  ],
+  "packages/coding-agent/src/utils/windows-self-update.ts": [
+    "packages/coding-agent/src/utils/paths.ts"
+  ],
+  "packages/orchestrator/src/cli.ts": [
+    "packages/orchestrator/src/config.ts",
+    "packages/orchestrator/src/ipc/client.ts",
+    "packages/orchestrator/src/ipc/protocol.ts",
+    "packages/orchestrator/src/serve.ts"
+  ],
+  "packages/orchestrator/src/handler.ts": [
+    "packages/orchestrator/src/ipc/protocol.ts",
+    "packages/orchestrator/src/supervisor.ts",
+    "packages/orchestrator/src/types.ts"
+  ],
+  "packages/orchestrator/src/ipc/client.ts": [
+    "packages/orchestrator/src/config.ts",
+    "packages/orchestrator/src/ipc/protocol.ts"
+  ],
+  "packages/orchestrator/src/ipc/server.ts": [
+    "packages/orchestrator/src/config.ts",
+    "packages/orchestrator/src/ipc/protocol.ts"
+  ],
+  "packages/orchestrator/src/radius.ts": [
+    "packages/orchestrator/src/config.ts",
+    "packages/orchestrator/src/storage.ts",
+    "packages/orchestrator/src/types.ts"
+  ],
+  "packages/orchestrator/src/serve.ts": [
+    "packages/orchestrator/src/config.ts",
+    "packages/orchestrator/src/handler.ts",
+    "packages/orchestrator/src/ipc/server.ts",
+    "packages/orchestrator/src/radius.ts",
+    "packages/orchestrator/src/supervisor.ts"
+  ],
+  "packages/orchestrator/src/storage.ts": [
+    "packages/orchestrator/src/config.ts",
+    "packages/orchestrator/src/types.ts"
+  ],
+  "packages/orchestrator/src/supervisor.ts": [
+    "packages/orchestrator/src/radius.ts",
+    "packages/orchestrator/src/rpc-process.ts",
+    "packages/orchestrator/src/storage.ts",
+    "packages/orchestrator/src/types.ts"
+  ],
+  "packages/tui/src/autocomplete.ts": [
+    "packages/tui/src/fuzzy.ts"
+  ],
+  "packages/tui/src/components/box.ts": [
+    "packages/tui/src/tui.ts",
+    "packages/tui/src/utils.ts"
+  ],
+  "packages/tui/src/components/cancellable-loader.ts": [
+    "packages/tui/src/components/loader.ts",
+    "packages/tui/src/keybindings.ts"
+  ],
+  "packages/tui/src/components/editor.ts": [
+    "packages/tui/src/autocomplete.ts",
+    "packages/tui/src/components/select-list.ts",
+    "packages/tui/src/keybindings.ts",
+    "packages/tui/src/keys.ts",
+    "packages/tui/src/kill-ring.ts",
+    "packages/tui/src/tui.ts",
+    "packages/tui/src/undo-stack.ts",
+    "packages/tui/src/utils.ts",
+    "packages/tui/src/word-navigation.ts"
+  ],
+  "packages/tui/src/components/image.ts": [
+    "packages/tui/src/terminal-image.ts",
+    "packages/tui/src/tui.ts"
+  ],
+  "packages/tui/src/components/input.ts": [
+    "packages/tui/src/keybindings.ts",
+    "packages/tui/src/keys.ts",
+    "packages/tui/src/kill-ring.ts",
+    "packages/tui/src/tui.ts",
+    "packages/tui/src/undo-stack.ts",
+    "packages/tui/src/utils.ts",
+    "packages/tui/src/word-navigation.ts"
+  ],
+  "packages/tui/src/components/loader.ts": [
+    "packages/tui/src/components/text.ts",
+    "packages/tui/src/tui.ts"
+  ],
+  "packages/tui/src/components/markdown.ts": [
+    "packages/tui/src/terminal-image.ts",
+    "packages/tui/src/tui.ts",
+    "packages/tui/src/utils.ts"
+  ],
+  "packages/tui/src/components/select-list.ts": [
+    "packages/tui/src/keybindings.ts",
+    "packages/tui/src/tui.ts",
+    "packages/tui/src/utils.ts"
+  ],
+  "packages/tui/src/components/settings-list.ts": [
+    "packages/tui/src/components/input.ts",
+    "packages/tui/src/fuzzy.ts",
+    "packages/tui/src/keybindings.ts",
+    "packages/tui/src/tui.ts",
+    "packages/tui/src/utils.ts"
+  ],
+  "packages/tui/src/components/spacer.ts": [
+    "packages/tui/src/tui.ts"
+  ],
+  "packages/tui/src/components/text.ts": [
+    "packages/tui/src/tui.ts",
+    "packages/tui/src/utils.ts"
+  ],
+  "packages/tui/src/components/truncated-text.ts": [
+    "packages/tui/src/tui.ts",
+    "packages/tui/src/utils.ts"
+  ],
+  "packages/tui/src/keybindings.ts": [
+    "packages/tui/src/keys.ts"
+  ],
+  "packages/tui/src/terminal.ts": [
+    "packages/tui/src/keys.ts",
+    "packages/tui/src/native-modifiers.ts",
+    "packages/tui/src/stdin-buffer.ts"
+  ],
+  "packages/tui/src/tui.ts": [
+    "packages/tui/src/keys.ts",
+    "packages/tui/src/terminal-colors.ts",
+    "packages/tui/src/terminal-image.ts",
+    "packages/tui/src/terminal.ts",
+    "packages/tui/src/utils.ts"
+  ],
+  "packages/tui/src/word-navigation.ts": [
+    "packages/tui/src/utils.ts"
+  ]
+}

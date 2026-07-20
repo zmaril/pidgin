@@ -1,0 +1,3442 @@
+[
+  {
+    "src": "packages/agent/src/agent-loop.ts",
+    "package": "agent",
+    "band": "DONE",
+    "coverage": 0.852,
+    "matched_symbols": 23,
+    "total_symbols": 27,
+    "mapped_target": "agent_loop",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/agent/src/agent.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.814,
+    "matched_symbols": 35,
+    "total_symbols": 43,
+    "mapped_target": "agent",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/agent-harness.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.729,
+    "matched_symbols": 51,
+    "total_symbols": 70,
+    "mapped_target": "harness/agent_harness",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/compaction/branch-summarization.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 8,
+    "total_symbols": 8,
+    "mapped_target": "harness/compaction/branch_summarization",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/compaction/compaction.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 25,
+    "total_symbols": 25,
+    "mapped_target": "harness/compaction/compaction",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/compaction/utils.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 8,
+    "total_symbols": 8,
+    "mapped_target": "harness/compaction/utils",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/env/nodejs.ts",
+    "package": "agent",
+    "band": "DONE",
+    "coverage": 0.838,
+    "matched_symbols": 31,
+    "total_symbols": 37,
+    "mapped_target": "harness/env/nodejs",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/agent/src/harness/messages.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.6,
+    "matched_symbols": 6,
+    "total_symbols": 10,
+    "mapped_target": "harness/messages",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/prompt-templates.ts",
+    "package": "agent",
+    "band": "DONE",
+    "coverage": 0.923,
+    "matched_symbols": 12,
+    "total_symbols": 13,
+    "mapped_target": "harness/prompt_templates",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/agent/src/harness/session/jsonl-repo.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.615,
+    "matched_symbols": 8,
+    "total_symbols": 13,
+    "mapped_target": "harness/session/repo",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/session/jsonl-storage.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.778,
+    "matched_symbols": 21,
+    "total_symbols": 27,
+    "mapped_target": "harness/session/jsonl_storage",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/session/memory-repo.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 6,
+    "total_symbols": 6,
+    "mapped_target": "harness/session/repo",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/session/memory-storage.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.875,
+    "matched_symbols": 14,
+    "total_symbols": 16,
+    "mapped_target": "harness/session",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/session/repo-utils.ts",
+    "package": "agent",
+    "band": "STARTED",
+    "coverage": 0.4,
+    "matched_symbols": 2,
+    "total_symbols": 5,
+    "mapped_target": "harness/session/repo",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/session/session.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.875,
+    "matched_symbols": 28,
+    "total_symbols": 32,
+    "mapped_target": "harness/session/session",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/session/uuid.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 2,
+    "total_symbols": 3,
+    "mapped_target": "harness/session/uuid",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/skills.ts",
+    "package": "agent",
+    "band": "DONE",
+    "coverage": 0.947,
+    "matched_symbols": 18,
+    "total_symbols": 19,
+    "mapped_target": "harness/skills",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/agent/src/harness/system-prompt.ts",
+    "package": "agent",
+    "band": "DONE",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "harness/system_prompt",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/agent/src/harness/types.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.802,
+    "matched_symbols": 81,
+    "total_symbols": 101,
+    "mapped_target": "harness/types",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/utils/shell-output.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.875,
+    "matched_symbols": 7,
+    "total_symbols": 8,
+    "mapped_target": "harness/utils/shell_output",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/harness/utils/truncate.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 8,
+    "total_symbols": 10,
+    "mapped_target": "harness/utils/truncate",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/proxy.ts",
+    "package": "agent",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 3,
+    "total_symbols": 9,
+    "mapped_target": "proxy",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/agent/src/types.ts",
+    "package": "agent",
+    "band": "PORTED",
+    "coverage": 0.783,
+    "matched_symbols": 18,
+    "total_symbols": 23,
+    "mapped_target": "types",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/anthropic-messages.lazy.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/anthropic-messages.ts",
+    "package": "ai",
+    "band": "DONE",
+    "coverage": 0.824,
+    "matched_symbols": 28,
+    "total_symbols": 34,
+    "mapped_target": "api/anthropic",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/ai/src/api/azure-openai-responses.lazy.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": "api/azure_openai_responses",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/azure-openai-responses.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.818,
+    "matched_symbols": 9,
+    "total_symbols": 11,
+    "mapped_target": "api/azure_openai_responses",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/bedrock-converse-stream.lazy.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/bedrock-converse-stream.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.889,
+    "matched_symbols": 32,
+    "total_symbols": 36,
+    "mapped_target": "api/bedrock",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/github-copilot-headers.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/google-generative-ai.lazy.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": "api/google_generative_ai",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/google-generative-ai.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.308,
+    "matched_symbols": 4,
+    "total_symbols": 13,
+    "mapped_target": "api/google_generative_ai",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/google-shared.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.875,
+    "matched_symbols": 14,
+    "total_symbols": 16,
+    "mapped_target": "api/google_shared",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/google-vertex.lazy.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": "api/google_vertex",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/google-vertex.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.571,
+    "matched_symbols": 12,
+    "total_symbols": 21,
+    "mapped_target": "api/google_vertex",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/lazy.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.714,
+    "matched_symbols": 5,
+    "total_symbols": 7,
+    "mapped_target": "api/lazy",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/mistral-conversations.lazy.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/mistral-conversations.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.808,
+    "matched_symbols": 21,
+    "total_symbols": 26,
+    "mapped_target": "api/mistral",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openai-codex-responses.lazy.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openai-codex-responses.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.047,
+    "matched_symbols": 4,
+    "total_symbols": 85,
+    "mapped_target": "api",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openai-completions.lazy.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": "api/openai_completions",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openai-completions.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.54,
+    "matched_symbols": 27,
+    "total_symbols": 50,
+    "mapped_target": "api/openai_completions",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openai-prompt-cache.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": "api/openai_prompt_cache",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openai-responses-shared.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.6,
+    "matched_symbols": 12,
+    "total_symbols": 20,
+    "mapped_target": "api/openai_responses_shared",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openai-responses.lazy.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": "api/openai_responses",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openai-responses.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.714,
+    "matched_symbols": 10,
+    "total_symbols": 14,
+    "mapped_target": "api/openai_responses",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openrouter-images.lazy.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 2,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/openrouter-images.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.111,
+    "matched_symbols": 1,
+    "total_symbols": 9,
+    "mapped_target": "api",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/pi-messages.lazy.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/pi-messages.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.136,
+    "matched_symbols": 3,
+    "total_symbols": 22,
+    "mapped_target": "api",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/simple-options.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 4,
+    "total_symbols": 4,
+    "mapped_target": "api/anthropic/simple_options",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/api/transform-messages.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 4,
+    "total_symbols": 4,
+    "mapped_target": "api",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/auth/context.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.286,
+    "matched_symbols": 2,
+    "total_symbols": 7,
+    "mapped_target": "auth/context",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/auth/credential-store.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.833,
+    "matched_symbols": 5,
+    "total_symbols": 6,
+    "mapped_target": "auth/credential_store",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/auth/helpers.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.857,
+    "matched_symbols": 6,
+    "total_symbols": 7,
+    "mapped_target": "auth/helpers",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/auth/oauth/anthropic.ts",
+    "package": "ai",
+    "band": "DONE",
+    "coverage": 0.267,
+    "matched_symbols": 4,
+    "total_symbols": 15,
+    "mapped_target": "auth/oauth/anthropic",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/ai/src/auth/oauth/device-code.ts",
+    "package": "ai",
+    "band": "DONE",
+    "coverage": 0.167,
+    "matched_symbols": 1,
+    "total_symbols": 6,
+    "mapped_target": "auth/oauth/device_code",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/ai/src/auth/oauth/github-copilot.ts",
+    "package": "ai",
+    "band": "DONE",
+    "coverage": 0.208,
+    "matched_symbols": 5,
+    "total_symbols": 24,
+    "mapped_target": "auth/oauth/github_copilot",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/ai/src/auth/oauth/load.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 8,
+    "mapped_target": "auth/oauth/load",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/auth/oauth/oauth-page.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 4,
+    "total_symbols": 4,
+    "mapped_target": "auth/oauth/oauth_page",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/auth/oauth/openai-codex.ts",
+    "package": "ai",
+    "band": "DONE",
+    "coverage": 0.258,
+    "matched_symbols": 8,
+    "total_symbols": 31,
+    "mapped_target": "auth/oauth/openai_codex",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/ai/src/auth/oauth/pkce.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "auth/oauth/pkce",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/auth/oauth/radius.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 8,
+    "total_symbols": 24,
+    "mapped_target": "auth/oauth/radius",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/auth/oauth/xai.ts",
+    "package": "ai",
+    "band": "DONE",
+    "coverage": 0.529,
+    "matched_symbols": 9,
+    "total_symbols": 17,
+    "mapped_target": "auth/oauth/xai",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/ai/src/auth/resolve.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.727,
+    "matched_symbols": 8,
+    "total_symbols": 11,
+    "mapped_target": "auth/resolve",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/auth/types.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 12,
+    "total_symbols": 18,
+    "mapped_target": "auth/types",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/bun-oauth.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 5,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/cli.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.429,
+    "matched_symbols": 3,
+    "total_symbols": 7,
+    "mapped_target": "auth/oauth",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/compat.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.52,
+    "matched_symbols": 13,
+    "total_symbols": 25,
+    "mapped_target": "compat",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/compat/extension-oauth-types.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.833,
+    "matched_symbols": 5,
+    "total_symbols": 6,
+    "mapped_target": "auth/oauth/extension",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/env-api-keys.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 4,
+    "total_symbols": 6,
+    "mapped_target": "env_api_keys",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/image-models.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 4,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/images-api-registry.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 7,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/images-models.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.45,
+    "matched_symbols": 9,
+    "total_symbols": 20,
+    "mapped_target": "providers/registry",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/images.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 2,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/legacy-api-aliases.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": null,
+    "matched_symbols": 0,
+    "total_symbols": 0,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/models-store.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.714,
+    "matched_symbols": 5,
+    "total_symbols": 7,
+    "mapped_target": "models_store",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/models.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 34,
+    "total_symbols": 51,
+    "mapped_target": "providers/registry",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/all.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.222,
+    "matched_symbols": 2,
+    "total_symbols": 9,
+    "mapped_target": "providers/builtins",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/amazon-bedrock.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 2,
+    "total_symbols": 3,
+    "mapped_target": "auth/helpers",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/ant-ling.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/anthropic.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/azure-openai-responses.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/cerebras.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/cloudflare-ai-gateway.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/cloudflare-auth.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.286,
+    "matched_symbols": 2,
+    "total_symbols": 7,
+    "mapped_target": "auth/helpers",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/cloudflare-stream.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 2,
+    "total_symbols": 4,
+    "mapped_target": "providers",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/cloudflare-workers-ai.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/deepseek.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/faux.ts",
+    "package": "ai",
+    "band": "DONE",
+    "coverage": 0.722,
+    "matched_symbols": 26,
+    "total_symbols": 36,
+    "mapped_target": "providers/faux",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/ai/src/providers/fireworks.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/github-copilot.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 1,
+    "total_symbols": 2,
+    "mapped_target": "providers/registry",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/google-vertex.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 2,
+    "total_symbols": 3,
+    "mapped_target": "auth/helpers",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/google.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/groq.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/huggingface.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/images/register-builtins.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 5,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/kimi-coding.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/minimax-cn.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/minimax.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/mistral.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/moonshotai-cn.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/moonshotai.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/nvidia.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/openai-codex.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/openai.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/opencode-go.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/opencode.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/openrouter-images.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/openrouter.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/radius-config.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.083,
+    "matched_symbols": 1,
+    "total_symbols": 12,
+    "mapped_target": "auth/oauth/radius",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/radius.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.714,
+    "matched_symbols": 5,
+    "total_symbols": 7,
+    "mapped_target": "providers",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/together.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/vercel-ai-gateway.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/xai.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/xiaomi-token-plan-ams.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/xiaomi-token-plan-cn.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/xiaomi-token-plan-sgp.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/xiaomi.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/zai-coding-cn.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/providers/zai.ts",
+    "package": "ai",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/session-resources.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 2,
+    "total_symbols": 3,
+    "mapped_target": "session_resources",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/types.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.593,
+    "matched_symbols": 35,
+    "total_symbols": 59,
+    "mapped_target": "types",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/abort-signals.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.2,
+    "matched_symbols": 1,
+    "total_symbols": 5,
+    "mapped_target": "seams/provider",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/deferred-tools.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 1,
+    "total_symbols": 3,
+    "mapped_target": "utils/deferred_tools",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/diagnostics.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 6,
+    "total_symbols": 6,
+    "mapped_target": "utils/diagnostics",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/error-body.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.9,
+    "matched_symbols": 9,
+    "total_symbols": 10,
+    "mapped_target": "utils/error_body",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/estimate.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.833,
+    "matched_symbols": 10,
+    "total_symbols": 12,
+    "mapped_target": "utils/estimate",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/event-stream.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.556,
+    "matched_symbols": 5,
+    "total_symbols": 9,
+    "mapped_target": "utils/event_stream",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/hash.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 1,
+    "total_symbols": 1,
+    "mapped_target": "utils/hash",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/headers.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "utils/headers",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/json-parse.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 5,
+    "total_symbols": 5,
+    "mapped_target": "utils/json_parse",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/node-http-proxy.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 4,
+    "total_symbols": 5,
+    "mapped_target": "utils/node_http_proxy",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/overflow.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "utils/overflow",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/provider-env.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 1,
+    "total_symbols": 2,
+    "mapped_target": "utils/provider_env",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/retry.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "utils/retry",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/sanitize-unicode.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 1,
+    "total_symbols": 1,
+    "mapped_target": "utils/sanitize_unicode",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/typebox-helpers.ts",
+    "package": "ai",
+    "band": "STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": "utils/typebox_helpers",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/ai/src/utils/validation.ts",
+    "package": "ai",
+    "band": "PORTED",
+    "coverage": 0.692,
+    "matched_symbols": 9,
+    "total_symbols": 13,
+    "mapped_target": "utils/validation",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/bun/cli.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": null,
+    "matched_symbols": 0,
+    "total_symbols": 0,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/bun/register-bedrock.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": null,
+    "matched_symbols": 0,
+    "total_symbols": 0,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/bun/restore-sandbox-env.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/cli.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": null,
+    "matched_symbols": 0,
+    "total_symbols": 0,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/cli/args.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 5,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/cli/config-selector.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 2,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/cli/file-processor.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/cli/initial-message.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/cli/list-models.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 2,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/cli/project-trust.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.6,
+    "matched_symbols": 3,
+    "total_symbols": 5,
+    "mapped_target": "extensions/llama/ui",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/cli/session-picker.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 2,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/cli/startup-ui.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.059,
+    "matched_symbols": 1,
+    "total_symbols": 17,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/config.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.093,
+    "matched_symbols": 4,
+    "total_symbols": 43,
+    "mapped_target": "core/auth/auth_guidance",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/agent-session-runtime.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.68,
+    "matched_symbols": 17,
+    "total_symbols": 25,
+    "mapped_target": "core/agent_session/runtime",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/agent-session-services.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 7,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/agent-session.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.513,
+    "matched_symbols": 78,
+    "total_symbols": 152,
+    "mapped_target": "core/agent_session",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/auth-guidance.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 4,
+    "total_symbols": 4,
+    "mapped_target": "core/auth/auth_guidance",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/auth-storage.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.63,
+    "matched_symbols": 17,
+    "total_symbols": 27,
+    "mapped_target": "core/auth/auth_storage",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/bash-executor.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.6,
+    "matched_symbols": 3,
+    "total_symbols": 5,
+    "mapped_target": "core/agent_session/bash",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/cache-stats.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.9,
+    "matched_symbols": 9,
+    "total_symbols": 10,
+    "mapped_target": "core/cache_stats",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/compaction/branch-summarization.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 9,
+    "total_symbols": 9,
+    "mapped_target": "core/compaction/branch_summarization",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/compaction/compaction.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.929,
+    "matched_symbols": 26,
+    "total_symbols": 28,
+    "mapped_target": "core/compaction/compaction",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/compaction/utils.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 7,
+    "total_symbols": 7,
+    "mapped_target": "core/compaction/utils",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/diagnostics.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "core/diagnostics",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/event-bus.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.571,
+    "matched_symbols": 4,
+    "total_symbols": 7,
+    "mapped_target": "core/event_bus",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/exec.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 4,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/experimental.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 1,
+    "total_symbols": 1,
+    "mapped_target": "core/experimental",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/export-html/ansi-to-html.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.818,
+    "matched_symbols": 9,
+    "total_symbols": 11,
+    "mapped_target": "core/export_html/ansi_to_html",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/export-html/index.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 10,
+    "total_symbols": 15,
+    "mapped_target": "core/export_html",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/export-html/tool-renderer.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.3,
+    "matched_symbols": 3,
+    "total_symbols": 10,
+    "mapped_target": "core/export_html/tool_renderer",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/extensions/loader.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.596,
+    "matched_symbols": 31,
+    "total_symbols": 52,
+    "mapped_target": "core/extensions/loader",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/extensions/runner.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.378,
+    "matched_symbols": 45,
+    "total_symbols": 119,
+    "mapped_target": "core/extensions/runner",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/extensions/types.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.46,
+    "matched_symbols": 64,
+    "total_symbols": 139,
+    "mapped_target": "core/extensions/types",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/extensions/wrapper.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 1,
+    "total_symbols": 3,
+    "mapped_target": "core/tools/bash",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/footer-data-provider.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.321,
+    "matched_symbols": 9,
+    "total_symbols": 28,
+    "mapped_target": "core/footer_data_provider",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/http-dispatcher.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.25,
+    "matched_symbols": 2,
+    "total_symbols": 8,
+    "mapped_target": "core/http_dispatcher",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/keybindings.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.643,
+    "matched_symbols": 9,
+    "total_symbols": 14,
+    "mapped_target": "core/keybindings",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/messages.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.9,
+    "matched_symbols": 9,
+    "total_symbols": 10,
+    "mapped_target": "core/messages",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/model-config.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.75,
+    "matched_symbols": 9,
+    "total_symbols": 12,
+    "mapped_target": "core/model_config",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/model-registry.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.905,
+    "matched_symbols": 19,
+    "total_symbols": 21,
+    "mapped_target": "core/model_registry",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/model-resolver.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 16,
+    "total_symbols": 16,
+    "mapped_target": "core/model_resolver",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/model-runtime.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.766,
+    "matched_symbols": 36,
+    "total_symbols": 47,
+    "mapped_target": "core/model_runtime",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/models-store.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.818,
+    "matched_symbols": 9,
+    "total_symbols": 11,
+    "mapped_target": "core/models_store",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/output-guard.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.111,
+    "matched_symbols": 1,
+    "total_symbols": 9,
+    "mapped_target": "core/output_guard",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/package-manager.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.436,
+    "matched_symbols": 68,
+    "total_symbols": 156,
+    "mapped_target": "core/package_manager",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/project-trust.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 6,
+    "total_symbols": 6,
+    "mapped_target": "core/project_trust",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/prompt-templates.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.9,
+    "matched_symbols": 9,
+    "total_symbols": 10,
+    "mapped_target": "core/prompt_templates",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/provider-attribution.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.571,
+    "matched_symbols": 4,
+    "total_symbols": 7,
+    "mapped_target": "core/provider_attribution",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/provider-composer.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.923,
+    "matched_symbols": 36,
+    "total_symbols": 39,
+    "mapped_target": "core/provider_composer",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/remote-catalog-provider.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 4,
+    "total_symbols": 5,
+    "mapped_target": "core/remote_catalog_provider",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/resolve-config-value.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.913,
+    "matched_symbols": 21,
+    "total_symbols": 23,
+    "mapped_target": "core/resolve_config_value",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/resource-loader.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 36,
+    "total_symbols": 45,
+    "mapped_target": "core/resource_loader",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/runtime-credentials.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.889,
+    "matched_symbols": 8,
+    "total_symbols": 9,
+    "mapped_target": "core/auth/runtime_credentials",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/sdk.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.4,
+    "matched_symbols": 4,
+    "total_symbols": 10,
+    "mapped_target": "core/sdk",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/session-cwd.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.75,
+    "matched_symbols": 6,
+    "total_symbols": 8,
+    "mapped_target": "core/session_cwd",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/session-manager.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.819,
+    "matched_symbols": 77,
+    "total_symbols": 94,
+    "mapped_target": "core/session_manager",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/settings-manager.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.896,
+    "matched_symbols": 138,
+    "total_symbols": 154,
+    "mapped_target": "core/settings_manager",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/skills.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.857,
+    "matched_symbols": 18,
+    "total_symbols": 21,
+    "mapped_target": "core/skills",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/slash-commands.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 3,
+    "total_symbols": 3,
+    "mapped_target": "core/slash_commands",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/source-info.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 4,
+    "total_symbols": 5,
+    "mapped_target": "core/source_info",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/system-prompt.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 2,
+    "total_symbols": 3,
+    "mapped_target": "core/system_prompt",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/telemetry.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "core/telemetry",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/timings.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.167,
+    "matched_symbols": 1,
+    "total_symbols": 6,
+    "mapped_target": "core/timings",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/bash.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.452,
+    "matched_symbols": 14,
+    "total_symbols": 31,
+    "mapped_target": "core/tools/bash",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/edit-diff.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.655,
+    "matched_symbols": 19,
+    "total_symbols": 29,
+    "mapped_target": "core/tools/edit_diff",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/edit.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.276,
+    "matched_symbols": 8,
+    "total_symbols": 29,
+    "mapped_target": "core/tools/edit",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/file-mutation-queue.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 1,
+    "total_symbols": 3,
+    "mapped_target": "core/tools/file_mutation_queue",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/find.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.313,
+    "matched_symbols": 5,
+    "total_symbols": 16,
+    "mapped_target": "core/tools/find",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/grep.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.3,
+    "matched_symbols": 6,
+    "total_symbols": 20,
+    "mapped_target": "core/tools/grep",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/index.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.917,
+    "matched_symbols": 11,
+    "total_symbols": 12,
+    "mapped_target": "core/tools/index",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/ls.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.25,
+    "matched_symbols": 3,
+    "total_symbols": 12,
+    "mapped_target": "core/tools/ls",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/output-accumulator.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 12,
+    "total_symbols": 18,
+    "mapped_target": "core/tools/output_accumulator",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/path-utils.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.778,
+    "matched_symbols": 7,
+    "total_symbols": 9,
+    "mapped_target": "core/tools/path_utils",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/read.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.174,
+    "matched_symbols": 4,
+    "total_symbols": 23,
+    "mapped_target": "core/tools/read",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/render-utils.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.778,
+    "matched_symbols": 7,
+    "total_symbols": 9,
+    "mapped_target": "core/tools/render_utils",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/tool-definition-wrapper.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 4,
+    "total_symbols": 4,
+    "mapped_target": "core/tools/tool_definition_wrapper",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/truncate.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 1.0,
+    "matched_symbols": 8,
+    "total_symbols": 8,
+    "mapped_target": "core/tools/truncate",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/tools/write.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.238,
+    "matched_symbols": 5,
+    "total_symbols": 21,
+    "mapped_target": "core/tools/write",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/core/trust-manager.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.75,
+    "matched_symbols": 15,
+    "total_symbols": 20,
+    "mapped_target": "core/trust_manager",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/extensions/index.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": null,
+    "matched_symbols": 0,
+    "total_symbols": 0,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/extensions/llama/client.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.923,
+    "matched_symbols": 24,
+    "total_symbols": 26,
+    "mapped_target": "extensions/llama/client",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/extensions/llama/huggingface.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.917,
+    "matched_symbols": 11,
+    "total_symbols": 12,
+    "mapped_target": "extensions/llama/huggingface",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/extensions/llama/index.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.067,
+    "matched_symbols": 1,
+    "total_symbols": 15,
+    "mapped_target": "modes/interactive/app",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/extensions/llama/provider.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 13,
+    "total_symbols": 13,
+    "mapped_target": "extensions/llama/provider",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/extensions/llama/ui.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.718,
+    "matched_symbols": 28,
+    "total_symbols": 39,
+    "mapped_target": "extensions/llama/ui",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/main.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.08,
+    "matched_symbols": 2,
+    "total_symbols": 25,
+    "mapped_target": "core",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/migrations.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 9,
+    "total_symbols": 9,
+    "mapped_target": "migrations",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/armin.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.182,
+    "matched_symbols": 4,
+    "total_symbols": 22,
+    "mapped_target": "widgets/loader",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/assistant-message.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.667,
+    "matched_symbols": 6,
+    "total_symbols": 9,
+    "mapped_target": "modes/interactive/components/assistant_message",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/bash-execution.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.455,
+    "matched_symbols": 5,
+    "total_symbols": 11,
+    "mapped_target": "modes/interactive/components/tool_execution",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/bordered-loader.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.429,
+    "matched_symbols": 3,
+    "total_symbols": 7,
+    "mapped_target": "core/agent_session",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/branch-summary-message.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 3,
+    "total_symbols": 6,
+    "mapped_target": "modes/interactive/components/tool_execution",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/compaction-summary-message.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 3,
+    "total_symbols": 6,
+    "mapped_target": "modes/interactive/components/tool_execution",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/config-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.111,
+    "matched_symbols": 7,
+    "total_symbols": 63,
+    "mapped_target": "core",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/countdown-timer.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 1,
+    "total_symbols": 3,
+    "mapped_target": "core/agent_session",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/custom-editor.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.25,
+    "matched_symbols": 1,
+    "total_symbols": 4,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/custom-entry.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 3,
+    "total_symbols": 6,
+    "mapped_target": "modes/interactive/components/tool_execution",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/custom-message.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 3,
+    "total_symbols": 6,
+    "mapped_target": "modes/interactive/components/tool_execution",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/daxnuts.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.273,
+    "matched_symbols": 3,
+    "total_symbols": 11,
+    "mapped_target": "core/agent_session",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/diff.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 4,
+    "total_symbols": 5,
+    "mapped_target": "core/tools/diff_render",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/dynamic-border.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.75,
+    "matched_symbols": 3,
+    "total_symbols": 4,
+    "mapped_target": "modes/interactive/components/dynamic_border",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/earendil-announcement.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 4,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/extension-editor.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 2,
+    "total_symbols": 6,
+    "mapped_target": "core/settings_manager/manager",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/extension-input.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 2,
+    "total_symbols": 6,
+    "mapped_target": "core/agent_session",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/extension-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 2,
+    "total_symbols": 6,
+    "mapped_target": "core/agent_session",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/first-time-setup.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.125,
+    "matched_symbols": 1,
+    "total_symbols": 8,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/footer.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.7,
+    "matched_symbols": 7,
+    "total_symbols": 10,
+    "mapped_target": "modes/interactive/components/footer",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/keybinding-hints.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.875,
+    "matched_symbols": 7,
+    "total_symbols": 8,
+    "mapped_target": "modes/interactive/components/keybinding_hints",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/login-dialog.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.133,
+    "matched_symbols": 2,
+    "total_symbols": 15,
+    "mapped_target": "auth/types",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/model-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.222,
+    "matched_symbols": 4,
+    "total_symbols": 18,
+    "mapped_target": "providers/registry",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/oauth-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.111,
+    "matched_symbols": 1,
+    "total_symbols": 9,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/scoped-models-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.15,
+    "matched_symbols": 3,
+    "total_symbols": 20,
+    "mapped_target": "core/timings",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/session-selector-search.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.083,
+    "matched_symbols": 1,
+    "total_symbols": 12,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/session-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.18,
+    "matched_symbols": 11,
+    "total_symbols": 61,
+    "mapped_target": "core",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/settings-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.207,
+    "matched_symbols": 6,
+    "total_symbols": 29,
+    "mapped_target": "core",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/show-images-selector.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/skill-invocation-message.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 3,
+    "total_symbols": 6,
+    "mapped_target": "modes/interactive/components/tool_execution",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/status-indicator.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.444,
+    "matched_symbols": 8,
+    "total_symbols": 18,
+    "mapped_target": "modes/interactive/components/status_indicator",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/theme-selector.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/thinking-selector.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/tool-execution.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.542,
+    "matched_symbols": 13,
+    "total_symbols": 24,
+    "mapped_target": "modes/interactive/components/tool_execution",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/tree-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.259,
+    "matched_symbols": 15,
+    "total_symbols": 58,
+    "mapped_target": "components/settings_list",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/trust-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.125,
+    "matched_symbols": 1,
+    "total_symbols": 8,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/user-message-selector.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.333,
+    "matched_symbols": 3,
+    "total_symbols": 9,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/user-message.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 3,
+    "total_symbols": 6,
+    "mapped_target": "modes/interactive/components/user_message",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/components/visual-truncate.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 2,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/interactive-mode.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.138,
+    "matched_symbols": 41,
+    "total_symbols": 298,
+    "mapped_target": "core",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/model-search.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/theme/theme-controller.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.846,
+    "matched_symbols": 11,
+    "total_symbols": 13,
+    "mapped_target": "modes/interactive/theme/controller",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/interactive/theme/theme.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.455,
+    "matched_symbols": 61,
+    "total_symbols": 134,
+    "mapped_target": "modes/interactive/theme",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/print-mode.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.692,
+    "matched_symbols": 9,
+    "total_symbols": 13,
+    "mapped_target": "core",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/rpc/jsonl.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.2,
+    "matched_symbols": 1,
+    "total_symbols": 5,
+    "mapped_target": "modes/rpc/jsonl",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/rpc/rpc-client.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.635,
+    "matched_symbols": 33,
+    "total_symbols": 52,
+    "mapped_target": "modes/rpc/session",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/rpc/rpc-mode.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.382,
+    "matched_symbols": 21,
+    "total_symbols": 55,
+    "mapped_target": "core",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/modes/rpc/rpc-types.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.286,
+    "matched_symbols": 2,
+    "total_symbols": 7,
+    "mapped_target": "modes/rpc/types",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/package-manager-cli.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.167,
+    "matched_symbols": 7,
+    "total_symbols": 42,
+    "mapped_target": "modes/interactive/theme/runtime",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/rpc-entry.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": null,
+    "matched_symbols": 0,
+    "total_symbols": 0,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/ansi.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "utils/ansi",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/changelog.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.75,
+    "matched_symbols": 9,
+    "total_symbols": 12,
+    "mapped_target": "utils/changelog",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/child-process.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.462,
+    "matched_symbols": 6,
+    "total_symbols": 13,
+    "mapped_target": "utils/child_process",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/clipboard-image.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.071,
+    "matched_symbols": 1,
+    "total_symbols": 14,
+    "mapped_target": "harness/env/nodejs",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/clipboard-native.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/clipboard.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 6,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/deprecation.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "utils/deprecation",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/exif-orientation.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.455,
+    "matched_symbols": 5,
+    "total_symbols": 11,
+    "mapped_target": "utils/exif",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/frontmatter.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 4,
+    "total_symbols": 5,
+    "mapped_target": "utils/frontmatter",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/fs-watch.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 2,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/git.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.714,
+    "matched_symbols": 5,
+    "total_symbols": 7,
+    "mapped_target": "utils/git_url",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/html.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 4,
+    "total_symbols": 4,
+    "mapped_target": "utils/html",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/image-convert.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 2,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/image-process.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 8,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/image-resize-core.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 6,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/image-resize-worker.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 3,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/image-resize.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.111,
+    "matched_symbols": 1,
+    "total_symbols": 9,
+    "mapped_target": "auth/oauth/xai",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/json.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 1,
+    "total_symbols": 1,
+    "mapped_target": "utils/json",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/mime.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.6,
+    "matched_symbols": 6,
+    "total_symbols": 10,
+    "mapped_target": "utils/mime",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/open-browser.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 1,
+    "total_symbols": 1,
+    "mapped_target": "utils/open_browser",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/paths.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.875,
+    "matched_symbols": 7,
+    "total_symbols": 8,
+    "mapped_target": "utils/paths",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/photon.ts",
+    "package": "coding-agent",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 5,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/pi-user-agent.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": "utils/pi_user_agent",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/shell.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 11,
+    "total_symbols": 11,
+    "mapped_target": "utils/shell",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/sleep.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 1,
+    "total_symbols": 1,
+    "mapped_target": "utils/sleep",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/syntax-highlight.ts",
+    "package": "coding-agent",
+    "band": "PORTED",
+    "coverage": 0.818,
+    "matched_symbols": 9,
+    "total_symbols": 11,
+    "mapped_target": "utils/syntax_highlight",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/tools-manager.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.2,
+    "matched_symbols": 3,
+    "total_symbols": 15,
+    "mapped_target": "utils/tools_manager",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/version-check.ts",
+    "package": "coding-agent",
+    "band": "DONE",
+    "coverage": 0.333,
+    "matched_symbols": 2,
+    "total_symbols": 6,
+    "mapped_target": "utils/version_check",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/coding-agent/src/utils/windows-self-update.ts",
+    "package": "coding-agent",
+    "band": "STARTED",
+    "coverage": 0.2,
+    "matched_symbols": 1,
+    "total_symbols": 5,
+    "mapped_target": "utils",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/cli.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 0.6,
+    "matched_symbols": 3,
+    "total_symbols": 5,
+    "mapped_target": "cli",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/config.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 0.714,
+    "matched_symbols": 5,
+    "total_symbols": 7,
+    "mapped_target": "config",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/handler.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 6,
+    "total_symbols": 6,
+    "mapped_target": "handler",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/ipc/client.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "ipc/client",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/ipc/protocol.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 0.769,
+    "matched_symbols": 20,
+    "total_symbols": 26,
+    "mapped_target": "ipc/protocol",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/ipc/server.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 4,
+    "total_symbols": 5,
+    "mapped_target": "ipc/server",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/radius.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 0.688,
+    "matched_symbols": 22,
+    "total_symbols": 32,
+    "mapped_target": "radius",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/rpc-process.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 0.813,
+    "matched_symbols": 13,
+    "total_symbols": 16,
+    "mapped_target": "rpc_process",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/serve.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 2,
+    "total_symbols": 2,
+    "mapped_target": "serve",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/storage.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 9,
+    "total_symbols": 9,
+    "mapped_target": "storage",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/supervisor.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 0.839,
+    "matched_symbols": 26,
+    "total_symbols": 31,
+    "mapped_target": "supervisor",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/orchestrator/src/types.ts",
+    "package": "orchestrator",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 4,
+    "total_symbols": 4,
+    "mapped_target": "types",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/autocomplete.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 0.833,
+    "matched_symbols": 25,
+    "total_symbols": 30,
+    "mapped_target": "autocomplete",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/components/box.ts",
+    "package": "tui",
+    "band": "STARTED",
+    "coverage": 0.5,
+    "matched_symbols": 6,
+    "total_symbols": 12,
+    "mapped_target": "widgets/box_widget",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/components/cancellable-loader.ts",
+    "package": "tui",
+    "band": "STARTED",
+    "coverage": 0.2,
+    "matched_symbols": 1,
+    "total_symbols": 5,
+    "mapped_target": "components",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/components/editor.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.912,
+    "matched_symbols": 83,
+    "total_symbols": 91,
+    "mapped_target": "editor",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/components/image.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.857,
+    "matched_symbols": 6,
+    "total_symbols": 7,
+    "mapped_target": "widgets/image",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/components/input.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 1.0,
+    "matched_symbols": 21,
+    "total_symbols": 21,
+    "mapped_target": "components/input",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/components/loader.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 8,
+    "total_symbols": 10,
+    "mapped_target": "widgets/loader",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/components/markdown.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 0.571,
+    "matched_symbols": 16,
+    "total_symbols": 28,
+    "mapped_target": "markdown",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/components/select-list.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 0.95,
+    "matched_symbols": 19,
+    "total_symbols": 20,
+    "mapped_target": "components/select_list",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/components/settings-list.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.929,
+    "matched_symbols": 13,
+    "total_symbols": 14,
+    "mapped_target": "components/settings_list",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/components/spacer.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 4,
+    "total_symbols": 5,
+    "mapped_target": "widgets/spacer",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/components/text.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.833,
+    "matched_symbols": 5,
+    "total_symbols": 6,
+    "mapped_target": "widgets/text",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/components/truncated-text.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 0.75,
+    "matched_symbols": 3,
+    "total_symbols": 4,
+    "mapped_target": "widgets/truncated_text",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/editor-component.ts",
+    "package": "tui",
+    "band": "NOT-STARTED",
+    "coverage": 0.0,
+    "matched_symbols": 0,
+    "total_symbols": 1,
+    "mapped_target": null,
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/fuzzy.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 1.0,
+    "matched_symbols": 4,
+    "total_symbols": 4,
+    "mapped_target": "fuzzy",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/keybindings.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 0.579,
+    "matched_symbols": 11,
+    "total_symbols": 19,
+    "mapped_target": "keybindings",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/keys.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 0.464,
+    "matched_symbols": 26,
+    "total_symbols": 56,
+    "mapped_target": "keys",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/kill-ring.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 4,
+    "total_symbols": 5,
+    "mapped_target": "kill_ring",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/native-modifiers.ts",
+    "package": "tui",
+    "band": "STARTED",
+    "coverage": 0.4,
+    "matched_symbols": 2,
+    "total_symbols": 5,
+    "mapped_target": "terminal/modifiers",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/stdin-buffer.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.647,
+    "matched_symbols": 11,
+    "total_symbols": 17,
+    "mapped_target": "terminal/stdin_buffer",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/terminal-colors.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 1.0,
+    "matched_symbols": 7,
+    "total_symbols": 7,
+    "mapped_target": "terminal_colors",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/terminal-image.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.931,
+    "matched_symbols": 27,
+    "total_symbols": 29,
+    "mapped_target": "terminal_image",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/terminal.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.61,
+    "matched_symbols": 25,
+    "total_symbols": 41,
+    "mapped_target": "terminal",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/tui.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 0.674,
+    "matched_symbols": 64,
+    "total_symbols": 95,
+    "mapped_target": "overlay",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/undo-stack.ts",
+    "package": "tui",
+    "band": "PORTED",
+    "coverage": 0.8,
+    "matched_symbols": 4,
+    "total_symbols": 5,
+    "mapped_target": "undo_stack",
+    "manifest_status": "original"
+  },
+  {
+    "src": "packages/tui/src/utils.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 0.857,
+    "matched_symbols": 30,
+    "total_symbols": 35,
+    "mapped_target": "width",
+    "manifest_status": "native"
+  },
+  {
+    "src": "packages/tui/src/word-navigation.ts",
+    "package": "tui",
+    "band": "DONE",
+    "coverage": 0.667,
+    "matched_symbols": 2,
+    "total_symbols": 3,
+    "mapped_target": "word_navigation",
+    "manifest_status": "native"
+  }
+]

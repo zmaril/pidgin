@@ -1,0 +1,661 @@
+{
+  "generated": "2026-07-20",
+  "pidgin_main_sha": "7756e93",
+  "pi_sha_manifest": "3da591ab74ab9ab407e72ed882600b2c851fae21",
+  "conformance_json": {
+    "manifest_native_modules": 39,
+    "rust_backed": {
+      "passing": 538,
+      "total": 3777,
+      "percent": 14.2
+    }
+  },
+  "packages": {
+    "ai": {
+      "bands_now": {
+        "done": 7,
+        "ported": 34,
+        "started": 29,
+        "not_started": 46
+      },
+      "bands_morning": {
+        "done": 7,
+        "ported": 32,
+        "started": 29,
+        "not_started": 48
+      },
+      "bands_delta": {
+        "done": 0,
+        "ported": 2,
+        "started": 0,
+        "not_started": -2
+      },
+      "source_files_total": 116,
+      "manifest_native": 7,
+      "done_band": 7,
+      "done_matches_native": true,
+      "ready_frontier_total": 6,
+      "ready_frontier": [
+        {
+          "path": "src/types.ts",
+          "band": "STARTED",
+          "fan_in": 115,
+          "coverage": 0.593,
+          "dep_count": 0,
+          "matched_symbols": 35,
+          "total_symbols": 59,
+          "mapped_target": "types"
+        },
+        {
+          "path": "src/api/openai-prompt-cache.ts",
+          "band": "STARTED",
+          "fan_in": 4,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 1,
+          "mapped_target": "api/openai_prompt_cache"
+        },
+        {
+          "path": "src/auth/context.ts",
+          "band": "STARTED",
+          "fan_in": 2,
+          "coverage": 0.286,
+          "dep_count": 1,
+          "matched_symbols": 2,
+          "total_symbols": 7,
+          "mapped_target": "auth/context"
+        },
+        {
+          "path": "src/auth/oauth/load.ts",
+          "band": "STARTED",
+          "fan_in": 2,
+          "coverage": 0.0,
+          "dep_count": 1,
+          "matched_symbols": 0,
+          "total_symbols": 8,
+          "mapped_target": "auth/oauth/load"
+        },
+        {
+          "path": "src/utils/typebox-helpers.ts",
+          "band": "STARTED",
+          "fan_in": 2,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 1,
+          "mapped_target": "utils/typebox_helpers"
+        },
+        {
+          "path": "src/utils/abort-signals.ts",
+          "band": "STARTED",
+          "fan_in": 1,
+          "coverage": 0.2,
+          "dep_count": 0,
+          "matched_symbols": 1,
+          "total_symbols": 5,
+          "mapped_target": "seams/provider"
+        }
+      ],
+      "not_started_total": 46,
+      "not_started_top10": [
+        {
+          "path": "src/api/anthropic-messages.lazy.ts",
+          "fan_in": 12,
+          "total_symbols": 1
+        },
+        {
+          "path": "src/providers/anthropic.ts",
+          "fan_in": 4,
+          "total_symbols": 1
+        },
+        {
+          "path": "src/api/github-copilot-headers.ts",
+          "fan_in": 3,
+          "total_symbols": 3
+        },
+        {
+          "path": "src/images.ts",
+          "fan_in": 3,
+          "total_symbols": 2
+        },
+        {
+          "path": "src/api/mistral-conversations.lazy.ts",
+          "fan_in": 3,
+          "total_symbols": 1
+        },
+        {
+          "path": "src/api/openai-codex-responses.lazy.ts",
+          "fan_in": 3,
+          "total_symbols": 1
+        },
+        {
+          "path": "src/images-api-registry.ts",
+          "fan_in": 2,
+          "total_symbols": 7
+        },
+        {
+          "path": "src/api/bedrock-converse-stream.lazy.ts",
+          "fan_in": 2,
+          "total_symbols": 3
+        },
+        {
+          "path": "src/api/pi-messages.lazy.ts",
+          "fan_in": 2,
+          "total_symbols": 1
+        },
+        {
+          "path": "src/providers/cloudflare-ai-gateway.ts",
+          "fan_in": 2,
+          "total_symbols": 1
+        }
+      ]
+    },
+    "agent": {
+      "bands_now": {
+        "done": 5,
+        "ported": 16,
+        "started": 2,
+        "not_started": 0
+      },
+      "bands_morning": {
+        "done": 5,
+        "ported": 16,
+        "started": 2,
+        "not_started": 0
+      },
+      "bands_delta": {
+        "done": 0,
+        "ported": 0,
+        "started": 0,
+        "not_started": 0
+      },
+      "source_files_total": 23,
+      "manifest_native": 5,
+      "done_band": 5,
+      "done_matches_native": true,
+      "ready_frontier_total": 2,
+      "ready_frontier": [
+        {
+          "path": "src/harness/session/repo-utils.ts",
+          "band": "STARTED",
+          "fan_in": 3,
+          "coverage": 0.4,
+          "dep_count": 3,
+          "matched_symbols": 2,
+          "total_symbols": 5,
+          "mapped_target": "harness/session/repo"
+        },
+        {
+          "path": "src/proxy.ts",
+          "band": "STARTED",
+          "fan_in": 0,
+          "coverage": 0.333,
+          "dep_count": 0,
+          "matched_symbols": 3,
+          "total_symbols": 9,
+          "mapped_target": "proxy"
+        }
+      ],
+      "not_started_total": 0,
+      "not_started_top10": []
+    },
+    "coding-agent": {
+      "bands_now": {
+        "done": 16,
+        "ported": 58,
+        "started": 64,
+        "not_started": 28
+      },
+      "bands_morning": {
+        "done": 15,
+        "ported": 42,
+        "started": 74,
+        "not_started": 35
+      },
+      "bands_delta": {
+        "done": 1,
+        "ported": 16,
+        "started": -10,
+        "not_started": -7
+      },
+      "source_files_total": 166,
+      "manifest_native": 16,
+      "done_band": 16,
+      "done_matches_native": true,
+      "ready_frontier_total": 24,
+      "ready_frontier": [
+        {
+          "path": "src/core/extensions/types.ts",
+          "band": "STARTED",
+          "fan_in": 118,
+          "coverage": 0.46,
+          "dep_count": 0,
+          "matched_symbols": 64,
+          "total_symbols": 139,
+          "mapped_target": "core/extensions/types"
+        },
+        {
+          "path": "src/utils/child-process.ts",
+          "band": "STARTED",
+          "fan_in": 7,
+          "coverage": 0.462,
+          "dep_count": 0,
+          "matched_symbols": 6,
+          "total_symbols": 13,
+          "mapped_target": "utils/child_process"
+        },
+        {
+          "path": "src/core/tools/file-mutation-queue.ts",
+          "band": "STARTED",
+          "fan_in": 6,
+          "coverage": 0.333,
+          "dep_count": 0,
+          "matched_symbols": 1,
+          "total_symbols": 3,
+          "mapped_target": "core/tools/file_mutation_queue"
+        },
+        {
+          "path": "src/core/event-bus.ts",
+          "band": "STARTED",
+          "fan_in": 4,
+          "coverage": 0.571,
+          "dep_count": 0,
+          "matched_symbols": 4,
+          "total_symbols": 7,
+          "mapped_target": "core/event_bus"
+        },
+        {
+          "path": "src/core/output-guard.ts",
+          "band": "STARTED",
+          "fan_in": 4,
+          "coverage": 0.111,
+          "dep_count": 0,
+          "matched_symbols": 1,
+          "total_symbols": 9,
+          "mapped_target": "core/output_guard"
+        },
+        {
+          "path": "src/core/timings.ts",
+          "band": "STARTED",
+          "fan_in": 4,
+          "coverage": 0.167,
+          "dep_count": 0,
+          "matched_symbols": 1,
+          "total_symbols": 6,
+          "mapped_target": "core/timings"
+        },
+        {
+          "path": "src/modes/interactive/components/custom-editor.ts",
+          "band": "STARTED",
+          "fan_in": 4,
+          "coverage": 0.25,
+          "dep_count": 1,
+          "matched_symbols": 1,
+          "total_symbols": 4,
+          "mapped_target": null
+        },
+        {
+          "path": "src/utils/pi-user-agent.ts",
+          "band": "STARTED",
+          "fan_in": 4,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 1,
+          "mapped_target": "utils/pi_user_agent"
+        },
+        {
+          "path": "src/modes/interactive/components/countdown-timer.ts",
+          "band": "STARTED",
+          "fan_in": 3,
+          "coverage": 0.333,
+          "dep_count": 0,
+          "matched_symbols": 1,
+          "total_symbols": 3,
+          "mapped_target": "core/agent_session"
+        },
+        {
+          "path": "src/modes/interactive/model-search.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 3,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 3,
+          "mapped_target": null
+        },
+        {
+          "path": "src/modes/rpc/jsonl.ts",
+          "band": "STARTED",
+          "fan_in": 3,
+          "coverage": 0.2,
+          "dep_count": 0,
+          "matched_symbols": 1,
+          "total_symbols": 5,
+          "mapped_target": "modes/rpc/jsonl"
+        },
+        {
+          "path": "src/utils/photon.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 3,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 5,
+          "mapped_target": null
+        },
+        {
+          "path": "src/bun/restore-sandbox-env.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 2,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 1,
+          "mapped_target": null
+        },
+        {
+          "path": "src/cli/initial-message.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 2,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 3,
+          "mapped_target": null
+        },
+        {
+          "path": "src/modes/interactive/components/session-selector-search.ts",
+          "band": "STARTED",
+          "fan_in": 2,
+          "coverage": 0.083,
+          "dep_count": 1,
+          "matched_symbols": 1,
+          "total_symbols": 12,
+          "mapped_target": null
+        },
+        {
+          "path": "src/modes/interactive/components/visual-truncate.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 2,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 2,
+          "mapped_target": null
+        },
+        {
+          "path": "src/modes/rpc/rpc-types.ts",
+          "band": "STARTED",
+          "fan_in": 2,
+          "coverage": 0.286,
+          "dep_count": 0,
+          "matched_symbols": 2,
+          "total_symbols": 7,
+          "mapped_target": "modes/rpc/types"
+        },
+        {
+          "path": "src/utils/exif-orientation.ts",
+          "band": "STARTED",
+          "fan_in": 2,
+          "coverage": 0.455,
+          "dep_count": 0,
+          "matched_symbols": 5,
+          "total_symbols": 11,
+          "mapped_target": "utils/exif"
+        },
+        {
+          "path": "src/utils/fs-watch.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 2,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 2,
+          "mapped_target": null
+        },
+        {
+          "path": "src/utils/windows-self-update.ts",
+          "band": "STARTED",
+          "fan_in": 2,
+          "coverage": 0.2,
+          "dep_count": 1,
+          "matched_symbols": 1,
+          "total_symbols": 5,
+          "mapped_target": "utils"
+        },
+        {
+          "path": "src/cli/list-models.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 1,
+          "coverage": 0.0,
+          "dep_count": 2,
+          "matched_symbols": 0,
+          "total_symbols": 2,
+          "mapped_target": null
+        },
+        {
+          "path": "src/core/provider-attribution.ts",
+          "band": "STARTED",
+          "fan_in": 1,
+          "coverage": 0.571,
+          "dep_count": 2,
+          "matched_symbols": 4,
+          "total_symbols": 7,
+          "mapped_target": "core/provider_attribution"
+        },
+        {
+          "path": "src/utils/clipboard-native.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 1,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 3,
+          "mapped_target": null
+        },
+        {
+          "path": "src/bun/register-bedrock.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 0,
+          "coverage": null,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 0,
+          "mapped_target": null
+        }
+      ],
+      "not_started_total": 28,
+      "not_started_top10": [
+        {
+          "path": "src/core/agent-session-services.ts",
+          "fan_in": 9,
+          "total_symbols": 7
+        },
+        {
+          "path": "src/cli/args.ts",
+          "fan_in": 5,
+          "total_symbols": 5
+        },
+        {
+          "path": "src/utils/image-process.ts",
+          "fan_in": 3,
+          "total_symbols": 8
+        },
+        {
+          "path": "src/utils/photon.ts",
+          "fan_in": 3,
+          "total_symbols": 5
+        },
+        {
+          "path": "src/core/exec.ts",
+          "fan_in": 3,
+          "total_symbols": 4
+        },
+        {
+          "path": "src/cli/file-processor.ts",
+          "fan_in": 3,
+          "total_symbols": 3
+        },
+        {
+          "path": "src/modes/interactive/model-search.ts",
+          "fan_in": 3,
+          "total_symbols": 3
+        },
+        {
+          "path": "src/utils/image-convert.ts",
+          "fan_in": 3,
+          "total_symbols": 2
+        },
+        {
+          "path": "src/utils/clipboard.ts",
+          "fan_in": 2,
+          "total_symbols": 6
+        },
+        {
+          "path": "src/utils/image-resize-core.ts",
+          "fan_in": 2,
+          "total_symbols": 6
+        }
+      ]
+    },
+    "orchestrator": {
+      "bands_now": {
+        "done": 0,
+        "ported": 12,
+        "started": 0,
+        "not_started": 0
+      },
+      "bands_morning": {
+        "done": 0,
+        "ported": 12,
+        "started": 0,
+        "not_started": 0
+      },
+      "bands_delta": {
+        "done": 0,
+        "ported": 0,
+        "started": 0,
+        "not_started": 0
+      },
+      "source_files_total": 12,
+      "manifest_native": 0,
+      "done_band": 0,
+      "done_matches_native": true,
+      "ready_frontier_total": 0,
+      "ready_frontier": [],
+      "not_started_total": 0,
+      "not_started_top10": []
+    },
+    "tui": {
+      "bands_now": {
+        "done": 11,
+        "ported": 12,
+        "started": 3,
+        "not_started": 1
+      },
+      "bands_morning": {
+        "done": 11,
+        "ported": 11,
+        "started": 3,
+        "not_started": 2
+      },
+      "bands_delta": {
+        "done": 0,
+        "ported": 1,
+        "started": 0,
+        "not_started": -1
+      },
+      "source_files_total": 27,
+      "manifest_native": 11,
+      "done_band": 11,
+      "done_matches_native": true,
+      "ready_frontier_total": 4,
+      "ready_frontier": [
+        {
+          "path": "src/native-modifiers.ts",
+          "band": "STARTED",
+          "fan_in": 1,
+          "coverage": 0.4,
+          "dep_count": 0,
+          "matched_symbols": 2,
+          "total_symbols": 5,
+          "mapped_target": "terminal/modifiers"
+        },
+        {
+          "path": "src/components/box.ts",
+          "band": "STARTED",
+          "fan_in": 0,
+          "coverage": 0.5,
+          "dep_count": 2,
+          "matched_symbols": 6,
+          "total_symbols": 12,
+          "mapped_target": "widgets/box_widget"
+        },
+        {
+          "path": "src/components/cancellable-loader.ts",
+          "band": "STARTED",
+          "fan_in": 0,
+          "coverage": 0.2,
+          "dep_count": 2,
+          "matched_symbols": 1,
+          "total_symbols": 5,
+          "mapped_target": "components"
+        },
+        {
+          "path": "src/editor-component.ts",
+          "band": "NOT-STARTED",
+          "fan_in": 0,
+          "coverage": 0.0,
+          "dep_count": 0,
+          "matched_symbols": 0,
+          "total_symbols": 1,
+          "mapped_target": null
+        }
+      ],
+      "not_started_total": 1,
+      "not_started_top10": [
+        {
+          "path": "src/editor-component.ts",
+          "fan_in": 0,
+          "total_symbols": 1
+        }
+      ]
+    }
+  },
+  "totals": {
+    "bands_now": {
+      "done": 39,
+      "ported": 132,
+      "started": 98,
+      "not_started": 75
+    },
+    "bands_morning": {
+      "done": 38,
+      "ported": 113,
+      "started": 108,
+      "not_started": 85
+    },
+    "bands_delta": {
+      "done": 1,
+      "ported": 19,
+      "started": -10,
+      "not_started": -10
+    },
+    "manifest_native_total": 39,
+    "bands_morning_given_row": {
+      "done": 38,
+      "ported": 114,
+      "started": 108,
+      "not_started": 84
+    },
+    "bands_delta_vs_given_row": {
+      "done": 1,
+      "ported": 18,
+      "started": -10,
+      "not_started": -9
+    },
+    "note": "bands_morning here is the SUM of the provided per-package morning bands (38/113/108/85). The task's provided morning TOTAL row is 38/114/108/84, which is internally inconsistent with its own per-package rows by +1 ported / -1 not_started. bands_delta uses the summed per-package morning; bands_delta_vs_given_row uses the provided TOTAL row."
+  }
+}
