@@ -3,9 +3,9 @@
   "generated_by": "scripts/conformance.sh",
   "manifest_native_modules": 39,
   "rust_backed": {
-    "passing": 538,
+    "passing": 524,
     "total": 3777,
-    "percent": 14.2
+    "percent": 13.9
   },
   "total": 3777,
   "passing": 2919,
@@ -57,8 +57,8 @@
       "note": "no tests"
     },
     "tui": {
-      "rust_backed_passing": 260,
-      "rust_backed_percent": 38.3,
+      "rust_backed_passing": 246,
+      "rust_backed_percent": 36.3,
       "total": 678,
       "passing": 678,
       "failing": 0,

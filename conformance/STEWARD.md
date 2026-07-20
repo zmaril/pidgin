@@ -112,3 +112,23 @@ The human merges in this order (rebasing each onto the prior as needed):
 | core/tools/edit | coding-agent | pending | — | no | hybrid port (later batch) |
 | agent session modules | coding-agent | pending | — | no | later batch |
 | utils/abort-signals | ai | deferred | — | no | abort-signals.ts deferred: sole consumer openai-codex-responses.ts unported; event-driven combinator has no faithful poll-seam mapping; port alongside consumer |
+
+## Shim audit (2026-07-20)
+
+A pass over the native rows checked that each flip's headline behavior crosses
+into Rust. Three modules came up: one was an over-count and is corrected here,
+the other two are honest and stay as-is.
+
+- **fuzzy.ts — corrected.** The manifest row counted `test/fuzzy.test.ts` toward
+  the Rust-backed headline, but the module's `fuzzyFilter` (tokenize, multi-token
+  AND gate, score-sum, sort/rank) runs in TypeScript; only the per-pair
+  `fuzzyMatch` is native. The suite asserts the TypeScript-decided filtered and
+  ordered list, so those cases are not Rust-decided. Fix: `tests` emptied to `[]`
+  — the row stays `native` because per-pair scoring is native, and the headline
+  stops counting the TypeScript-decided cases. The TUI lane will port
+  `fuzzyFilter` to Rust and re-add the test through the shim maintainer.
+- **path-utils.ts — observed and accepted.** `resolveReadPath` re-authors a
+  fallback ladder in TypeScript (native filename transforms plus an injected
+  fs-exists probe); this is already disclosed on the flip row. No action.
+- **faux.ts — observed and accepted.** About 7 LOC of pacing math stays in
+  TypeScript, disclosed at flip time. No action.

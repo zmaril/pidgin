@@ -1996,9 +1996,7 @@
       "package": "tui",
       "src": "packages/tui/src/fuzzy.ts",
       "status": "native",
-      "tests": [
-        "test/fuzzy.test.ts"
-      ]
+      "tests": []
     },
     {
       "package": "tui",
