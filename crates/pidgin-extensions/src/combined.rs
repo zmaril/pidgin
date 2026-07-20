@@ -14,13 +14,14 @@
 //!   2. classifies each surviving path by suffix (`.ts`/`.js` → deno, `.py` →
 //!      python, else unknown) and buckets it per engine;
 //!   3. calls each inner loader ONCE with its bucket (batched), then merges both
-//!      inners' `extensions` + `errors`;
-//!   4. reports cross-engine collisions: TOOL-name collisions trip the SAME
-//!      `detect_extension_conflicts` error as within-engine (run over the UNION of
-//!      both engines' loaded extensions), while COMMAND-name collisions are NOT an
-//!      error — the combined runner resolves them deno-first and each shadow is
-//!      logged;
-//!   5. recombines the two inner runtimes into a [`CombinedExtensionRuntime`] so
+//!      inners' `extensions` + `errors` — returning the FULL UNION of both
+//!      engines' extensions WITHOUT any conflict-diagnostic pass. Cross-engine
+//!      TOOL/flag-name conflicts are detected once by the orchestrator's
+//!      `add_extension_conflict_diagnostics` over this union (single source of
+//!      truth); duplicating that check here would double-report. COMMAND-name
+//!      collisions are NOT an error — the combined runner resolves them deno-first
+//!      and each shadow is logged (a runner concern, not a load diagnostic);
+//!   4. recombines the two inner runtimes into a [`CombinedExtensionRuntime`] so
 //!      the trust two-pass can thread them back through identity-preserving.
 //!
 //! A path whose engine is not compiled/enabled degrades gracefully to an
@@ -79,7 +80,6 @@ use pidgin_coding::core::extensions::runner::{
     SessionControlHost, UnsubscribeFn,
 };
 use pidgin_coding::core::extensions::types::ExtensionContext;
-use pidgin_coding::core::resource_loader::{detect_extension_conflicts, ExtensionConflictInput};
 use pidgin_coding::utils::paths::{resolve_path, PathInputOptions};
 
 #[cfg(feature = "deno")]
@@ -288,26 +288,12 @@ impl ExtensionLoader for CombinedExtensionLoader {
             }
         }
 
-        // Cross-engine TOOL/flag-name collisions ARE an error — the SAME conflict
-        // the within-engine check raises. Run the shared `detect_extension_conflicts`
-        // over the UNION of both engines' loaded extensions so a duplicate name
-        // coming from different engines still trips the conflict, rather than
-        // slipping through by being split across two inner loaders.
-        let conflict_inputs: Vec<ExtensionConflictInput> = extensions
-            .iter()
-            .map(|ext| ExtensionConflictInput {
-                path: ext.path.clone(),
-                tools: ext.tool_names().map(str::to_string).collect(),
-                flags: ext.flag_names().map(str::to_string).collect(),
-            })
-            .collect();
-        for conflict in detect_extension_conflicts(&conflict_inputs) {
-            errors.push(ExtensionLoadError {
-                path: conflict.path,
-                error: conflict.message,
-            });
-        }
-
+        // Cross-engine TOOL/flag-name conflict diagnostics are NOT emitted here:
+        // the loader returns the FULL UNION of both engines' extensions and the
+        // orchestrator's `add_extension_conflict_diagnostics` runs the shared
+        // `detect_extension_conflicts` over that union exactly once (single source
+        // of truth) — matching single-engine behavior. Duplicating the check here
+        // would double-report a cross-engine collision.
         LoadExtensionsResult {
             extensions,
             errors,

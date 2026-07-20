@@ -12,9 +12,11 @@
 //!   2. a `.ts` path degrades GRACEFULLY to an `ExtensionLoadError` containing
 //!      "not compiled in" (NOT a panic, NOT a load), because the deno engine is
 //!      absent from this build;
-//!   3. two python extensions registering the SAME tool name trip the shared
-//!      `detect_extension_conflicts` error the combined loader runs over the UNION
-//!      of both engines' loaded extensions.
+//!   3. two python extensions registering the SAME tool name, loaded THROUGH the
+//!      orchestrator (`DefaultResourceLoader`) with the combined loader injected,
+//!      trip the tool-conflict error EXACTLY ONCE. The combined loader returns the
+//!      full union with NO loader-level conflict diagnostic; the orchestrator's
+//!      `add_extension_conflict_diagnostics` is the single source of truth.
 #![cfg(all(feature = "python", not(feature = "deno")))]
 
 // straitjacket-allow-file:duplication -- the fixture text, the load-then-assert
@@ -30,6 +32,9 @@ use serde_json::json;
 
 use pidgin_coding::core::event_bus::EventBus;
 use pidgin_coding::core::extensions::events::tool::ToolCallEvent;
+use pidgin_coding::core::resource_loader_orchestrator::{
+    DefaultResourceLoader, DefaultResourceLoaderOptions, ReloadOptions,
+};
 
 use pidgin_extensions::{
     create_combined_extension_runner, CombinedExtensionLoader, EngineSelection,
@@ -193,33 +198,68 @@ fn combined_loader_rejects_ts_path_gracefully_when_deno_absent() {
     assert!(result.runtime.is_some());
 }
 
-/// (3) Two python extensions registering the SAME tool name trip the shared
-/// tool-conflict error the combined loader runs over the UNION of loaded
-/// extensions — proving cross-engine (here, cross-extension) duplicates do not
-/// slip through by being split across inner loaders.
+/// (3) Two python extensions registering the SAME tool name, loaded THROUGH the
+/// orchestrator (`DefaultResourceLoader`) with the combined loader injected, trip
+/// the tool-conflict error EXACTLY ONCE.
+///
+/// The combined loader returns the FULL UNION of both extensions with NO
+/// loader-level conflict diagnostic; the orchestrator's
+/// `add_extension_conflict_diagnostics` is the single source of truth, so the
+/// cross-extension collision is reported once — not zero (the loader dropped no
+/// duplicate) and not twice (the loader no longer double-reports). This mirrors
+/// the within-engine `detect_tool_conflicts_between_extensions` orchestrator test
+/// setup, exercising it on the python-only build offline.
 #[test]
-fn combined_loader_detects_tool_conflict_over_the_union() {
+fn orchestrator_detects_tool_conflict_exactly_once_over_combined_union() {
     let dir = temp_dir("conflict");
+    let cwd = dir.join("project");
+    let agent = dir.join("agent");
+    let home = dir.join("home");
+    std::fs::create_dir_all(&cwd).unwrap();
+    std::fs::create_dir_all(&agent).unwrap();
+    std::fs::create_dir_all(&home).unwrap();
+
+    // Two `.py` fixtures OUTSIDE the discovery roots, each registering the same
+    // tool name, injected as explicit CLI extension paths.
     let first = write_fixture(&dir, "first", "shared_tool");
     let second = write_fixture(&dir, "second", "shared_tool");
 
-    let loader = CombinedExtensionLoader::spawn(EngineSelection {
-        deno: false,
-        python: true,
+    let mut loader = DefaultResourceLoader::new(DefaultResourceLoaderOptions {
+        cwd: cwd.to_string_lossy().into_owned(),
+        agent_dir: agent.to_string_lossy().into_owned(),
+        home_dir: Some(home.to_string_lossy().into_owned()),
+        extension_loader: Some(CombinedExtensionLoader::spawn(EngineSelection {
+            deno: false,
+            python: true,
+        })),
+        additional_extension_paths: vec![first.clone(), second.clone()],
+        ..Default::default()
     });
-    let bus = EventBus::new();
-    let cwd = dir.to_string_lossy().into_owned();
-    let result = loader.load_extensions_cached(&[first.clone(), second.clone()], &cwd, &bus, None);
+    loader.reload(ReloadOptions::default());
 
-    // Both extensions still load (precedence is by load order); the conflict is
-    // reported as an error over the union.
-    assert_eq!(result.extensions.len(), 2, "both extensions load");
-    assert!(
+    let result = loader.get_extensions();
+    // The FULL union of both extensions loads (the loader drops no duplicate)...
+    assert_eq!(
+        result.extensions.len(),
+        2,
+        "both extensions load in the union, got {:?}",
         result
-            .errors
+            .extensions
             .iter()
-            .any(|error| error.error.contains("conflicts with")),
-        "a cross-extension tool-name conflict is reported, got {:?}",
+            .map(|e| e.path.clone())
+            .collect::<Vec<_>>()
+    );
+    // ...and the orchestrator emits the tool-conflict error EXACTLY once.
+    let conflicts = result
+        .errors
+        .iter()
+        .filter(|error| {
+            error.error.contains("shared_tool") && error.error.contains("conflicts with")
+        })
+        .count();
+    assert_eq!(
+        conflicts, 1,
+        "cross-extension tool conflict reported exactly once, got errors {:?}",
         result.errors
     );
 }
