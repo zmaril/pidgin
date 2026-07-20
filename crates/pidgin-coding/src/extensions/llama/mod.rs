@@ -3,6 +3,7 @@
 
 pub mod client;
 pub mod huggingface;
+pub mod provider;
 
 pub use client::{
     format_bytes, llama_inference_url, normalize_llama_server_url, parse_sse_frame,
@@ -13,4 +14,8 @@ pub use client::{
 pub use huggingface::{
     find_hugging_face_token, HuggingFaceClient, HuggingFaceGated, HuggingFaceModel,
     HuggingFaceModelDetails, HuggingFaceQuantization, DEFAULT_HUGGING_FACE_URL,
+};
+pub use provider::{
+    create_llama_provider, LlamaProvider, LlamaProviderController, DEFAULT_LLAMA_SERVER_URL,
+    LLAMA_PROVIDER_ID,
 };
