@@ -1,4 +1,3 @@
-// straitjacket-allow-file:duplication
 // Bridge slice 3 — the eight loop hooks through the bridge.
 //
 // Each hook is a BLOCKING Rust→JS→Rust round-trip over the same NonBlocking-TSFN
@@ -21,108 +20,20 @@
 //
 // Run: node __tests__/agent-bridge-hooks.mjs   (after `npx napi build --platform`)
 
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-
-const require = createRequire(import.meta.url);
-const here = dirname(fileURLToPath(import.meta.url));
-const { AgentBridge } = require(join(here, "..", "index.js"));
-
-let failures = 0;
-function assert(cond, msg) {
-  if (cond) console.log(`  ok - ${msg}`);
-  else {
-    failures += 1;
-    console.log(`  NOT OK - ${msg}`);
-  }
-}
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// --- fixtures -------------------------------------------------------------
-const MODEL = {
-  id: "faux-model",
-  name: "Faux Model",
-  api: "faux",
-  provider: "faux",
-  baseUrl: "http://localhost",
-  reasoning: false,
-  input: ["text"],
-  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-  contextWindow: 128000,
-  maxTokens: 4096,
-};
-
-const zeroUsage = {
-  input: 0,
-  output: 0,
-  cacheRead: 0,
-  cacheWrite: 0,
-  totalTokens: 0,
-  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-};
-
-function assistantText(text, stopReason = "stop") {
-  return {
-    role: "assistant",
-    content: [{ type: "text", text }],
-    api: "faux",
-    provider: "faux",
-    model: "faux-model",
-    usage: zeroUsage,
-    stopReason,
-    timestamp: 0,
-  };
-}
-
-function assistantToolCall(id, name, args) {
-  return {
-    role: "assistant",
-    content: [{ type: "toolCall", id, name, arguments: args }],
-    api: "faux",
-    provider: "faux",
-    model: "faux-model",
-    usage: zeroUsage,
-    stopReason: "toolUse",
-    timestamp: 0,
-  };
-}
+import {
+  AgentBridge,
+  assert,
+  assistantText,
+  assistantToolCall,
+  doneStream,
+  getFailures,
+  MODEL,
+  runLoopBridge,
+  toolMeta,
+  toolThenDoneStreamFn,
+} from "./_harness.mjs";
 
 const userMessage = (content) => ({ role: "user", content, timestamp: 0 });
-
-function fakeStream(events, message) {
-  return {
-    async *[Symbol.asyncIterator]() {
-      for (const ev of events) {
-        await sleep(1);
-        yield ev;
-      }
-    },
-    async result() {
-      await sleep(1);
-      return message;
-    },
-  };
-}
-
-function doneStream(message) {
-  return fakeStream(
-    [{ type: "done", reason: message.stopReason, message }],
-    message,
-  );
-}
-
-function toolMeta(tool) {
-  return {
-    name: tool.name,
-    label: tool.label ?? tool.name,
-    description: tool.description ?? "",
-    parameters: tool.parameters ?? {},
-    executionMode: tool.executionMode ?? null,
-    hasPrepareArguments: typeof tool.prepareArguments === "function",
-  };
-}
 
 // --- the JS side of the envelope protocol (the _bridge/dispatcher.ts shape) --
 // Routes bridge kinds to the injected closures, including (slice 3) the eight
@@ -160,114 +71,83 @@ function runLoop(bridge, { streamFn, config, tools, onEvent }) {
     };
   };
 
-  return new Promise((resolve, reject) => {
-    const dispatcher = (envelopeJson) => {
-      let env;
-      try {
-        env = JSON.parse(envelopeJson);
-      } catch (e) {
-        reject(e);
-        return;
-      }
-      const { id, kind, payload: p } = env;
-      if (kind === "__complete__") {
-        bridge.join();
-        resolve(p);
-        return;
-      }
-      if (kind === "event") {
-        if (onEvent) onEvent(p);
-        return;
-      }
-      const handle = async () => {
-        switch (kind) {
-          case "streamFn": {
-            const stream = await streamFn(p.model, p.context, p.options);
-            const events = [];
-            for await (const ev of stream) events.push(ev);
-            const message = await stream.result();
-            return { events, message };
-          }
-          case "convertToLlm":
-            return await config.convertToLlm(p.messages);
-          case "toolExecute": {
-            const tool = toolsByName.get(p.toolName);
-            if (!tool) throw new Error(`no tool ${p.toolName}`);
-            const onUpdate = (partial) =>
-              bridge.emitToolUpdate(p.toolCallId, JSON.stringify(partial));
-            return await tool.execute(p.toolCallId, p.args, mkSignal(p.aborted), onUpdate);
-          }
-          case "transformContext":
-            return await config.transformContext(p.messages, mkSignal(p.aborted));
-          case "getApiKey":
-            return (await config.getApiKey(p.provider)) ?? null;
-          case "getSteeringMessages":
-            return (await config.getSteeringMessages()) ?? [];
-          case "getFollowUpMessages":
-            return (await config.getFollowUpMessages()) ?? [];
-          case "shouldStopAfterTurn":
-            return await config.shouldStopAfterTurn(reviveTurnCtx(p));
-          case "prepareNextTurn":
-            return serializeUpdate(await config.prepareNextTurn(reviveTurnCtx(p)));
-          case "beforeToolCall":
-            return (
-              (await config.beforeToolCall(
-                {
-                  assistantMessage: p.assistantMessage,
-                  toolCall: p.toolCall,
-                  args: p.args,
-                  context: reviveContext(p.context),
-                },
-                mkSignal(p.aborted),
-              )) ?? null
-            );
-          case "afterToolCall":
-            return (
-              (await config.afterToolCall(
-                {
-                  assistantMessage: p.assistantMessage,
-                  toolCall: p.toolCall,
-                  args: p.args,
-                  result: p.result,
-                  isError: p.isError,
-                  context: reviveContext(p.context),
-                },
-                mkSignal(p.aborted),
-              )) ?? null
-            );
-          default:
-            throw new Error(`unhandled kind: ${kind}`);
+  const payload = {
+    prompts: [userMessage("go")],
+    context: {
+      systemPrompt: config.systemPrompt ?? "",
+      messages: config.messages ?? [],
+    },
+    model: MODEL,
+    tools: toolList.map(toolMeta),
+    toolExecution: config.toolExecution ?? null,
+    hooks: {
+      transformContext: typeof config.transformContext === "function",
+      getApiKey: typeof config.getApiKey === "function",
+      shouldStopAfterTurn: typeof config.shouldStopAfterTurn === "function",
+      prepareNextTurn: typeof config.prepareNextTurn === "function",
+      getSteeringMessages: typeof config.getSteeringMessages === "function",
+      getFollowUpMessages: typeof config.getFollowUpMessages === "function",
+      beforeToolCall: typeof config.beforeToolCall === "function",
+      afterToolCall: typeof config.afterToolCall === "function",
+    },
+  };
+  // The base kinds (streamFn/convertToLlm) + dispatcher plumbing live in the
+  // shared harness; this routes the eight loop hooks (plus toolExecute) here.
+  return runLoopBridge(bridge, payload, {
+    streamFn,
+    convertToLlm: config.convertToLlm,
+    onEvent,
+    handle: async (kind, p) => {
+      switch (kind) {
+        case "toolExecute": {
+          const tool = toolsByName.get(p.toolName);
+          if (!tool) throw new Error(`no tool ${p.toolName}`);
+          const onUpdate = (partial) =>
+            bridge.emitToolUpdate(p.toolCallId, JSON.stringify(partial));
+          return await tool.execute(p.toolCallId, p.args, mkSignal(p.aborted), onUpdate);
         }
-      };
-      handle()
-        .then((result) => bridge.resolveBridge(id, JSON.stringify(result ?? null)))
-        .catch((e) =>
-          bridge.resolveBridgeError(id, JSON.stringify({ __bridge_error: String(e?.message ?? e) })),
-        );
-    };
-    bridge.run(
-      dispatcher,
-      JSON.stringify({
-        prompts: [userMessage("go")],
-        context: {
-          systemPrompt: config.systemPrompt ?? "",
-          messages: config.messages ?? [],
-        },
-        model: MODEL,
-        tools: toolList.map(toolMeta),
-        toolExecution: config.toolExecution ?? null,
-        hooks: {
-          transformContext: typeof config.transformContext === "function",
-          getApiKey: typeof config.getApiKey === "function",
-          shouldStopAfterTurn: typeof config.shouldStopAfterTurn === "function",
-          prepareNextTurn: typeof config.prepareNextTurn === "function",
-          getSteeringMessages: typeof config.getSteeringMessages === "function",
-          getFollowUpMessages: typeof config.getFollowUpMessages === "function",
-          beforeToolCall: typeof config.beforeToolCall === "function",
-          afterToolCall: typeof config.afterToolCall === "function",
-        },
-      }),
-    );
+        case "transformContext":
+          return await config.transformContext(p.messages, mkSignal(p.aborted));
+        case "getApiKey":
+          return (await config.getApiKey(p.provider)) ?? null;
+        case "getSteeringMessages":
+          return (await config.getSteeringMessages()) ?? [];
+        case "getFollowUpMessages":
+          return (await config.getFollowUpMessages()) ?? [];
+        case "shouldStopAfterTurn":
+          return await config.shouldStopAfterTurn(reviveTurnCtx(p));
+        case "prepareNextTurn":
+          return serializeUpdate(await config.prepareNextTurn(reviveTurnCtx(p)));
+        case "beforeToolCall":
+          return (
+            (await config.beforeToolCall(
+              {
+                assistantMessage: p.assistantMessage,
+                toolCall: p.toolCall,
+                args: p.args,
+                context: reviveContext(p.context),
+              },
+              mkSignal(p.aborted),
+            )) ?? null
+          );
+        case "afterToolCall":
+          return (
+            (await config.afterToolCall(
+              {
+                assistantMessage: p.assistantMessage,
+                toolCall: p.toolCall,
+                args: p.args,
+                result: p.result,
+                isError: p.isError,
+                context: reviveContext(p.context),
+              },
+              mkSignal(p.aborted),
+            )) ?? null
+          );
+        default:
+          throw new Error(`unhandled kind: ${kind}`);
+      }
+    },
   });
 }
 
@@ -275,15 +155,6 @@ const identityConverter = (messages) =>
   messages.filter(
     (m) => m.role === "user" || m.role === "assistant" || m.role === "toolResult",
   );
-
-function toolThenDoneStreamFn(toolCallId, toolName, args) {
-  let callIndex = 0;
-  return async () => {
-    const i = callIndex++;
-    if (i === 0) return doneStream(assistantToolCall(toolCallId, toolName, args));
-    return doneStream(assistantText("done"));
-  };
-}
 
 const echoTool = (executed) => ({
   name: "echo",
@@ -334,17 +205,13 @@ async function testShouldStopAfterTurn() {
   console.log("# (b) shouldStopAfterTurn=true stops the loop after the current turn");
   const bridge = new AgentBridge();
   const executed = [];
-  let llmCalls = 0;
   let steeringPolls = 0;
   let followUpPolls = 0;
   let stopCtxRoles = [];
   let stopToolResultIds = [];
+  const stream = toolThenDoneStreamFn("tool-1", "echo", { value: "hello" }, "should not run");
   const out = await runLoop(bridge, {
-    streamFn: async () => {
-      const i = llmCalls++;
-      if (i === 0) return doneStream(assistantToolCall("tool-1", "echo", { value: "hello" }));
-      return doneStream(assistantText("should not run"));
-    },
+    streamFn: stream,
     config: {
       convertToLlm: identityConverter,
       getSteeringMessages: async () => {
@@ -363,7 +230,7 @@ async function testShouldStopAfterTurn() {
     },
     tools: [echoTool(executed)],
   });
-  assert(llmCalls === 1, `only one LLM turn ran (got ${llmCalls})`);
+  assert(stream.calls() === 1, `only one LLM turn ran (got ${stream.calls()})`);
   assert(JSON.stringify(executed) === JSON.stringify(["hello"]), `tool ran once (got ${JSON.stringify(executed)})`);
   assert(steeringPolls === 1, `getSteeringMessages polled once, at start (got ${steeringPolls})`);
   assert(followUpPolls === 0, `getFollowUpMessages not polled (stopped first) (got ${followUpPolls})`);
@@ -384,13 +251,9 @@ async function testBeforeAfterToolCall() {
   const executed = [];
   let beforeArgs = null;
   let afterResultText = null;
-  let llmCalls = 0;
+  const stream = toolThenDoneStreamFn("tool-1", "echo", { value: "hello" }, "should not run");
   const out = await runLoop(bridge, {
-    streamFn: async () => {
-      const i = llmCalls++;
-      if (i === 0) return doneStream(assistantToolCall("tool-1", "echo", { value: "hello" }));
-      return doneStream(assistantText("should not run"));
-    },
+    streamFn: stream,
     config: {
       convertToLlm: identityConverter,
       beforeToolCall: async ({ args }) => {
@@ -407,7 +270,7 @@ async function testBeforeAfterToolCall() {
   assert(JSON.stringify(beforeArgs) === JSON.stringify({ value: "hello" }), `beforeToolCall observed validated args (got ${JSON.stringify(beforeArgs)})`);
   assert(JSON.stringify(executed) === JSON.stringify(["hello"]), `tool executed (not blocked) (got ${JSON.stringify(executed)})`);
   assert(afterResultText === "echoed: hello", `afterToolCall observed the executed result (got ${JSON.stringify(afterResultText)})`);
-  assert(llmCalls === 1, `afterToolCall terminate:true stopped after the batch (got ${llmCalls} turns)`);
+  assert(stream.calls() === 1, `afterToolCall terminate:true stopped after the batch (got ${stream.calls()} turns)`);
   assert(
     JSON.stringify(out.messages?.map((m) => m.role)) === JSON.stringify(["user", "assistant", "toolResult"]),
     `transcript ends at the terminated batch (got ${JSON.stringify(out.messages?.map((m) => m.role))})`,
@@ -501,9 +364,9 @@ async function main() {
   await testAbortDuringHook();
 
   console.log("");
-  if (failures === 0) console.log("SLICE 3: ALL HOOK-BRIDGE CHECKS PASSED");
+  if (getFailures() === 0) console.log("SLICE 3: ALL HOOK-BRIDGE CHECKS PASSED");
   else {
-    console.log(`SLICE 3: ${failures} CHECK(S) FAILED`);
+    console.log(`SLICE 3: ${getFailures()} CHECK(S) FAILED`);
     process.exitCode = 1;
   }
   // Clean exit with no explicit process.exit(): condition (C).
