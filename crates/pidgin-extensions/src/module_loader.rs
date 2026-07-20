@@ -37,7 +37,8 @@
 //!
 //! * **Vendored bare specifier** — exactly `typebox` or `@sinclair/typebox`:
 //!   resolved to the synthetic URL [`TYPEBOX_URL`], whose source
-//!   [`PidginModuleLoader::load`] serves from the embedded bundle. This is the
+//!   [`PidginModuleLoader::load`] serves from the embedded bundle (behind a small
+//!   `TextEncoder` shim the bundle needs — see [`TEXTENCODER_SHIM`]). This is the
 //!   only bare specifier that resolves.
 //! * **Relative / URL specifier** — starts with `.` or `/`, or already has a URL
 //!   scheme (`file:`, `http:`, …): delegated to [`deno_core::resolve_import`],
@@ -53,8 +54,8 @@
 
 use deno_core::error::ModuleLoaderError;
 use deno_core::{
-    resolve_import, FastString, ModuleLoadOptions, ModuleLoadReferrer, ModuleLoadResponse,
-    ModuleLoader, ModuleSource, ModuleSourceCode, ModuleSpecifier, ModuleType, ResolutionKind,
+    resolve_import, ModuleLoadOptions, ModuleLoadReferrer, ModuleLoadResponse, ModuleLoader,
+    ModuleSource, ModuleSourceCode, ModuleSpecifier, ModuleType, ResolutionKind,
 };
 
 // `ModuleLoaderError` is a type alias for `deno_error::JsErrorBox`. deno_error is
@@ -66,6 +67,46 @@ use deno_core::{
 /// `vendor/NOTICE`). A single self-contained ESM: no internal relative imports
 /// remain, so the loader serves it as one asset.
 const TYPEBOX_SRC: &str = include_str!("vendor/typebox-1.1.38.mjs");
+
+/// A minimal `TextEncoder` host global the vendored TypeBox bundle needs at load.
+///
+/// TypeBox's FNV-hash module constructs `new TextEncoder()` at module top level
+/// (`typebox-1.1.38.mjs`), so the class must exist the moment the module
+/// evaluates — even though `Type.Object(...)` never invokes hashing. `TextEncoder`
+/// is a Web Platform global that Node/Bun (where pi runs) provide ambiently, but
+/// the bare `deno_core` plane wires no `deno_web`, so it is absent and the module
+/// throws `ReferenceError: TextEncoder is not defined`. [`PidginModuleLoader::load`]
+/// prepends this shim to the served TypeBox source so the global is defined
+/// (non-destructively via `??=`) before the bundle runs. It is a correct minimal
+/// UTF-8 encoder — BMP plus surrogate pairs — verified byte-for-byte against the
+/// platform `TextEncoder`.
+const TEXTENCODER_SHIM: &str = r#"
+globalThis.TextEncoder ??= class TextEncoder {
+  get encoding() { return "utf-8"; }
+  encode(input = "") {
+    const s = String(input);
+    const out = [];
+    for (let i = 0; i < s.length; i++) {
+      let c = s.charCodeAt(i);
+      if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {
+        const n = s.charCodeAt(i + 1);
+        if (n >= 0xdc00 && n <= 0xdfff) { c = 0x10000 + ((c - 0xd800) << 10) + (n - 0xdc00); i++; }
+      }
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 0x3f));
+      else if (c < 0x10000) out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
+      else out.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 0x3f), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
+    }
+    return new Uint8Array(out);
+  }
+  encodeInto(source, dest) {
+    const enc = this.encode(source);
+    const n = Math.min(enc.length, dest.length);
+    dest.set(enc.subarray(0, n));
+    return { read: source.length, written: n };
+  }
+};
+"#;
 
 /// The synthetic URL the vendored TypeBox bundle loads under. Extensions never
 /// see this URL: [`PidginModuleLoader::resolve`] maps the bare `typebox` /
@@ -139,9 +180,13 @@ impl ModuleLoader for PidginModuleLoader {
         _options: ModuleLoadOptions,
     ) -> ModuleLoadResponse {
         if module_specifier.as_str() == TYPEBOX_URL {
+            // Prepend the TextEncoder shim so the bundle's top-level
+            // `new TextEncoder()` succeeds on the deno_web-less plane (see
+            // TEXTENCODER_SHIM). One String allocation per load; loads are rare.
+            let source = format!("{TEXTENCODER_SHIM}{TYPEBOX_SRC}");
             return ModuleLoadResponse::Sync(Ok(ModuleSource::new(
                 ModuleType::JavaScript,
-                ModuleSourceCode::String(FastString::from_static(TYPEBOX_SRC)),
+                ModuleSourceCode::String(source.into()),
                 module_specifier,
                 None,
             )));
