@@ -1251,7 +1251,10 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/session-cwd.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/session-cwd.test.ts"
+      ]
     },
     {
       "package": "coding-agent",

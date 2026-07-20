@@ -36,6 +36,14 @@ mod tools;
 // JSON in/out driver loop, backing the native `package-manager.ts` shim.
 mod command_core;
 
+// The coding-agent session-cwd surface (`getMissingSessionCwdIssue`,
+// `formatMissingSessionCwdError`, `formatMissingSessionCwdPrompt`): drives pi's
+// missing-session-cwd detection (`pidgin_coding::core::session_cwd`) natively —
+// the filesystem probe, empty-cwd guard, and both format strings. The JS shim
+// keeps only pi's `MissingSessionCwdError` class identity and reads the two
+// strings off pi's `SessionCwdSource`. Additive.
+mod session_cwd;
+
 // The tui autocomplete provider (`AutocompleteCore`): wraps pi's
 // `CombinedAutocompleteProvider` over a native `FileProvider` (std::fs + real
 // `fd`), backing the native `autocomplete.ts` shim. Additive.
