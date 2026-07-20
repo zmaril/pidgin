@@ -55,9 +55,29 @@
 //!   invented; they are public-API convenience only and unused by
 //!   `create_agent_session`.
 //!
-//! Finally, pi's `export * from "./agent-session-runtime.ts"` (pi `sdk.ts:94`) is
-//! intentionally **omitted**: `AgentSessionRuntime` is owned by the AgentSession
-//! lane, not the SDK façade.
+//! Finally, mirroring pi's `export * from "./agent-session-runtime.ts"` (pi
+//! `sdk.ts:94`), the SDK surfaces the [`AgentSessionRuntime`] lifecycle orchestrator
+//! and a runtime-returning entry point ([`create_agent_session_runtime_from_options`])
+//! that wraps this offline [`create_agent_session`] façade in a session factory and
+//! hands it to [`create_agent_session_runtime`]. The runtime owns the current session
+//! and swaps it on `/new`, `/resume`, and `/fork`. The `AgentSessionRuntime` type
+//! itself lives in the AgentSession lane (`agent_session::runtime`); the SDK only
+//! re-exports it and supplies the factory adaptation, mirroring pi's production
+//! `createRuntime` closure (pi `main.ts:615`) minus the still-unported services /
+//! diagnostics / project-trust surface.
+//!
+//! # Runtime factory divergence: per-call `model_runtime` rebuild
+//!
+//! pi shares one `modelRuntime` across the runtime's whole life (built once in
+//! `createAgentSessionServices` and reused for every `/new`, `/resume`, and `/fork`).
+//! The ported [`create_agent_session`] consumes [`ModelRuntime`] **by value** (it is
+//! `!Send` and not `Clone`), so the factory cannot re-hand the same runtime to each
+//! call; it passes `model_runtime: None`, which rebuilds a fresh runtime from
+//! `{agent_dir}/auth.json` + `{agent_dir}/models.json` on every replacement. Any
+//! runtime-set API key or interactive login (which live only on the in-memory
+//! [`ModelRuntime`], not on disk) is therefore dropped across a session switch. The
+//! faithful fix needs a shareable / re-lent `ModelRuntime`; this is a named
+//! follow-up. See the `TODO(follow-up)` at the factory site.
 
 // straitjacket-allow-file:duplication
 
@@ -77,10 +97,23 @@ use crate::core::model_runtime::{CreateModelRuntimeOptions, ModelRuntime, Models
 use crate::core::resource_loader_orchestrator::{
     DefaultResourceLoader, DefaultResourceLoaderOptions, ReloadOptions,
 };
+use crate::core::session_cwd::MissingSessionCwdError;
 use crate::core::session_manager::{get_default_session_dir, SessionEntry, SessionManager};
 use crate::core::settings_manager::SettingsManager;
 use crate::core::skills::get_agent_dir;
 use crate::utils::paths::{resolve_path, PathInputOptions};
+
+// Re-exports (pi `sdk.ts:92-94`: `export * from "./agent-session-runtime.ts"`).
+//
+// The SDK surfaces the `AgentSessionRuntime` session-lifecycle orchestrator and its
+// public surface. The type is owned by the AgentSession lane (`agent_session::runtime`);
+// the SDK only re-exports it and supplies the factory adaptation below.
+pub use crate::core::agent_session::{
+    create_agent_session_runtime, AgentSessionRuntime, AgentSessionRuntimeError,
+    AgentSessionRuntimeFactoryOptions, AgentSessionRuntimeResult, BeforeSessionInvalidate,
+    CreateAgentSessionRuntimeFactory, ForkOptions, ForkResult, NewSessionOptions, RebindSession,
+    SwitchResult,
+};
 
 /// Default tool suppression mode when no explicit allowlist is provided (pi's
 /// `noTools?: "all" | "builtin"`, `sdk.ts:56`).
@@ -524,6 +557,110 @@ pub fn create_agent_session(options: CreateAgentSessionOptions) -> CreateAgentSe
     }
 }
 
+// Runtime wiring
+//
+// pi's production `createRuntime` closure (pi `main.ts:615-739`) closes over the
+// process-global "fixed" session inputs, recreates the cwd-bound services for the
+// per-call cwd, and calls `createAgentSessionFromServices` -> `createAgentSession`.
+// The ported surface trims the services / diagnostics / project-trust layer, so the
+// factory here wraps the plain [`create_agent_session`] instead.
+
+/// The fixed [`create_agent_session`] inputs the runtime's session factory closes
+/// over, mirroring the process-global options pi's `createRuntime` captures (pi
+/// `main.ts:615`).
+///
+/// Each factory call clones these into a [`CreateAgentSessionOptions`] and merges the
+/// per-call cwd / agent_dir / session_manager / session_start_event handed in by the
+/// runtime. The per-call `model_runtime` / `settings_manager` / `resource_loader` are
+/// left `None` so [`create_agent_session`] rebuilds them cwd-bound — mirroring pi's
+/// per-cwd `createAgentSessionServices` rebuild (with the `model_runtime` divergence
+/// noted in the module docs).
+#[derive(Default, Clone)]
+pub struct CreateAgentSessionRuntimeFixedOptions {
+    /// Model to use. Default: from settings, else first available.
+    pub model: Option<Model>,
+    /// Thinking level. Default: from settings, else `medium` (clamped).
+    pub thinking_level: Option<ModelThinkingLevel>,
+    /// Models available for cycling (Ctrl+P in interactive mode).
+    pub scoped_models: Vec<ScopedModel>,
+    /// Default tool suppression when no explicit allowlist is provided.
+    pub no_tools: Option<NoTools>,
+    /// Allowlist of tool names. When provided, only these are enabled.
+    pub tools: Option<Vec<String>>,
+    /// Denylist of tool names, applied after `tools`.
+    pub exclude_tools: Option<Vec<String>>,
+    /// Custom tools to register in addition to built-in tools.
+    pub custom_tools: Vec<ToolDefinition>,
+}
+
+/// Build the session factory the runtime reuses for every `/new`, `/resume`, and
+/// `/fork` (pi's `createRuntime` closure, `main.ts:615-739`).
+///
+/// The returned closure captures the fixed inputs and, per call, merges the runtime's
+/// [`AgentSessionRuntimeFactoryOptions`] into a [`CreateAgentSessionOptions`], calls
+/// [`create_agent_session`], and adapts the [`CreateAgentSessionResult`] into an
+/// [`AgentSessionRuntimeResult`] — passing the per-call `cwd` straight through (pi
+/// returns `services.cwd`) and dropping `extensions_result` (the runtime does not
+/// carry it; the services / diagnostics surface is unported — see the runtime module
+/// docs).
+pub fn build_create_runtime_factory(
+    fixed: CreateAgentSessionRuntimeFixedOptions,
+) -> CreateAgentSessionRuntimeFactory {
+    Box::new(move |options: AgentSessionRuntimeFactoryOptions| {
+        // pi returns `services.cwd`; the runtime resolves cwd before calling the
+        // factory, so pass it straight through (no refactor of create_agent_session's
+        // internal cwd resolution).
+        let cwd = options.cwd.clone();
+
+        // TODO(follow-up): model_runtime rebuild-per-call divergence vs pi. pi shares
+        // one modelRuntime across the runtime's life; create_agent_session consumes
+        // ModelRuntime by value (!Send, not Clone), so passing None here REBUILDS it
+        // from {agent_dir}/auth.json + {agent_dir}/models.json on every new/resume/fork,
+        // dropping runtime-set API keys / interactive login. The fix needs a shareable
+        // or re-lent ModelRuntime. See the module docs.
+        let result = create_agent_session(CreateAgentSessionOptions {
+            // Per-call inputs from the runtime.
+            cwd: Some(options.cwd),
+            agent_dir: Some(options.agent_dir),
+            session_manager: Some(options.session_manager),
+            session_start_event: options.session_start_event,
+            // Fixed inputs captured from the caller.
+            model: fixed.model.clone(),
+            thinking_level: fixed.thinking_level,
+            scoped_models: fixed.scoped_models.clone(),
+            no_tools: fixed.no_tools,
+            tools: fixed.tools.clone(),
+            exclude_tools: fixed.exclude_tools.clone(),
+            custom_tools: fixed.custom_tools.clone(),
+            // Rebuilt cwd-bound per call (pi's per-cwd createAgentSessionServices).
+            model_runtime: None,
+            settings_manager: None,
+            resource_loader: None,
+        });
+
+        AgentSessionRuntimeResult {
+            session: result.session,
+            cwd,
+            model_fallback_message: result.model_fallback_message,
+        }
+    })
+}
+
+/// Create an [`AgentSessionRuntime`] wrapping the offline [`create_agent_session`]
+/// façade (mirrors pi's `createAgentSessionRuntime` production surface, wired in pi
+/// `main.ts:615-745`).
+///
+/// Builds the session factory from `fixed` and hands it, together with the `initial`
+/// target, to [`create_agent_session_runtime`]. The same factory is reused for every
+/// subsequent `/new`, `/resume`, and `/fork`.
+pub fn create_agent_session_runtime_from_options(
+    fixed: CreateAgentSessionRuntimeFixedOptions,
+    initial: AgentSessionRuntimeFactoryOptions,
+) -> Result<AgentSessionRuntime, MissingSessionCwdError> {
+    let factory = build_create_runtime_factory(fixed);
+    create_agent_session_runtime(factory, initial)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -679,5 +816,59 @@ mod tests {
         // The freshly built loader has no extensions.
         assert!(result.extensions_result.extensions.is_empty());
         assert!(result.extensions_result.runtime.is_none());
+    }
+
+    // Build an AgentSessionRuntime through the REAL create_agent_session factory
+    // (offline, no configured providers) and drive one `new_session` replacement. This
+    // exercises the factory adaptation (CreateAgentSessionResult -> AgentSessionRuntimeResult,
+    // cwd passed through) and the rebuild-per-call path: `new_session` invokes the
+    // factory again, which rebuilds cwd-bound services and re-runs create_agent_session.
+    #[test]
+    fn runtime_builds_offline_and_new_session_rebuilds_through_the_factory() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let cwd = tmp.path().to_string_lossy().into_owned();
+        let agent_dir = tmp.path().join(".agent").to_string_lossy().into_owned();
+
+        let mut runtime = create_agent_session_runtime_from_options(
+            CreateAgentSessionRuntimeFixedOptions::default(),
+            AgentSessionRuntimeFactoryOptions {
+                cwd: cwd.clone(),
+                agent_dir,
+                // In-memory: no disk session file needed for the offline path.
+                session_manager: SessionManager::in_memory(&cwd),
+                session_start_event: None,
+            },
+        )
+        .expect("initial runtime builds offline");
+
+        // The initial session bound to the passed-through cwd, and — with no providers
+        // configured — reports the no-models fallback and clamps thinking to `off`.
+        assert_eq!(runtime.cwd(), cwd);
+        assert_eq!(
+            runtime.model_fallback_message(),
+            Some(format_no_models_available_message().as_str())
+        );
+        assert_eq!(
+            runtime.session().agent.thinking_level(),
+            ModelThinkingLevel::Off
+        );
+
+        // Drive one `/new`: no lifecycle handlers are registered (the offline session
+        // uses the stub extension runner), so the switch is not cancelled and the
+        // factory is invoked a second time, rebuilding the whole stack cwd-bound.
+        let result = runtime.new_session(NewSessionOptions::default());
+        assert!(!result.cancelled);
+
+        // The rebuilt session still binds to the same cwd and reports the no-models
+        // fallback, proving the factory adaptation runs on replacement too.
+        assert_eq!(runtime.cwd(), cwd);
+        assert_eq!(
+            runtime.model_fallback_message(),
+            Some(format_no_models_available_message().as_str())
+        );
+        assert_eq!(
+            runtime.session().agent.thinking_level(),
+            ModelThinkingLevel::Off
+        );
     }
 }
