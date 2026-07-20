@@ -42,7 +42,7 @@ mod command_core;
 // the filesystem probe, empty-cwd guard, and both format strings. The JS shim
 // keeps only pi's `MissingSessionCwdError` class identity and reads the two
 // strings off pi's `SessionCwdSource`. Additive.
-mod session_cwd;
+pub mod session_cwd;
 
 // The tui autocomplete provider (`AutocompleteCore`): wraps pi's
 // `CombinedAutocompleteProvider` over a native `FileProvider` (std::fs + real
