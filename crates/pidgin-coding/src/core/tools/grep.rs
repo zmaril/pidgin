@@ -13,14 +13,32 @@
 //! Deferred seam: the filesystem access (directory walk + file reads) is done
 //! directly here rather than through pi's injectable `GrepOperations`; a custom
 //! operations backend (for example SSH) would be layered on later.
+//!
+//! The TUI render hooks ([`grep_render_call`]/[`grep_render_result`]) are ported
+//! here as **stateless** functions (pi reuses a `Text` via
+//! `context.lastComponent`, but the output is a pure function of its inputs).
+//! grep uses the DEFAULT render shell, so the returned `Text` is composed into
+//! the shell's call/result box.
 
 use std::path::{Path, PathBuf};
 
 use grep_matcher::Matcher;
 use grep_regex::RegexMatcherBuilder;
 use ignore::WalkBuilder;
+use serde_json::Value;
+
+use pidgin_agent::types::AgentToolResult;
+use pidgin_tui::renderer::Component;
+use pidgin_tui::Text;
+
+use crate::core::extensions::types::{ToolRenderContext, ToolRenderResultOptions};
+use crate::modes::interactive::theme::runtime::Theme;
 
 use super::path_utils::resolve_to_cwd;
+use super::render_utils::{
+    detail_usize, get_text_output_from_blocks, invalid_arg_text, json_number_display,
+    shorten_path_home, str_json, tools_expand_hint,
+};
 use super::truncate::{
     format_size, truncate_head, truncate_line, TruncationOptions, TruncationResult,
     DEFAULT_MAX_BYTES, GREP_MAX_LINE_LENGTH,
@@ -276,6 +294,151 @@ pub fn run_grep(cwd: &str, params: &GrepParams) -> Result<GrepResult, String> {
     Ok(result)
 }
 
+// ---------------------------------------------------------------------------
+// TUI render hooks (pi's `renderCall` / `renderResult`, `grep.ts:370` / `:375`)
+// ---------------------------------------------------------------------------
+
+/// Local `theme.fg` wrapper falling back to unstyled text on an unknown color
+/// key (pi's `theme.fg` is infallible; the ported [`Theme::fg`] returns a
+/// `Result`).
+fn fg(theme: &Theme, color: &str, text: &str) -> String {
+    theme.fg(color, text).unwrap_or_else(|_| text.to_string())
+}
+
+/// Format the grep call header (pi's `formatGrepCall`):
+/// `grep /pattern/ in <path> (glob) limit N`, with `[invalid arg]` for a
+/// wrong-typed pattern or path.
+fn format_grep_call(args: &Value, theme: &Theme) -> String {
+    let pattern = str_json(args.get("pattern"));
+    let raw_path = str_json(args.get("path"));
+    let invalid = invalid_arg_text(theme);
+
+    let pattern_part = match &pattern {
+        None => invalid.clone(),
+        Some(p) => fg(theme, "accent", &format!("/{p}/")),
+    };
+    let path_part = match &raw_path {
+        None => invalid.clone(),
+        Some(p) => shorten_path_home(if p.is_empty() { "." } else { p }),
+    };
+    let mut text = format!(
+        "{} {}{}",
+        fg(theme, "toolTitle", &theme.bold("grep")),
+        pattern_part,
+        fg(theme, "toolOutput", &format!(" in {path_part}"))
+    );
+    if let Some(glob) = str_json(args.get("glob")).filter(|g| !g.is_empty()) {
+        text += &fg(theme, "toolOutput", &format!(" ({glob})"));
+    }
+    if let Some(limit) = args.get("limit") {
+        text += &fg(
+            theme,
+            "toolOutput",
+            &format!(" limit {}", json_number_display(limit)),
+        );
+    }
+    text
+}
+
+/// Format the grep result body (pi's `formatGrepResult`): the matches (up to 15
+/// lines unless expanded) plus a `[Truncated: …]` footer for match/byte/line
+/// caps.
+fn format_grep_result(
+    result: &AgentToolResult,
+    options: &ToolRenderResultOptions,
+    theme: &Theme,
+    show_images: bool,
+) -> String {
+    let output = get_text_output_from_blocks(&result.content, show_images);
+    let output = output.trim();
+    let mut text = String::new();
+    if !output.is_empty() {
+        let lines: Vec<&str> = output.split('\n').collect();
+        let max_lines = if options.expanded { lines.len() } else { 15 };
+        let display_lines = &lines[..max_lines.min(lines.len())];
+        let remaining = lines.len() as isize - max_lines as isize;
+        text += &format!(
+            "\n{}",
+            display_lines
+                .iter()
+                .map(|line| fg(theme, "toolOutput", line))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        if remaining > 0 {
+            text += &fg(theme, "muted", &format!("\n... ({remaining} more lines,"));
+            text += " ";
+            text += &tools_expand_hint(theme, "to expand");
+            text += &fg(theme, "muted", ")");
+        }
+    }
+
+    let match_limit = result
+        .details
+        .get("matchLimitReached")
+        .and_then(Value::as_u64)
+        .filter(|&m| m != 0);
+    let truncation = result.details.get("truncation");
+    let truncated = truncation
+        .and_then(|t| t.get("truncated"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let lines_truncated = result
+        .details
+        .get("linesTruncated")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    if match_limit.is_some() || truncated || lines_truncated {
+        let mut warnings: Vec<String> = Vec::new();
+        if let Some(m) = match_limit {
+            warnings.push(format!("{m} matches limit"));
+        }
+        if truncated {
+            let max_bytes = truncation
+                .and_then(|t| detail_usize(t, "maxBytes"))
+                .unwrap_or(DEFAULT_MAX_BYTES);
+            warnings.push(format!("{} limit", format_size(max_bytes)));
+        }
+        if lines_truncated {
+            warnings.push("some lines truncated".to_string());
+        }
+        text += &format!(
+            "\n{}",
+            fg(
+                theme,
+                "warning",
+                &format!("[Truncated: {}]", warnings.join(", "))
+            )
+        );
+    }
+    text
+}
+
+/// Custom rendering for the grep tool call (pi's `renderCall`, `grep.ts:370`).
+pub fn grep_render_call(
+    args: &Value,
+    theme: &Theme,
+    _context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    Box::new(Text::new(&format_grep_call(args, theme), 0, 0, None))
+}
+
+/// Custom rendering for the grep tool result (pi's `renderResult`,
+/// `grep.ts:375`).
+pub fn grep_render_result(
+    result: &AgentToolResult,
+    options: &ToolRenderResultOptions,
+    theme: &Theme,
+    context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    Box::new(Text::new(
+        &format_grep_result(result, options, theme, context.show_images),
+        0,
+        0,
+        None,
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -375,5 +538,89 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.starts_with("Path not found:"), "got: {err}");
+    }
+}
+
+#[cfg(test)]
+mod render_tests {
+    use super::*;
+    use crate::modes::interactive::theme::{create_theme, parse_theme_json, ColorMode};
+    use pidgin_ai::ContentBlock;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    fn dark_theme() -> Theme {
+        let path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/modes/interactive/theme/dark.json");
+        let content = std::fs::read_to_string(&path).expect("read dark.json");
+        let json = parse_theme_json(&content).expect("parse dark.json");
+        create_theme(&json, Some(ColorMode::Color256), None).expect("create dark theme")
+    }
+
+    fn text_result(text: &str, details: Value) -> AgentToolResult {
+        AgentToolResult {
+            content: vec![ContentBlock::Text {
+                text: text.to_string(),
+                text_signature: None,
+            }],
+            details,
+            added_tool_names: None,
+            terminate: None,
+        }
+    }
+
+    fn opts(expanded: bool) -> ToolRenderResultOptions {
+        ToolRenderResultOptions {
+            expanded,
+            is_partial: false,
+        }
+    }
+
+    #[test]
+    fn call_renders_pattern_in_slashes_and_default_dot_path() {
+        let theme = dark_theme();
+        let args = json!({ "pattern": "needle" });
+        let text = format_grep_call(&args, &theme);
+        assert!(text.contains("grep"));
+        assert!(text.contains("/needle/"), "got: {text:?}");
+        assert!(text.contains(" in ."), "got: {text:?}");
+    }
+
+    #[test]
+    fn call_renders_glob_and_limit_suffixes() {
+        let theme = dark_theme();
+        let args = json!({ "pattern": "foo", "path": "src", "glob": "*.rs", "limit": 50 });
+        let text = format_grep_call(&args, &theme);
+        assert!(text.contains("/foo/"));
+        assert!(text.contains(" in src"));
+        assert!(text.contains("(*.rs)"), "got: {text:?}");
+        assert!(text.contains("limit 50"), "got: {text:?}");
+    }
+
+    #[test]
+    fn call_invalid_pattern_shows_invalid_marker() {
+        let theme = dark_theme();
+        let args = json!({ "pattern": 42 });
+        let text = format_grep_call(&args, &theme);
+        assert!(text.contains("[invalid arg]"), "got: {text:?}");
+    }
+
+    #[test]
+    fn result_lists_matches() {
+        let theme = dark_theme();
+        let result = text_result("src/a.rs:1: let x = 1;\nsrc/b.rs:5: fn y() {}", Value::Null);
+        let body = format_grep_result(&result, &opts(false), &theme, false);
+        assert!(body.contains("src/a.rs:1:"));
+        assert!(body.contains("src/b.rs:5:"));
+    }
+
+    #[test]
+    fn result_footer_reports_match_and_line_truncation() {
+        let theme = dark_theme();
+        let details = json!({ "matchLimitReached": 100, "linesTruncated": true });
+        let result = text_result("src/a.rs:1: x", details);
+        let body = format_grep_result(&result, &opts(false), &theme, false);
+        assert!(body.contains("100 matches limit"), "got: {body:?}");
+        assert!(body.contains("some lines truncated"), "got: {body:?}");
     }
 }

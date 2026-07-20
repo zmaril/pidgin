@@ -7,14 +7,26 @@
 //! [`invalid_arg_text`] are also ported now that the interactive `Theme` and the
 //! pi-tui capability/hyperlink seams are available in this crate.
 
+// straitjacket-allow-file:duplication — [`get_text_output_from_blocks`] faithfully
+// mirrors pi's `getTextOutput` (the same transform the `ToolExecution` shell's
+// `text_output` performs); the shared render helpers here parallel pi's
+// `render-utils.ts` by design.
+
 use serde_json::Value;
 
+use pidgin_ai::ContentBlock;
+use pidgin_tui::keybindings::{
+    KeybindingDefinition as TuiKeybindingDefinition, KeybindingsManager as TuiKeybindingsManager,
+};
 use pidgin_tui::{get_capabilities, hyperlink};
 
+use crate::core::keybindings::{keybindings_for, Keys, Platform};
+use crate::modes::interactive::components::{key_hint, key_text};
 use crate::modes::interactive::theme::runtime::Theme;
 use crate::utils::ansi::strip_ansi;
 use crate::utils::paths::{resolve_path, PathInputOptions};
 use crate::utils::shell::sanitize_binary_output;
+use crate::utils::syntax_highlight::supports_language;
 
 /// Local `theme.fg` wrapper that falls back to the unstyled text on an unknown
 /// color key, matching the infallible-render convention used elsewhere (pi's
@@ -71,6 +83,13 @@ pub fn shorten_path(path: &str, home: &str) -> String {
 /// The user's home directory, mirroring pi's `os.homedir()` on POSIX (`$HOME`).
 fn home() -> String {
     std::env::var("HOME").unwrap_or_default()
+}
+
+/// [`shorten_path`] against the process home directory, mirroring pi's
+/// single-argument `shortenPath(path)` (which reads `os.homedir()` internally).
+/// Used by the grep/find call renderers.
+pub fn shorten_path_home(path: &str) -> String {
+    shorten_path(path, &home())
 }
 
 /// Coerce a JSON value into a display string, matching pi's `str`
@@ -159,6 +178,187 @@ pub fn render_tool_path(
     )
 }
 
+/// Materialize a tool result's text blocks for display, mirroring pi's
+/// `getTextOutput(result, showImages)` (`render-utils.ts`) for the text path:
+/// each text block is ANSI-stripped, binary-sanitized, and CR-normalized (the
+/// per-block [`get_text_output`]), then the blocks are joined with `\n`.
+///
+/// Image blocks are a deferred seam: pi appends `imageFallback` indicators when
+/// image blocks are present and the terminal cannot show them, but the
+/// image-fallback / dimension helpers are not ported and the byte-exact vectors
+/// carry only text blocks. `show_images` is accepted to mirror pi's signature.
+pub fn get_text_output_from_blocks(content: &[ContentBlock], _show_images: bool) -> String {
+    content
+        .iter()
+        .filter_map(|block| match block {
+            ContentBlock::Text { text, .. } => Some(get_text_output(text)),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Map a file path to a highlight.js language identifier from its extension,
+/// mirroring pi's `getLanguageFromPath` (`theme/theme.ts`): the last `.`-segment
+/// is lowercased and looked up in pi's extension table. An empty extension (a
+/// trailing dot, or an empty path) yields `None`; unmapped extensions yield
+/// `None`. The whole-name-as-extension quirk for dotless names (`Makefile` ->
+/// `makefile`) is preserved, matching pi's `split(".").pop()`.
+pub fn get_language_from_path(file_path: &str) -> Option<&'static str> {
+    let ext = file_path.rsplit('.').next().unwrap_or("").to_lowercase();
+    if ext.is_empty() {
+        return None;
+    }
+    let lang = match ext.as_str() {
+        "ts" | "tsx" => "typescript",
+        "js" | "jsx" | "mjs" | "cjs" => "javascript",
+        "py" => "python",
+        "rb" => "ruby",
+        "rs" => "rust",
+        "go" => "go",
+        "java" => "java",
+        "kt" => "kotlin",
+        "swift" => "swift",
+        "c" | "h" => "c",
+        "cpp" | "cc" | "cxx" | "hpp" => "cpp",
+        "cs" => "csharp",
+        "php" => "php",
+        "sh" | "bash" | "zsh" => "bash",
+        "fish" => "fish",
+        "ps1" => "powershell",
+        "sql" => "sql",
+        "html" | "htm" => "html",
+        "css" => "css",
+        "scss" => "scss",
+        "sass" => "sass",
+        "less" => "less",
+        "json" => "json",
+        "yaml" | "yml" => "yaml",
+        "toml" => "toml",
+        "xml" => "xml",
+        "md" | "markdown" => "markdown",
+        "dockerfile" => "dockerfile",
+        "makefile" => "makefile",
+        "cmake" => "cmake",
+        "lua" => "lua",
+        "perl" => "perl",
+        "r" => "r",
+        "scala" => "scala",
+        "clj" => "clojure",
+        "ex" | "exs" => "elixir",
+        "erl" => "erlang",
+        "hs" => "haskell",
+        "ml" => "ocaml",
+        "vim" => "vim",
+        "graphql" => "graphql",
+        "proto" => "protobuf",
+        "tf" | "hcl" => "hcl",
+        _ => return None,
+    };
+    Some(lang)
+}
+
+/// Highlight `code` into themed terminal lines, mirroring pi's `highlightCode`
+/// (`theme/theme.ts`).
+///
+/// **Documented divergence — valid-language highlighting.** pi validates the
+/// language via `supportsLanguage` and, when valid, runs the highlight.js
+/// grammar engine. That engine is deno-plane only (see
+/// [`crate::utils::syntax_highlight`]), so [`supports_language`] is `false` on
+/// this build and the no-valid-language fallback is always taken — pi's own path
+/// when the engine cannot validate a language: each line is colored with
+/// `theme.fg("mdCodeBlock", …)`. This matches the same divergence already
+/// documented for the markdown renderer's `highlight_code`. Byte-exact vectors
+/// therefore avoid valid-language content.
+pub fn highlight_code(code: &str, lang: Option<&str>, theme: &Theme) -> Vec<String> {
+    let valid_lang = lang.filter(|l| supports_language(l));
+    // The valid-language branch (real hljs) is deno-plane only; on this build
+    // `valid_lang` is always `None`, so the fallback below is pi-faithful.
+    let _ = valid_lang;
+    code.split('\n')
+        .map(|line| fg(theme, "mdCodeBlock", line))
+        .collect()
+}
+
+/// Read a numeric field off a tool result's `details` JSON as `usize`, for the
+/// shared `[Truncated: …]` result footers.
+pub fn detail_usize(details: &Value, key: &str) -> Option<usize> {
+    details.get(key).and_then(Value::as_u64).map(|n| n as usize)
+}
+
+/// Render a JSON numeric argument the way JS string-interpolation does, for the
+/// `(limit N)` / `limit N` call suffixes: integers print without a decimal
+/// point, other numbers via their default formatting.
+pub fn json_number_display(value: &Value) -> String {
+    if let Some(i) = value.as_i64() {
+        return i.to_string();
+    }
+    if let Some(u) = value.as_u64() {
+        return u.to_string();
+    }
+    if let Some(f) = value.as_f64() {
+        return f.to_string();
+    }
+    value.as_str().map(str::to_string).unwrap_or_default()
+}
+
+/// Drop trailing empty lines from `lines`, mirroring pi's
+/// `trimTrailingEmptyLines` (used by the read/write renderers before slicing to
+/// the display window).
+pub fn trim_trailing_empty_lines(lines: &[String]) -> &[String] {
+    let mut end = lines.len();
+    while end > 0 && lines[end - 1].is_empty() {
+        end -= 1;
+    }
+    &lines[..end]
+}
+
+/// A default `pidgin_tui` [`KeybindingsManager`](TuiKeybindingsManager) built
+/// from the coding-agent's platform keybinding table with no user overrides —
+/// the Rust analog of pi's global `getKeybindings()` in the byte-exact setting
+/// (no user config). The tool renderers use it for the `app.tools.expand` hint.
+fn app_keybindings_manager() -> TuiKeybindingsManager {
+    let owned: Vec<(String, TuiKeybindingDefinition)> = keybindings_for(Platform::current())
+        .into_iter()
+        .map(|(id, def)| {
+            let keys = match def.default_keys {
+                Keys::One(k) => vec![k],
+                Keys::Many(v) => v,
+            };
+            (
+                id,
+                TuiKeybindingDefinition {
+                    default_keys: keys,
+                    description: Some(def.description.to_string()),
+                },
+            )
+        })
+        .collect();
+    let refs: Vec<(&str, TuiKeybindingDefinition)> = owned
+        .iter()
+        .map(|(id, def)| (id.as_str(), def.clone()))
+        .collect();
+    TuiKeybindingsManager::new(refs, Vec::new())
+}
+
+/// The `app.tools.expand` keybinding hint (`keyHint("app.tools.expand", …)`) — a
+/// dim key label plus a muted, space-prefixed `description`. Used in the
+/// tool-result "… (N more lines, to expand)" truncation notices.
+pub fn tools_expand_hint(theme: &Theme, description: &str) -> String {
+    key_hint(
+        theme,
+        &app_keybindings_manager(),
+        "app.tools.expand",
+        description,
+    )
+}
+
+/// The `app.tools.expand` key text (`keyText("app.tools.expand")`) — the
+/// resolved keys, uncapitalized. Used by the read compact-call expand hint.
+pub fn tools_expand_key_text() -> String {
+    key_text(&app_keybindings_manager(), "app.tools.expand")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -230,5 +430,59 @@ mod tests {
         // this environment, so the styled text passes through unchanged.
         assert!(!get_capabilities().hyperlinks);
         assert_eq!(link_path("styled", "src/x.rs", "/cwd"), "styled");
+    }
+
+    #[test]
+    fn get_language_from_path_maps_known_extensions() {
+        assert_eq!(get_language_from_path("main.rs"), Some("rust"));
+        assert_eq!(get_language_from_path("a/b/app.tsx"), Some("typescript"));
+        assert_eq!(get_language_from_path("Config.YAML"), Some("yaml"));
+        // Unmapped and empty extensions -> None (the byte-exact read/write path).
+        assert_eq!(get_language_from_path("notes.txt"), None);
+        assert_eq!(get_language_from_path("noext"), None);
+        assert_eq!(get_language_from_path("trailing."), None);
+    }
+
+    #[test]
+    fn trim_trailing_empty_lines_drops_only_trailing_blanks() {
+        let lines = vec![
+            "a".to_string(),
+            String::new(),
+            "b".to_string(),
+            String::new(),
+            String::new(),
+        ];
+        assert_eq!(trim_trailing_empty_lines(&lines), &lines[..3]);
+        let all_blank = vec![String::new(), String::new()];
+        assert!(trim_trailing_empty_lines(&all_blank).is_empty());
+    }
+
+    #[test]
+    fn json_number_display_formats_like_js_interpolation() {
+        use serde_json::json;
+        assert_eq!(json_number_display(&json!(100)), "100");
+        assert_eq!(json_number_display(&json!(0)), "0");
+    }
+
+    #[test]
+    fn get_text_output_from_blocks_joins_text_blocks() {
+        let blocks = vec![
+            ContentBlock::Text {
+                text: "one".to_string(),
+                text_signature: None,
+            },
+            ContentBlock::Text {
+                text: "two\r".to_string(),
+                text_signature: None,
+            },
+        ];
+        assert_eq!(get_text_output_from_blocks(&blocks, false), "one\ntwo");
+    }
+
+    #[test]
+    fn tools_expand_key_text_uses_ctrl_o_default_binding() {
+        // app.tools.expand defaults to ctrl+o in the coding-agent keybinding
+        // table, so the compact/expand hints resolve to that key.
+        assert_eq!(tools_expand_key_text(), "ctrl+o");
     }
 }

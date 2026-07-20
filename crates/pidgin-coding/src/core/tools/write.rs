@@ -8,20 +8,38 @@
 //! [`create_local_write_operations`] returns the default `tokio::fs`-backed
 //! implementation.
 //!
-//! Deferred seam: pi's `write.ts` also carries a large syntax-highlight
-//! render/caching layer (`WriteCallRenderComponent`, incremental highlight
-//! cache) plus the `renderCall`/`renderResult` TUI hooks. Those are TUI-only
-//! and depend on the theme layer, so — as with the other ported tools — they
-//! are not reproduced here; only the execute path is ported.
+//! The TUI render hooks ([`write_render_call`]/[`write_render_result`]) are
+//! ported here as **stateless** functions. pi threads a mutable
+//! `WriteCallRenderComponent` with an incremental syntax-highlight cache through
+//! `context.lastComponent`, but that cache converges to a full rebuild on the
+//! `argsComplete` frame (`rebuildWriteHighlightCacheFull` == the non-cache
+//! `highlightCode(replaceTabs(normalizeDisplayText(content)), lang)` path), so
+//! the settled output is a pure function of `{args, options, context}`. write
+//! uses the DEFAULT render shell, so the returned components are composed into
+//! the shell's call/result box. Valid-language highlighting is the deno-plane
+//! seam documented on [`highlight_code`](super::render_utils::highlight_code).
 
 use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 
+use serde_json::Value;
 use tokio::sync::watch;
+
+use pidgin_agent::types::AgentToolResult;
+use pidgin_ai::ContentBlock;
+use pidgin_tui::renderer::{Component, Container};
+use pidgin_tui::Text;
+
+use crate::core::extensions::types::{ToolRenderContext, ToolRenderResultOptions};
+use crate::modes::interactive::theme::runtime::Theme;
 
 use super::file_mutation_queue::with_file_mutation_queue;
 use super::path_utils::resolve_to_cwd;
+use super::render_utils::{
+    get_language_from_path, highlight_code, normalize_display_text, render_tool_path, replace_tabs,
+    str_json, tools_expand_hint, trim_trailing_empty_lines,
+};
 
 /// Input parameters for the write tool (pi's `{ path, content }` schema).
 #[derive(Debug, Clone)]
@@ -151,6 +169,160 @@ pub async fn run_write(
         })
     })
     .await
+}
+
+// ---------------------------------------------------------------------------
+// TUI render hooks (pi's `renderCall` / `renderResult`, `write.ts:227` / `:251`)
+// ---------------------------------------------------------------------------
+
+/// Local `theme.fg` wrapper falling back to unstyled text on an unknown color
+/// key (pi's `theme.fg` is infallible; the ported [`Theme::fg`] returns a
+/// `Result`).
+fn fg(theme: &Theme, color: &str, text: &str) -> String {
+    theme.fg(color, text).unwrap_or_else(|_| text.to_string())
+}
+
+/// The path argument for display: `file_path` unless nullish, else `path`,
+/// coerced through pi's `str` (mirrors `str(args?.file_path ?? args?.path)`).
+fn write_path_arg(args: &Value) -> Option<String> {
+    let raw = match args.get("file_path") {
+        Some(v) if !v.is_null() => Some(v),
+        _ => args.get("path"),
+    };
+    str_json(raw)
+}
+
+/// Format the write call header + content preview (pi's `formatWriteCall`).
+///
+/// The syntax-highlight cache is stateless here: on the settled frame pi's cache
+/// equals `highlightCode(replaceTabs(normalizeDisplayText(content)), lang)`, so
+/// this recomputes it directly (see the module doc).
+fn format_write_call(
+    args: &Value,
+    options: &ToolRenderResultOptions,
+    theme: &Theme,
+    cwd: &str,
+) -> String {
+    let raw_path = write_path_arg(args);
+    let file_content = str_json(args.get("content"));
+    let path_display = render_tool_path(raw_path.as_deref(), theme, cwd, None);
+    let mut text = format!(
+        "{} {}",
+        fg(theme, "toolTitle", &theme.bold("write")),
+        path_display
+    );
+
+    match file_content {
+        None => {
+            text += &format!(
+                "\n\n{}",
+                fg(theme, "error", "[invalid content arg - expected string]")
+            );
+        }
+        Some(content) if !content.is_empty() => {
+            let lang = raw_path
+                .as_deref()
+                .filter(|p| !p.is_empty())
+                .and_then(get_language_from_path);
+            let rendered_lines: Vec<String> = match lang {
+                Some(l) => highlight_code(
+                    &replace_tabs(&normalize_display_text(&content)),
+                    Some(l),
+                    theme,
+                ),
+                None => normalize_display_text(&content)
+                    .split('\n')
+                    .map(str::to_string)
+                    .collect(),
+            };
+            let lines = trim_trailing_empty_lines(&rendered_lines);
+            let total_lines = lines.len();
+            let max_lines = if options.expanded { lines.len() } else { 10 };
+            let display_lines = &lines[..max_lines.min(lines.len())];
+            let remaining = lines.len() as isize - max_lines as isize;
+
+            let body = display_lines
+                .iter()
+                .map(|line| {
+                    if lang.is_some() {
+                        line.clone()
+                    } else {
+                        fg(theme, "toolOutput", &replace_tabs(line))
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            text += &format!("\n\n{body}");
+
+            if remaining > 0 {
+                text += &fg(
+                    theme,
+                    "muted",
+                    &format!("\n... ({remaining} more lines, {total_lines} total,"),
+                );
+                text += " ";
+                text += &tools_expand_hint(theme, "to expand");
+                text += &fg(theme, "muted", ")");
+            }
+        }
+        Some(_) => {}
+    }
+
+    text
+}
+
+/// Format the write result body (pi's `formatWriteResult`): only rendered on
+/// error, as the raw error text (no ANSI stripping/sanitizing, matching pi).
+fn format_write_result(result: &AgentToolResult, theme: &Theme, is_error: bool) -> Option<String> {
+    if !is_error {
+        return None;
+    }
+    let output = result
+        .content
+        .iter()
+        .filter_map(|block| match block {
+            ContentBlock::Text { text, .. } => Some(text.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    if output.is_empty() {
+        return None;
+    }
+    Some(format!("\n{}", fg(theme, "error", &output)))
+}
+
+/// Custom rendering for the write tool call (pi's `renderCall`, `write.ts:227`).
+pub fn write_render_call(
+    args: &Value,
+    theme: &Theme,
+    context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    let options = ToolRenderResultOptions {
+        expanded: context.expanded,
+        is_partial: context.is_partial,
+    };
+    Box::new(Text::new(
+        &format_write_call(args, &options, theme, context.cwd),
+        0,
+        0,
+        None,
+    ))
+}
+
+/// Custom rendering for the write tool result (pi's `renderResult`,
+/// `write.ts:251`). pi returns a cleared `Container` (renders nothing) unless
+/// the result is an error, in which case it returns the error text `Text`.
+pub fn write_render_result(
+    result: &AgentToolResult,
+    _options: &ToolRenderResultOptions,
+    theme: &Theme,
+    context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    match format_write_result(result, theme, context.is_error) {
+        None => Box::new(Container::new()),
+        Some(output) => Box::new(Text::new(&output, 0, 0, None)),
+    }
 }
 
 #[cfg(test)]
@@ -539,5 +711,111 @@ mod tests {
         // Final on-disk content is the second write's, exactly like pi.
         let content = std::fs::read_to_string(&file_path).unwrap();
         assert_eq!(content, "second\n");
+    }
+}
+
+#[cfg(test)]
+mod render_tests {
+    use super::*;
+    use crate::modes::interactive::theme::{create_theme, parse_theme_json, ColorMode};
+    use pidgin_ai::ContentBlock;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    fn dark_theme() -> Theme {
+        let path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/modes/interactive/theme/dark.json");
+        let content = std::fs::read_to_string(&path).expect("read dark.json");
+        let json = parse_theme_json(&content).expect("parse dark.json");
+        create_theme(&json, Some(ColorMode::Color256), None).expect("create dark theme")
+    }
+
+    fn ctx<'a>(args: &'a Value, is_error: bool) -> ToolRenderContext<'a> {
+        ToolRenderContext {
+            args,
+            cwd: "/tmp/tool-cwd",
+            execution_started: true,
+            args_complete: true,
+            is_partial: false,
+            expanded: false,
+            show_images: false,
+            is_error,
+        }
+    }
+
+    fn text_result(text: &str) -> AgentToolResult {
+        AgentToolResult {
+            content: vec![ContentBlock::Text {
+                text: text.to_string(),
+                text_signature: None,
+            }],
+            details: Value::Null,
+            added_tool_names: None,
+            terminate: None,
+        }
+    }
+
+    fn opts() -> ToolRenderResultOptions {
+        ToolRenderResultOptions {
+            expanded: false,
+            is_partial: false,
+        }
+    }
+
+    #[test]
+    fn call_renders_write_header_and_content_preview() {
+        let theme = dark_theme();
+        let args = json!({ "path": "out.txt", "content": "hello\nworld" });
+        let text = format_write_call(&args, &opts(), &theme, "/tmp/tool-cwd");
+        assert!(text.contains("write"), "got: {text:?}");
+        assert!(text.contains("out.txt"), "got: {text:?}");
+        assert!(text.contains("hello"));
+        assert!(text.contains("world"));
+    }
+
+    #[test]
+    fn call_with_empty_content_is_header_only() {
+        let theme = dark_theme();
+        let args = json!({ "path": "out.txt", "content": "" });
+        let text = format_write_call(&args, &opts(), &theme, "/tmp/tool-cwd");
+        assert!(text.contains("out.txt"));
+        // No content preview (no double-newline body).
+        assert!(!text.contains("\n\n"), "got: {text:?}");
+    }
+
+    #[test]
+    fn call_with_non_string_content_shows_invalid_marker() {
+        let theme = dark_theme();
+        let args = json!({ "path": "out.txt", "content": 42 });
+        let text = format_write_call(&args, &opts(), &theme, "/tmp/tool-cwd");
+        assert!(
+            text.contains("[invalid content arg - expected string]"),
+            "got: {text:?}"
+        );
+    }
+
+    #[test]
+    fn result_is_empty_container_on_success() {
+        let theme = dark_theme();
+        let args = json!({ "path": "out.txt", "content": "hi" });
+        let result = text_result("Successfully wrote 2 bytes to out.txt");
+        let out = write_render_result(&result, &opts(), &theme, &ctx(&args, false)).render(80);
+        assert!(
+            out.is_empty(),
+            "success result must render nothing: {out:?}"
+        );
+    }
+
+    #[test]
+    fn result_shows_error_text_on_error() {
+        let theme = dark_theme();
+        let args = json!({ "path": "out.txt", "content": "hi" });
+        let result = text_result("EACCES: permission denied");
+        let out = write_render_result(&result, &opts(), &theme, &ctx(&args, true)).render(80);
+        let joined = out.join("\n");
+        assert!(
+            joined.contains("EACCES: permission denied"),
+            "got: {joined:?}"
+        );
     }
 }

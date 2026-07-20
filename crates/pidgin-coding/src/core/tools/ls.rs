@@ -8,18 +8,31 @@
 //! remote filesystem); [`create_local_ls_operations`] returns the default
 //! std-backed implementation.
 //!
-//! Deferred seam: pi's `ls.ts` also carries the `renderCall`/`renderResult` TUI
-//! hooks (theme-styled listing with a `[Truncated: ...]` footer). Those are
-//! TUI-only and depend on the theme layer, so — as with the other ported tools
-//! — they are not reproduced here; only the execute path is ported.
+//! The TUI render hooks ([`ls_render_call`]/[`ls_render_result`]) are ported
+//! here as **stateless** functions (pi reuses a `Text` via
+//! `context.lastComponent`, but the output is a pure function of its inputs). ls
+//! uses the DEFAULT render shell, so the returned `Text` is composed into the
+//! shell's call/result box.
 
 use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
 
+use serde_json::Value;
 use tokio::sync::watch;
 
+use pidgin_agent::types::AgentToolResult;
+use pidgin_tui::renderer::Component;
+use pidgin_tui::Text;
+
+use crate::core::extensions::types::{ToolRenderContext, ToolRenderResultOptions};
+use crate::modes::interactive::theme::runtime::Theme;
+
 use super::path_utils::resolve_to_cwd;
+use super::render_utils::{
+    detail_usize, get_text_output_from_blocks, json_number_display, render_tool_path, str_json,
+    tools_expand_hint,
+};
 use super::truncate::{
     format_size, truncate_head, TruncationOptions, TruncationResult, DEFAULT_MAX_BYTES,
 };
@@ -247,6 +260,131 @@ pub async fn run_ls(
     })
 }
 
+// ---------------------------------------------------------------------------
+// TUI render hooks (pi's `renderCall` / `renderResult`, `ls.ts:210` / `:215`)
+// ---------------------------------------------------------------------------
+
+/// Local `theme.fg` wrapper falling back to unstyled text on an unknown color
+/// key (pi's `theme.fg` is infallible; the ported [`Theme::fg`] returns a
+/// `Result`).
+fn fg(theme: &Theme, color: &str, text: &str) -> String {
+    theme.fg(color, text).unwrap_or_else(|_| text.to_string())
+}
+
+/// Format the ls call header (pi's `formatLsCall`): `ls <path>` with an empty
+/// path defaulting to `.`, plus an optional ` (limit N)` suffix.
+fn format_ls_call(args: &Value, theme: &Theme, cwd: &str) -> String {
+    let path_display =
+        render_tool_path(str_json(args.get("path")).as_deref(), theme, cwd, Some("."));
+    let mut text = format!(
+        "{} {}",
+        fg(theme, "toolTitle", &theme.bold("ls")),
+        path_display
+    );
+    if let Some(limit) = args.get("limit") {
+        text += &fg(
+            theme,
+            "toolOutput",
+            &format!(" (limit {})", json_number_display(limit)),
+        );
+    }
+    text
+}
+
+/// Format the ls result body (pi's `formatLsResult`): the listing (up to 20
+/// lines unless expanded) plus a `[Truncated: …]` footer for entry/byte caps.
+fn format_ls_result(
+    result: &AgentToolResult,
+    options: &ToolRenderResultOptions,
+    theme: &Theme,
+    show_images: bool,
+) -> String {
+    let output = get_text_output_from_blocks(&result.content, show_images);
+    let output = output.trim();
+    let mut text = String::new();
+    if !output.is_empty() {
+        let lines: Vec<&str> = output.split('\n').collect();
+        let max_lines = if options.expanded { lines.len() } else { 20 };
+        let display_lines = &lines[..max_lines.min(lines.len())];
+        let remaining = lines.len() as isize - max_lines as isize;
+        text += &format!(
+            "\n{}",
+            display_lines
+                .iter()
+                .map(|line| fg(theme, "toolOutput", line))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        if remaining > 0 {
+            text += &fg(theme, "muted", &format!("\n... ({remaining} more lines,"));
+            text += " ";
+            text += &tools_expand_hint(theme, "to expand");
+            text += &fg(theme, "muted", ")");
+        }
+    }
+
+    let entry_limit = result
+        .details
+        .get("entryLimitReached")
+        .and_then(Value::as_u64)
+        .filter(|&e| e != 0);
+    let truncation = result.details.get("truncation");
+    let truncated = truncation
+        .and_then(|t| t.get("truncated"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    if entry_limit.is_some() || truncated {
+        let mut warnings: Vec<String> = Vec::new();
+        if let Some(e) = entry_limit {
+            warnings.push(format!("{e} entries limit"));
+        }
+        if truncated {
+            let max_bytes = truncation
+                .and_then(|t| detail_usize(t, "maxBytes"))
+                .unwrap_or(DEFAULT_MAX_BYTES);
+            warnings.push(format!("{} limit", format_size(max_bytes)));
+        }
+        text += &format!(
+            "\n{}",
+            fg(
+                theme,
+                "warning",
+                &format!("[Truncated: {}]", warnings.join(", "))
+            )
+        );
+    }
+    text
+}
+
+/// Custom rendering for the ls tool call (pi's `renderCall`, `ls.ts:210`).
+pub fn ls_render_call(
+    args: &Value,
+    theme: &Theme,
+    context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    Box::new(Text::new(
+        &format_ls_call(args, theme, context.cwd),
+        0,
+        0,
+        None,
+    ))
+}
+
+/// Custom rendering for the ls tool result (pi's `renderResult`, `ls.ts:215`).
+pub fn ls_render_result(
+    result: &AgentToolResult,
+    options: &ToolRenderResultOptions,
+    theme: &Theme,
+    context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    Box::new(Text::new(
+        &format_ls_result(result, options, theme, context.show_images),
+        0,
+        0,
+        None,
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -442,5 +580,88 @@ mod tests {
             &out.text[out.text.len().saturating_sub(60)..]
         );
         assert!(out.truncation.is_some());
+    }
+}
+
+#[cfg(test)]
+mod render_tests {
+    use super::*;
+    use crate::modes::interactive::theme::{create_theme, parse_theme_json, ColorMode};
+    use pidgin_ai::ContentBlock;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    fn dark_theme() -> Theme {
+        let path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/modes/interactive/theme/dark.json");
+        let content = std::fs::read_to_string(&path).expect("read dark.json");
+        let json = parse_theme_json(&content).expect("parse dark.json");
+        create_theme(&json, Some(ColorMode::Color256), None).expect("create dark theme")
+    }
+
+    fn text_result(text: &str, details: Value) -> AgentToolResult {
+        AgentToolResult {
+            content: vec![ContentBlock::Text {
+                text: text.to_string(),
+                text_signature: None,
+            }],
+            details,
+            added_tool_names: None,
+            terminate: None,
+        }
+    }
+
+    fn opts(expanded: bool) -> ToolRenderResultOptions {
+        ToolRenderResultOptions {
+            expanded,
+            is_partial: false,
+        }
+    }
+
+    #[test]
+    fn call_renders_ls_header() {
+        let theme = dark_theme();
+        let args = json!({ "path": "src" });
+        let text = format_ls_call(&args, &theme, "/tmp/tool-cwd");
+        assert!(text.contains("ls"));
+        assert!(text.contains("src"));
+        assert!(!text.contains("limit"));
+    }
+
+    #[test]
+    fn call_with_limit_shows_limit_suffix() {
+        let theme = dark_theme();
+        let args = json!({ "path": "src", "limit": 100 });
+        let text = format_ls_call(&args, &theme, "/tmp/tool-cwd");
+        assert!(text.contains("(limit 100)"), "got: {text:?}");
+    }
+
+    #[test]
+    fn empty_path_defaults_to_dot() {
+        let theme = dark_theme();
+        let args = json!({});
+        let text = format_ls_call(&args, &theme, "/tmp/tool-cwd");
+        assert!(text.contains('.'), "got: {text:?}");
+    }
+
+    #[test]
+    fn result_lists_entries_with_tool_output() {
+        let theme = dark_theme();
+        let result = text_result("a.txt\nb.txt\nsub/", Value::Null);
+        let body = format_ls_result(&result, &opts(false), &theme, false);
+        assert!(body.starts_with('\n'));
+        assert!(body.contains("a.txt"));
+        assert!(body.contains("sub/"));
+    }
+
+    #[test]
+    fn result_shows_truncation_footer_for_entry_and_byte_caps() {
+        let theme = dark_theme();
+        let details = json!({ "entryLimitReached": 500, "truncation": { "truncated": true, "maxBytes": 51200 } });
+        let result = text_result("a.txt", details);
+        let body = format_ls_result(&result, &opts(false), &theme, false);
+        assert!(body.contains("[Truncated:"), "got: {body:?}");
+        assert!(body.contains("500 entries limit"), "got: {body:?}");
+        assert!(body.contains("50.0KB limit"), "got: {body:?}");
     }
 }

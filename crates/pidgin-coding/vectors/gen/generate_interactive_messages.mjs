@@ -425,6 +425,45 @@ const editCases = [
     // },
 ];
 
+// Coding-tool cases (oracle 2, cont.) — the read/write/ls/grep/find renderers,
+// driven through pi's own ToolExecutionComponent. Inputs deliberately avoid
+// deferred sub-features so every case is byte-exact:
+//   * read/write use unmapped extensions (.txt) so getLanguageFromPath returns
+//     undefined and no syntax highlighting runs (the hljs engine is a deno seam
+//     and is stubbed in this harness);
+//   * outputs stay within each renderer's display window (read 10, ls/find 20,
+//     grep 15) so the "(N more lines, <keyhint>)" branch never fires;
+//   * result `details` is null so no `[Truncated: …]` footer renders;
+//   * read paths are plain files (not SKILL.md/CLAUDE.md/AGENTS.md) so the
+//     compact-call classification returns undefined.
+const READ_BODY = "line one\nline two\nline three";
+const codingToolCases = [
+    // read
+    { tool: "read", label: "read-call-pending", args: { path: "notes.txt" }, result: null, isPartial: true, expanded: false },
+    { tool: "read", label: "read-call-range", args: { limit: 10, offset: 5, path: "notes.txt" }, result: null, isPartial: true, expanded: false },
+    { tool: "read", label: "read-result-collapsed", args: { path: "notes.txt" }, result: textResult(READ_BODY), isPartial: false, expanded: false },
+    { tool: "read", label: "read-result-expanded", args: { path: "notes.txt" }, result: textResult(READ_BODY), isPartial: false, expanded: true },
+    { tool: "read", label: "read-result-error", args: { path: "missing.txt" }, result: textResult("ENOENT: no such file or directory", true), isPartial: false, expanded: false },
+    // write
+    { tool: "write", label: "write-call-pending", args: { content: "hello\nworld", path: "out.txt" }, result: null, isPartial: true, expanded: false },
+    { tool: "write", label: "write-call-empty-content", args: { content: "", path: "out.txt" }, result: null, isPartial: true, expanded: false },
+    { tool: "write", label: "write-result-success", args: { content: "hello\nworld", path: "out.txt" }, result: textResult("Successfully wrote 11 bytes to out.txt"), isPartial: false, expanded: false },
+    { tool: "write", label: "write-result-error", args: { content: "data", path: "out.txt" }, result: textResult("EACCES: permission denied", true), isPartial: false, expanded: false },
+    // ls
+    { tool: "ls", label: "ls-call-pending", args: { path: "src" }, result: null, isPartial: true, expanded: false },
+    { tool: "ls", label: "ls-call-limit", args: { limit: 100, path: "src" }, result: null, isPartial: true, expanded: false },
+    { tool: "ls", label: "ls-result", args: { path: "src" }, result: textResult("file1.txt\nfile2.txt\nsub/"), isPartial: false, expanded: false },
+    { tool: "ls", label: "ls-result-expanded", args: { path: "src" }, result: textResult("file1.txt\nfile2.txt\nsub/"), isPartial: false, expanded: true },
+    // grep
+    { tool: "grep", label: "grep-call-default-path", args: { pattern: "needle" }, result: null, isPartial: true, expanded: false },
+    { tool: "grep", label: "grep-call-glob-limit", args: { glob: "*.rs", limit: 50, path: "src", pattern: "foo" }, result: null, isPartial: true, expanded: false },
+    { tool: "grep", label: "grep-result", args: { path: "src", pattern: "needle" }, result: textResult("src/a.rs:1: let needle = 1;\nsrc/b.rs:5: fn needle() {}"), isPartial: false, expanded: false },
+    // find
+    { tool: "find", label: "find-call-default-path", args: { pattern: "*.md" }, result: null, isPartial: true, expanded: false },
+    { tool: "find", label: "find-call-limit", args: { limit: 1000, path: "src", pattern: "*.rs" }, result: null, isPartial: true, expanded: false },
+    { tool: "find", label: "find-result", args: { path: "src", pattern: "*.rs" }, result: textResult("a.rs\nb.rs\nsub/c.rs"), isPartial: false, expanded: false },
+];
+
 function genToolExecution() {
     const vectors = [];
     // Oracle 1: fallback paths via pi's own ToolExecutionComponent.
@@ -479,6 +518,38 @@ function genToolExecution() {
             vectors.push({
                 label: c.label,
                 toolName: "edit",
+                args: c.args,
+                toolDefinition: null,
+                cwd: TOOL_CWD,
+                result: c.result,
+                isPartial: c.isPartial,
+                expanded: c.expanded,
+                width,
+                expected: component.render(width),
+            });
+        }
+    }
+    // Oracle 2 (cont.): read/write/ls/grep/find renderers, driven the same way.
+    for (const c of codingToolCases) {
+        for (const width of WIDTHS) {
+            const component = new ToolExecutionComponent(
+                c.tool,
+                "tool_call_id_1",
+                c.args,
+                { showImages: true, imageWidthCells: 60 },
+                undefined,
+                stubUi,
+                TOOL_CWD,
+            );
+            if (c.expanded) {
+                component.setExpanded(true);
+            }
+            if (c.result) {
+                component.updateResult(c.result, c.isPartial);
+            }
+            vectors.push({
+                label: c.label,
+                toolName: c.tool,
                 args: c.args,
                 toolDefinition: null,
                 cwd: TOOL_CWD,

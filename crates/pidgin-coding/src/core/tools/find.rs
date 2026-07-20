@@ -14,12 +14,35 @@
 //!
 //! Deferred seam: the directory walk and `.git` probe touch the filesystem
 //! directly here rather than through pi's injectable `FindOperations`.
+//!
+//! The TUI render hooks ([`find_render_call`]/[`find_render_result`]) are ported
+//! here as **stateless** functions (pi reuses a `Text` via
+//! `context.lastComponent`, but the output is a pure function of its inputs).
+//! find uses the DEFAULT render shell, so the returned `Text` is composed into
+//! the shell's call/result box.
+
+// straitjacket-allow-file:duplication — the find/grep/ls call+result render
+// helpers (and their `render_tests` fixtures) faithfully mirror pi's per-tool
+// `format<Tool>Call`/`format<Tool>Result`, which duplicate the same shape across
+// tools; extracting them would diverge from the source-of-truth structure.
 
 use std::path::{Path, PathBuf};
 
 use ignore::WalkBuilder;
+use serde_json::Value;
+
+use pidgin_agent::types::AgentToolResult;
+use pidgin_tui::renderer::Component;
+use pidgin_tui::Text;
+
+use crate::core::extensions::types::{ToolRenderContext, ToolRenderResultOptions};
+use crate::modes::interactive::theme::runtime::Theme;
 
 use super::path_utils::resolve_to_cwd;
+use super::render_utils::{
+    detail_usize, get_text_output_from_blocks, invalid_arg_text, json_number_display,
+    shorten_path_home, str_json, tools_expand_hint,
+};
 use super::truncate::{
     format_size, truncate_head, TruncationOptions, TruncationResult, DEFAULT_MAX_BYTES,
 };
@@ -171,6 +194,139 @@ pub fn run_find(
 
     result.text = result_output;
     Ok(result)
+}
+
+// ---------------------------------------------------------------------------
+// TUI render hooks (pi's `renderCall` / `renderResult`, `find.ts:359` / `:364`)
+// ---------------------------------------------------------------------------
+
+/// Local `theme.fg` wrapper falling back to unstyled text on an unknown color
+/// key (pi's `theme.fg` is infallible; the ported [`Theme::fg`] returns a
+/// `Result`).
+fn fg(theme: &Theme, color: &str, text: &str) -> String {
+    theme.fg(color, text).unwrap_or_else(|_| text.to_string())
+}
+
+/// Format the find call header (pi's `formatFindCall`):
+/// `find <pattern> in <path> (limit N)`, with `[invalid arg]` for a
+/// wrong-typed pattern or path.
+fn format_find_call(args: &Value, theme: &Theme) -> String {
+    let pattern = str_json(args.get("pattern"));
+    let raw_path = str_json(args.get("path"));
+    let invalid = invalid_arg_text(theme);
+
+    let pattern_part = match &pattern {
+        None => invalid.clone(),
+        Some(p) => fg(theme, "accent", p),
+    };
+    let path_part = match &raw_path {
+        None => invalid.clone(),
+        Some(p) => shorten_path_home(if p.is_empty() { "." } else { p }),
+    };
+    let mut text = format!(
+        "{} {}{}",
+        fg(theme, "toolTitle", &theme.bold("find")),
+        pattern_part,
+        fg(theme, "toolOutput", &format!(" in {path_part}"))
+    );
+    if let Some(limit) = args.get("limit") {
+        text += &fg(
+            theme,
+            "toolOutput",
+            &format!(" (limit {})", json_number_display(limit)),
+        );
+    }
+    text
+}
+
+/// Format the find result body (pi's `formatFindResult`): the matches (up to 20
+/// lines unless expanded) plus a `[Truncated: …]` footer for result/byte caps.
+fn format_find_result(
+    result: &AgentToolResult,
+    options: &ToolRenderResultOptions,
+    theme: &Theme,
+    show_images: bool,
+) -> String {
+    let output = get_text_output_from_blocks(&result.content, show_images);
+    let output = output.trim();
+    let mut text = String::new();
+    if !output.is_empty() {
+        let lines: Vec<&str> = output.split('\n').collect();
+        let max_lines = if options.expanded { lines.len() } else { 20 };
+        let display_lines = &lines[..max_lines.min(lines.len())];
+        let remaining = lines.len() as isize - max_lines as isize;
+        text += &format!(
+            "\n{}",
+            display_lines
+                .iter()
+                .map(|line| fg(theme, "toolOutput", line))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        if remaining > 0 {
+            text += &fg(theme, "muted", &format!("\n... ({remaining} more lines,"));
+            text += " ";
+            text += &tools_expand_hint(theme, "to expand");
+            text += &fg(theme, "muted", ")");
+        }
+    }
+
+    let result_limit = result
+        .details
+        .get("resultLimitReached")
+        .and_then(Value::as_u64)
+        .filter(|&r| r != 0);
+    let truncation = result.details.get("truncation");
+    let truncated = truncation
+        .and_then(|t| t.get("truncated"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    if result_limit.is_some() || truncated {
+        let mut warnings: Vec<String> = Vec::new();
+        if let Some(r) = result_limit {
+            warnings.push(format!("{r} results limit"));
+        }
+        if truncated {
+            let max_bytes = truncation
+                .and_then(|t| detail_usize(t, "maxBytes"))
+                .unwrap_or(DEFAULT_MAX_BYTES);
+            warnings.push(format!("{} limit", format_size(max_bytes)));
+        }
+        text += &format!(
+            "\n{}",
+            fg(
+                theme,
+                "warning",
+                &format!("[Truncated: {}]", warnings.join(", "))
+            )
+        );
+    }
+    text
+}
+
+/// Custom rendering for the find tool call (pi's `renderCall`, `find.ts:359`).
+pub fn find_render_call(
+    args: &Value,
+    theme: &Theme,
+    _context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    Box::new(Text::new(&format_find_call(args, theme), 0, 0, None))
+}
+
+/// Custom rendering for the find tool result (pi's `renderResult`,
+/// `find.ts:364`).
+pub fn find_render_result(
+    result: &AgentToolResult,
+    options: &ToolRenderResultOptions,
+    theme: &Theme,
+    context: &ToolRenderContext,
+) -> Box<dyn Component> {
+    Box::new(Text::new(
+        &format_find_result(result, options, theme, context.show_images),
+        0,
+        0,
+        None,
+    ))
 }
 
 #[cfg(test)]
@@ -339,5 +495,92 @@ mod tests {
                 "root.txt".to_string()
             ]
         );
+    }
+}
+
+#[cfg(test)]
+mod render_tests {
+    use super::*;
+    use crate::modes::interactive::theme::{create_theme, parse_theme_json, ColorMode};
+    use pidgin_ai::ContentBlock;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    fn dark_theme() -> Theme {
+        let path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/modes/interactive/theme/dark.json");
+        let content = std::fs::read_to_string(&path).expect("read dark.json");
+        let json = parse_theme_json(&content).expect("parse dark.json");
+        create_theme(&json, Some(ColorMode::Color256), None).expect("create dark theme")
+    }
+
+    fn text_result(text: &str, details: Value) -> AgentToolResult {
+        AgentToolResult {
+            content: vec![ContentBlock::Text {
+                text: text.to_string(),
+                text_signature: None,
+            }],
+            details,
+            added_tool_names: None,
+            terminate: None,
+        }
+    }
+
+    fn opts(expanded: bool) -> ToolRenderResultOptions {
+        ToolRenderResultOptions {
+            expanded,
+            is_partial: false,
+        }
+    }
+
+    #[test]
+    fn call_renders_pattern_without_slashes_and_default_dot_path() {
+        let theme = dark_theme();
+        let args = json!({ "pattern": "*.md" });
+        let text = format_find_call(&args, &theme);
+        assert!(text.contains("find"));
+        assert!(text.contains("*.md"), "got: {text:?}");
+        assert!(
+            !text.contains("/*.md/"),
+            "find must not slash-wrap: {text:?}"
+        );
+        assert!(text.contains(" in ."), "got: {text:?}");
+    }
+
+    #[test]
+    fn call_renders_limit_in_parens() {
+        let theme = dark_theme();
+        let args = json!({ "pattern": "*.rs", "path": "src", "limit": 1000 });
+        let text = format_find_call(&args, &theme);
+        assert!(text.contains("*.rs"));
+        assert!(text.contains(" in src"));
+        assert!(text.contains("(limit 1000)"), "got: {text:?}");
+    }
+
+    #[test]
+    fn call_invalid_path_shows_invalid_marker() {
+        let theme = dark_theme();
+        let args = json!({ "pattern": "*.rs", "path": 42 });
+        let text = format_find_call(&args, &theme);
+        assert!(text.contains("[invalid arg]"), "got: {text:?}");
+    }
+
+    #[test]
+    fn result_lists_paths() {
+        let theme = dark_theme();
+        let result = text_result("a.rs\nb.rs\nsub/c.rs", Value::Null);
+        let body = format_find_result(&result, &opts(false), &theme, false);
+        assert!(body.contains("a.rs"));
+        assert!(body.contains("sub/c.rs"));
+    }
+
+    #[test]
+    fn result_footer_reports_result_and_byte_caps() {
+        let theme = dark_theme();
+        let details = json!({ "resultLimitReached": 1000, "truncation": { "truncated": true, "maxBytes": 51200 } });
+        let result = text_result("a.rs", details);
+        let body = format_find_result(&result, &opts(false), &theme, false);
+        assert!(body.contains("1000 results limit"), "got: {body:?}");
+        assert!(body.contains("50.0KB limit"), "got: {body:?}");
     }
 }
