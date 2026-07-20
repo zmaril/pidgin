@@ -30,6 +30,7 @@ How it was produced:
 Faithful shims of pi named exports:
   pi-ai-shim.mjs
   pi-coding-agent-shim.mjs
+  pi-tui-shim.mjs
     upstream: pi (earendil-works/pi), MIT License, Copyright (c) 2025 Mario Zechner
     homepage: https://github.com/earendil-works/pi
 
@@ -50,10 +51,29 @@ Faithful shims of pi named exports:
     (packages/coding-agent/src/core/extensions/types.ts:497), which is a pure
     identity function; the shim is the equivalent `(tool) => tool`.
 
-  The loader serves them for the bare specifiers `@earendil-works/pi-ai` and
-  `@earendil-works/pi-coding-agent`, mirroring pi's jiti virtualModules alias.
-  pi's MIT license (Copyright (c) 2025 Mario Zechner) governs these adaptations;
-  its full text is reproduced in examples/extensions/NOTICE.
+    pi-tui-shim.mjs is a RENDER-STUB shim of `@earendil-works/pi-tui`
+    (packages/tui/src/index.ts). The UI component classes it exports — Text, Box,
+    Container, Spacer, Markdown (packages/tui/src/components/*.ts and tui.ts) — are
+    touched by an extension ONLY in its display hooks (renderResult / renderCall),
+    which pidgin's HEADLESS plane never calls (invoke runs the tool's `execute`
+    only; the inventory records metadata alone). So the shim serves them as marker
+    classes: the constructor stores its args and `render()` returns a
+    `{ __piTuiStub }` marker. That is behavior-faithful for load / register /
+    invoke; only display output changes, and the headless plane produces none. The
+    shim also ports pi's pure `Key` const (packages/tui/src/keys.ts) to JS
+    (its TypeScript generic parameters erase at transpile, leaving an identical
+    runtime body). pi-tui utilities with heavy or host-coupled dependencies —
+    `truncateToWidth` (imports the external `get-east-asian-width` package) and
+    `matchesKey` (reads process.env) — are intentionally omitted: they are
+    display / input-time code the headless plane never runs, and no vendored
+    example imports them. First introduced alongside the vendored
+    examples/extensions/structured-output/index.ts example (PR 242 line of work).
+
+  The loader serves them for the bare specifiers `@earendil-works/pi-ai`,
+  `@earendil-works/pi-coding-agent`, and `@earendil-works/pi-tui`, mirroring pi's
+  jiti virtualModules alias. pi's MIT license (Copyright (c) 2025 Mario Zechner)
+  governs these adaptations; its full text is reproduced in
+  examples/extensions/NOTICE.
 
 The full upstream license text (for the vendored TypeBox asset) follows.
 

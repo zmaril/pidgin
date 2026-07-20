@@ -11,6 +11,9 @@ Vendored file(s):
   examples/extensions/hello/index.ts
     upstream: packages/coding-agent/examples/extensions/hello.ts
 
+  examples/extensions/structured-output/index.ts
+    upstream: packages/coding-agent/examples/extensions/structured-output.ts
+
 The code below the short attribution header in each vendored file is an
 unmodified copy of the corresponding upstream source. The full upstream
 license text follows.
