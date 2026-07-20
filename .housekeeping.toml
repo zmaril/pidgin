@@ -31,9 +31,13 @@ allow = [
 # inline unit5 deferral markers flag the JS-backed tool/command execute + the
 # runtime-invalidate primitive that land in later unit5 PRs — tracked deferrals,
 # not untracked work. Drop these once the port completes.
+# llama/client.rs is the ported llama client seam; its inline TODO(port) markers
+# flag the streaming SSE transport that is deferred to a later port PR — tracked
+# deferrals, not untracked work. Drop this entry once the SSE transport lands.
 ignore = [
     "notes/fluessig-integration.md",
     "crates/pidgin-coding/src/core/extensions/runner.rs",
     "crates/pidgin-extensions/src/runner_impl/mod.rs",
     "crates/pidgin-extensions/src/runner_impl/queries.rs",
+    "crates/pidgin-coding/src/extensions/llama/client.rs",
 ]
