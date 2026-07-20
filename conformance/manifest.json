@@ -886,7 +886,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/utils/error-body.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/error-body.test.ts"
+      ]
     },
     {
       "package": "ai",
