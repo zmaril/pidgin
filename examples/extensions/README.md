@@ -17,12 +17,20 @@ exercises all three surfaces:
 | Slash command | `/task <text>` — appends a task to an in-memory list |
 | Custom tool | `list_tasks` — lets the LLM read the current tasks back |
 | Hook: `session_start` | notifies how many tasks are loaded |
-| Hook: `tool_call` | blocks destructive `rm -rf` bash commands (a guardrail) |
+| Hook: `tool_call` | demonstrates the block contract on a literal `rm -rf` |
 
 The tasks live in a module-scoped array for the life of the process. A
 production extension would reconstruct state from session entries, as pi's
 upstream stateful-list examples do; the in-memory list keeps this example
 focused.
+
+> **The `tool_call` hook is a demonstration, not a safety control.** It shows
+> the shape of a blocking hook — return `{ block: true, reason }` and the tool
+> call is refused — by matching the single literal string `rm -rf`. Equally
+> destructive spellings (`rm -fr`, `rm -Rf`, `rm -r -f`, `rm --recursive
+> --force`, `rm -rfv`) pass straight through. Do not copy it as a guardrail. A
+> real one belongs in pi's `protected-paths.ts` territory: match on the parsed
+> command, not a flag substring.
 
 ## Loading it
 
@@ -66,6 +74,10 @@ cargo test  -p pidgin-extensions --features deno
 ```
 
 The loader test [`deno_example_extension.rs`](../../crates/pidgin-extensions/tests/deno_example_extension.rs)
-loads `task-list/index.ts` through the real extension loader and asserts its
-command, tool, and hooks register. It runs only in CI's dedicated
-"deno runtime (V8)" job, because the V8 blob download is blocked in the sandbox.
+loads `task-list/index.ts` through the real extension loader and asserts that
+its command, tool, and hooks **register**. It does not invoke them, so the
+command handler, the tool's `execute`, and the `tool_call` hook are unexercised.
+
+It runs in CI's dedicated "deno runtime (V8)" job, and locally wherever
+`deno_core` can fetch its V8 blob — some sandboxed environments block that
+download, which is the only reason it may not build for you.

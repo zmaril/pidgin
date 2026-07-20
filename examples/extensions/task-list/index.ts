@@ -8,7 +8,8 @@
  *   - a slash command    `/task <text>`  — append a task (user-facing)
  *   - a custom tool       `list_tasks`   — let the LLM read the tasks back
  *   - two lifecycle hooks `session_start` + `tool_call` — a load notice and a
- *     `rm -rf` bash guardrail (mirrors protected-paths.ts)
+ *     demonstration of the blocking contract (mirrors protected-paths.ts).
+ *     The block check is illustrative only — see the note on Hook 2 below.
  *
  * The tasks live in a module-scoped array, so they persist for the life of the
  * process (a real extension would reconstruct state from session entries, as
@@ -95,8 +96,13 @@ export default function taskListExtension(pi: ExtensionAPI) {
 		ctx.ui.notify(`Task list ready (${tasks.length} task(s) loaded).`, "info");
 	});
 
-	// Hook 2: a guardrail that blocks destructive `rm -rf` bash commands,
-	// mirroring the block contract used by protected-paths.ts.
+	// Hook 2: demonstrates the blocking contract used by protected-paths.ts —
+	// returning `{ block: true, reason }` refuses the tool call.
+	//
+	// This is NOT a usable guardrail. It matches one literal spelling, so
+	// `rm -fr`, `rm -Rf`, `rm -r -f`, `rm --recursive --force` and `rm -rfv`
+	// all pass through. It is here to show the hook shape, not to protect
+	// anything; a real check would inspect the parsed command.
 	pi.on("tool_call", async (event, ctx) => {
 		if (event.toolName !== "bash") {
 			return undefined;
