@@ -1,13 +1,19 @@
-//! Read the EXIF orientation tag from JPEG and WebP byte buffers.
+//! Read the EXIF orientation tag from JPEG and WebP byte buffers, and apply the
+//! corresponding pixel rotate/flip transform.
 //!
-//! Ported from pi's `utils/exif-orientation.ts`. Only the pure byte-parsing
-//! reader (`getExifOrientation`) is ported. It locates the EXIF/TIFF block in a
-//! JPEG (APP1 segment) or WebP (`EXIF` chunk), reads the TIFF IFD, and returns
-//! the orientation tag (`0x0112`) as a value in `1..=8`.
+//! Ported from pi's `utils/exif-orientation.ts`. The pure byte-parsing reader
+//! (`getExifOrientation`) locates the EXIF/TIFF block in a JPEG (APP1 segment)
+//! or WebP (`EXIF` chunk), reads the TIFF IFD, and returns the orientation tag
+//! (`0x0112`) as a value in `1..=8`.
 //!
-//! Deferred: pi's `applyExifOrientation` (and its `rotate90` helper) mutate
-//! Photon images to physically rotate/flip pixels. That depends on the Photon
-//! WASM image library and is out of scope for this PR.
+//! [`apply_exif_orientation`] mirrors pi's `applyExifOrientation` (and its
+//! `rotate90` helper): it physically rotates/flips the decoded pixels so the
+//! image reads upright. pi drives the Photon WASM library's `fliph`/`flipv` and
+//! a hand-rolled `rotate90` over raw RGBA pixel buffers; this port applies the
+//! byte-identical geometric transform through the `image` crate's
+//! `imageops::{flip_horizontal, flip_vertical, rotate90, rotate270}` — pi's
+//! clockwise `rotate90` matches `imageops::rotate90`, and its counter-clockwise
+//! variant matches `imageops::rotate270`.
 //!
 //! Adaptation: pi returns the number `1` as a default when no EXIF orientation
 //! is present. This port returns `Option<u8>`, using `None` for buffers with no
@@ -15,6 +21,7 @@
 //! callers treat as "no transform").
 
 use super::bytes::{byte_at, read_u16_be, read_u16_le, read_u32_be, read_u32_le};
+use ::image::{imageops, RgbaImage};
 
 fn has_exif_header(bytes: &[u8], offset: usize) -> bool {
     bytes.get(offset..offset + 6) == Some(&b"Exif\0\0"[..])
@@ -156,6 +163,45 @@ pub fn get_exif_orientation(bytes: &[u8]) -> Option<u8> {
     tiff_offset.map(|offset| read_orientation_from_tiff(bytes, offset))
 }
 
+/// Apply the EXIF orientation transform to a decoded RGBA image so it reads
+/// upright, mirroring pi's `applyExifOrientation`.
+///
+/// `original_bytes` are the source-encoded bytes the orientation tag is read
+/// from. Orientation `1` (and any buffer with no EXIF orientation) is returned
+/// unchanged, matching pi's early return. The rotate/flip mapping for
+/// orientations `2..=8` reproduces pi's switch exactly:
+///
+/// - `2` -> horizontal flip
+/// - `3` -> horizontal flip then vertical flip
+/// - `4` -> vertical flip
+/// - `5` -> clockwise `rotate90` then horizontal flip
+/// - `6` -> clockwise `rotate90`
+/// - `7` -> counter-clockwise `rotate270` then horizontal flip
+/// - `8` -> counter-clockwise `rotate270`
+pub fn apply_exif_orientation(image: RgbaImage, original_bytes: &[u8]) -> RgbaImage {
+    let orientation = get_exif_orientation(original_bytes).unwrap_or(1);
+    match orientation {
+        2 => imageops::flip_horizontal(&image),
+        3 => {
+            let flipped = imageops::flip_horizontal(&image);
+            imageops::flip_vertical(&flipped)
+        }
+        4 => imageops::flip_vertical(&image),
+        5 => {
+            let rotated = imageops::rotate90(&image);
+            imageops::flip_horizontal(&rotated)
+        }
+        6 => imageops::rotate90(&image),
+        7 => {
+            let rotated = imageops::rotate270(&image);
+            imageops::flip_horizontal(&rotated)
+        }
+        8 => imageops::rotate270(&image),
+        // Orientation 1 (and any out-of-range value) is a no-op passthrough.
+        _ => image,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -205,5 +251,58 @@ mod tests {
     #[test]
     fn returns_none_for_short_input() {
         assert_eq!(get_exif_orientation(&[0xff]), None);
+    }
+
+    /// A 2x3 image where each pixel encodes its own (x, y) in the red/green
+    /// channels, so a transform can be verified pixel by pixel.
+    fn coded_image() -> RgbaImage {
+        RgbaImage::from_fn(2, 3, |x, y| ::image::Rgba([x as u8, y as u8, 0, 255]))
+    }
+
+    #[test]
+    fn orientation_one_is_passthrough() {
+        let src = coded_image();
+        let out = apply_exif_orientation(src.clone(), &jpeg_with_orientation(1));
+        assert_eq!(out.dimensions(), (2, 3));
+        assert_eq!(out.get_pixel(1, 2), src.get_pixel(1, 2));
+    }
+
+    #[test]
+    fn no_exif_bytes_leave_image_unchanged() {
+        let src = coded_image();
+        let out = apply_exif_orientation(src.clone(), &[0, 1, 2, 3]);
+        assert_eq!(out.dimensions(), (2, 3));
+        assert_eq!(out.get_pixel(0, 0), src.get_pixel(0, 0));
+    }
+
+    #[test]
+    fn orientation_six_rotates_clockwise() {
+        // Orientation 6 is a clockwise 90-degree rotation: a 2x3 image becomes
+        // 3x2, and source pixel (x, y) lands at (h - 1 - y, x).
+        let src = coded_image();
+        let out = apply_exif_orientation(src.clone(), &jpeg_with_orientation(6));
+        assert_eq!(out.dimensions(), (3, 2));
+        assert_eq!(out.get_pixel(2, 0), src.get_pixel(0, 0));
+        assert_eq!(out.get_pixel(0, 1), src.get_pixel(1, 2));
+    }
+
+    #[test]
+    fn orientation_eight_rotates_counter_clockwise() {
+        // Orientation 8 is a counter-clockwise rotation: source pixel (x, y)
+        // lands at (y, w - 1 - x) in the swapped 3x2 output.
+        let src = coded_image();
+        let out = apply_exif_orientation(src.clone(), &jpeg_with_orientation(8));
+        assert_eq!(out.dimensions(), (3, 2));
+        assert_eq!(out.get_pixel(0, 1), src.get_pixel(0, 0));
+        assert_eq!(out.get_pixel(2, 0), src.get_pixel(1, 2));
+    }
+
+    #[test]
+    fn orientation_two_flips_horizontally() {
+        let src = coded_image();
+        let out = apply_exif_orientation(src.clone(), &jpeg_with_orientation(2));
+        assert_eq!(out.dimensions(), (2, 3));
+        assert_eq!(out.get_pixel(0, 0), src.get_pixel(1, 0));
+        assert_eq!(out.get_pixel(1, 2), src.get_pixel(0, 2));
     }
 }
