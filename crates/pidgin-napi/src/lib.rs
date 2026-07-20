@@ -38,7 +38,7 @@ pub mod terminal_colors;
 // (`pidgin_coding::core::compaction::serialize_conversation`). The JS shim
 // re-exports the module's un-flipped file-op helpers from pi's original and
 // delegates only `serializeConversation` to Rust. Additive.
-mod compaction_utils;
+pub mod compaction_utils;
 
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
