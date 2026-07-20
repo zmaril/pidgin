@@ -89,7 +89,7 @@ impl Provider for MistralBackend {
         // pi's buildBaseOptions defaults maxTokens to `model.maxTokens`; the
         // temperature/max_tokens/metadata fields are not on this base's
         // `StreamOptions` yet.
-        // TODO(#192): thread StreamOptions.temperature/max_tokens/metadata once merged.
+        // Follow-up (#192): thread StreamOptions.temperature/max_tokens/metadata once merged.
         let mistral_options = MistralOptions {
             max_tokens: (typed_model.max_tokens > 0).then_some(typed_model.max_tokens),
             session_id: options.and_then(|o| o.session_id.clone()),

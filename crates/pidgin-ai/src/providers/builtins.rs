@@ -34,10 +34,10 @@ use crate::providers::anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_ME
 use crate::providers::google_generative_ai_backend::{
     GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API,
 };
+use crate::providers::mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
 use crate::providers::openai_completions_backend::{
     OpenAICompletionsBackend, OPENAI_COMPLETIONS_API,
 };
-use crate::providers::mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
 use crate::providers::registry::{
     create_provider, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
     RefreshContext, RegistryProvider, StreamBackendRef,
