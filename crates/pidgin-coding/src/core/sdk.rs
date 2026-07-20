@@ -23,15 +23,18 @@
 //!   `ModelRuntime::stream_simple` **and** the five [`AgentOptions`] fields the
 //!   ported struct omits (`onPayload`, `onResponse`, `transport`,
 //!   `thinkingBudgets`, `maxRetryDelayMs` — see [`AgentOptions`]'s own doc).
-//! - **the block-images `convertToLlm` wrapper (pi `sdk.ts:251-285`) —
-//!   deferred.** pi wraps `convertToLlm` in a closure that re-reads
-//!   `settingsManager.getBlockImages()` on every call. Two ported-code realities
-//!   block a faithful wiring: (1) [`SettingsManager`] is `!Send`, so it cannot be
-//!   captured in the `Send + Sync` [`pidgin_agent::types::ConvertToLlm`] closure;
-//!   (2) `core::messages::convert_to_llm` operates on its own mirror types (a
-//!   local `AgentMessage` enum + `LlmMessage`) that are not yet bridged to the
-//!   [`Agent`]'s `serde_json::Value`-based `AgentMessage` / `pidgin_ai::Message`.
-//!   The [`Agent`] is built with `convert_to_llm: None` (default pass-through).
+//! - **the block-images `convertToLlm` wrapper (pi `sdk.ts:251-285`) — landed.**
+//!   pi wraps `convertToLlm` in a closure that re-reads
+//!   `settingsManager.getBlockImages()` on every call. The port runs the wrapper
+//!   at the Agent's [`pidgin_agent::types::ConvertToLlm`] seam, on the
+//!   *already-converted* [`pidgin_ai::Message`] list produced by
+//!   [`pidgin_agent::harness::messages::convert_to_llm`] — a pure transform that
+//!   avoids bridging the coding crate's typed mirror messages
+//!   (`core::messages`). Since [`SettingsManager`] is `!Send` and cannot be
+//!   captured by the `Send + Sync` closure, the setting is read through a shared
+//!   `Arc<AtomicBool>` mirror (`SettingsManager::block_images_flag`) that the
+//!   manager keeps in sync with `getBlockImages()`, so a mid-session
+//!   `setBlockImages` toggle is observed live. See [`crate::core::block_images`].
 //! - **`transform_context` (pi `sdk.ts:345-349`) — deferred.** pi routes context
 //!   through `extensionRunnerRef.current.emitContext`; the extension-runner ref is
 //!   the extension-host wiring tracked by #186. Built with `None`.
@@ -68,6 +71,7 @@ use pidgin_ai::{clamp_thinking_level, Model, ModelThinkingLevel};
 
 use crate::core::agent_session::{AgentSession, AgentSessionConfig, ScopedModel};
 use crate::core::auth::auth_guidance::format_no_models_available_message;
+use crate::core::block_images::block_images_converter;
 use crate::core::defaults::DEFAULT_THINKING_LEVEL;
 use crate::core::extensions::events::session::SessionStartEvent;
 use crate::core::extensions::loader::LoadExtensionsResult;
@@ -448,12 +452,15 @@ pub fn create_agent_session(options: CreateAgentSessionOptions) -> CreateAgentSe
     );
     let excluded_tool_names = options.exclude_tools.clone();
 
-    // The block-images convertToLlm wrapper (pi `sdk.ts:251-285`) is deferred; the
-    // streamFn / onPayload / onResponse / transport / thinkingBudgets /
-    // maxRetryDelayMs closures and options (pi `sdk.ts:297-355`) are deferred. See
-    // the module docs for the blockers. The Agent uses its default converter and
-    // the provider-unavailable stub streamFn.
+    // The block-images convertToLlm wrapper (pi `sdk.ts:251-285`) filters image
+    // blocks out of the converted output when `getBlockImages()` is set; it reads
+    // a shared `Arc<AtomicBool>` mirror so a mid-session toggle takes effect live,
+    // matching pi's per-call setting read. The streamFn / onPayload / onResponse /
+    // transport / thinkingBudgets / maxRetryDelayMs closures and options (pi
+    // `sdk.ts:297-355`) are deferred — see the module docs. The Agent uses the
+    // provider-unavailable stub streamFn.
     let session_id = session_manager.get_session_id().to_string();
+    let convert_to_llm = block_images_converter(settings_manager.block_images_flag());
     let agent = Agent::new(AgentOptions {
         initial_state: Some(InitialAgentState {
             system_prompt: Some(String::new()),
@@ -462,6 +469,7 @@ pub fn create_agent_session(options: CreateAgentSessionOptions) -> CreateAgentSe
             tools: Some(Vec::new()),
             ..Default::default()
         }),
+        convert_to_llm: Some(convert_to_llm),
         steering_mode: parse_queue_mode(&settings_manager.get_steering_mode()),
         follow_up_mode: parse_queue_mode(&settings_manager.get_follow_up_mode()),
         session_id: Some(session_id),
