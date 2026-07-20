@@ -849,13 +849,6 @@ impl AgentSession {
             .rev()
             .find(|message| message_role(message) == Some("assistant"))
     }
-
-    /// Flush pending bash messages before/after a run (pi's
-    /// `_flushPendingBashMessages`, L2732).
-    fn flush_pending_bash_messages(&self) {
-        // unit5: bash execution and its pending-message plumbing land in PR8; no
-        // pending bash messages exist yet, so this is a no-op.
-    }
 }
 
 #[cfg(test)]
