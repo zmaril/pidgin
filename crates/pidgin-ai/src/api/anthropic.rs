@@ -38,11 +38,14 @@ pub mod cache;
 pub mod client;
 pub mod compat;
 pub mod content;
+pub mod deferred_tools;
 pub mod driver;
+pub mod estimate;
 pub mod request;
 pub mod simple_options;
 pub mod thinking;
 pub mod tools;
+pub mod transform_messages;
 
 use crate::cost::calculate_cost_with;
 use crate::types::{
