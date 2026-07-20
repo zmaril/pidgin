@@ -29,7 +29,10 @@ use std::sync::{Arc, Mutex};
 use pidgin_agent::types::AgentEvent;
 use pidgin_ai::providers::faux::{faux_assistant_message, faux_text, FauxAssistantOptions};
 use pidgin_ai::types::ContentBlock;
-use pidgin_coding::modes::interactive::routing::{ChatRegion, ChatState};
+use pidgin_coding::modes::interactive::components::IdleStatus;
+use pidgin_coding::modes::interactive::routing::{
+    ChatRegion, ChatState, StatusRegion, StatusSlot, StatusView,
+};
 use pidgin_coding::modes::interactive::theme::{create_theme, parse_theme_json, ColorMode, Theme};
 use pidgin_coding::modes::interactive::turn::collect_faux_turn;
 use pidgin_coding::modes::interactive::{InteractiveShell, ShellEvent};
@@ -133,7 +136,7 @@ fn tool_result_value(text: &str) -> Value {
 /// Build a `ChatRegion` + `ChatState` over one shared entry list and status.
 fn router() -> (ChatRegion, ChatState) {
     let entries = Rc::new(RefCell::new(Vec::new()));
-    let status = Rc::new(RefCell::new(Vec::new()));
+    let status: StatusSlot = Rc::new(RefCell::new(StatusView::Idle(IdleStatus)));
     let region = ChatRegion::new(Rc::clone(&entries));
     let state = ChatState::new(entries, status, dark_theme(), ".".to_string());
     (region, state)
@@ -218,19 +221,36 @@ fn routing_creates_and_resolves_a_tool_panel() {
 }
 
 #[test]
-fn routing_status_placeholder_tracks_turn_lifecycle() {
+fn routing_status_region_tracks_turn_lifecycle() {
     let entries = Rc::new(RefCell::new(Vec::new()));
-    let status = Rc::new(RefCell::new(Vec::new()));
+    let status: StatusSlot = Rc::new(RefCell::new(StatusView::Idle(IdleStatus)));
+    let region = StatusRegion::new(Rc::clone(&status));
     let mut state = ChatState::new(entries, Rc::clone(&status), dark_theme(), ".".to_string());
 
+    // Idle: two blank full-width lines.
+    assert!(
+        matches!(&*status.borrow(), StatusView::Idle(_)),
+        "starts idle"
+    );
+    let idle_lines = region.render(40);
+    assert_eq!(idle_lines, vec![" ".repeat(40), " ".repeat(40)]);
+
     state.handle_event(&AgentEvent::TurnStart);
-    assert_eq!(status.borrow().len(), 1, "turn_start sets a status line");
+    assert!(
+        matches!(&*status.borrow(), StatusView::Working(_)),
+        "turn_start mounts the working spinner"
+    );
+    // The working spinner renders a non-blank message line.
+    assert!(
+        strip_ansi(&region.render(40).join("\n")).contains("Working..."),
+        "working spinner shows the working message"
+    );
 
     state.handle_event(&AgentEvent::AgentEnd {
         messages: Vec::new(),
     });
     assert!(
-        status.borrow().is_empty(),
-        "agent_end clears the status line"
+        matches!(&*status.borrow(), StatusView::Idle(_)),
+        "agent_end restores the idle placeholder"
     );
 }

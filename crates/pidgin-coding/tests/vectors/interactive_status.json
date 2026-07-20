@@ -1,0 +1,82 @@
+[
+	{
+		"kind": "idle",
+		"message": null,
+		"ticks": 0,
+		"width": 40,
+		"expected": [
+			"                                        ",
+			"                                        "
+		]
+	},
+	{
+		"kind": "idle",
+		"message": null,
+		"ticks": 0,
+		"width": 80,
+		"expected": [
+			"                                                                                ",
+			"                                                                                "
+		]
+	},
+	{
+		"kind": "working",
+		"message": "Thinking...",
+		"ticks": 0,
+		"width": 40,
+		"expected": [
+			"",
+			" \u001b[38;5;109m⠋\u001b[39m \u001b[38;5;244mThinking...\u001b[39m                          "
+		]
+	},
+	{
+		"kind": "working",
+		"message": "Thinking...",
+		"ticks": 0,
+		"width": 80,
+		"expected": [
+			"",
+			" \u001b[38;5;109m⠋\u001b[39m \u001b[38;5;244mThinking...\u001b[39m                                                                  "
+		]
+	},
+	{
+		"kind": "working",
+		"message": "Thinking...",
+		"ticks": 3,
+		"width": 40,
+		"expected": [
+			"",
+			" \u001b[38;5;109m⠸\u001b[39m \u001b[38;5;244mThinking...\u001b[39m                          "
+		]
+	},
+	{
+		"kind": "working",
+		"message": "Thinking...",
+		"ticks": 3,
+		"width": 80,
+		"expected": [
+			"",
+			" \u001b[38;5;109m⠸\u001b[39m \u001b[38;5;244mThinking...\u001b[39m                                                                  "
+		]
+	},
+	{
+		"kind": "working",
+		"message": "Working on it",
+		"ticks": 1,
+		"width": 40,
+		"expected": [
+			"",
+			" \u001b[38;5;109m⠙\u001b[39m \u001b[38;5;244mWorking on it\u001b[39m                        "
+		]
+	},
+	{
+		"kind": "working",
+		"message": "Working on it",
+		"ticks": 1,
+		"width": 80,
+		"expected": [
+			"",
+			" \u001b[38;5;109m⠙\u001b[39m \u001b[38;5;244mWorking on it\u001b[39m                                                                "
+		]
+	}
+]
