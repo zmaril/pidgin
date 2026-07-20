@@ -15,14 +15,26 @@
 //! live-provider and extension-host closures, which are documented seams rather
 //! than stubs invented here:
 //!
-//! - **`stream_fn` (pi `sdk.ts:297-325`) — deferred.** pi's `streamFn` closure
-//!   calls `modelRuntime.streamSimple(...)`, which is not yet ported, and threads
-//!   the retry/timeout knobs plus `mergeProviderAttributionHeaders` and the
-//!   extension header hook. The [`Agent`] is built with `stream_fn: None`, so it
-//!   uses the crate's provider-unavailable stub. Blocked on
-//!   `ModelRuntime::stream_simple` **and** the five [`AgentOptions`] fields the
-//!   ported struct omits (`onPayload`, `onResponse`, `transport`,
-//!   `thinkingBudgets`, `maxRetryDelayMs` — see [`AgentOptions`]'s own doc).
+//! - **`stream_fn` (pi `sdk.ts:297-325`) — wired (buffered).** pi's `streamFn`
+//!   closure snapshots the retry/timeout knobs from the settings manager, layers
+//!   `mergeProviderAttributionHeaders`, and calls `modelRuntime.streamSimple(...)`.
+//!   The port builds a `Send + Sync` [`StreamFn`](pidgin_agent::types::StreamFn)
+//!   that captures a standalone ai [`Models`](pidgin_ai::providers::registry::Models)
+//!   handle extracted from the runtime ([`ModelRuntime::stream_models_handle`]) plus
+//!   a value snapshot of the retry/timeout/telemetry settings read once at factory
+//!   time (the [`SettingsManager`] and [`ModelRuntime`] are both `!Send`, so neither
+//!   is captured), and delegates through the shared
+//!   [`stream_simple_with_attribution`](crate::core::model_runtime::stream_simple_with_attribution)
+//!   helper. The [`Agent`] is built with `stream_fn: Some(...)`, so the session
+//!   streams from real providers (buffered — a whole turn resolves before the loop
+//!   iterates its events). Remaining follow-ups: **incremental streaming**
+//!   ([`Models::stream_incremental`](pidgin_ai::providers::registry::Models::stream_incremental),
+//!   the per-event `IncrementalStreamFn` path), the extension
+//!   `before_provider_headers` header hook (#186), a full
+//!   faux-turn end-to-end test (converges on #269), and the `model_runtime`
+//!   rebuild-per-call sharing gap (below). The five [`AgentOptions`] fields the
+//!   ported struct omits (`onPayload`, `onResponse`, `transport`, `thinkingBudgets`,
+//!   `maxRetryDelayMs`) are unchanged deferrals — see [`AgentOptions`]'s own doc.
 //! - **the block-images `convertToLlm` wrapper (pi `sdk.ts:251-285`) — landed.**
 //!   pi wraps `convertToLlm` in a closure that re-reads
 //!   `settingsManager.getBlockImages()` on every call. The port runs the wrapper
@@ -86,8 +98,12 @@
 
 use std::collections::HashSet;
 
+use std::sync::Arc;
+
 use pidgin_agent::agent::{Agent, AgentOptions, InitialAgentState, QueueMode};
-use pidgin_ai::{clamp_thinking_level, Model, ModelThinkingLevel};
+use pidgin_agent::types::StreamFn;
+use pidgin_ai::seams::{AbortSignal, StreamResult};
+use pidgin_ai::{clamp_thinking_level, Context, Model, ModelThinkingLevel, StreamOptions};
 
 use crate::core::agent_session::{AgentSession, AgentSessionConfig, ScopedModel};
 use crate::core::auth::auth_guidance::format_no_models_available_message;
@@ -96,8 +112,11 @@ use crate::core::defaults::DEFAULT_THINKING_LEVEL;
 use crate::core::extensions::events::session::SessionStartEvent;
 use crate::core::extensions::loader::LoadExtensionsResult;
 use crate::core::extensions::types::ToolDefinition;
+use crate::core::http_dispatcher::DEFAULT_HTTP_IDLE_TIMEOUT_MS;
 use crate::core::model_resolver::{find_initial_model, FindInitialModelOptions, ModelRuntimeView};
-use crate::core::model_runtime::{CreateModelRuntimeOptions, ModelRuntime, ModelsPath};
+use crate::core::model_runtime::{
+    stream_simple_with_attribution, CreateModelRuntimeOptions, ModelRuntime, ModelsPath,
+};
 use crate::core::resource_loader_orchestrator::{
     DefaultResourceLoader, DefaultResourceLoaderOptions, ReloadOptions,
 };
@@ -323,6 +342,86 @@ impl ModelRuntimeView for ModelRuntime {
     }
 }
 
+/// Build the buffered [`StreamFn`] the [`Agent`] uses to reach real providers,
+/// pi's `streamFn` closure (`sdk.ts:297-325`).
+///
+/// The returned closure is `Send + Sync`, so it captures neither the `!Send`
+/// [`ModelRuntime`] nor the `!Send` [`SettingsManager`]: it takes a standalone ai
+/// [`Models`](pidgin_ai::providers::registry::Models) handle extracted from the
+/// runtime ([`ModelRuntime::stream_models_handle`]) and a value snapshot of the
+/// retry / timeout / telemetry settings, both read once here at factory time.
+///
+/// Per call it mirrors pi's option resolution: `timeout_ms`,
+/// `websocket_connect_timeout_ms`, `max_retries`, and `max_retry_delay_ms` fall
+/// back through the caller's options to the snapshot (pi's `??` chain, with pi's
+/// `httpIdleTimeoutMs === 0 ? 2147483647` "disable" sentinel), then it delegates
+/// through the shared [`stream_simple_with_attribution`] helper (attribution +
+/// [`Models::stream_simple`](pidgin_ai::providers::registry::Models::stream_simple)).
+/// The attribution session id is read from the caller's `options.session_id`,
+/// exactly as pi passes `options?.sessionId`. The extension
+/// `before_provider_headers` header hook (pi `sdk.ts:320-322`) is deferred (#186).
+fn build_stream_fn(model_runtime: &ModelRuntime, settings_manager: &SettingsManager) -> StreamFn {
+    let models = model_runtime.stream_models_handle();
+    let provider_retry = settings_manager.get_provider_retry_settings();
+    let http_idle_timeout_ms = settings_manager
+        .get_http_idle_timeout_ms()
+        .unwrap_or(DEFAULT_HTTP_IDLE_TIMEOUT_MS);
+    let websocket_connect_timeout_ms = settings_manager
+        .get_websocket_connect_timeout_ms()
+        .ok()
+        .flatten();
+    let telemetry_enabled = settings_manager.get_enable_install_telemetry();
+
+    Arc::new(
+        move |model: &Model,
+              context: &Context,
+              options: Option<&StreamOptions>,
+              signal: Option<&AbortSignal>|
+              -> StreamResult {
+            // pi: `effectiveTimeoutMs = httpIdleTimeoutMs === 0 ? 2147483647 : httpIdleTimeoutMs`.
+            // SDKs treat timeout=0 as an immediate timeout, so max int32 effectively disables it.
+            let effective_timeout_ms = if http_idle_timeout_ms == 0 {
+                i32::MAX as u64
+            } else {
+                http_idle_timeout_ms
+            };
+            // pi's `??` fallbacks: caller option, then the settings snapshot.
+            let timeout_ms = options
+                .and_then(|o| o.timeout_ms)
+                .or_else(|| provider_retry.timeout_ms.map(|ms| ms as u64))
+                .unwrap_or(effective_timeout_ms);
+            let websocket_connect_timeout_ms = options
+                .and_then(|o| o.websocket_connect_timeout_ms)
+                .or(websocket_connect_timeout_ms);
+            let max_retries = options
+                .and_then(|o| o.max_retries)
+                .or_else(|| provider_retry.max_retries.map(|n| n as u32));
+            let max_retry_delay_ms = options
+                .and_then(|o| o.max_retry_delay_ms)
+                .unwrap_or(provider_retry.max_retry_delay_ms as u64);
+
+            // Build the effective options on top of the caller's (pi's `{ ...options, ... }`).
+            let mut opts = options.cloned().unwrap_or_default();
+            opts.timeout_ms = Some(timeout_ms);
+            opts.websocket_connect_timeout_ms = websocket_connect_timeout_ms;
+            opts.max_retries = max_retries;
+            opts.max_retry_delay_ms = Some(max_retry_delay_ms);
+
+            // pi threads `options?.sessionId` into `mergeProviderAttributionHeaders`.
+            let session_id = opts.session_id.clone();
+            stream_simple_with_attribution(
+                &models,
+                telemetry_enabled,
+                session_id.as_deref(),
+                model,
+                context,
+                Some(&opts),
+                signal,
+            )
+        },
+    )
+}
+
 /// Create an [`AgentSession`] with the specified options (pi's
 /// `createAgentSession`, `sdk.ts:164-393`).
 ///
@@ -488,12 +587,18 @@ pub fn create_agent_session(options: CreateAgentSessionOptions) -> CreateAgentSe
     // The block-images convertToLlm wrapper (pi `sdk.ts:251-285`) filters image
     // blocks out of the converted output when `getBlockImages()` is set; it reads
     // a shared `Arc<AtomicBool>` mirror so a mid-session toggle takes effect live,
-    // matching pi's per-call setting read. The streamFn / onPayload / onResponse /
-    // transport / thinkingBudgets / maxRetryDelayMs closures and options (pi
-    // `sdk.ts:297-355`) are deferred — see the module docs. The Agent uses the
-    // provider-unavailable stub streamFn.
+    // matching pi's per-call setting read. The onPayload / onResponse / transport /
+    // thinkingBudgets / maxRetryDelayMs closures and options (pi `sdk.ts:326-355`)
+    // are deferred — see the module docs. The streamFn is now wired (buffered) below.
     let session_id = session_manager.get_session_id().to_string();
     let convert_to_llm = block_images_converter(settings_manager.block_images_flag());
+
+    // Build the buffered `stream_fn` (pi's `streamFn`, `sdk.ts:297-325`). Snapshot
+    // the ai `Models` handle and the retry/timeout/telemetry settings BEFORE
+    // `model_runtime` is moved into `AgentSessionConfig` and while `settings_manager`
+    // is still in scope: both are `!Send`, so the `Send + Sync` closure captures only
+    // the extracted `Models` handle plus a value snapshot of the settings.
+    let stream_fn = build_stream_fn(&model_runtime, &settings_manager);
     let agent = Agent::new(AgentOptions {
         initial_state: Some(InitialAgentState {
             system_prompt: Some(String::new()),
@@ -506,6 +611,7 @@ pub fn create_agent_session(options: CreateAgentSessionOptions) -> CreateAgentSe
         steering_mode: parse_queue_mode(&settings_manager.get_steering_mode()),
         follow_up_mode: parse_queue_mode(&settings_manager.get_follow_up_mode()),
         session_id: Some(session_id),
+        stream_fn: Some(stream_fn),
         ..Default::default()
     });
 
@@ -782,9 +888,33 @@ mod tests {
         assert_eq!(resolved.initial_active, vec!["read", "edit"]);
     }
 
+    // The buffered stream_fn (pi `sdk.ts:297-325`) — the closure captures a
+    // Send + Sync `Models` handle plus a value snapshot of the settings, so the
+    // built `StreamFn` type-checks as `Send + Sync`. Building it here (offline)
+    // proves `build_stream_fn` returns and its captures satisfy the bound.
+    #[test]
+    fn build_stream_fn_produces_a_send_sync_closure() {
+        fn assert_send_sync<T: Send + Sync>(_: &T) {}
+
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let cwd = tmp.path().to_string_lossy().into_owned();
+        let settings_manager = SettingsManager::create(&cwd, &cwd);
+        let model_runtime = ModelRuntime::create(CreateModelRuntimeOptions {
+            models_path: ModelsPath::Disabled,
+            ..Default::default()
+        });
+
+        let stream_fn = build_stream_fn(&model_runtime, &settings_manager);
+        // The StreamFn alias is `Arc<dyn Fn(...) + Send + Sync>`; this fails to
+        // compile if the captured Models / settings snapshot were not Send + Sync.
+        assert_send_sync(&stream_fn);
+    }
+
     // A construction test that builds a real AgentSession fully offline: an
     // in-memory session (no disk), no configured providers, and a freshly built
-    // resource loader. Exercises the no-model fallback path end to end.
+    // resource loader. Exercises the no-model fallback path end to end. With the
+    // stream_fn now wired (Some), this also proves the live closure does not break
+    // offline construction (it is never invoked at construction time).
     #[test]
     fn create_agent_session_builds_offline_with_no_models() {
         let tmp = tempfile::tempdir().expect("tempdir");
