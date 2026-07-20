@@ -26,6 +26,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::overlay::{ComponentId, OverlayFocusRestoreState, OverlayStackEntry, ReactionAction};
+use crate::query_terminal::{PendingColorSchemeQuery, PendingOsc11BackgroundQuery};
 use crate::terminal::Terminal;
 use crate::terminal_colors::TerminalColorScheme;
 use crate::{normalize_terminal_output, visible_width};
@@ -355,6 +356,19 @@ pub struct Tui<T: Terminal> {
     /// (pi's `terminalColorSchemeNotificationsEnabled`). Gates the `\x1b[?2031h`
     /// / `\x1b[?2031l` writes on start/stop and toggle.
     pub(crate) terminal_color_scheme_notifications_enabled: bool,
+    /// Count of OSC 11 background-color queries awaiting a response (pi's
+    /// `pendingOsc11BackgroundReplies`). Gates `consume_osc11_background_response`
+    /// so stray OSC 11 frames are only intercepted while a query is in flight.
+    pub(crate) pending_osc11_background_replies: usize,
+    /// The single in-flight OSC 11 background query slot (pi keeps a queue; the
+    /// synchronous port needs only one). Armed by
+    /// [`Tui::write_terminal_background_query`], settled in
+    /// `consume_osc11_background_response`.
+    pub(crate) pending_osc11_background_query: Option<PendingOsc11BackgroundQuery>,
+    /// The single in-flight DSR color-scheme query slot. Armed by
+    /// [`Tui::write_terminal_color_scheme_query`], settled in
+    /// `consume_terminal_color_scheme_report`.
+    pub(crate) pending_color_scheme_query: Option<PendingColorSchemeQuery>,
 }
 
 impl<T: Terminal> Tui<T> {
@@ -393,6 +407,9 @@ impl<T: Terminal> Tui<T> {
             input_listeners: Vec::new(),
             terminal_color_scheme_listeners: Vec::new(),
             terminal_color_scheme_notifications_enabled: false,
+            pending_osc11_background_replies: 0,
+            pending_osc11_background_query: None,
+            pending_color_scheme_query: None,
         }
     }
 

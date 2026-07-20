@@ -32,7 +32,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::editor::Editor;
 use crate::overlay::ComponentId;
@@ -40,6 +40,7 @@ use crate::renderer::{Component, RenderError, Tui};
 use crate::terminal::{
     ProcessTerminal, Terminal, TerminalInput, KEYBOARD_PROTOCOL_RESPONSE_FRAGMENT_TIMEOUT_MS,
 };
+use crate::terminal_colors::{RgbColor, TerminalColorScheme};
 
 /// StdinBuffer sequence-completion timeout in milliseconds. Mirrors
 /// [`crate::StdinBufferOptions`]'s default (`timeout_ms = 10`): pi arms this
@@ -361,6 +362,86 @@ impl<W: Write> RunLoop<W> {
         }
     }
 
+    /// Query the terminal's default background color with OSC 11
+    /// (`ESC ] 11 ; ? BEL`), synchronously. The Rust port of pi's
+    /// `TUI.queryTerminalBackgroundColor({ timeoutMs })`: pi returns a promise
+    /// resolved by the Node event loop; pidgin's stack is fully synchronous, so
+    /// this instead drives the existing input pump ([`RunLoop::feed_bytes`] ->
+    /// [`Tui::handle_input`], which consumes the OSC 11 response) over `rx` until
+    /// the pending query settles or `timeout` elapses. The bytes written, the
+    /// query semantics, and the timeout are identical to pi; only the async shell
+    /// is dropped. Returns the parsed [`RgbColor`], or `None` on timeout / parse
+    /// failure.
+    ///
+    /// `rx` is the run loop's own event channel (the one [`RunLoop::run`] pumps),
+    /// so the reader thread feeding it is shared with the main loop — a single
+    /// stdin reader, never an abandoned one.
+    pub fn query_terminal_background_color(
+        &mut self,
+        rx: &Receiver<LoopEvent>,
+        timeout: Duration,
+    ) -> Option<RgbColor> {
+        self.tui.write_terminal_background_query();
+        self.pump_until(rx, timeout, |tui| tui.terminal_background_query_settled());
+        if !self.tui.terminal_background_query_settled() {
+            self.tui.settle_terminal_background_timeout();
+        }
+        self.tui.take_terminal_background_reply()
+    }
+
+    /// Query the terminal's color-scheme preference with DSR (`CSI ? 996 n`),
+    /// synchronously. The Rust port of pi's
+    /// `TUI.queryTerminalColorScheme({ timeoutMs })`: drives the input pump over
+    /// `rx` until a DEC 2031 color-scheme report is consumed (settling the pending
+    /// query via the color-scheme listener path) or `timeout` elapses. Returns the
+    /// reported [`TerminalColorScheme`], or `None` on timeout.
+    pub fn query_terminal_color_scheme(
+        &mut self,
+        rx: &Receiver<LoopEvent>,
+        timeout: Duration,
+    ) -> Option<TerminalColorScheme> {
+        self.tui.write_terminal_color_scheme_query();
+        self.pump_until(rx, timeout, |tui| tui.terminal_color_scheme_query_settled());
+        if !self.tui.terminal_color_scheme_query_settled() {
+            self.tui.settle_terminal_color_scheme_timeout();
+        }
+        self.tui.take_terminal_color_scheme_reply()
+    }
+
+    /// Drive the input pump over `rx` until `settled` reports the awaited query
+    /// resolved or the `timeout` deadline passes. Blocks on `recv_timeout` (never
+    /// busy-waits) and routes each event through the same
+    /// [`RunLoop::feed_bytes`]/[`RunLoop::resize`] handlers the main loop uses, so
+    /// the OSC 11 / DSR responses reach [`Tui::handle_input`] and settle the
+    /// pending slot exactly as during normal operation.
+    fn pump_until<F>(&mut self, rx: &Receiver<LoopEvent>, timeout: Duration, mut settled: F)
+    where
+        F: FnMut(&Tui<ProcessTerminal<W>>) -> bool,
+    {
+        let deadline = Instant::now() + timeout;
+        while !settled(&self.tui) {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                break;
+            }
+            match rx.recv_timeout(remaining) {
+                Ok(LoopEvent::Bytes(bytes)) => {
+                    if self.feed_bytes(&bytes).is_err() {
+                        break;
+                    }
+                }
+                Ok(LoopEvent::Resize(columns, rows)) => {
+                    if self.resize(columns, rows).is_err() {
+                        break;
+                    }
+                }
+                Ok(LoopEvent::Shutdown) => break,
+                Err(RecvTimeoutError::Timeout) => break,
+                Err(RecvTimeoutError::Disconnected) => break,
+            }
+        }
+    }
+
     /// Drive the loop from a scripted event sequence. This is the headless,
     /// deterministic entry point used by tests: it exercises the exact same
     /// dispatch, resize, and exit-checking paths as the live loop, minus the
@@ -585,5 +666,68 @@ mod tests {
             thread::sleep(Duration::from_millis(5));
         }
         assert!(reader.is_finished(), "reader should stop on receiver drop");
+    }
+
+    // --- Synchronous terminal-query pump -----------------------------------
+
+    /// A headless run loop over an in-memory sink, matching the `run_events`
+    /// tests' construction.
+    fn headless_run_loop() -> RunLoop<Vec<u8>> {
+        let terminal = ProcessTerminal::with_size(Vec::new(), 80, 24).manage_raw_mode(false);
+        RunLoop::new(Tui::new(terminal, false))
+    }
+
+    #[test]
+    fn query_background_color_resolves_from_pumped_response() {
+        // An OSC 11 response already queued on the channel is pumped through
+        // feed_bytes -> handle_input, consumed, and parsed before the deadline.
+        let mut run_loop = headless_run_loop();
+        let (tx, rx) = mpsc::channel::<LoopEvent>();
+        tx.send(LoopEvent::Bytes(b"\x1b]11;rgb:ffff/0000/8080\x07".to_vec()))
+            .expect("queue response");
+
+        let rgb = run_loop.query_terminal_background_color(&rx, Duration::from_secs(5));
+        assert_eq!(
+            rgb,
+            Some(RgbColor {
+                r: 255,
+                g: 0,
+                b: 128
+            })
+        );
+    }
+
+    #[test]
+    fn query_background_color_times_out_to_none() {
+        // No response arrives; the pump blocks on recv_timeout until the deadline
+        // and resolves to None. `tx` is kept alive so the Timeout arm (not
+        // Disconnected) is exercised.
+        let mut run_loop = headless_run_loop();
+        let (_tx, rx) = mpsc::channel::<LoopEvent>();
+
+        let rgb = run_loop.query_terminal_background_color(&rx, Duration::from_millis(20));
+        assert_eq!(rgb, None);
+    }
+
+    #[test]
+    fn query_color_scheme_resolves_from_pumped_report() {
+        // A DEC 2031 color-scheme report queued on the channel settles the DSR
+        // color-scheme query.
+        let mut run_loop = headless_run_loop();
+        let (tx, rx) = mpsc::channel::<LoopEvent>();
+        tx.send(LoopEvent::Bytes(b"\x1b[?997;2n".to_vec()))
+            .expect("queue report");
+
+        let scheme = run_loop.query_terminal_color_scheme(&rx, Duration::from_secs(5));
+        assert_eq!(scheme, Some(TerminalColorScheme::Light));
+    }
+
+    #[test]
+    fn query_color_scheme_times_out_to_none() {
+        let mut run_loop = headless_run_loop();
+        let (_tx, rx) = mpsc::channel::<LoopEvent>();
+
+        let scheme = run_loop.query_terminal_color_scheme(&rx, Duration::from_millis(20));
+        assert_eq!(scheme, None);
     }
 }
