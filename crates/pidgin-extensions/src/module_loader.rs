@@ -39,7 +39,9 @@
 //! classes, driven by the [`MODULE_TABLE`] of embedded assets:
 //!
 //! * **Vendored / shimmed bare specifier** — matched exactly against a
-//!   [`ModuleTableEntry::specifiers`] list:
+//!   [`ModuleTableEntry::specifiers`] list, then resolved to that entry's
+//!   synthetic `file:///pidgin-vendor/…` URL, whose source
+//!   [`PidginModuleLoader::load`] serves as `prelude + source`:
 //!     * `typebox` / `@sinclair/typebox` → the vendored TypeBox 1.1.38 bundle
 //!       ([`TYPEBOX_SRC`]), served behind a small `TextEncoder` shim the bundle
 //!       needs (see [`TEXTENCODER_SHIM`], carried as the entry's `prelude`).
@@ -48,8 +50,6 @@
 //!       `Type`'s identity is shared) plus `StringEnum`.
 //!     * `@earendil-works/pi-coding-agent` → a shim exporting the identity
 //!       `defineTool`.
-//!   Each resolves to the entry's synthetic `file:///pidgin-vendor/…` URL, whose
-//!   source [`PidginModuleLoader::load`] serves as `prelude + source`.
 //! * **Relative / URL specifier** — starts with `.` or `/`, or already has a URL
 //!   scheme (`file:`, `http:`, …): delegated to [`deno_core::resolve_import`],
 //!   which handles the extension entry module itself (loaded under
