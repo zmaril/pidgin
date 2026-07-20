@@ -1,22 +1,25 @@
 //! Shared fixtures and assertion helpers for the package-manager resolve /
 //! discovery integration tests. Extracted so the (large) ported test suites can
 //! split across files without duplicating setup.
-
-// straitjacket-allow-file:duplication -- the path/write/symlink helpers here are
-// faithfully mirrored by `crates/pidgin-extensions/tests/common/mod.rs` (a
-// crate-boundary test-helper file can't be shared across crates); the small
-// overlap is intentional mirror duplication, not an accident to hoist away.
+//!
+//! The generic path/write/symlink helpers (`canonical`, `join`, `write`,
+//! `mkdir`, `symlink_dir`) live in the `pidgin-testkit` dev crate and are
+//! re-exported below, so they are shared with `pidgin-extensions` rather than
+//! copied across the crate boundary. The crate-specific fixtures and assertion
+//! helpers below stay local because they reference `pidgin-coding`'s own
+//! package-manager types.
 
 // Each integration-test binary that includes this module uses a different
 // subset of these helpers, so per-binary `dead_code` is expected and allowed.
 #![allow(dead_code)]
 
 use std::fs;
-use std::path::Path;
 
 use pidgin_coding::core::package_manager::{
     PackageResolver, ResolveSettings, ResolvedResource, ScopeResources,
 };
+
+pub use pidgin_testkit::{canonical, join, mkdir, symlink_dir, write};
 
 /// A temp-dir fixture: a project root, an agent dir, and a dedicated empty home.
 pub struct Fixture {
@@ -58,31 +61,6 @@ impl Fixture {
     pub fn resolver_home_root(&self, cwd: &str, agent_dir: &str) -> PackageResolver {
         PackageResolver::new(cwd, agent_dir).with_home_dir(&self.root)
     }
-}
-
-pub fn canonical(path: &str) -> String {
-    fs::canonicalize(path)
-        .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| path.to_string())
-}
-
-pub fn join(base: &str, parts: &[&str]) -> String {
-    let mut p = std::path::PathBuf::from(base);
-    for part in parts {
-        p.push(part);
-    }
-    p.to_string_lossy().into_owned()
-}
-
-pub fn write(path: &str, content: &str) {
-    if let Some(parent) = Path::new(path).parent() {
-        fs::create_dir_all(parent).unwrap();
-    }
-    fs::write(path, content).unwrap();
-}
-
-pub fn mkdir(path: &str) {
-    fs::create_dir_all(path).unwrap();
 }
 
 pub fn skill_md(name: &str) -> String {
@@ -145,15 +123,4 @@ pub fn incl_disabled(list: &[ResolvedResource], needle: &str) -> bool {
 
 pub fn ends_any(list: &[ResolvedResource], suffix: &str) -> bool {
     list.iter().any(|r| norm(&r.path).ends_with(&norm(suffix)))
-}
-
-#[cfg(unix)]
-pub fn symlink_dir(src: &str, dst: &str) {
-    std::os::unix::fs::symlink(src, dst).unwrap();
-}
-
-#[cfg(not(unix))]
-pub fn symlink_dir(src: &str, dst: &str) {
-    let _ = (src, dst);
-    panic!("symlink tests require unix");
 }

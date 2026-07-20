@@ -63,3 +63,7 @@ nix = { version = "0.29", features = ["signal", "process"] }
 
 [dev-dependencies]
 serde_json = "1"
+# Shared filesystem/path test-fixture helpers (canonical/join/write/mkdir/
+# symlink_dir), hoisted out of `tests/common/mod.rs` so pidgin-extensions can
+# reuse the same copy across the crate boundary. Dev-only.
+pidgin-testkit = { path = "../pidgin-testkit" }

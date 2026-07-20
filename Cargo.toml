@@ -11,6 +11,7 @@ members = [
     "crates/pidgin-orchestrator",
     "crates/pidgin-napi",
     "crates/pidgin-tui",
+    "crates/pidgin-testkit",
 ]
 
 [workspace.package]

@@ -101,3 +101,8 @@ pidgin-ai = { path = "../pidgin-ai" }
 # build real on-disk extension trees in a temp dir. Cfg'd out without the feature,
 # so the default test build never pulls it.
 tempfile = "3"
+# Shared filesystem/path test-fixture helpers (canonical/join/write/mkdir/
+# symlink_dir), previously copied into `tests/common/mod.rs` from
+# `crates/pidgin-coding/tests/common/mod.rs`. Now shared across the crate
+# boundary via this dev-only crate. Dev-only.
+pidgin-testkit = { path = "../pidgin-testkit" }
