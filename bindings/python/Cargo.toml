@@ -1,0 +1,42 @@
+[package]
+name = "pidgin-python"
+description = "Python native extension (PyO3 cdylib) bridging the pidgin engine into Python."
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/zmaril/atilla"
+publish = false
+
+[lib]
+# The Python-visible module is `pidgin` (import pidgin). The cdylib is loaded as
+# an extension module; abi3 keeps it CPython-version-agnostic (no libpython link).
+name = "pidgin"
+crate-type = ["cdylib"]
+
+[features]
+# `live` wires the real Anthropic path by enabling pidgin-ai's native reqwest
+# transport. reqwest compiles fine offline, so this ships on by default: the
+# module supports both the offline faux path and the live path. Turn it off
+# (`--no-default-features`) for a lean faux-only build with no reqwest/rustls.
+default = ["live"]
+live = ["pidgin-ai/native-http"]
+
+[dependencies]
+# abi3-py39: build one wheel that loads on CPython 3.9+ without linking libpython.
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py39"] }
+
+# Engine crates via path deps (this crate is a standalone workspace; the path
+# deps resolve fine across the workspace boundary, exactly like bindings/php).
+pidgin-core = { path = "../../crates/pidgin-core" }
+pidgin-agent = { path = "../../crates/pidgin-agent" }
+pidgin-ai = { path = "../../crates/pidgin-ai" }
+
+serde_json = "1"
+
+# Standalone workspace: this empty table makes cargo treat this crate as its own
+# workspace rather than attaching it to the workspace rooted at the repository
+# top level. That keeps PyO3/maturin (and, under `live`, reqwest + rustls) out of
+# the root `cargo build` and the shared `rust` CI job, so those stay green
+# without a Python toolchain. Mirrors bindings/php. Build this crate with
+# `cargo build` from inside bindings/python (see README.md).
+[workspace]

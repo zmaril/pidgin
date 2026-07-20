@@ -1,0 +1,68 @@
+<!-- straitjacket-allow-file:color — demo chat page; the few inline CSS color
+     literals are the whole styling of this throwaway single-file template. -->
+<!-- straitjacket-allow-file:inline-font — same: the system-ui font stack is the
+     template's only typographic choice, inlined to keep the demo self-contained. -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pidgin chat demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    .mode { color: #666; font-size: 0.85rem; margin-bottom: 1rem; }
+    #transcript { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; min-height: 12rem; margin-bottom: 1rem; }
+    .msg { margin: 0.5rem 0; white-space: pre-wrap; }
+    .user { font-weight: 600; }
+    .assistant { color: #1a4f8b; }
+    form { display: flex; gap: 0.5rem; }
+    input[type=text] { flex: 1; padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; }
+    button { padding: 0.5rem 1rem; border: 0; border-radius: 6px; background: #1a4f8b; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>pidgin chat demo</h1>
+  <div class="mode">provider: {{ mode }}</div>
+
+  <div id="transcript">
+    {% for m in transcript %}
+      <div class="msg {{ m.role }}">{{ '🧑' if m.role == 'user' else '🤖' }} {{ m.text }}</div>
+    {% endfor %}
+  </div>
+
+  <form id="chat">
+    <input type="text" id="message" name="message" placeholder="Say something…" autofocus autocomplete="off">
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    const form = document.getElementById('chat');
+    const transcript = document.getElementById('transcript');
+    const input = document.getElementById('message');
+
+    function append(role, text) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.textContent = (role === 'user' ? '🧑 ' : '🤖 ') + text;
+      transcript.appendChild(div);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = input.value.trim();
+      if (!message) return;
+      append('user', message);
+      input.value = '';
+      const res = await fetch('/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
+      const data = await res.json();
+      append('assistant', data.reply ?? ('error: ' + (data.error || 'unknown')));
+      transcript.scrollTop = transcript.scrollHeight;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+# straitjacket-allow-file[:duplication] — the checkout/toolchain/cache setup
+# necessarily mirrors ci.yml and php.yml; Actions YAML has no include mechanism
+# for it.
+#
+# Python binding workflow. Builds the PyO3 cdylib, then proves the extension
+# imports and drives a real (offline, faux) agent turn (bindings/python/
+# test_faux.py). The Python binding is a standalone crate outside the root
+# workspace (it carries PyO3/maturin — and, under `live`, reqwest — which the
+# shared `rust` job does not build), so it gets its own job here rather than
+# riding along in ci.yml.
+
+name: python
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Fan-out: only run the heavy build when the PR actually touches the Python
+  # binding, its workflow, or the engine crates it depends on. A skipped
+  # required check still reports green, so branch protection stays happy.
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            python:
+              - 'bindings/python/**'
+              - 'crates/pidgin-core/**'
+              - 'crates/pidgin-ai/**'
+              - 'crates/pidgin-agent/**'
+              - '.github/workflows/python.yml'
+
+  python:
+    name: python extension
+    needs: changes
+    if: needs.changes.outputs.python == 'true' || github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/python
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: fmt
+        working-directory: bindings/python
+        run: cargo fmt --all --check
+
+      - name: clippy
+        working-directory: bindings/python
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: build
+        working-directory: bindings/python
+        run: maturin build
+
+      - name: develop + faux smoke test
+        working-directory: bindings/python
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          maturin develop
+          python test_faux.py
