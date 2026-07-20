@@ -14,10 +14,10 @@ use serde::Deserialize;
 
 use pidgin_tui::text_util::WordSegment;
 use pidgin_tui::{
-    apply_background_to_line, find_word_backward, find_word_forward, fuzzy_filter, fuzzy_match,
-    is_punctuation_char, is_whitespace_char, set_kitty_protocol_active, tui_keybindings,
-    word_segment, KeybindingConflict, KeybindingsManager, KillRing, PushOpts, UndoStack,
-    WordNavOptions,
+    apply_background_to_line, find_word_backward, find_word_forward, fuzzy_filter,
+    fuzzy_filter_indices, fuzzy_match, is_punctuation_char, is_whitespace_char,
+    set_kitty_protocol_active, tui_keybindings, word_segment, KeybindingConflict,
+    KeybindingsManager, KillRing, PushOpts, UndoStack, WordNavOptions,
 };
 
 fn load<T: serde::de::DeserializeOwned>(name: &str) -> Vec<T> {
@@ -80,6 +80,114 @@ fn fuzzy_filter_vectors() {
         let got = fuzzy_filter(v.items.clone(), &v.query, |x: &String| x.clone());
         assert_eq!(got, v.result, "fuzzy_filter(query={:?})", v.query);
     }
+}
+
+// `fuzzy_filter_indices` is the shared orchestration behind both the closure
+// `fuzzy_filter` and the napi `fuzzyFilter`. Every pi conformance vector must
+// hold for it too: the ranked indices, mapped back through `items`, reproduce
+// the vector's `result` exactly.
+#[test]
+fn fuzzy_filter_indices_matches_vectors() {
+    let vectors: Vec<FuzzyFilterVec> = load("fuzzy_filter");
+    assert!(!vectors.is_empty());
+    for v in &vectors {
+        let texts: Vec<&str> = v.items.iter().map(String::as_str).collect();
+        let indices = fuzzy_filter_indices(&texts, &v.query);
+        // Indices must be unique and in range.
+        let mut seen = std::collections::HashSet::new();
+        for &i in &indices {
+            assert!(
+                i < v.items.len(),
+                "index {i} out of range (query={:?})",
+                v.query
+            );
+            assert!(seen.insert(i), "duplicate index {i} (query={:?})", v.query);
+        }
+        let ranked: Vec<String> = indices.iter().map(|&i| v.items[i].clone()).collect();
+        assert_eq!(
+            ranked, v.result,
+            "fuzzy_filter_indices(query={:?})",
+            v.query
+        );
+    }
+}
+
+// Empty / whitespace / only-slash queries produce no tokens, so pi returns the
+// items unchanged — indices are the identity `0..len`.
+#[test]
+fn fuzzy_filter_indices_empty_query_returns_all_in_order() {
+    let texts = ["alpha", "beta", "gamma"];
+    for q in ["", "   ", "\t\n", "/", "//", " / "] {
+        assert_eq!(
+            fuzzy_filter_indices(&texts, q),
+            vec![0, 1, 2],
+            "empty-ish query {q:?} should return all indices in order"
+        );
+    }
+    // Empty input stays empty.
+    assert_eq!(fuzzy_filter_indices(&[], "abc"), Vec::<usize>::new());
+    assert_eq!(fuzzy_filter_indices(&[], ""), Vec::<usize>::new());
+}
+
+// A single token filters to matching items, ranked best (lowest score) first.
+#[test]
+fn fuzzy_filter_indices_single_token() {
+    let texts = ["foobar", "xyz", "barfoo"];
+    let indices = fuzzy_filter_indices(&texts, "foo");
+    // "xyz" cannot match "foo"; both foo-bearing items survive.
+    assert_eq!(indices.len(), 2);
+    assert!(!indices.contains(&1));
+    // The exact ranking must match the closure filter over the same texts.
+    let closure = fuzzy_filter(texts.to_vec(), "foo", |s: &&str| s.to_string());
+    let ranked: Vec<&str> = indices.iter().map(|&i| texts[i]).collect();
+    assert_eq!(ranked, closure);
+}
+
+// Multi-token AND gate: an item missing any token is excluded entirely.
+#[test]
+fn fuzzy_filter_indices_multi_token_and_gate() {
+    let texts = ["foo bar baz", "foo only", "bar baz"];
+    // Query "foo bar" — both tokens required.
+    let indices = fuzzy_filter_indices(&texts, "foo bar");
+    let ranked: Vec<&str> = indices.iter().map(|&i| texts[i]).collect();
+    // "foo only" lacks "bar"; "bar baz" lacks "foo": both excluded.
+    assert!(ranked.contains(&"foo bar baz"));
+    assert!(!ranked.contains(&"foo only"));
+    assert!(!ranked.contains(&"bar baz"));
+    // Slash is also a token separator.
+    let slash = fuzzy_filter_indices(&texts, "foo/bar");
+    assert_eq!(slash, indices, "slash and space tokenize identically here");
+}
+
+// Score-sum ranking: with a single token, the item whose fuzzy_match score is
+// lowest ranks first, and the index ranking agrees with the raw scores.
+#[test]
+fn fuzzy_filter_indices_score_sum_ranking() {
+    let texts = ["cat", "concatenate", "scatter"];
+    let indices = fuzzy_filter_indices(&texts, "cat");
+    // Exact match "cat" (score includes the -100 exact bonus) must rank first.
+    assert_eq!(texts[indices[0]], "cat");
+    // Ranking is ascending by fuzzy_match score against the single token.
+    let mut scores: Vec<f64> = indices
+        .iter()
+        .map(|&i| fuzzy_match("cat", texts[i]).score)
+        .collect();
+    let mut sorted = scores.clone();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    assert_eq!(scores, sorted, "indices must be ascending by total score");
+    scores.dedup();
+    // Sanity: at least the exact match differs from the others.
+    assert!(scores.len() >= 2);
+}
+
+// Stable tie order: items with equal total score keep their input order.
+#[test]
+fn fuzzy_filter_indices_stable_tie_order() {
+    // Three identical texts all score identically for any query, so the ranking
+    // must be the identity order (stable sort preserves input order on ties).
+    let texts = ["match", "match", "match", "match"];
+    let indices = fuzzy_filter_indices(&texts, "match");
+    assert_eq!(indices, vec![0, 1, 2, 3], "equal scores keep input order");
 }
 
 // --- word segmentation ----------------------------------------------------

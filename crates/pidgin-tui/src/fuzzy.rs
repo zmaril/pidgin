@@ -154,34 +154,40 @@ pub fn fuzzy_match(query: &str, text: &str) -> FuzzyMatch {
     }
 }
 
-/// Filter and sort items by fuzzy match quality (best matches first). Supports
-/// whitespace- and slash-separated tokens: all tokens must match.
-pub fn fuzzy_filter<T, F>(items: Vec<T>, query: &str, get_text: F) -> Vec<T>
-where
-    F: Fn(&T) -> String,
-{
+/// Fuzzy-filter orchestration keyed on original indices. Given the text of each
+/// candidate, return the surviving candidates' original indices ranked exactly
+/// as pi's `fuzzyFilter` ranks the items themselves (best matches first).
+///
+/// This is the whole `fuzzyFilter` orchestration — trim/empty-query early
+/// return, tokenize on whitespace/`/`, per-index AND-gate over the tokens,
+/// token score-sum, and a stable ascending sort by total score — expressed over
+/// indices so it can cross the napi boundary (where the `getText` callback
+/// cannot). It reuses the same [`fuzzy_match`] scorer and tokenizer as
+/// [`fuzzy_filter`], so ranking is byte-identical.
+///
+/// On an empty/whitespace/only-slash query (no tokens) pi returns the items
+/// unchanged, so this returns `0..texts.len()` in order.
+pub fn fuzzy_filter_indices(texts: &[&str], query: &str) -> Vec<usize> {
     let trimmed = js_trim(query);
     if trimmed.is_empty() {
-        return items;
+        return (0..texts.len()).collect();
     }
 
     let tokens: Vec<String> = split_ws_or_slash(trimmed);
 
     if tokens.is_empty() {
-        return items;
+        return (0..texts.len()).collect();
     }
 
-    // (index-into-items via ownership, totalScore). We keep items owned and
-    // stable-sort a parallel list of (item, score).
-    let mut results: Vec<(T, f64)> = Vec::new();
+    // (original index, totalScore) for each surviving candidate.
+    let mut results: Vec<(usize, f64)> = Vec::new();
 
-    for item in items {
-        let text = get_text(&item);
+    for (idx, text) in texts.iter().enumerate() {
         let mut total_score: f64 = 0.0;
         let mut all_match = true;
 
         for token in &tokens {
-            let m = fuzzy_match(token, &text);
+            let m = fuzzy_match(token, text);
             if m.matches {
                 total_score += m.score;
             } else {
@@ -191,13 +197,40 @@ where
         }
 
         if all_match {
-            results.push((item, total_score));
+            results.push((idx, total_score));
         }
     }
 
     // Stable sort ascending by totalScore, matching JS `Array.prototype.sort`.
     results.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
-    results.into_iter().map(|(item, _)| item).collect()
+    results.into_iter().map(|(idx, _)| idx).collect()
+}
+
+/// Filter and sort items by fuzzy match quality (best matches first). Supports
+/// whitespace- and slash-separated tokens: all tokens must match.
+///
+/// Expressed on top of [`fuzzy_filter_indices`]: materialize each item's text
+/// via `get_text`, rank the original indices, then reorder the owned items into
+/// that ranking. One orchestration, no duplicated scoring/sort logic.
+pub fn fuzzy_filter<T, F>(items: Vec<T>, query: &str, get_text: F) -> Vec<T>
+where
+    F: Fn(&T) -> String,
+{
+    let texts: Vec<String> = items.iter().map(&get_text).collect();
+    let text_refs: Vec<&str> = texts.iter().map(String::as_str).collect();
+    let indices = fuzzy_filter_indices(&text_refs, query);
+
+    // `indices` is a subset permutation of `0..items.len()` with no repeats, so
+    // each `take()` observes its slot exactly once.
+    let mut slots: Vec<Option<T>> = items.into_iter().map(Some).collect();
+    indices
+        .into_iter()
+        .map(|i| {
+            slots[i]
+                .take()
+                .expect("fuzzy_filter_indices yields unique indices")
+        })
+        .collect()
 }
 
 // JS `\s` as a `char` predicate (all such code points are in the BMP, so the
