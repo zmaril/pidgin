@@ -1,0 +1,590 @@
+[
+	{
+		"label": "loading/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mllama.cpp models\u001b[22m\u001b[39m                       ",
+			"                                        ",
+			" \u001b[38;5;244mLoading…\u001b[39m                               ",
+			"                                        ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "loading/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mllama.cpp models\u001b[22m\u001b[39m                                                               ",
+			"                                                                                ",
+			" \u001b[38;5;244mLoading…\u001b[39m                                                                       ",
+			"                                                                                ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "models/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mllama.cpp models\u001b[22m\u001b[39m                       ",
+			" \u001b[38;5;241mhttp://127.0.0.1:8080\u001b[39m                  ",
+			"",
+			"\u001b[38;5;109m→ unsloth/Qwen3-4B-GGUF\u001b[39m",
+			"  bartowski/Llama-3.2-3B-Instruct-GGUF",
+			"  ggml-org/gemma-3-1b",
+			"  TheBloke/Mistral-7B-Instruct-v0.2-GG\u001b[0m",
+			"  Download model…",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m load/unload/download\u001b[39m •           ",
+			" \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m close\u001b[39m\u001b[39m                    ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "models/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mllama.cpp models\u001b[22m\u001b[39m                                                               ",
+			" \u001b[38;5;241mhttp://127.0.0.1:8080\u001b[39m                                                          ",
+			"",
+			"\u001b[38;5;109m→ unsloth/Qwen3-4B-GGUF                   loaded · 8k context\u001b[39m",
+			"  bartowski/Llama-3.2-3B-Instruct-GGUF",
+			"  ggml-org/gemma-3-1b\u001b[38;5;244m                     loaded · 131k context\u001b[39m",
+			"  TheBloke/Mistral-7B-Instruct-v0.2-GGUF\u001b[38;5;244m  downloading\u001b[39m",
+			"  Download model…\u001b[38;5;244m                         Hugging Face owner/repository[:quant\u001b[0m\u001b[39m",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m load/unload/download\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m close\u001b[39m\u001b[39m                               ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "models-empty/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mllama.cpp models\u001b[22m\u001b[39m                       ",
+			" \u001b[38;5;241mhttp://127.0.0.1:8080\u001b[39m                  ",
+			"",
+			"\u001b[38;5;109m→ Download model…\u001b[39m",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m load/unload/download\u001b[39m •           ",
+			" \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m close\u001b[39m\u001b[39m                    ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "models-empty/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mllama.cpp models\u001b[22m\u001b[39m                                                               ",
+			" \u001b[38;5;241mhttp://127.0.0.1:8080\u001b[39m                                                          ",
+			"",
+			"\u001b[38;5;109m→ Download model…                     Hugging Face owner/repository[:quant]\u001b[39m",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m load/unload/download\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m close\u001b[39m\u001b[39m                               ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "select/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mChoose an action\u001b[22m\u001b[39m                       ",
+			"",
+			"\u001b[38;5;109m→ Load\u001b[39m",
+			"  Unload",
+			"  Remove",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m cancel\u001b[39m\u001b[39m    ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "select/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mChoose an action\u001b[22m\u001b[39m                                                               ",
+			"",
+			"\u001b[38;5;109m→ Load\u001b[39m",
+			"  Unload",
+			"  Remove",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m cancel\u001b[39m\u001b[39m                                            ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "status/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mWorking\u001b[22m\u001b[39m                                ",
+			"",
+			" \u001b[38;5;244mContacting llama.cpp router…\u001b[39m           ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "status/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mWorking\u001b[22m\u001b[39m                                                                        ",
+			"",
+			" \u001b[38;5;244mContacting llama.cpp router…\u001b[39m                                                   ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-none/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                            ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                  ",
+			"",
+			" \u001b[38;5;244mStarting…\u001b[39m                              ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                     ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-none/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                                                                    ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                                                          ",
+			"",
+			" \u001b[38;5;244mStarting…\u001b[39m                                                                      ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                                                             ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-0/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                            ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                  ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                       ",
+			" \u001b[38;5;109m────────────────────────────────────── ",
+			" \u001b[38;5;109m── 0%\u001b[39m                                  ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                    ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                     ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-0/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                                                                    ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                                                          ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                                                               ",
+			" \u001b[38;5;109m──────────────────────────────────────── 0%\u001b[39m                                    ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                                                            ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                                                             ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-0.25/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                            ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                  ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                       ",
+			" \u001b[38;5;109m██████████──────────────────────────── ",
+			" \u001b[38;5;109m── 25%\u001b[39m                                 ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                    ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                     ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-0.25/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                                                                    ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                                                          ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                                                               ",
+			" \u001b[38;5;109m██████████────────────────────────────── 25%\u001b[39m                                   ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                                                            ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                                                             ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-0.5/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                            ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                  ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                       ",
+			" \u001b[38;5;109m████████████████████────────────────── ",
+			" \u001b[38;5;109m── 50%\u001b[39m                                 ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                    ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                     ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-0.5/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                                                                    ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                                                          ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                                                               ",
+			" \u001b[38;5;109m████████████████████──────────────────── 50%\u001b[39m                                   ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                                                            ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                                                             ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-0.5125/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                            ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                  ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                       ",
+			" \u001b[38;5;109m█████████████████████───────────────── ",
+			" \u001b[38;5;109m── 51%\u001b[39m                                 ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                    ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                     ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-0.5125/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                                                                    ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                                                          ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                                                               ",
+			" \u001b[38;5;109m█████████████████████─────────────────── 51%\u001b[39m                                   ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                                                            ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                                                             ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-1/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                            ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                  ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                       ",
+			" \u001b[38;5;109m██████████████████████████████████████ ",
+			" \u001b[38;5;109m██ 100%\u001b[39m                                ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                    ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                     ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "progress-1/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownloading\u001b[22m\u001b[39m                                                                    ",
+			" \u001b[38;5;188munsloth/Qwen3-4B-GGUF\u001b[39m                                                          ",
+			"",
+			" \u001b[38;5;244mFetching weights\u001b[39m                                                               ",
+			" \u001b[38;5;109m████████████████████████████████████████ 100%\u001b[39m                                  ",
+			" \u001b[38;5;241m1.00 GiB / 2.00 GiB\u001b[39m                                                            ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m stop\u001b[39m\u001b[39m                                                             ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-empty/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                         ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m ",
+			"> \u001b_pi:c\u0007\u001b[7m \u001b[27m                                     ",
+			"",
+			"\u001b[38;5;241m  Type at least 2 characters\u001b[39m            ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m      ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-empty/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                                                                 ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m                                         ",
+			"> \u001b_pi:c\u0007\u001b[7m \u001b[27m                                                                             ",
+			"",
+			"\u001b[38;5;241m  Type at least 2 characters\u001b[39m                                                    ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m                                              ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-searching/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                         ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m ",
+			"> qwen\u001b_pi:c\u0007\u001b[7m \u001b[27m                                 ",
+			"",
+			"\u001b[38;5;241m  Searching Hugging Face…\u001b[39m               ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m      ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-searching/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                                                                 ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m                                         ",
+			"> qwen\u001b_pi:c\u0007\u001b[7m \u001b[27m                                                                         ",
+			"",
+			"\u001b[38;5;241m  Searching Hugging Face…\u001b[39m                                                       ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m                                              ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-results/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                         ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m ",
+			"> qwen\u001b_pi:c\u0007\u001b[7m \u001b[27m                                 ",
+			"",
+			"\u001b[38;5;109m→ unsloth/Qwen3-4B-GGUF  1.5M downloads\u001b[39m ",
+			"  bartowski/Qwen2.5-Coder-7B-GGUF\u001b[38;5;244m  88.4k",
+			"\u001b[38;5;244mdownloads\u001b[39m                               ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m      ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-results/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                                                                 ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m                                         ",
+			"> qwen\u001b_pi:c\u0007\u001b[7m \u001b[27m                                                                         ",
+			"",
+			"\u001b[38;5;109m→ unsloth/Qwen3-4B-GGUF  1.5M downloads\u001b[39m                                         ",
+			"  bartowski/Qwen2.5-Coder-7B-GGUF\u001b[38;5;244m  88.4k downloads\u001b[39m                              ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m                                              ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-results-sel1/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                         ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m ",
+			"> qwen\u001b_pi:c\u0007\u001b[7m \u001b[27m                                 ",
+			"",
+			"  unsloth/Qwen3-4B-GGUF\u001b[38;5;244m  1.5M downloads\u001b[39m ",
+			"\u001b[38;5;109m→ bartowski/Qwen2.5-Coder-7B-GGUF  88.4k",
+			"\u001b[38;5;109mdownloads\u001b[39m                               ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m      ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-results-sel1/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                                                                 ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m                                         ",
+			"> qwen\u001b_pi:c\u0007\u001b[7m \u001b[27m                                                                         ",
+			"",
+			"  unsloth/Qwen3-4B-GGUF\u001b[38;5;244m  1.5M downloads\u001b[39m                                         ",
+			"\u001b[38;5;109m→ bartowski/Qwen2.5-Coder-7B-GGUF  88.4k downloads\u001b[39m                              ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m                                              ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-no-models/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                         ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m ",
+			"> zzzznope\u001b_pi:c\u0007\u001b[7m \u001b[27m                             ",
+			"",
+			"\u001b[38;5;241m  No GGUF models found\u001b[39m                  ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m      ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-no-models/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                                                                 ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m                                         ",
+			"> zzzznope\u001b_pi:c\u0007\u001b[7m \u001b[27m                                                                     ",
+			"",
+			"\u001b[38;5;241m  No GGUF models found\u001b[39m                                                          ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m                                              ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-unfocused/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                         ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m ",
+			"> qwen\u001b[7m \u001b[27m                                 ",
+			"",
+			"  unsloth/Qwen3-4B-GGUF\u001b[38;5;244m  1.5M downloads\u001b[39m ",
+			"\u001b[38;5;109m→ bartowski/Qwen2.5-Coder-7B-GGUF  88.4k",
+			"\u001b[38;5;109mdownloads\u001b[39m                               ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m      ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-unfocused/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                                                                 ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m                                         ",
+			"> qwen\u001b[7m \u001b[27m                                                                         ",
+			"",
+			"  unsloth/Qwen3-4B-GGUF\u001b[38;5;244m  1.5M downloads\u001b[39m                                         ",
+			"\u001b[38;5;109m→ bartowski/Qwen2.5-Coder-7B-GGUF  88.4k downloads\u001b[39m                              ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m                                              ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-scroll/w=40",
+		"width": 40,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                         ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m ",
+			"> ml\u001b_pi:c\u0007\u001b[7m \u001b[27m                                   ",
+			"",
+			"\u001b[38;5;109m→ ggml-org/model-0-GGUF  1.0k downloads\u001b[39m ",
+			"  ggml-org/model-1-GGUF\u001b[38;5;244m  1.1k downloads\u001b[39m ",
+			"  ggml-org/model-2-GGUF\u001b[38;5;244m  1.2k downloads\u001b[39m ",
+			"  ggml-org/model-3-GGUF\u001b[38;5;244m  1.3k downloads\u001b[39m ",
+			"  ggml-org/model-4-GGUF\u001b[38;5;244m  1.4k downloads\u001b[39m ",
+			"  ggml-org/model-5-GGUF\u001b[38;5;244m  1.6k downloads\u001b[39m ",
+			"  ggml-org/model-6-GGUF\u001b[38;5;244m  1.7k downloads\u001b[39m ",
+			"  ggml-org/model-7-GGUF\u001b[38;5;244m  1.8k downloads\u001b[39m ",
+			"  ggml-org/model-8-GGUF\u001b[38;5;244m  1.9k downloads\u001b[39m ",
+			"  ggml-org/model-9-GGUF\u001b[38;5;244m  2.0k downloads\u001b[39m ",
+			"\u001b[38;5;241m  (1/15)\u001b[39m                                ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m      ",
+			"\u001b[38;5;109m────────────────────────────────────────\u001b[39m"
+		]
+	},
+	{
+		"label": "search-scroll/w=80",
+		"width": 80,
+		"expected": [
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m",
+			" \u001b[38;5;109m\u001b[1mDownload model\u001b[22m\u001b[39m                                                                 ",
+			"",
+			" \u001b[38;5;241mModel name or owner/repository[:quant]\u001b[39m                                         ",
+			"> ml\u001b_pi:c\u0007\u001b[7m \u001b[27m                                                                           ",
+			"",
+			"\u001b[38;5;109m→ ggml-org/model-0-GGUF  1.0k downloads\u001b[39m                                         ",
+			"  ggml-org/model-1-GGUF\u001b[38;5;244m  1.1k downloads\u001b[39m                                         ",
+			"  ggml-org/model-2-GGUF\u001b[38;5;244m  1.2k downloads\u001b[39m                                         ",
+			"  ggml-org/model-3-GGUF\u001b[38;5;244m  1.3k downloads\u001b[39m                                         ",
+			"  ggml-org/model-4-GGUF\u001b[38;5;244m  1.4k downloads\u001b[39m                                         ",
+			"  ggml-org/model-5-GGUF\u001b[38;5;244m  1.6k downloads\u001b[39m                                         ",
+			"  ggml-org/model-6-GGUF\u001b[38;5;244m  1.7k downloads\u001b[39m                                         ",
+			"  ggml-org/model-7-GGUF\u001b[38;5;244m  1.8k downloads\u001b[39m                                         ",
+			"  ggml-org/model-8-GGUF\u001b[38;5;244m  1.9k downloads\u001b[39m                                         ",
+			"  ggml-org/model-9-GGUF\u001b[38;5;244m  2.0k downloads\u001b[39m                                         ",
+			"\u001b[38;5;241m  (1/15)\u001b[39m                                                                        ",
+			"",
+			" \u001b[38;5;241m\u001b[38;5;241menter\u001b[39m\u001b[38;5;244m select\u001b[39m • \u001b[38;5;241mescape/ctrl+c\u001b[39m\u001b[38;5;244m back\u001b[39m\u001b[39m                                              ",
+			"\u001b[38;5;109m────────────────────────────────────────────────────────────────────────────────\u001b[39m"
+		]
+	}
+]

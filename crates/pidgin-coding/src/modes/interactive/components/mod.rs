@@ -32,13 +32,17 @@
 //! `DiffComponent`) lands when that suite is ported.
 
 pub mod assistant_message;
+pub mod dynamic_border;
 pub mod footer;
+pub mod keybinding_hints;
 pub mod status_indicator;
 pub mod tool_execution;
 pub mod user_message;
 
 pub use assistant_message::AssistantMessage;
+pub use dynamic_border::{ColorFn, DynamicBorder};
 pub use footer::{FooterComponent, FooterData};
+pub use keybinding_hints::{format_key_text, key_display_text, key_hint, key_text, raw_key_hint};
 pub use status_indicator::{
     IdleStatus, StatusIndicator, StatusIndicatorKind, WorkingStatusIndicator,
 };
