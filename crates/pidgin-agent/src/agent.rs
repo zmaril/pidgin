@@ -423,10 +423,15 @@ struct AgentShared {
     transform_context: Option<TransformContext>,
     stream_fn: StreamFn,
     get_api_key: Option<GetApiKey>,
-    before_tool_call: Option<BeforeToolCall>,
-    after_tool_call: Option<AfterToolCall>,
+    // The tool-call and context-aware next-turn hooks are interior-mutable so a
+    // post-construction caller can install or replace them (pi reassigns
+    // `beforeToolCall` / `afterToolCall` / `prepareNextTurnWithContext` after
+    // construction — `agent-session.ts:449-490`). Each read locks and clones,
+    // preserving pi's "reads the current closure per run" semantics.
+    before_tool_call: Mutex<Option<BeforeToolCall>>,
+    after_tool_call: Mutex<Option<AfterToolCall>>,
     prepare_next_turn: Option<PrepareNextTurnSignal>,
-    prepare_next_turn_with_context: Option<PrepareNextTurnWithContext>,
+    prepare_next_turn_with_context: Mutex<Option<PrepareNextTurnWithContext>>,
     tool_execution: ToolExecutionMode,
     clock: Arc<dyn Clock>,
 }
@@ -496,10 +501,10 @@ impl Agent {
             transform_context: options.transform_context,
             stream_fn: options.stream_fn.unwrap_or_else(default_stream_fn),
             get_api_key: options.get_api_key,
-            before_tool_call: options.before_tool_call,
-            after_tool_call: options.after_tool_call,
+            before_tool_call: Mutex::new(options.before_tool_call),
+            after_tool_call: Mutex::new(options.after_tool_call),
             prepare_next_turn: options.prepare_next_turn,
-            prepare_next_turn_with_context: options.prepare_next_turn_with_context,
+            prepare_next_turn_with_context: Mutex::new(options.prepare_next_turn_with_context),
             tool_execution: options
                 .tool_execution
                 .unwrap_or(ToolExecutionMode::Parallel),
@@ -637,6 +642,32 @@ impl Agent {
     /// Set the follow-up queue drain mode (pi's `set followUpMode`).
     pub fn set_follow_up_mode(&self, mode: QueueMode) {
         self.shared.follow_up_queue.lock().unwrap().mode = mode;
+    }
+
+    // -- Post-construction hook installation --------------------------------
+    //
+    // pi reassigns the agent's mutable `beforeToolCall` / `afterToolCall` /
+    // `prepareNextTurnWithContext` fields after construction (its
+    // `AgentSession._installAgentToolHooks`, `agent-session.ts:449-490`). These
+    // setters give a caller that holds a pre-built [`Agent`] the same ability to
+    // install or replace those hooks; each run re-reads the current closure.
+
+    /// Install or replace the pre-execution tool hook (pi's
+    /// `agent.beforeToolCall = ...`).
+    pub fn set_before_tool_call(&self, hook: Option<BeforeToolCall>) {
+        *self.shared.before_tool_call.lock().unwrap() = hook;
+    }
+
+    /// Install or replace the post-execution tool hook (pi's
+    /// `agent.afterToolCall = ...`).
+    pub fn set_after_tool_call(&self, hook: Option<AfterToolCall>) {
+        *self.shared.after_tool_call.lock().unwrap() = hook;
+    }
+
+    /// Install or replace the context-aware next-turn hook (pi's
+    /// `agent.prepareNextTurnWithContext = ...`).
+    pub fn set_prepare_next_turn_with_context(&self, hook: Option<PrepareNextTurnWithContext>) {
+        *self.shared.prepare_next_turn_with_context.lock().unwrap() = hook;
     }
 
     // -- Queues (`agent.ts:274-302`) ---------------------------------------
@@ -874,7 +905,12 @@ impl Agent {
 
         // prepareNextTurn: prefer the context-aware hook, else the legacy hook,
         // passing the active run's signal. Only present when either is set.
-        let pnt_with_context = self.shared.prepare_next_turn_with_context.clone();
+        let pnt_with_context = self
+            .shared
+            .prepare_next_turn_with_context
+            .lock()
+            .unwrap()
+            .clone();
         let pnt_legacy = self.shared.prepare_next_turn.clone();
         let pnt_signal = signal.clone();
         let prepare_next_turn: Option<PrepareNextTurn> =
@@ -925,8 +961,8 @@ impl Agent {
             get_steering_messages: Some(get_steering),
             get_follow_up_messages: Some(get_follow_up),
             tool_execution: Some(self.shared.tool_execution),
-            before_tool_call: self.shared.before_tool_call.clone(),
-            after_tool_call: self.shared.after_tool_call.clone(),
+            before_tool_call: self.shared.before_tool_call.lock().unwrap().clone(),
+            after_tool_call: self.shared.after_tool_call.lock().unwrap().clone(),
         }
     }
 
