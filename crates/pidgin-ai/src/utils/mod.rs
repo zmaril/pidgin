@@ -13,5 +13,6 @@ pub mod overflow;
 pub mod provider_env;
 pub mod retry;
 pub mod sanitize_unicode;
+pub mod sse;
 pub mod typebox_helpers;
 pub mod validation;
