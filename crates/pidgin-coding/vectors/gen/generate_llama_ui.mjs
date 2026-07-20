@@ -367,12 +367,27 @@ function genLlamaUi() {
     push("models", showModelsContent("http://127.0.0.1:8080", MODELS));
     push("models-empty", showModelsContent("http://127.0.0.1:8080", []));
 
-    // Generic select. (confirm / connectionError use MULTI-LINE titles, whose
-    // bold+fg spans a hard newline — a case where pidgin-tui's wrapTextWithAnsi
-    // currently diverges from pi-tui's, so those two surfaces are covered
-    // behaviourally in the Rust unit tests rather than byte-vectored here. See
-    // the port PR notes.)
+    // Generic select.
     push("select", selectContent("Choose an action", ["Load", "Unload", "Remove"]));
+
+    // confirm / connectionError compose MULTI-LINE titles (`${title}\n${message}`
+    // and `llama.cpp unavailable\n${serverUrl}\n\n${message}`) and drive the same
+    // `select` primitive. Their bold+fg title spans a hard newline — now rendered
+    // byte-identically to pi thanks to the chalk per-newline re-encasing fix.
+    push(
+        "confirm",
+        selectContent("Stop download?\nCancel the in-progress download and discard the partial weights?", [
+            "Yes",
+            "No",
+        ]),
+    );
+    push(
+        "connection-error",
+        selectContent("llama.cpp unavailable\nhttp://127.0.0.1:8080\n\nConnection refused after 3 retries.", [
+            "Retry",
+            "Close",
+        ]),
+    );
 
     // Status.
     push("status", statusContent("Working", "Contacting llama.cpp router…"));
