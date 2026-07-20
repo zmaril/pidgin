@@ -26,6 +26,9 @@
 //!   `bindCore` host traits, and the always-compiled no-op
 //!   [`runner::StubExtensionRunner`]. PR0 = trait + stub only; the deno-backed
 //!   impl lives in `pidgin-extensions`.
+//! - [`notify`] — the `ctx.ui.notify` DELIVERY seam: the [`notify::NotifySink`]
+//!   `Send` one-way sink + std-mpsc channel the JS plane pushes notifications
+//!   into, reusing [`types::NotifyLevel`].
 //!
 //! The JS-execution plane (running each discovered entrypoint on the embedded
 //! `deno_core` runtime) and the live `ExtensionRunner` that drives the hooks over
@@ -40,6 +43,7 @@ pub mod dispatch;
 pub mod events;
 pub mod hook;
 pub mod loader;
+pub mod notify;
 pub mod registry;
 pub mod runner;
 pub mod types;

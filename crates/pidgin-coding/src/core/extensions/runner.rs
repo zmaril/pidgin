@@ -75,6 +75,7 @@ use crate::core::extensions::events::tool::{
 use crate::core::extensions::events::turn::{
     MessageEndEvent, MessageStartEvent, MessageUpdateEvent, TurnEndEvent, TurnStartEvent,
 };
+use crate::core::extensions::notify::NotifySink;
 use crate::core::extensions::types::{ExtensionContext, ToolDefinition};
 use crate::core::source_info::SourceInfo;
 
@@ -417,6 +418,12 @@ pub trait ExtensionRunner: Send + Sync {
     fn set_ui_context(&self, ui_context: Option<ExtensionUIContext>, mode: ExtensionMode);
     /// pi `bindCommandContext(actions?)` (runner.ts:410).
     fn bind_command_context(&self, actions: Option<Arc<dyn ExtensionCommandContextHost>>);
+    /// Bind the host [`NotifySink`] that JS `ctx.ui.notify` delivers into (the
+    /// net-new DELIVERY seam; no pi equivalent — pi routes notify straight into
+    /// its main-thread UI, but here the plane is off-thread so delivery crosses a
+    /// `Send` one-way sink). Default: a no-op (the sink stays unbound and
+    /// notifications are dropped, matching the pre-seam behavior).
+    fn bind_notify_sink(&self, _sink: Arc<dyn NotifySink>) {}
     /// pi `onError(listener): () => void` (runner.ts:555).
     fn on_error(&self, listener: ExtensionErrorListener) -> UnsubscribeFn;
     /// pi `emitError(error)` (runner.ts:559).
