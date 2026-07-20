@@ -66,12 +66,17 @@ use super::edit::{
     validate_edit_input,
 };
 use super::file_mutation_queue::with_file_mutation_queue;
-use super::find::run_find;
-use super::grep::{run_grep, GrepParams};
-use super::ls::{run_ls, LocalLsOperations, LsOperations, LsParams};
+use super::find::{find_render_call, find_render_result, run_find};
+use super::grep::{grep_render_call, grep_render_result, run_grep, GrepParams};
+use super::ls::{
+    ls_render_call, ls_render_result, run_ls, LocalLsOperations, LsOperations, LsParams,
+};
 use super::path_utils::{resolve_read_path, resolve_to_cwd};
-use super::read::format_text_read;
-use super::write::{run_write, LocalWriteOperations, WriteOperations, WriteParams};
+use super::read::{format_text_read, read_render_call, read_render_result};
+use super::write::{
+    run_write, write_render_call, write_render_result, LocalWriteOperations, WriteOperations,
+    WriteParams,
+};
 
 // ---------------------------------------------------------------------------
 // Runtime + async bridges
@@ -300,8 +305,8 @@ pub fn create_read_tool_definition(
         prompt_snippet: Some("Read file contents".to_string()),
         prompt_guidelines: Some(vec!["Use read to examine files instead of cat or sed.".to_string()]),
         render_shell: None,
-        render_call: None,
-        render_result: None,
+        render_call: Some(Arc::new(read_render_call)),
+        render_result: Some(Arc::new(read_render_result)),
     }
 }
 
@@ -357,8 +362,8 @@ pub fn create_grep_tool_definition(
         prompt_snippet: Some("Search file contents for patterns (respects .gitignore)".to_string()),
         prompt_guidelines: None,
         render_shell: None,
-        render_call: None,
-        render_result: None,
+        render_call: Some(Arc::new(grep_render_call)),
+        render_result: Some(Arc::new(grep_render_result)),
     }
 }
 
@@ -403,8 +408,8 @@ pub fn create_find_tool_definition(
         prompt_snippet: Some("Find files by glob pattern (respects .gitignore)".to_string()),
         prompt_guidelines: None,
         render_shell: None,
-        render_call: None,
-        render_result: None,
+        render_call: Some(Arc::new(find_render_call)),
+        render_result: Some(Arc::new(find_render_result)),
     }
 }
 
@@ -453,8 +458,8 @@ pub fn create_ls_tool_definition(
         prompt_snippet: Some("List directory contents".to_string()),
         prompt_guidelines: None,
         render_shell: None,
-        render_call: None,
-        render_result: None,
+        render_call: Some(Arc::new(ls_render_call)),
+        render_result: Some(Arc::new(ls_render_result)),
     }
 }
 
@@ -504,8 +509,8 @@ pub fn create_write_tool_definition(
         prompt_snippet: Some("Create or overwrite files".to_string()),
         prompt_guidelines: Some(vec!["Use write only for new files or complete rewrites.".to_string()]),
         render_shell: None,
-        render_call: None,
-        render_result: None,
+        render_call: Some(Arc::new(write_render_call)),
+        render_result: Some(Arc::new(write_render_result)),
     }
 }
 

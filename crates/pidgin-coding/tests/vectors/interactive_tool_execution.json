@@ -1034,5 +1034,979 @@
 			"\u001b[48;5;22m \u001b[38;5;244m 3 last\u001b[39m                                                                        \u001b[49m",
 			"\u001b[48;5;22m                                                                                \u001b[49m"
 		]
+	},
+	{
+		"label": "read-call-pending",
+		"toolName": "read",
+		"args": {
+			"path": "notes.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mnotes.txt\u001b[39m                         \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "read-call-pending",
+		"toolName": "read",
+		"args": {
+			"path": "notes.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mnotes.txt\u001b[39m                                                                 \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "read-call-range",
+		"toolName": "read",
+		"args": {
+			"limit": 10,
+			"offset": 5,
+			"path": "notes.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mnotes.txt\u001b[39m\u001b[38;5;226m:5-14\u001b[39m                    \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "read-call-range",
+		"toolName": "read",
+		"args": {
+			"limit": 10,
+			"offset": 5,
+			"path": "notes.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mnotes.txt\u001b[39m\u001b[38;5;226m:5-14\u001b[39m                                                            \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "read-result-collapsed",
+		"toolName": "read",
+		"args": {
+			"path": "notes.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "line one\nline two\nline three"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mnotes.txt\u001b[39m                         \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "read-result-collapsed",
+		"toolName": "read",
+		"args": {
+			"path": "notes.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "line one\nline two\nline three"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mnotes.txt\u001b[39m                                                                 \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "read-result-expanded",
+		"toolName": "read",
+		"args": {
+			"path": "notes.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "line one\nline two\nline three"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": true,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mnotes.txt\u001b[39m                         \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mline one\u001b[39m                               \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mline two\u001b[39m                               \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mline three\u001b[39m                             \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "read-result-expanded",
+		"toolName": "read",
+		"args": {
+			"path": "notes.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "line one\nline two\nline three"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": true,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mnotes.txt\u001b[39m                                                                 \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mline one\u001b[39m                                                                       \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mline two\u001b[39m                                                                       \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mline three\u001b[39m                                                                     \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "read-result-error",
+		"toolName": "read",
+		"args": {
+			"path": "missing.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "ENOENT: no such file or directory"
+				}
+			],
+			"details": null,
+			"isError": true
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;52m                                        \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mmissing.txt\u001b[39m                       \u001b[49m",
+			"\u001b[48;5;52m                                        \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;244mENOENT: no such file or directory\u001b[39m      \u001b[49m",
+			"\u001b[48;5;52m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "read-result-error",
+		"toolName": "read",
+		"args": {
+			"path": "missing.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "ENOENT: no such file or directory"
+				}
+			],
+			"details": null,
+			"isError": true
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;52m                                                                                \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;188m\u001b[1mread\u001b[22m\u001b[39m \u001b[38;5;109mmissing.txt\u001b[39m                                                               \u001b[49m",
+			"\u001b[48;5;52m                                                                                \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;244mENOENT: no such file or directory\u001b[39m                                              \u001b[49m",
+			"\u001b[48;5;52m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "write-call-pending",
+		"toolName": "write",
+		"args": {
+			"content": "hello\nworld",
+			"path": "out.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mwrite\u001b[22m\u001b[39m \u001b[38;5;109mout.txt\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;244mhello\u001b[39m                                  \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;244mworld\u001b[39m                                  \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "write-call-pending",
+		"toolName": "write",
+		"args": {
+			"content": "hello\nworld",
+			"path": "out.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mwrite\u001b[22m\u001b[39m \u001b[38;5;109mout.txt\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;244mhello\u001b[39m                                                                          \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;244mworld\u001b[39m                                                                          \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "write-call-empty-content",
+		"toolName": "write",
+		"args": {
+			"content": "",
+			"path": "out.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mwrite\u001b[22m\u001b[39m \u001b[38;5;109mout.txt\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "write-call-empty-content",
+		"toolName": "write",
+		"args": {
+			"content": "",
+			"path": "out.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mwrite\u001b[22m\u001b[39m \u001b[38;5;109mout.txt\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "write-result-success",
+		"toolName": "write",
+		"args": {
+			"content": "hello\nworld",
+			"path": "out.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully wrote 11 bytes to out.txt"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mwrite\u001b[22m\u001b[39m \u001b[38;5;109mout.txt\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mhello\u001b[39m                                  \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mworld\u001b[39m                                  \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "write-result-success",
+		"toolName": "write",
+		"args": {
+			"content": "hello\nworld",
+			"path": "out.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "Successfully wrote 11 bytes to out.txt"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mwrite\u001b[22m\u001b[39m \u001b[38;5;109mout.txt\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mhello\u001b[39m                                                                          \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mworld\u001b[39m                                                                          \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "write-result-error",
+		"toolName": "write",
+		"args": {
+			"content": "data",
+			"path": "out.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "EACCES: permission denied"
+				}
+			],
+			"details": null,
+			"isError": true
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;52m                                        \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;188m\u001b[1mwrite\u001b[22m\u001b[39m \u001b[38;5;109mout.txt\u001b[39m                          \u001b[49m",
+			"\u001b[48;5;52m                                        \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;244mdata\u001b[39m                                   \u001b[49m",
+			"\u001b[48;5;52m                                        \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;167mEACCES: permission denied\u001b[39m              \u001b[49m",
+			"\u001b[48;5;52m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "write-result-error",
+		"toolName": "write",
+		"args": {
+			"content": "data",
+			"path": "out.txt"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "EACCES: permission denied"
+				}
+			],
+			"details": null,
+			"isError": true
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;52m                                                                                \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;188m\u001b[1mwrite\u001b[22m\u001b[39m \u001b[38;5;109mout.txt\u001b[39m                                                                  \u001b[49m",
+			"\u001b[48;5;52m                                                                                \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;244mdata\u001b[39m                                                                           \u001b[49m",
+			"\u001b[48;5;52m                                                                                \u001b[49m",
+			"\u001b[48;5;52m \u001b[38;5;167mEACCES: permission denied\u001b[39m                                                      \u001b[49m",
+			"\u001b[48;5;52m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "ls-call-pending",
+		"toolName": "ls",
+		"args": {
+			"path": "src"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mls\u001b[22m\u001b[39m \u001b[38;5;109msrc\u001b[39m                                 \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "ls-call-pending",
+		"toolName": "ls",
+		"args": {
+			"path": "src"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mls\u001b[22m\u001b[39m \u001b[38;5;109msrc\u001b[39m                                                                         \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "ls-call-limit",
+		"toolName": "ls",
+		"args": {
+			"limit": 100,
+			"path": "src"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mls\u001b[22m\u001b[39m \u001b[38;5;109msrc\u001b[39m\u001b[38;5;244m (limit 100)\u001b[39m                     \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "ls-call-limit",
+		"toolName": "ls",
+		"args": {
+			"limit": 100,
+			"path": "src"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mls\u001b[22m\u001b[39m \u001b[38;5;109msrc\u001b[39m\u001b[38;5;244m (limit 100)\u001b[39m                                                             \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "ls-result",
+		"toolName": "ls",
+		"args": {
+			"path": "src"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "file1.txt\nfile2.txt\nsub/"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mls\u001b[22m\u001b[39m \u001b[38;5;109msrc\u001b[39m                                 \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile1.txt\u001b[39m                              \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile2.txt\u001b[39m                              \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msub/\u001b[39m                                   \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "ls-result",
+		"toolName": "ls",
+		"args": {
+			"path": "src"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "file1.txt\nfile2.txt\nsub/"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mls\u001b[22m\u001b[39m \u001b[38;5;109msrc\u001b[39m                                                                         \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile1.txt\u001b[39m                                                                      \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile2.txt\u001b[39m                                                                      \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msub/\u001b[39m                                                                           \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "ls-result-expanded",
+		"toolName": "ls",
+		"args": {
+			"path": "src"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "file1.txt\nfile2.txt\nsub/"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": true,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mls\u001b[22m\u001b[39m \u001b[38;5;109msrc\u001b[39m                                 \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile1.txt\u001b[39m                              \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile2.txt\u001b[39m                              \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msub/\u001b[39m                                   \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "ls-result-expanded",
+		"toolName": "ls",
+		"args": {
+			"path": "src"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "file1.txt\nfile2.txt\nsub/"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": true,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mls\u001b[22m\u001b[39m \u001b[38;5;109msrc\u001b[39m                                                                         \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile1.txt\u001b[39m                                                                      \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mfile2.txt\u001b[39m                                                                      \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msub/\u001b[39m                                                                           \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "grep-call-default-path",
+		"toolName": "grep",
+		"args": {
+			"pattern": "needle"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mgrep\u001b[22m\u001b[39m \u001b[38;5;109m/needle/\u001b[39m\u001b[38;5;244m in .\u001b[39m                     \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "grep-call-default-path",
+		"toolName": "grep",
+		"args": {
+			"pattern": "needle"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mgrep\u001b[22m\u001b[39m \u001b[38;5;109m/needle/\u001b[39m\u001b[38;5;244m in .\u001b[39m                                                             \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "grep-call-glob-limit",
+		"toolName": "grep",
+		"args": {
+			"glob": "*.rs",
+			"limit": 50,
+			"path": "src",
+			"pattern": "foo"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mgrep\u001b[22m\u001b[39m \u001b[38;5;109m/foo/\u001b[39m\u001b[38;5;244m in src\u001b[39m\u001b[38;5;244m (*.rs)\u001b[39m\u001b[38;5;244m limit 50\u001b[39m      \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "grep-call-glob-limit",
+		"toolName": "grep",
+		"args": {
+			"glob": "*.rs",
+			"limit": 50,
+			"path": "src",
+			"pattern": "foo"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mgrep\u001b[22m\u001b[39m \u001b[38;5;109m/foo/\u001b[39m\u001b[38;5;244m in src\u001b[39m\u001b[38;5;244m (*.rs)\u001b[39m\u001b[38;5;244m limit 50\u001b[39m                                              \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "grep-result",
+		"toolName": "grep",
+		"args": {
+			"path": "src",
+			"pattern": "needle"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "src/a.rs:1: let needle = 1;\nsrc/b.rs:5: fn needle() {}"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mgrep\u001b[22m\u001b[39m \u001b[38;5;109m/needle/\u001b[39m\u001b[38;5;244m in src\u001b[39m                   \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msrc/a.rs:1: let needle = 1;\u001b[39m            \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msrc/b.rs:5: fn needle() {}\u001b[39m             \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "grep-result",
+		"toolName": "grep",
+		"args": {
+			"path": "src",
+			"pattern": "needle"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "src/a.rs:1: let needle = 1;\nsrc/b.rs:5: fn needle() {}"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mgrep\u001b[22m\u001b[39m \u001b[38;5;109m/needle/\u001b[39m\u001b[38;5;244m in src\u001b[39m                                                           \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msrc/a.rs:1: let needle = 1;\u001b[39m                                                    \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msrc/b.rs:5: fn needle() {}\u001b[39m                                                     \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "find-call-default-path",
+		"toolName": "find",
+		"args": {
+			"pattern": "*.md"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mfind\u001b[22m\u001b[39m \u001b[38;5;109m*.md\u001b[39m\u001b[38;5;244m in .\u001b[39m                         \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "find-call-default-path",
+		"toolName": "find",
+		"args": {
+			"pattern": "*.md"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mfind\u001b[22m\u001b[39m \u001b[38;5;109m*.md\u001b[39m\u001b[38;5;244m in .\u001b[39m                                                                 \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "find-call-limit",
+		"toolName": "find",
+		"args": {
+			"limit": 1000,
+			"path": "src",
+			"pattern": "*.rs"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                        \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mfind\u001b[22m\u001b[39m \u001b[38;5;109m*.rs\u001b[39m\u001b[38;5;244m in src\u001b[39m\u001b[38;5;244m (limit 1000)\u001b[39m          \u001b[49m",
+			"\u001b[48;5;17m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "find-call-limit",
+		"toolName": "find",
+		"args": {
+			"limit": 1000,
+			"path": "src",
+			"pattern": "*.rs"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": null,
+		"isPartial": true,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;17m                                                                                \u001b[49m",
+			"\u001b[48;5;17m \u001b[38;5;188m\u001b[1mfind\u001b[22m\u001b[39m \u001b[38;5;109m*.rs\u001b[39m\u001b[38;5;244m in src\u001b[39m\u001b[38;5;244m (limit 1000)\u001b[39m                                                  \u001b[49m",
+			"\u001b[48;5;17m                                                                                \u001b[49m"
+		]
+	},
+	{
+		"label": "find-result",
+		"toolName": "find",
+		"args": {
+			"path": "src",
+			"pattern": "*.rs"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "a.rs\nb.rs\nsub/c.rs"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 40,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mfind\u001b[22m\u001b[39m \u001b[38;5;109m*.rs\u001b[39m\u001b[38;5;244m in src\u001b[39m                       \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244ma.rs\u001b[39m                                   \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mb.rs\u001b[39m                                   \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msub/c.rs\u001b[39m                               \u001b[49m",
+			"\u001b[48;5;22m                                        \u001b[49m"
+		]
+	},
+	{
+		"label": "find-result",
+		"toolName": "find",
+		"args": {
+			"path": "src",
+			"pattern": "*.rs"
+		},
+		"toolDefinition": null,
+		"cwd": "/tmp/tool-cwd",
+		"result": {
+			"content": [
+				{
+					"type": "text",
+					"text": "a.rs\nb.rs\nsub/c.rs"
+				}
+			],
+			"details": null,
+			"isError": false
+		},
+		"isPartial": false,
+		"expanded": false,
+		"width": 80,
+		"expected": [
+			"",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;188m\u001b[1mfind\u001b[22m\u001b[39m \u001b[38;5;109m*.rs\u001b[39m\u001b[38;5;244m in src\u001b[39m                                                               \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244ma.rs\u001b[39m                                                                           \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244mb.rs\u001b[39m                                                                           \u001b[49m",
+			"\u001b[48;5;22m \u001b[38;5;244msub/c.rs\u001b[39m                                                                       \u001b[49m",
+			"\u001b[48;5;22m                                                                                \u001b[49m"
+		]
 	}
 ]

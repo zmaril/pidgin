@@ -32,6 +32,11 @@
 //!   deviation. (Settled-error's speculative-preview decoration is deferred; the
 //!   error frame still takes this arm but is not yet pi-exact.)
 
+// straitjacket-allow-file:duplication — the edit render helpers and
+// `render_tests` fixtures faithfully mirror pi's per-tool renderers, which share
+// the same shape across read/write/ls/grep/find; the parallel structure is the
+// source-of-truth form, not incidental copy-paste.
+
 use serde_json::{Map, Value};
 
 use pidgin_agent::types::AgentToolResult;
