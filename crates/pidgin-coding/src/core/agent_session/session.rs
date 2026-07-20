@@ -139,8 +139,10 @@ pub struct AgentSession {
     /// `isProjectTrusted` without crossing the `!Send` boundary.
     pub(super) project_trusted: Arc<Mutex<bool>>,
 
-    /// Models cycled with Ctrl+P (pi `_scopedModels`).
-    scoped_models: Mutex<Vec<ScopedModel>>,
+    /// Models cycled with Ctrl+P (pi `_scopedModels`). `pub(super)` so the
+    /// model-management surface in [`super::model`] can replace it via
+    /// `set_scoped_models`.
+    pub(super) scoped_models: Mutex<Vec<ScopedModel>>,
 
     // unit5: the following configuration is consumed by the runtime/tool-registry
     // PR (`_buildRuntime`/`_refreshToolRegistry`); held here so construction is a

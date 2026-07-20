@@ -104,6 +104,36 @@ fn mock_stream(message: AssistantMessage) -> StreamResult {
     }
 }
 
+/// A faux-provider model definition for the harness (pi's `FauxModelDefinition`):
+/// an id and whether the model advertises reasoning support.
+pub(crate) struct HarnessModel {
+    /// The model id (also used as its name).
+    pub id: String,
+    /// Whether the model supports thinking/reasoning.
+    pub reasoning: bool,
+}
+
+impl HarnessModel {
+    /// A definition with the given id and reasoning flag.
+    pub fn new(id: &str, reasoning: bool) -> Self {
+        Self {
+            id: id.to_string(),
+            reasoning,
+        }
+    }
+}
+
+/// Build a `faux`-provider [`Model`] from `id` and `reasoning`, sharing every
+/// other field with [`faux_model`].
+pub(crate) fn faux_model_named(id: &str, reasoning: bool) -> Model {
+    Model {
+        id: id.to_string(),
+        name: id.to_string(),
+        reasoning,
+        ..faux_model()
+    }
+}
+
 /// The `faux` test model (pi's `registerFauxProvider().getModel()`).
 pub(crate) fn faux_model() -> Model {
     Model {
@@ -226,11 +256,18 @@ pub(crate) struct Harness {
     call_count: Arc<AtomicUsize>,
     /// Every emitted session event, in order.
     pub events: Arc<Mutex<Vec<AgentSessionEvent>>>,
+    /// The faux-provider models known to the harness, in declaration order (pi's
+    /// `fauxProvider.models`).
+    models: Vec<Model>,
     _temp_dir: tempfile::TempDir,
 }
 
 /// Options for [`create_harness`].
 pub(crate) struct HarnessOptions {
+    /// The faux-provider model definitions (pi's `createHarness({ models })`).
+    /// Empty defaults to a single non-reasoning `faux-1`; the first entry is the
+    /// initially selected model.
+    pub models: Vec<HarnessModel>,
     /// Extra tools for the agent.
     pub tools: Vec<AgentTool>,
     /// Whether the agent starts with the `faux` model selected.
@@ -262,6 +299,7 @@ pub(crate) struct HarnessOptions {
 impl Default for HarnessOptions {
     fn default() -> Self {
         Self {
+            models: Vec::new(),
             tools: Vec::new(),
             with_model: true,
             with_configured_auth: true,
@@ -290,6 +328,17 @@ impl Harness {
     /// Total provider stream invocations so far (pi's `faux.state.callCount`).
     pub fn call_count(&self) -> usize {
         self.call_count.load(Ordering::SeqCst)
+    }
+
+    /// The model with `id`, or `None` if the harness does not know it (pi's
+    /// `getModel(modelId)`).
+    pub fn get_model(&self, id: &str) -> Option<Model> {
+        self.models.iter().find(|model| model.id == id).cloned()
+    }
+
+    /// The initially selected model (pi's zero-arg `getModel()`).
+    pub fn default_model(&self) -> Model {
+        self.models.first().cloned().unwrap_or_else(faux_model)
     }
 
     /// The roles of every message currently in agent state.
@@ -463,7 +512,21 @@ pub(crate) fn create_harness(options: HarnessOptions) -> Harness {
     let cwd = temp_dir.path().to_string_lossy().to_string();
     let agent_dir = temp_dir.path().join(".agent").to_string_lossy().to_string();
 
-    let model_runtime = build_model_runtime(&temp_dir, options.with_configured_auth);
+    // The faux-provider model set (pi's `registerFauxProvider({ models })`). An
+    // empty option list defaults to the single non-reasoning `faux-1`, so existing
+    // harness callers are unchanged.
+    let models: Vec<Model> = if options.models.is_empty() {
+        vec![faux_model()]
+    } else {
+        options
+            .models
+            .iter()
+            .map(|def| faux_model_named(&def.id, def.reasoning))
+            .collect()
+    };
+    let initial_model = models[0].clone();
+
+    let model_runtime = build_model_runtime(&temp_dir, &models, options.with_configured_auth);
     // When skills / prompt templates are injected (pi's fake `getSkills`/`getPrompts`),
     // reload the loader through its overrides so the session's skill / prompt-template
     // expansion sees them. A `home_dir` seam keeps the reload off the ambient `$HOME`.
@@ -526,7 +589,7 @@ pub(crate) fn create_harness(options: HarnessOptions) -> Harness {
 
     let initial_state = InitialAgentState {
         system_prompt: Some("You are a test assistant.".to_string()),
-        model: options.with_model.then(faux_model),
+        model: options.with_model.then(|| initial_model.clone()),
         thinking_level: None,
         tools: Some(options.tools),
         messages: None,
@@ -579,31 +642,51 @@ pub(crate) fn create_harness(options: HarnessOptions) -> Harness {
         responses,
         call_count,
         events,
+        models,
         _temp_dir: temp_dir,
     }
 }
 
 /// A model runtime that knows the `faux` provider via a temp `models.json`,
-/// optionally marked configured through a runtime api key.
-fn build_model_runtime(temp_dir: &tempfile::TempDir, with_configured_auth: bool) -> ModelRuntime {
+/// optionally marked configured through a runtime api key. Every model in `models`
+/// is registered under the `faux` provider.
+fn build_model_runtime(
+    temp_dir: &tempfile::TempDir,
+    models: &[Model],
+    with_configured_auth: bool,
+) -> ModelRuntime {
     let models_path = temp_dir.path().join("models.json");
-    let providers = json!({
-        "providers": {
-            "faux": {
-                "baseUrl": "https://faux.test/v1",
-                "api": "openai-completions",
-                "models": [{
-                    "id": "faux-1",
-                    "name": "faux-1",
-                    "reasoning": false,
-                    "input": ["text"],
-                    "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
-                    "contextWindow": 128000,
-                    "maxTokens": 4096
-                }]
+    let model_entries: Vec<Value> = models
+        .iter()
+        .map(|model| {
+            json!({
+                "id": model.id,
+                "name": model.name,
+                "reasoning": model.reasoning,
+                "input": ["text"],
+                "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+                "contextWindow": model.context_window,
+                "maxTokens": model.max_tokens
+            })
+        })
+        .collect();
+    // Mirror pi's harness, which registers the faux provider only when
+    // `withConfiguredAuth` is set: an unconfigured run leaves the provider unknown,
+    // so `checkAuth` (used by `setModel`) and `hasConfiguredAuth` both report it
+    // absent. The keyless faux provider would otherwise always read as configured.
+    let providers = if with_configured_auth {
+        json!({
+            "providers": {
+                "faux": {
+                    "baseUrl": "https://faux.test/v1",
+                    "api": "openai-completions",
+                    "models": model_entries
+                }
             }
-        }
-    });
+        })
+    } else {
+        json!({ "providers": {} })
+    };
     std::fs::write(&models_path, providers.to_string()).expect("write models.json");
 
     let mut runtime = ModelRuntime::create(CreateModelRuntimeOptions {
@@ -678,6 +761,12 @@ pub(crate) struct TestExtensionRunner {
     /// A shared flag set when `bind_core` is invoked (pi's `runner.bindCore(...)`),
     /// so a test holding a clone can assert `bind_extensions` wired the hosts.
     bind_core_flag: Option<Arc<AtomicBool>>,
+    /// A sink recording each dispatched `model_select` event as
+    /// `"<previousId>-><modelId>:<source>"` (pi's `pi.on("model_select", ...)`).
+    model_events: Option<Arc<Mutex<Vec<String>>>>,
+    /// A sink recording each dispatched `thinking_level_select` event as
+    /// `"<previousLevel>-><level>"` (pi's `pi.on("thinking_level_select", ...)`).
+    thinking_events: Option<Arc<Mutex<Vec<String>>>>,
 }
 
 /// A `session_before_compact` handler for [`TestExtensionRunner`] (pi's
@@ -708,7 +797,23 @@ impl TestExtensionRunner {
             before_agent_start: None,
             message_end_replacement: None,
             bind_core_flag: None,
+            model_events: None,
+            thinking_events: None,
         }
+    }
+
+    /// Record every dispatched `model_select` event into `sink` as
+    /// `"<previousId>-><modelId>:<source>"` (pi's `pi.on("model_select", ...)`).
+    pub fn with_model_select_recording(mut self, sink: Arc<Mutex<Vec<String>>>) -> Self {
+        self.model_events = Some(sink);
+        self
+    }
+
+    /// Record every dispatched `thinking_level_select` event into `sink` as
+    /// `"<previousLevel>-><level>"` (pi's `pi.on("thinking_level_select", ...)`).
+    pub fn with_thinking_select_recording(mut self, sink: Arc<Mutex<Vec<String>>>) -> Self {
+        self.thinking_events = Some(sink);
+        self
     }
 
     /// Record `bind_core` invocations into `flag` (so `bind_extensions` wiring can
@@ -860,6 +965,40 @@ impl ExtensionRunner for TestExtensionRunner {
         if let (Some(sink), ExtensionDispatchEvent::SessionTree(tree)) = (&self.tree_events, event)
         {
             sink.lock().unwrap().push(tree.clone());
+        }
+        if let (Some(sink), ExtensionDispatchEvent::ModelSelect(payload)) =
+            (&self.model_events, event)
+        {
+            let model_id = payload
+                .get("model")
+                .and_then(|model| model.get("id"))
+                .and_then(Value::as_str)
+                .unwrap_or("none");
+            let previous_id = payload
+                .get("previousModel")
+                .and_then(|model| model.get("id"))
+                .and_then(Value::as_str)
+                .unwrap_or("none");
+            let source = payload
+                .get("source")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            sink.lock()
+                .unwrap()
+                .push(format!("{previous_id}->{model_id}:{source}"));
+        }
+        if let (Some(sink), ExtensionDispatchEvent::ThinkingLevelChanged(payload)) =
+            (&self.thinking_events, event)
+        {
+            let level = payload
+                .get("level")
+                .and_then(Value::as_str)
+                .unwrap_or("none");
+            let previous = payload
+                .get("previousLevel")
+                .and_then(Value::as_str)
+                .unwrap_or("none");
+            sink.lock().unwrap().push(format!("{previous}->{level}"));
         }
         if let (Some(sink), ExtensionDispatchEvent::MessageStart(start)) =
             (&self.event_order, event)
