@@ -279,6 +279,18 @@ fn setup_into(view: &LlamaView, surface: &str) {
                 vec!["Load".into(), "Unload".into(), "Remove".into()],
             ));
         }
+        "confirm" => {
+            poll_once(view.confirm(
+                "Stop download?",
+                "Cancel the in-progress download and discard the partial weights?",
+            ));
+        }
+        "connection-error" => {
+            poll_once(view.connection_error(
+                "http://127.0.0.1:8080",
+                "Connection refused after 3 retries.",
+            ));
+        }
         "status" => {
             view.show_status("Working", "Contacting llama.cpp router\u{2026}");
         }
