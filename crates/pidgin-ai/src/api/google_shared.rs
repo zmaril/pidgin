@@ -1,15 +1,17 @@
 // straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// `google-shared.ts` plus the `transform-messages.ts` / `sanitize-unicode.ts`
-// helpers the Google drivers depend on. The per-branch `convertMessages` arms
-// (user / assistant / toolResult) and the stream-decode block-flush arms are
-// walls of near-identical part-building JSON by design; the clone detector reads
-// them as duplicates. They are distinct, load-bearing transcriptions kept
-// verbatim to mirror the upstream wire behaviour exactly.
+// `google-shared.ts` plus a Google-specific `transform-messages.ts` port the
+// drivers depend on. The per-branch `convertMessages` arms (user / assistant /
+// toolResult) and the stream-decode block-flush arms are walls of near-identical
+// part-building JSON by design; the clone detector reads them as duplicates.
+// They are distinct, load-bearing transcriptions kept verbatim to mirror the
+// upstream wire behaviour exactly.
 //! Shared helpers for the Google Generative AI and Google Vertex drivers, ported
 //! from pi-ai's `packages/ai/src/api/google-shared.ts` at pinned commit
-//! `3da591ab`, together with the two upstream helpers those drivers pull in:
+//! `3da591ab`, together with a Google-specific port of
 //! `api/transform-messages.ts` (message normalization + tool-call-id mapping +
-//! synthetic tool-result insertion) and `utils/sanitize-unicode.ts`.
+//! synthetic tool-result insertion). Unpaired-surrogate stripping
+//! (`utils/sanitize-unicode.ts`) is not re-ported here: it is shared from
+//! [`crate::utils::sanitize_unicode`].
 //!
 //! Faithful to pi's behaviour:
 //! - [`is_thinking_part`] / [`retain_thought_signature`] reproduce the streamed
@@ -24,10 +26,14 @@
 //!   walking `candidates[].content.parts[]` into text / thinking / tool-call
 //!   events, function-call id-synthesis, usage/cost math, and stop-reason mapping.
 //!
-//! Rebase note: `transform_messages`, `sanitize_surrogates`, and the JSON-Schema
-//! meta-key set are transcribed here as driver-local helpers because the utils
-//! sibling that will own the shared versions is not present yet. They should be
-//! de-duplicated against that sibling's implementation once it lands.
+//! Provenance note: `transform_messages` is a Google-specific port of
+//! `transform-messages.ts` — it threads a `requiresToolCallId`-gated tool-call-id
+//! normalizer and a caller-supplied `now` into synthetic tool results, unlike the
+//! anthropic port in [`crate::api::anthropic::transform_messages`], which hard-wires
+//! anthropic's unconditional normalizer and a fixed timestamp. Each provider keeps
+//! its own `transform-messages.ts` port (mistral / bedrock / openai / anthropic),
+//! so this one stays local by design. The JSON-Schema meta-key set is
+//! `google-shared.ts`-local (not duplicated elsewhere in the crate).
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -39,6 +45,7 @@ use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, ContentBlock, Message, Modality,
     ModelCost, StopReason, Usage, UsageCost, UserContent,
 };
+use crate::utils::sanitize_unicode::sanitize_surrogates;
 
 // ---------------------------------------------------------------------------
 // Model slice
@@ -177,22 +184,13 @@ fn supports_multimodal_function_response(model_id: &str) -> bool {
 }
 
 // ---------------------------------------------------------------------------
-// sanitize-unicode.ts
-// ---------------------------------------------------------------------------
-
-/// `utils/sanitize-unicode.ts:21` — remove unpaired UTF-16 surrogate code units.
-///
-/// Rust `String`/`&str` are guaranteed well-formed UTF-8 and cannot contain
-/// unpaired surrogates in the first place, so for every value that reaches this
-/// port the operation is the identity. Kept as a named seam so the call sites
-/// read exactly like pi's, and as a rebase point against the utils sibling.
-pub fn sanitize_surrogates(text: &str) -> String {
-    text.to_string()
-}
-
-// ---------------------------------------------------------------------------
 // transform-messages.ts
 // ---------------------------------------------------------------------------
+//
+// pi's `sanitizeSurrogates` (`utils/sanitize-unicode.ts`) is shared, not
+// re-ported: the call sites below use [`sanitize_surrogates`] from
+// [`crate::utils::sanitize_unicode`] (imported above), the same shared util the
+// bedrock driver consumes.
 
 const NON_VISION_USER_IMAGE_PLACEHOLDER: &str = "(image omitted: model does not support images)";
 const NON_VISION_TOOL_IMAGE_PLACEHOLDER: &str =
