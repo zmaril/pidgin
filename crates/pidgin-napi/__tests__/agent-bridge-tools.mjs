@@ -1,4 +1,3 @@
-// straitjacket-allow-file:duplication
 // Bridge slice 2 — tool.execute + onUpdate through the bridge.
 //
 // Registers a JS tool whose `execute` (and, for one case, `prepareArguments`) is
@@ -17,184 +16,50 @@
 //
 // Run: node __tests__/agent-bridge-tools.mjs   (after `npm run build:debug`)
 
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-
-const require = createRequire(import.meta.url);
-const here = dirname(fileURLToPath(import.meta.url));
-const { AgentBridge } = require(join(here, "..", "index.js"));
-
-let failures = 0;
-function assert(cond, msg) {
-  if (cond) console.log(`  ok - ${msg}`);
-  else {
-    failures += 1;
-    console.log(`  NOT OK - ${msg}`);
-  }
-}
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// --- fixtures -------------------------------------------------------------
-const MODEL = {
-  id: "faux-model",
-  name: "Faux Model",
-  api: "faux",
-  provider: "faux",
-  baseUrl: "http://localhost",
-  reasoning: false,
-  input: ["text"],
-  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-  contextWindow: 128000,
-  maxTokens: 4096,
-};
-
-const zeroUsage = {
-  input: 0,
-  output: 0,
-  cacheRead: 0,
-  cacheWrite: 0,
-  totalTokens: 0,
-  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-};
-
-function assistantText(text, stopReason = "stop") {
-  return {
-    role: "assistant",
-    content: [{ type: "text", text }],
-    api: "faux",
-    provider: "faux",
-    model: "faux-model",
-    usage: zeroUsage,
-    stopReason,
-    timestamp: 0,
-  };
-}
-
-function assistantToolCall(id, name, args) {
-  return {
-    role: "assistant",
-    content: [{ type: "toolCall", id, name, arguments: args }],
-    api: "faux",
-    provider: "faux",
-    model: "faux-model",
-    usage: zeroUsage,
-    stopReason: "toolUse",
-    timestamp: 0,
-  };
-}
+import {
+  AgentBridge,
+  assert,
+  getFailures,
+  MODEL,
+  runLoopBridge,
+  sleep,
+  toolMeta,
+  toolThenDoneStreamFn,
+} from "./_harness.mjs";
 
 const userPrompt = { role: "user", content: "run tool", timestamp: 0 };
 
-// A tiny async stream (mirrors pi's AssistantMessageEventStream contract).
-function fakeStream(events, message) {
-  return {
-    async *[Symbol.asyncIterator]() {
-      for (const ev of events) {
-        await sleep(1);
-        yield ev;
-      }
-    },
-    async result() {
-      await sleep(1);
-      return message;
-    },
-  };
-}
-
-function doneStream(message) {
-  return fakeStream(
-    [{ type: "done", reason: message.stopReason, message }],
-    message,
-  );
-}
-
-// --- the JS side of the envelope protocol (the _bridge/dispatcher.ts shape) --
-// Routes bridge kinds to the injected closures. Slice 2 adds `toolExecute`
-// (→ tool.execute with an onUpdate that pushes via emitToolUpdate) and
-// `prepareArguments`. A name→tool map is built from the run payload's tools.
+// Slice 2 adds `toolExecute` (→ tool.execute with an onUpdate that pushes via
+// emitToolUpdate) and `prepareArguments` on top of the shared base kinds. A
+// name→tool map is built from the run payload's tools.
 function runLoop(bridge, { streamFn, convertToLlm, tools, onEvent }, payload) {
   const toolMap = new Map((tools ?? []).map((t) => [t.name, t]));
-  return new Promise((resolve, reject) => {
-    const dispatcher = (envelopeJson) => {
-      let env;
-      try {
-        env = JSON.parse(envelopeJson);
-      } catch (e) {
-        reject(e);
-        return;
-      }
-      const { id, kind, payload: p } = env;
-      if (kind === "__complete__") {
-        bridge.join();
-        resolve(p);
-        return;
-      }
-      if (kind === "event") {
-        if (onEvent) onEvent(p);
-        return; // fire-and-forget: no resolve
-      }
-      const handle = async () => {
-        switch (kind) {
-          case "streamFn": {
-            const stream = await streamFn(p.model, p.context, p.options);
-            const events = [];
-            for await (const ev of stream) events.push(ev);
-            const message = await stream.result();
-            return { events, message };
-          }
-          case "convertToLlm":
-            return await convertToLlm(p.messages);
-          case "toolExecute": {
-            const tool = toolMap.get(p.toolName);
-            if (!tool) throw new Error(`no tool ${p.toolName}`);
-            // Route onUpdate back to Rust by closing over this toolCallId; the
-            // push is fire-and-forget (no resolve, no round-trip).
-            const onUpdate = (partial) =>
-              bridge.emitToolUpdate(p.toolCallId, JSON.stringify(partial));
-            const signal = { aborted: !!p.aborted };
-            return await tool.execute(p.toolCallId, p.args, signal, onUpdate);
-          }
-          case "prepareArguments": {
-            const tool = toolMap.get(p.toolName);
-            if (!tool || typeof tool.prepareArguments !== "function") return p.args;
-            return tool.prepareArguments(p.args);
-          }
-          default:
-            throw new Error(`unhandled kind: ${kind}`);
+  return runLoopBridge(bridge, payload, {
+    streamFn,
+    convertToLlm,
+    onEvent,
+    handle: (kind, p) => {
+      switch (kind) {
+        case "toolExecute": {
+          const tool = toolMap.get(p.toolName);
+          if (!tool) throw new Error(`no tool ${p.toolName}`);
+          // Route onUpdate back to Rust by closing over this toolCallId; the
+          // push is fire-and-forget (no resolve, no round-trip).
+          const onUpdate = (partial) =>
+            bridge.emitToolUpdate(p.toolCallId, JSON.stringify(partial));
+          const signal = { aborted: !!p.aborted };
+          return tool.execute(p.toolCallId, p.args, signal, onUpdate);
         }
-      };
-      handle()
-        .then((result) => bridge.resolveBridge(id, JSON.stringify(result ?? null)))
-        .catch((e) =>
-          bridge.resolveBridgeError(id, JSON.stringify({ __bridge_error: String(e?.message ?? e) })),
-        );
-    };
-    bridge.run(dispatcher, JSON.stringify(payload));
+        case "prepareArguments": {
+          const tool = toolMap.get(p.toolName);
+          if (!tool || typeof tool.prepareArguments !== "function") return p.args;
+          return tool.prepareArguments(p.args);
+        }
+        default:
+          throw new Error(`unhandled kind: ${kind}`);
+      }
+    },
   });
-}
-
-// Serialize a JS tool to the wire metadata the Rust `run` payload expects.
-function toolMeta(tool) {
-  return {
-    name: tool.name,
-    label: tool.label ?? tool.name,
-    description: tool.description ?? "",
-    parameters: tool.parameters ?? {},
-    executionMode: tool.executionMode ?? null,
-    hasPrepareArguments: typeof tool.prepareArguments === "function",
-  };
-}
-
-// A streamFn that returns a tool call first, then a final text turn.
-function toolThenDoneStreamFn(toolCallId, toolName, args) {
-  let callIndex = 0;
-  return async () => {
-    const i = callIndex++;
-    if (i === 0) return doneStream(assistantToolCall(toolCallId, toolName, args));
-    return doneStream(assistantText("done"));
-  };
 }
 
 // --- tests ----------------------------------------------------------------
@@ -391,9 +256,9 @@ async function main() {
   await testPrepareArgumentsSeam();
 
   console.log("");
-  if (failures === 0) console.log("SLICE 2: ALL TOOL-BRIDGE CHECKS PASSED");
+  if (getFailures() === 0) console.log("SLICE 2: ALL TOOL-BRIDGE CHECKS PASSED");
   else {
-    console.log(`SLICE 2: ${failures} CHECK(S) FAILED`);
+    console.log(`SLICE 2: ${getFailures()} CHECK(S) FAILED`);
     process.exitCode = 1;
   }
   // Clean exit with no explicit process.exit(): condition (C).
