@@ -5,6 +5,13 @@
 // part-building JSON by design; the clone detector reads them as duplicates.
 // They are distinct, load-bearing transcriptions kept verbatim to mirror the
 // upstream wire behaviour exactly.
+// straitjacket-allow-file:file-size — TODO(straitjacket): this file is 1632 lines, over
+// the 1500-line ceiling. Declared explicitly so it suppresses only file-size, not every
+// rule (the old bracket form was a silent catch-all). The overrun is the streamSimple
+// reasoning-lowering helpers ported alongside the shared model/build_params slice; pi keeps
+// the per-dialect getThinkingLevel/getGemini3ThinkingLevel/getGoogleBudget in separate
+// files, so they are not collapsible. Remove once the file is split into a directory module
+// (see PR follow-up).
 //! Shared helpers for the Google Generative AI and Google Vertex drivers, ported
 //! from pi-ai's `packages/ai/src/api/google-shared.ts` at pinned commit
 //! `3da591ab`, together with a Google-specific port of
@@ -43,7 +50,7 @@ use serde_json::{json, Map, Value};
 use crate::cost::calculate_cost_with;
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, ContentBlock, Message, Modality,
-    ModelCost, StopReason, Usage, UsageCost, UserContent,
+    ModelCost, ModelThinkingLevel, StopReason, ThinkingBudgets, Usage, UsageCost, UserContent,
 };
 use crate::utils::sanitize_unicode::sanitize_surrogates;
 
@@ -902,6 +909,218 @@ fn disabled_thinking_config(model_id: &str) -> Value {
     }
 }
 
+// ---------------------------------------------------------------------------
+// streamSimple reasoning lowering
+// (`google-generative-ai.ts:284-509` / `google-vertex.ts:301-584`)
+// ---------------------------------------------------------------------------
+
+/// pi's `ClampedThinkingLevel` (`google-*.ts` — `Exclude<ThinkingLevel, "xhigh" |
+/// "max">`): the effort google's thinking lowering operates on after the requested
+/// level is model-clamped and `off` is mapped to `high`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GoogleEffort {
+    Minimal,
+    Low,
+    Medium,
+    High,
+}
+
+impl GoogleEffort {
+    /// pi `google-generative-ai.ts:299-300` / `google-vertex.ts:314-315`:
+    /// `const effort = clampedReasoning === "off" ? "high" : clampedReasoning`.
+    ///
+    /// The requested level is first model-clamped by the caller (pi's
+    /// `clampThinkingLevel`); this maps the clamped result to the effort. Unlike
+    /// the openai dialects (which OMIT reasoning for `off`), google maps `off ⇒
+    /// high` — thinking stays ON. pi's `ClampedThinkingLevel` type excludes
+    /// `xhigh`/`max`; google models never expose those in their thinking maps, so
+    /// clamp never yields them here and this collapses them to `high` defensively
+    /// (unreachable in practice).
+    pub fn from_clamped(level: ModelThinkingLevel) -> Self {
+        match level {
+            ModelThinkingLevel::Minimal => Self::Minimal,
+            ModelThinkingLevel::Low => Self::Low,
+            ModelThinkingLevel::Medium => Self::Medium,
+            ModelThinkingLevel::High
+            | ModelThinkingLevel::Off
+            | ModelThinkingLevel::Xhigh
+            | ModelThinkingLevel::Max => Self::High,
+        }
+    }
+}
+
+/// pi `customBudgets?.[effort]` (`getGoogleBudget`) — index the per-level custom
+/// token budget by effort. pi's `ThinkingBudgets` is a partial record keyed by the
+/// clamped levels; the Rust struct carries exactly `minimal`/`low`/`medium`/`high`.
+fn custom_budget(custom: Option<&ThinkingBudgets>, effort: GoogleEffort) -> Option<i64> {
+    let budgets = custom?;
+    let value = match effort {
+        GoogleEffort::Minimal => budgets.minimal,
+        GoogleEffort::Low => budgets.low,
+        GoogleEffort::Medium => budgets.medium,
+        GoogleEffort::High => budgets.high,
+    };
+    value.map(|n| n as i64)
+}
+
+/// pi `google-generative-ai.ts:436-467` `getThinkingLevel` — gen-ai's level path.
+/// Gemini-3-Pro collapses `minimal`/`low ⇒ LOW` and `medium`/`high ⇒ HIGH`;
+/// Gemma-4 collapses `minimal`/`low ⇒ MINIMAL` and `medium`/`high ⇒ HIGH`; every
+/// other (gemini-3-flash) model maps the effort straight through.
+fn gen_ai_thinking_level(effort: GoogleEffort, model_id: &str) -> String {
+    if is_gemini3_pro(model_id) {
+        return match effort {
+            GoogleEffort::Minimal | GoogleEffort::Low => "LOW",
+            GoogleEffort::Medium | GoogleEffort::High => "HIGH",
+        }
+        .to_string();
+    }
+    if is_gemma4(model_id) {
+        return match effort {
+            GoogleEffort::Minimal | GoogleEffort::Low => "MINIMAL",
+            GoogleEffort::Medium | GoogleEffort::High => "HIGH",
+        }
+        .to_string();
+    }
+    straight_through_level(effort)
+}
+
+/// pi `google-vertex.ts:528-552` `getGemini3ThinkingLevel` — vertex's level path.
+/// Same Gemini-3-Pro collapse as gen-ai, but with NO Gemma-4 branch (vertex never
+/// gates on gemma); every other model maps the effort straight through.
+fn vertex_thinking_level(effort: GoogleEffort, model_id: &str) -> String {
+    if is_gemini3_pro(model_id) {
+        return match effort {
+            GoogleEffort::Minimal | GoogleEffort::Low => "LOW",
+            GoogleEffort::Medium | GoogleEffort::High => "HIGH",
+        }
+        .to_string();
+    }
+    straight_through_level(effort)
+}
+
+/// The default (non-pro, non-gemma) effort → `GoogleThinkingLevel` string map,
+/// shared verbatim by both dialects' level paths (`google-generative-ai.ts:457-466`
+/// / `google-vertex.ts:542-551`).
+fn straight_through_level(effort: GoogleEffort) -> String {
+    match effort {
+        GoogleEffort::Minimal => "MINIMAL",
+        GoogleEffort::Low => "LOW",
+        GoogleEffort::Medium => "MEDIUM",
+        GoogleEffort::High => "HIGH",
+    }
+    .to_string()
+}
+
+/// pi `google-generative-ai.ts:469-509` `getGoogleBudget` — gen-ai's budget path.
+/// A caller-supplied custom budget wins; else per-model-id tables for `2.5-pro`,
+/// `2.5-flash-lite`, and `2.5-flash` (the flash-lite check precedes flash since
+/// `"2.5-flash-lite".includes("2.5-flash")`); any other model returns `-1`
+/// (dynamic). pi indexes `model.id` case-sensitively.
+fn gen_ai_budget(model_id: &str, effort: GoogleEffort, custom: Option<&ThinkingBudgets>) -> i64 {
+    if let Some(budget) = custom_budget(custom, effort) {
+        return budget;
+    }
+    if model_id.contains("2.5-pro") {
+        return match effort {
+            GoogleEffort::Minimal => 128,
+            GoogleEffort::Low => 2048,
+            GoogleEffort::Medium => 8192,
+            GoogleEffort::High => 32768,
+        };
+    }
+    if model_id.contains("2.5-flash-lite") {
+        return match effort {
+            GoogleEffort::Minimal => 512,
+            GoogleEffort::Low => 2048,
+            GoogleEffort::Medium => 8192,
+            GoogleEffort::High => 24576,
+        };
+    }
+    if model_id.contains("2.5-flash") {
+        return match effort {
+            GoogleEffort::Minimal => 128,
+            GoogleEffort::Low => 2048,
+            GoogleEffort::Medium => 8192,
+            GoogleEffort::High => 24576,
+        };
+    }
+    -1
+}
+
+/// pi `google-vertex.ts:554-584` `getGoogleBudget` — vertex's budget path. Same
+/// shape as gen-ai but with NO `2.5-flash-lite` table (a flash-lite id falls
+/// through to the `2.5-flash` table); any other model returns `-1` (dynamic).
+fn vertex_budget(model_id: &str, effort: GoogleEffort, custom: Option<&ThinkingBudgets>) -> i64 {
+    if let Some(budget) = custom_budget(custom, effort) {
+        return budget;
+    }
+    if model_id.contains("2.5-pro") {
+        return match effort {
+            GoogleEffort::Minimal => 128,
+            GoogleEffort::Low => 2048,
+            GoogleEffort::Medium => 8192,
+            GoogleEffort::High => 32768,
+        };
+    }
+    if model_id.contains("2.5-flash") {
+        return match effort {
+            GoogleEffort::Minimal => 128,
+            GoogleEffort::Low => 2048,
+            GoogleEffort::Medium => 8192,
+            GoogleEffort::High => 24576,
+        };
+    }
+    -1
+}
+
+/// pi `google-generative-ai.ts:303-319` — build the enabled `thinking` option for
+/// the gen-ai `streamSimple`. Gemini-3-Pro / Gemini-3-Flash / Gemma-4 models take
+/// the `level` path; every other model takes the `budgetTokens` path.
+pub fn gen_ai_thinking_option(
+    model_id: &str,
+    effort: GoogleEffort,
+    custom_budgets: Option<&ThinkingBudgets>,
+) -> GoogleThinkingOption {
+    if is_gemini3_pro(model_id) || is_gemini3_flash(model_id) || is_gemma4(model_id) {
+        GoogleThinkingOption {
+            enabled: true,
+            budget_tokens: None,
+            level: Some(gen_ai_thinking_level(effort, model_id)),
+        }
+    } else {
+        GoogleThinkingOption {
+            enabled: true,
+            budget_tokens: Some(gen_ai_budget(model_id, effort, custom_budgets)),
+            level: None,
+        }
+    }
+}
+
+/// pi `google-vertex.ts:318-334` — build the enabled `thinking` option for the
+/// vertex `streamSimple`. Gemini-3-Pro / Gemini-3-Flash models take the `level`
+/// path (NO Gemma-4 gate, unlike gen-ai); every other model takes the
+/// `budgetTokens` path (vertex's tables, which have no flash-lite branch).
+pub fn vertex_thinking_option(
+    model_id: &str,
+    effort: GoogleEffort,
+    custom_budgets: Option<&ThinkingBudgets>,
+) -> GoogleThinkingOption {
+    if is_gemini3_pro(model_id) || is_gemini3_flash(model_id) {
+        GoogleThinkingOption {
+            enabled: true,
+            budget_tokens: None,
+            level: Some(vertex_thinking_level(effort, model_id)),
+        }
+    } else {
+        GoogleThinkingOption {
+            enabled: true,
+            budget_tokens: Some(vertex_budget(model_id, effort, custom_budgets)),
+            level: None,
+        }
+    }
+}
+
 /// `buildParams` — build the Gemini `generateContent` request body. Shared by
 /// both Google drivers (they differ only in client/auth construction, not the
 /// request shape). Returns `Err("Request aborted")` when a pre-aborted signal is
@@ -956,6 +1175,12 @@ pub fn build_params(
             let mut thinking_config = Map::new();
             thinking_config.insert("includeThoughts".to_string(), json!(true));
             if let Some(level) = &thinking.level {
+                // gen-ai passes the `GoogleThinkingLevel` string through as-is
+                // (`google-generative-ai.ts:378`); vertex maps it via
+                // `THINKING_LEVEL_MAP` to the SDK `ThinkingLevel` enum
+                // (`google-vertex.ts:476`), whose members serialize to the SAME
+                // strings (`MINIMAL`/`LOW`/`MEDIUM`/`HIGH`), so the wire value is
+                // identical for both dialects.
                 thinking_config.insert("thinkingLevel".to_string(), json!(level));
             } else if let Some(budget) = thinking.budget_tokens {
                 thinking_config.insert("thinkingBudget".to_string(), json!(budget));
