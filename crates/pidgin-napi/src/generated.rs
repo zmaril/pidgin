@@ -55,6 +55,8 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
         after_len: i32,
         strict_after: bool,
     ) -> ExtractSegmentsResult;
+    fn find_word_backward(text: String, cursor: i32) -> i32;
+    fn find_word_forward(text: String, cursor: i32) -> i32;
 }
 
 /// Returns the crate version. Proves the native addon builds and loads.
@@ -175,4 +177,18 @@ pub fn extract_segments(
         after_len,
         strict_after,
     )
+}
+
+/// `findWordBackward` (word-navigation.ts), default segmentation: cursor after
+/// moving one word backward from `cursor` (UTF-16 index).
+#[napi(js_name = "findWordBackward")]
+pub fn find_word_backward(text: String, cursor: i32) -> i32 {
+    <crate::core_impl::PidginImpl as PidginCore>::find_word_backward(text, cursor)
+}
+
+/// `findWordForward` (word-navigation.ts), default segmentation: cursor after
+/// moving one word forward from `cursor` (UTF-16 index).
+#[napi(js_name = "findWordForward")]
+pub fn find_word_forward(text: String, cursor: i32) -> i32 {
+    <crate::core_impl::PidginImpl as PidginCore>::find_word_forward(text, cursor)
 }

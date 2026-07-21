@@ -971,33 +971,16 @@ pub fn fuzzy_filter(texts: Vec<String>, query: String) -> Vec<u32> {
 
 // --- tui word-navigation layer (packages/tui/src/word-navigation.ts) --------
 //
-// Thin wrappers over `pidgin_tui::word_navigation`, backing the native
-// `word-navigation.ts` shim. Cursors are UTF-16 string indices (as in pi). The
-// napi surface covers only the default-segmenter path; the shim delegates to
-// pi's original when `options.segment`/`options.isAtomicSegment` are supplied
-// (JS callbacks that cannot cross the boundary).
-
-/// `findWordBackward` (word-navigation.ts), default segmentation: cursor after
-/// moving one word backward from `cursor` (UTF-16 index).
-#[napi(js_name = "findWordBackward")]
-pub fn find_word_backward(text: String, cursor: u32) -> u32 {
-    pidgin_tui::find_word_backward(
-        &text,
-        cursor as usize,
-        &pidgin_tui::WordNavOptions::default(),
-    ) as u32
-}
-
-/// `findWordForward` (word-navigation.ts), default segmentation: cursor after
-/// moving one word forward from `cursor` (UTF-16 index).
-#[napi(js_name = "findWordForward")]
-pub fn find_word_forward(text: String, cursor: u32) -> u32 {
-    pidgin_tui::find_word_forward(
-        &text,
-        cursor as usize,
-        &pidgin_tui::WordNavOptions::default(),
-    ) as u32
-}
+// MODULE 5 (word-navigation): the two word-navigation ops (`findWordBackward`,
+// `findWordForward`) now generate from the fluessig api schema through
+// `crate::generated` + `crate::core_impl`, routing into
+// `pidgin_tui::word_navigation`'s default-segmenter path. Cursors are UTF-16
+// string indices authored as `int32` (JS `number`) and widened to the engine's
+// `usize` at the core seam. The shim still delegates to pi's original when
+// `options.segment`/`options.isAtomicSegment` are supplied (JS callbacks that
+// cannot cross the boundary). The hand-written `#[napi]` exports that lived here
+// were deleted; edit `schema/api.json` and rerun `regen.sh` instead of re-adding
+// them.
 
 // --- tui truncated-text layer (packages/tui/src/components/truncated-text.ts)
 //
