@@ -979,6 +979,434 @@
       ]
     },
     {
+      "name": "NodeExecutionEnvCore",
+      "doc": "The Rust-backed host execution environment, exposed to JavaScript as\n`NodeExecutionEnvCore`. The name avoids colliding with the shim's own\n`NodeExecutionEnv` class, which composes this handle with a pi-original one.",
+      "ops": [
+        {
+          "name": "new",
+          "doc": "Build a host env rooted at `cwd`, optionally with a custom `shellPath`\nand base `shellEnv` (JSON object), mirroring pi's constructor options.",
+          "shape": "ctor",
+          "params": [
+            {
+              "name": "cwd",
+              "type": "string"
+            },
+            {
+              "name": "shellPath",
+              "type": {
+                "nullable": "string"
+              }
+            },
+            {
+              "name": "shellEnvJson",
+              "type": {
+                "nullable": "string"
+              }
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "cwd",
+          "doc": "pi's `cwd` field.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "cwd"
+            }
+          }
+        },
+        {
+          "name": "absolutePath",
+          "doc": "pi's `absolutePath`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "absolutePath"
+            }
+          }
+        },
+        {
+          "name": "joinPath",
+          "doc": "pi's `joinPath`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "parts",
+              "type": {
+                "list": "string"
+              }
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "joinPath"
+            }
+          }
+        },
+        {
+          "name": "readTextFile",
+          "doc": "pi's `readTextFile` (non-abort path).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "readTextFile"
+            }
+          }
+        },
+        {
+          "name": "readTextLines",
+          "doc": "pi's `readTextLines` (non-abort path). `max_lines < 0` means \"no limit\".",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            },
+            {
+              "name": "maxLines",
+              "type": {
+                "nullable": "int64"
+              }
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "readTextLines"
+            }
+          }
+        },
+        {
+          "name": "readBinaryFile",
+          "doc": "pi's `readBinaryFile` (non-abort path). Raw bytes cross as a `Buffer`;\nan error is thrown with a `{code,message,path?}` JSON reason.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            }
+          ],
+          "returns": "bytes",
+          "bindings": {
+            "node": {
+              "name": "readBinaryFile"
+            }
+          }
+        },
+        {
+          "name": "writeFile",
+          "doc": "pi's `writeFile` (non-abort path, string content).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            },
+            {
+              "name": "content",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "writeFile"
+            }
+          }
+        },
+        {
+          "name": "appendFile",
+          "doc": "pi's `appendFile`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            },
+            {
+              "name": "content",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "appendFile"
+            }
+          }
+        },
+        {
+          "name": "fileInfo",
+          "doc": "pi's `fileInfo`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "fileInfo"
+            }
+          }
+        },
+        {
+          "name": "listDir",
+          "doc": "pi's `listDir` (non-abort path).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "listDir"
+            }
+          }
+        },
+        {
+          "name": "canonicalPath",
+          "doc": "pi's `canonicalPath`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "canonicalPath"
+            }
+          }
+        },
+        {
+          "name": "exists",
+          "doc": "pi's `exists`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "exists"
+            }
+          }
+        },
+        {
+          "name": "createDir",
+          "doc": "pi's `createDir`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            },
+            {
+              "name": "recursive",
+              "type": "boolean"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "createDir"
+            }
+          }
+        },
+        {
+          "name": "remove",
+          "doc": "pi's `remove`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "path",
+              "type": "string"
+            },
+            {
+              "name": "recursive",
+              "type": "boolean"
+            },
+            {
+              "name": "force",
+              "type": "boolean"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "remove"
+            }
+          }
+        },
+        {
+          "name": "createTempDir",
+          "doc": "pi's `createTempDir`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "prefix",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "createTempDir"
+            }
+          }
+        },
+        {
+          "name": "createTempFile",
+          "doc": "pi's `createTempFile`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "prefix",
+              "type": "string"
+            },
+            {
+              "name": "suffix",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "createTempFile"
+            }
+          }
+        },
+        {
+          "name": "exec",
+          "doc": "pi's `exec` (non-streaming, non-abort path). `options_json` carries only\n`cwd`/`env`/`timeout`; the result crosses as `{stdout,stderr,exitCode}`.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": false,
+          "params": [
+            {
+              "name": "command",
+              "type": "string"
+            },
+            {
+              "name": "optionsJson",
+              "type": {
+                "nullable": "string"
+              }
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "exec"
+            }
+          }
+        },
+        {
+          "name": "loadSkills",
+          "doc": "`loadSkills` (harness/skills.ts): traverse the given directories through\nthis host env and return `{skills,diagnostics}` as a JSON string. The\nsourced/mapper variants are composed in the shim over this method, so no\nopaque JS `source` value ever crosses the boundary. `disableModelInvocation`\nis always present on each skill (see [`skill_to_value`]).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "dirs",
+              "type": {
+                "list": "string"
+              }
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "loadSkills"
+            }
+          }
+        },
+        {
+          "name": "loadPromptTemplates",
+          "doc": "`loadPromptTemplates` (harness/prompt-templates.ts): load `.md` templates\nfrom the given paths through this host env and return\n`{promptTemplates,diagnostics}` as a JSON string. The sourced/mapper\nvariants are composed in the shim over this method.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "paths",
+              "type": {
+                "list": "string"
+              }
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "loadPromptTemplates"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "KeybindingsManagerCore",
       "doc": "The Rust-backed keybindings core, exposed to JavaScript as\n`KeybindingsManagerCore`.",
       "ops": [

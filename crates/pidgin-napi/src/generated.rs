@@ -130,6 +130,34 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     ) -> Option<String>;
 }
 
+/// The `NodeExecutionEnvCore` contract — implement over the engine in `crate::core_impl`.
+pub trait NodeExecutionEnvCoreCore: Sized + Send + Sync + 'static {
+    fn new(
+        cwd: String,
+        shell_path: Option<String>,
+        shell_env_json: Option<String>,
+    ) -> anyhow::Result<Self>;
+    fn cwd(&self) -> String;
+    fn absolute_path(&self, path: String) -> String;
+    fn join_path(&self, parts: Vec<String>) -> String;
+    fn read_text_file(&self, path: String) -> String;
+    fn read_text_lines(&self, path: String, max_lines: Option<i64>) -> String;
+    fn read_binary_file(&self, path: String) -> anyhow::Result<napi::bindgen_prelude::Buffer>;
+    fn write_file(&self, path: String, content: String) -> String;
+    fn append_file(&self, path: String, content: String) -> String;
+    fn file_info(&self, path: String) -> String;
+    fn list_dir(&self, path: String) -> String;
+    fn canonical_path(&self, path: String) -> String;
+    fn exists(&self, path: String) -> String;
+    fn create_dir(&self, path: String, recursive: bool) -> String;
+    fn remove(&self, path: String, recursive: bool, force: bool) -> String;
+    fn create_temp_dir(&self, prefix: String) -> String;
+    fn create_temp_file(&self, prefix: String, suffix: String) -> String;
+    fn exec(&self, command: String, options_json: Option<String>) -> anyhow::Result<String>;
+    fn load_skills(&self, dirs: Vec<String>) -> String;
+    fn load_prompt_templates(&self, paths: Vec<String>) -> String;
+}
+
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
 pub trait KeybindingsManagerCoreCore: Sized + Send + Sync + 'static {
     fn new(definitions_json: String, user_bindings_json: String) -> anyhow::Result<Self>;
@@ -517,6 +545,142 @@ pub fn detect_supported_image_mime_type(
     buffer: napi::bindgen_prelude::Uint8Array,
 ) -> Option<String> {
     <crate::core_impl::PidginImpl as PidginCore>::detect_supported_image_mime_type(buffer)
+}
+
+/// The Rust-backed host execution environment, exposed to JavaScript as
+/// `NodeExecutionEnvCore`. The name avoids colliding with the shim's own
+/// `NodeExecutionEnv` class, which composes this handle with a pi-original one.
+#[napi]
+pub struct NodeExecutionEnvCore {
+    // pub(crate): the @manual ops in lib.rs extend this class and need the core
+    pub(crate) core: Arc<crate::core_impl::NodeExecutionEnvCoreImpl>,
+}
+
+#[napi]
+impl NodeExecutionEnvCore {
+    /// Build a host env rooted at `cwd`, optionally with a custom `shellPath`
+    /// and base `shellEnv` (JSON object), mirroring pi's constructor options.
+    #[napi(constructor)]
+    pub fn new(
+        cwd: String,
+        shell_path: Option<String>,
+        shell_env_json: Option<String>,
+    ) -> Result<Self> {
+        Ok(Self {
+            core: Arc::new(
+                <crate::core_impl::NodeExecutionEnvCoreImpl as NodeExecutionEnvCoreCore>::new(
+                    cwd,
+                    shell_path,
+                    shell_env_json,
+                )
+                .map_err(err)?,
+            ),
+        })
+    }
+    /// pi's `cwd` field.
+    #[napi(js_name = "cwd")]
+    pub fn cwd(&self) -> String {
+        self.core.cwd()
+    }
+    /// pi's `absolutePath`.
+    #[napi(js_name = "absolutePath")]
+    pub fn absolute_path(&self, path: String) -> String {
+        self.core.absolute_path(path)
+    }
+    /// pi's `joinPath`.
+    #[napi(js_name = "joinPath")]
+    pub fn join_path(&self, parts: Vec<String>) -> String {
+        self.core.join_path(parts)
+    }
+    /// pi's `readTextFile` (non-abort path).
+    #[napi(js_name = "readTextFile")]
+    pub fn read_text_file(&self, path: String) -> String {
+        self.core.read_text_file(path)
+    }
+    /// pi's `readTextLines` (non-abort path). `max_lines < 0` means "no limit".
+    #[napi(js_name = "readTextLines")]
+    pub fn read_text_lines(&self, path: String, max_lines: Option<i64>) -> String {
+        self.core.read_text_lines(path, max_lines)
+    }
+    /// pi's `readBinaryFile` (non-abort path). Raw bytes cross as a `Buffer`;
+    /// an error is thrown with a `{code,message,path?}` JSON reason.
+    #[napi(js_name = "readBinaryFile")]
+    pub fn read_binary_file(&self, path: String) -> Result<napi::bindgen_prelude::Buffer> {
+        self.core.read_binary_file(path).map_err(err)
+    }
+    /// pi's `writeFile` (non-abort path, string content).
+    #[napi(js_name = "writeFile")]
+    pub fn write_file(&self, path: String, content: String) -> String {
+        self.core.write_file(path, content)
+    }
+    /// pi's `appendFile`.
+    #[napi(js_name = "appendFile")]
+    pub fn append_file(&self, path: String, content: String) -> String {
+        self.core.append_file(path, content)
+    }
+    /// pi's `fileInfo`.
+    #[napi(js_name = "fileInfo")]
+    pub fn file_info(&self, path: String) -> String {
+        self.core.file_info(path)
+    }
+    /// pi's `listDir` (non-abort path).
+    #[napi(js_name = "listDir")]
+    pub fn list_dir(&self, path: String) -> String {
+        self.core.list_dir(path)
+    }
+    /// pi's `canonicalPath`.
+    #[napi(js_name = "canonicalPath")]
+    pub fn canonical_path(&self, path: String) -> String {
+        self.core.canonical_path(path)
+    }
+    /// pi's `exists`.
+    #[napi(js_name = "exists")]
+    pub fn exists(&self, path: String) -> String {
+        self.core.exists(path)
+    }
+    /// pi's `createDir`.
+    #[napi(js_name = "createDir")]
+    pub fn create_dir(&self, path: String, recursive: bool) -> String {
+        self.core.create_dir(path, recursive)
+    }
+    /// pi's `remove`.
+    #[napi(js_name = "remove")]
+    pub fn remove(&self, path: String, recursive: bool, force: bool) -> String {
+        self.core.remove(path, recursive, force)
+    }
+    /// pi's `createTempDir`.
+    #[napi(js_name = "createTempDir")]
+    pub fn create_temp_dir(&self, prefix: String) -> String {
+        self.core.create_temp_dir(prefix)
+    }
+    /// pi's `createTempFile`.
+    #[napi(js_name = "createTempFile")]
+    pub fn create_temp_file(&self, prefix: String, suffix: String) -> String {
+        self.core.create_temp_file(prefix, suffix)
+    }
+    /// pi's `exec` (non-streaming, non-abort path). `options_json` carries only
+    /// `cwd`/`env`/`timeout`; the result crosses as `{stdout,stderr,exitCode}`.
+    #[napi(js_name = "exec")]
+    pub fn exec(&self, command: String, options_json: Option<String>) -> Result<String> {
+        self.core.exec(command, options_json).map_err(err)
+    }
+    /// `loadSkills` (harness/skills.ts): traverse the given directories through
+    /// this host env and return `{skills,diagnostics}` as a JSON string. The
+    /// sourced/mapper variants are composed in the shim over this method, so no
+    /// opaque JS `source` value ever crosses the boundary. `disableModelInvocation`
+    /// is always present on each skill (see [`skill_to_value`]).
+    #[napi(js_name = "loadSkills")]
+    pub fn load_skills(&self, dirs: Vec<String>) -> String {
+        self.core.load_skills(dirs)
+    }
+    /// `loadPromptTemplates` (harness/prompt-templates.ts): load `.md` templates
+    /// from the given paths through this host env and return
+    /// `{promptTemplates,diagnostics}` as a JSON string. The sourced/mapper
+    /// variants are composed in the shim over this method.
+    #[napi(js_name = "loadPromptTemplates")]
+    pub fn load_prompt_templates(&self, paths: Vec<String>) -> String {
+        self.core.load_prompt_templates(paths)
+    }
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as
