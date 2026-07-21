@@ -964,7 +964,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/utils/validation.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/validation.test.ts"
+      ]
     },
     {
       "package": "coding-agent",

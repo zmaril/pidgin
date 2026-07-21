@@ -118,6 +118,9 @@ pub mod ai_retry;
 // `#[napi]` fns crate-reachable. Additive.
 pub mod ai_estimate;
 
+// Tool-argument validation + JSON-Schema coercion (`validateToolArguments`, `validateToolCall`): the `Tool`/`ToolCall` cross as JSON (the TypeBox schema's JSON-Schema projection minus the dropped `[TypeBox.Kind]` symbol), pi's coercion + validation + error-envelope logic runs natively; `pub` keeps the free `#[napi]` fns crate-reachable. Additive.
+pub mod ai_validation;
+
 /// `createLsTool(...).execute` default path (`ls.ts`): list a directory through
 /// the native `run_ls` port, returning pi's `AgentToolResult` JSON. See
 /// [`tools::ls_execute`].
