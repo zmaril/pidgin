@@ -263,24 +263,6 @@ pub fn is_newer_package_version(candidate_version: String, current_version: Stri
     )
 }
 
-/// `parseGitUrl` (utils/git.ts): parse a git source string into pi's `GitSource`
-/// JSON shape (`{ type, repo, host, path, ref?, pinned }`), or `null`. The shim
-/// `JSON.parse`s the result.
-#[napi(js_name = "parseGitUrl")]
-pub fn parse_git_url(source: String) -> Option<String> {
-    let parsed = pidgin_coding::utils::git_url::parse_git_url(&source)?;
-    let mut obj = serde_json::Map::new();
-    obj.insert("type".to_string(), serde_json::json!(parsed.kind));
-    obj.insert("repo".to_string(), serde_json::json!(parsed.repo));
-    obj.insert("host".to_string(), serde_json::json!(parsed.host));
-    obj.insert("path".to_string(), serde_json::json!(parsed.path));
-    if let Some(git_ref) = parsed.git_ref {
-        obj.insert("ref".to_string(), serde_json::json!(git_ref));
-    }
-    obj.insert("pinned".to_string(), serde_json::json!(parsed.pinned));
-    Some(serde_json::Value::Object(obj).to_string())
-}
-
 // --- coding-agent http-dispatcher layer -------------------------------------
 //
 // Thin wrappers over `pidgin_coding::core::http_dispatcher`, backing the native

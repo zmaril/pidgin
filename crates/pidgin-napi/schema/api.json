@@ -498,6 +498,27 @@
               "name": "findWordForward"
             }
           }
+        },
+        {
+          "name": "parseGitUrl",
+          "doc": "`parseGitUrl` (utils/git.ts): parse a git source string into pi's `GitSource`\nJSON shape (`{ type, repo, host, path, ref?, pinned }`), or `null`. The shim\n`JSON.parse`s the result.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "source",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "parseGitUrl"
+            }
+          }
         }
       ]
     },
