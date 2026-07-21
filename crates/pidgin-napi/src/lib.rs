@@ -108,6 +108,15 @@ pub mod error_body;
 // Provider-error retry classifier (`isRetryableAssistantError`): an `AssistantMessage` crosses as JSON, pi's ordered pattern tables run natively; `pub` keeps the free `#[napi]` fn crate-reachable. Additive.
 pub mod ai_retry;
 
+// Context-token estimation (`utils/estimate.ts`) + the simple-options `maxTokens`
+// context clamp (`clampMaxTokensToContext`): a `Context`/`Usage`/`Message` crosses
+// as JSON, pi's `ceil(chars/4)` accounting and the
+// `window − estimate − safety` clamp run natively. `buildBaseOptions`'s
+// non-serializable fields (signal/onPayload/onResponse/transport) stay JS-side in
+// the shim; only the numeric clamp routes through here. `pub` keeps the free
+// `#[napi]` fns crate-reachable. Additive.
+pub mod ai_estimate;
+
 /// `createLsTool(...).execute` default path (`ls.ts`): list a directory through
 /// the native `run_ls` port, returning pi's `AgentToolResult` JSON. See
 /// [`tools::ls_execute`].

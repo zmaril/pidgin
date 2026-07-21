@@ -294,7 +294,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/api/simple-options.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/context-estimate.test.ts"
+      ]
     },
     {
       "package": "ai",
@@ -900,7 +903,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/utils/estimate.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/context-estimate.test.ts"
+      ]
     },
     {
       "package": "ai",
