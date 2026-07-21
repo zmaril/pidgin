@@ -1,0 +1,36 @@
+{
+  "items_in": 72,
+  "by_kind": {
+    "class": 2,
+    "const": 3,
+    "function": 22,
+    "interface": 21,
+    "method": 17,
+    "typeAlias": 7
+  },
+  "models_emitted": 21,
+  "enums_emitted": 1,
+  "interfaces_emitted": 3,
+  "unions_synthesized": 1,
+  "ops_total": 39,
+  "ops_clean": 24,
+  "ops_degraded": 15,
+  "fields_total": 78,
+  "fields_degraded": 2,
+  "params_total": 31,
+  "params_degraded": 15,
+  "returns_degraded": 11,
+  "dropped": {
+    "const dropped": 3,
+    "typeAlias (non-string-union) dropped": 6
+  },
+  "degradation_reasons": {
+    "function type": 9,
+    "inline object literal": 4,
+    "unparsable type expression": 1,
+    "unresolved type reference": 14
+  },
+  "notes": {
+    "number → float64 (int/float ambiguity)": 2
+  }
+}
