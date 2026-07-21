@@ -226,3 +226,215 @@ impl crate::generated::KeybindingsManagerCoreCore for KeybindingsManagerCoreImpl
         serde_json::to_string(&resolved).map_err(anyhow::Error::from)
     }
 }
+
+// --- package-manager command flow (coding-agent/src/core/package-manager.ts) --
+//
+// The engine-backed implementation behind the generated `CommandCore` handle
+// class (its ctor + `start`/`advance` methods). Wraps one boxed
+// `pidgin_coding::core::command_flow::CommandFlowMachine`, reaching the SAME
+// command-flow planning logic the hand-written `#[napi]` class called before the
+// fluessig swap. The machine carries mutable step state (`&mut self` on
+// `start`/`advance`), while fluessig's generated handle methods take `&self`, so
+// the core holds the machine behind a `Mutex` — interior mutability is the bridge
+// that lets a `&self` trait method drive a `&mut self` machine. JSON crosses
+// in/out exactly as the pre-swap class defined (the `CommandStep` / `CommandOutput`
+// wire shapes), and the error messages are reproduced verbatim through `anyhow`
+// (the generated wrapper throws `napi::Error::from_reason(e.to_string())`), so the
+// JS-visible behavior is byte-for-byte unchanged.
+//
+// straitjacket-allow-file:duplication is not needed here: the per-op match arms
+// live in `build_machine` below and mirror pi's package-manager operations.
+
+use pidgin_ai::seams::subprocess::CommandOutput;
+use pidgin_coding::core::command_flow::{CommandFlowMachine, CommandStep};
+use pidgin_coding::core::package_manager::{
+    git_dependency_install, npm_install, npm_uninstall, GitCloneMachine, GitEnsureRefMachine,
+    GitHasUpdateMachine, GitLocalUpdateTargetMachine, GitRemoteHeadMachine, GlobalNpmRootMachine,
+    InstallScope, PackageManagerConfig, PnpmGlobalListMachine,
+};
+
+/// JSON shape of the package-manager config the command argv depends on
+/// (pi's `options.cwd` / `options.agentDir` / `settings.npmCommand`), parsed at
+/// the boundary and mapped onto [`PackageManagerConfig`].
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ConfigJson {
+    cwd: String,
+    agent_dir: String,
+    #[serde(default)]
+    npm_command: Option<Vec<String>>,
+}
+
+/// JSON shape of the per-op params blob. Every field is optional; each op reads
+/// the fields it needs (mirroring pi's already-parsed inputs). `config` is
+/// required for the ops that build argv from a package-manager command.
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ParamsJson {
+    config: Option<ConfigJson>,
+    #[serde(default)]
+    specs: Vec<String>,
+    name: Option<String>,
+    scope: Option<String>,
+    package_name: Option<String>,
+    target_dir: Option<String>,
+    repo: Option<String>,
+    #[serde(rename = "ref")]
+    ref_: Option<String>,
+    #[serde(default)]
+    fetch_args: Vec<String>,
+    #[serde(default)]
+    has_package_json: bool,
+    installed_path: Option<String>,
+    // Note: the `npm view` version probe (pi's getLatestNpmVersion) is
+    // deliberately not an op here. pi's parseSource expands version ranges into
+    // node-semver syntax (e.g. `>=1.0.0 <2.0.0-0`), which the machines'
+    // Cargo-style `semver::VersionReq` cannot parse; the shim keeps that method
+    // on pi's original rather than silently mis-select versions.
+}
+
+impl ParamsJson {
+    fn config(&self) -> anyhow::Result<PackageManagerConfig> {
+        self.config
+            .as_ref()
+            .map(|c| {
+                PackageManagerConfig::new(c.cwd.clone(), c.agent_dir.clone(), c.npm_command.clone())
+            })
+            .ok_or_else(|| anyhow::anyhow!("missing `config` for op"))
+    }
+
+    fn scope(&self) -> anyhow::Result<InstallScope> {
+        match self.scope.as_deref() {
+            Some("user") => Ok(InstallScope::User),
+            Some("project") => Ok(InstallScope::Project),
+            other => Err(anyhow::anyhow!(
+                "invalid or missing scope: {other:?} (expected \"user\" | \"project\")"
+            )),
+        }
+    }
+
+    fn require(&self, field: Option<&String>, name: &str) -> anyhow::Result<String> {
+        field
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("missing `{name}` for op"))
+    }
+}
+
+/// Build the boxed machine for `op` from its JSON params.
+fn build_machine(
+    op: &str,
+    params: &ParamsJson,
+) -> anyhow::Result<Box<dyn CommandFlowMachine + Send>> {
+    match op {
+        "npmInstall" => {
+            let cfg = params.config()?;
+            let scope = params.scope()?;
+            Ok(Box::new(npm_install(&cfg, &params.specs, scope)))
+        }
+        "npmUninstall" => {
+            let cfg = params.config()?;
+            let scope = params.scope()?;
+            let name = params.require(params.name.as_ref(), "name")?;
+            Ok(Box::new(npm_uninstall(&cfg, &name, scope)))
+        }
+        "gitDependencyInstall" => {
+            let cfg = params.config()?;
+            let target_dir = params.require(params.target_dir.as_ref(), "targetDir")?;
+            Ok(Box::new(git_dependency_install(&cfg, &target_dir)))
+        }
+        "npmGlobalRoot" => {
+            let cfg = params.config()?;
+            Ok(Box::new(GlobalNpmRootMachine::new(&cfg)))
+        }
+        "pnpmGlobalPath" => {
+            let cfg = params.config()?;
+            let package_name = params.require(params.package_name.as_ref(), "packageName")?;
+            Ok(Box::new(PnpmGlobalListMachine::new(&cfg, package_name)))
+        }
+        "gitEnsureRef" => {
+            let cfg = params.config()?;
+            let target_dir = params.require(params.target_dir.as_ref(), "targetDir")?;
+            let ref_ = params.require(params.ref_.as_ref(), "ref")?;
+            Ok(Box::new(GitEnsureRefMachine::new(
+                &cfg,
+                target_dir,
+                params.fetch_args.clone(),
+                &ref_,
+                params.has_package_json,
+            )))
+        }
+        "gitClone" => {
+            let cfg = params.config()?;
+            let repo = params.require(params.repo.as_ref(), "repo")?;
+            let target_dir = params.require(params.target_dir.as_ref(), "targetDir")?;
+            Ok(Box::new(GitCloneMachine::new(
+                &cfg,
+                repo,
+                target_dir,
+                params.ref_.clone(),
+                params.has_package_json,
+            )))
+        }
+        "gitLocalUpdateTarget" => {
+            let installed_path = params.require(params.installed_path.as_ref(), "installedPath")?;
+            Ok(Box::new(GitLocalUpdateTargetMachine::new(installed_path)))
+        }
+        "gitRemoteHead" => {
+            let installed_path = params.require(params.installed_path.as_ref(), "installedPath")?;
+            Ok(Box::new(GitRemoteHeadMachine::new(installed_path)))
+        }
+        "gitHasUpdate" => {
+            let installed_path = params.require(params.installed_path.as_ref(), "installedPath")?;
+            Ok(Box::new(GitHasUpdateMachine::new(installed_path)))
+        }
+        other => Err(anyhow::anyhow!("unknown CommandCore op: {other}")),
+    }
+}
+
+/// Serialize a [`CommandStep`] to the driver-loop JSON contract.
+fn step_to_json(step: CommandStep) -> anyhow::Result<String> {
+    let value = match step {
+        CommandStep::Run { request } => {
+            let request = serde_json::to_value(&request).map_err(anyhow::Error::from)?;
+            serde_json::json!({ "type": "run", "request": request })
+        }
+        CommandStep::Done { result } => serde_json::json!({ "type": "done", "result": result }),
+    };
+    serde_json::to_string(&value).map_err(anyhow::Error::from)
+}
+
+/// The engine-backed implementation of the generated `CommandCore` contract.
+/// Holds one boxed [`CommandFlowMachine`] behind a `Mutex`; the generated handle
+/// class owns it as `Arc<CommandCoreImpl>` and delegates `start`/`advance`
+/// straight through. The `Mutex` supplies the interior mutability the machine's
+/// `&mut self` steps need behind the generated `&self` method receivers — a
+/// single JS caller never contends, so the lock is uncontended in practice.
+pub struct CommandCoreImpl {
+    machine: std::sync::Mutex<Box<dyn CommandFlowMachine + Send>>,
+}
+
+impl crate::generated::CommandCoreCore for CommandCoreImpl {
+    fn new(op: String, params_json: String) -> anyhow::Result<Self> {
+        let params: ParamsJson = if params_json.trim().is_empty() {
+            serde_json::from_str("{}")
+        } else {
+            serde_json::from_str(&params_json)
+        }
+        .map_err(|e| anyhow::anyhow!("invalid CommandCore params: {e}"))?;
+        Ok(Self {
+            machine: std::sync::Mutex::new(build_machine(&op, &params)?),
+        })
+    }
+
+    fn start(&self) -> anyhow::Result<String> {
+        let mut machine = self.machine.lock().unwrap();
+        step_to_json(machine.start())
+    }
+
+    fn advance(&self, output_json: String) -> anyhow::Result<String> {
+        let output: CommandOutput = serde_json::from_str(&output_json)
+            .map_err(|e| anyhow::anyhow!("invalid CommandOutput: {e}"))?;
+        let mut machine = self.machine.lock().unwrap();
+        step_to_json(machine.advance(output))
+    }
+}

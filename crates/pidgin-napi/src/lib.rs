@@ -57,10 +57,11 @@ mod oauth;
 // wrappers live here (crate root) — the thin impls are in `tools`.
 mod tools;
 
-// The package-manager command flow (`CommandCore`): drives the Rust
-// command-flow state machines (`pidgin_coding::core::package_manager`) behind a
-// JSON in/out driver loop, backing the native `package-manager.ts` shim.
-mod command_core;
+// The package-manager command flow (`CommandCore`) now generates from the
+// fluessig api schema through `crate::generated` + `crate::core_impl` (the
+// `CommandCoreImpl` behind an interior-mutability `Mutex`, driving the Rust
+// command-flow state machines in `pidgin_coding::core::package_manager` behind a
+// JSON in/out driver loop). The hand-written `#[napi]` class was retired.
 
 // The coding-agent session-cwd surface (`getMissingSessionCwdIssue`,
 // `formatMissingSessionCwdError`, `formatMissingSessionCwdPrompt`): drives pi's

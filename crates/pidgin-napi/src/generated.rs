@@ -67,6 +67,13 @@ pub trait KeybindingsManagerCoreCore: Sized + Send + Sync + 'static {
     fn get_resolved_bindings_json(&self) -> anyhow::Result<String>;
 }
 
+/// The `CommandCore` contract — implement over the engine in `crate::core_impl`.
+pub trait CommandCoreCore: Sized + Send + Sync + 'static {
+    fn new(op: String, params_json: String) -> anyhow::Result<Self>;
+    fn start(&self) -> anyhow::Result<String>;
+    fn advance(&self, output_json: String) -> anyhow::Result<String>;
+}
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `pidginNativeVersion`.
@@ -234,5 +241,42 @@ impl KeybindingsManagerCore {
     #[napi(js_name = "getResolvedBindingsJson")]
     pub fn get_resolved_bindings_json(&self) -> Result<String> {
         self.core.get_resolved_bindings_json().map_err(err)
+    }
+}
+
+/// The Rust-backed package-manager command flow, exposed to JavaScript as
+/// `CommandCore`. Holds one boxed [`CommandFlowMachine`]; the JS shim drives it
+/// through [`CommandCore::start`] / [`CommandCore::advance`].
+#[napi]
+pub struct CommandCore {
+    // pub(crate): the @manual ops in lib.rs extend this class and need the core
+    pub(crate) core: Arc<crate::core_impl::CommandCoreImpl>,
+}
+
+#[napi]
+impl CommandCore {
+    /// Build a command core for `op` from its JSON params (see the module docs
+    /// for the op catalog and param shapes).
+    #[napi(constructor)]
+    pub fn new(op: String, params_json: String) -> Result<Self> {
+        Ok(Self {
+            core: Arc::new(
+                <crate::core_impl::CommandCoreImpl as CommandCoreCore>::new(op, params_json)
+                    .map_err(err)?,
+            ),
+        })
+    }
+    /// Plan the first command (or finish immediately). Returns the JSON-encoded
+    /// `CommandStep` (`{ type: "run", request }` or `{ type: "done", result }`).
+    #[napi(js_name = "start")]
+    pub fn start(&self) -> Result<String> {
+        self.core.start().map_err(err)
+    }
+    /// Consume the JSON-encoded `CommandOutput` (`{ code, stdout, stderr }`) of
+    /// the last planned command and plan the next one (or finish). Returns the
+    /// JSON-encoded `CommandStep`.
+    #[napi(js_name = "advance")]
+    pub fn advance(&self, output_json: String) -> Result<String> {
+        self.core.advance(output_json).map_err(err)
     }
 }

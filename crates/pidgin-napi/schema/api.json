@@ -532,6 +532,61 @@
           }
         }
       ]
+    },
+    {
+      "name": "CommandCore",
+      "doc": "The Rust-backed package-manager command flow, exposed to JavaScript as\n`CommandCore`. Holds one boxed [`CommandFlowMachine`]; the JS shim drives it\nthrough [`CommandCore::start`] / [`CommandCore::advance`].",
+      "ops": [
+        {
+          "name": "new",
+          "doc": "Build a command core for `op` from its JSON params (see the module docs\nfor the op catalog and param shapes).",
+          "shape": "ctor",
+          "params": [
+            {
+              "name": "op",
+              "type": "string"
+            },
+            {
+              "name": "paramsJson",
+              "type": "string"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "start",
+          "doc": "Plan the first command (or finish immediately). Returns the JSON-encoded\n`CommandStep` (`{ type: \"run\", request }` or `{ type: \"done\", result }`).",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": false,
+          "params": [],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "start"
+            }
+          }
+        },
+        {
+          "name": "advance",
+          "doc": "Consume the JSON-encoded `CommandOutput` (`{ code, stdout, stderr }`) of\nthe last planned command and plan the next one (or finish). Returns the\nJSON-encoded `CommandStep`.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": false,
+          "params": [
+            {
+              "name": "outputJson",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "advance"
+            }
+          }
+        }
+      ]
     }
   ]
 }
