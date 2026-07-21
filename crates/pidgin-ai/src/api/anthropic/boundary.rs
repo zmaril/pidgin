@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — the options DTO mirrors pi's
+// straitjacket-allow-file:duplication — the options DTO mirrors pi's
 // `AnthropicOptions`/`StreamOptions` field-for-field (`anthropic-messages.ts:199`,
 // `types.ts:113`) so the JSON boundary accepts exactly what pi's `stream()`
 // receives. The per-field option scaffolding reads as duplicative of

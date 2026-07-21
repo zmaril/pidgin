@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — `AuthStorage` is a faithful mirror of
+// straitjacket-allow-file:duplication — `AuthStorage` is a faithful mirror of
 // pi's file-backed `CredentialStore`, so its `read`/`list`/`modify`/`delete`
 // members repeat the trait's method shapes and the backends' `with_lock`
 // scaffolding, and the inline tests rebuild the same `write_auth_json` + create

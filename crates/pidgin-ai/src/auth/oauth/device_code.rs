@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — the inline `#[cfg(test)] mod tests`
+// straitjacket-allow-file:duplication — the inline `#[cfg(test)] mod tests`
 // rebuilds the same poll scaffold (FakeClock + recording sleeper + poll closure)
 // per case so each interval/timeout path is exercised in isolation. The clone
 // detector reads the repeated test setup as duplication; it is deliberate,

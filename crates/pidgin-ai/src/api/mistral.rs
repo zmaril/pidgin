@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `api/mistral-conversations.ts`: the per-item content-delta arms (`text` /
 // `thinking` / bare string) and the request-build helpers share pi's hand-rolled
 // shapes by design. The clone detector reads the mirrored arms as duplicates;

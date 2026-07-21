@@ -1,9 +1,13 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's
+// straitjacket-allow-file:duplication — these tests transcribe pi's
 // OpenAI-completions fixtures verbatim: the request-shaping `compat` models and
 // the streamed `ChatCompletionChunk` arrays are walls of near-identical JSON by
 // design, and the clone detector reads them as duplicates. They are distinct,
 // load-bearing wire fixtures kept faithful to pi's `test/openai-completions-*`
 // cases.
+// straitjacket-allow-file:file-size — TODO(straitjacket): this file is 1539 lines, over
+// the 1500-line ceiling. Declared explicitly so it suppresses only file-size, not every
+// rule (the old bracket form was a silent catch-all). Remove once the file is split into a
+// directory module (see PR follow-up).
 //! Unit tests for the OpenAI-completions request shaper and chunk walker,
 //! mirroring representative cases from pi's `packages/ai/test/openai-completions-*`
 //! suites (tool-choice, response-model, empty-tools, reasoning-details,

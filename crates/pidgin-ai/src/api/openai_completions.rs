@@ -1,9 +1,13 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `openai-completions.ts`: the `thinkingFormat` switch arms, the per-provider
 // `detectCompat` boolean lattice, and the `convertMessages` role branches are
 // walls of near-identical option-shaping by design. The clone detector reads
 // these mirrored arms as duplicates; factoring them would distort the
 // byte-faithful port, so the repetition is intentional.
+// straitjacket-allow-file:file-size — TODO(straitjacket): this file is 2239 lines, over
+// the 1500-line ceiling. Declared explicitly so it suppresses only file-size, not every
+// rule (the old bracket form was a silent catch-all). Remove once the file is split into a
+// directory module (see PR follow-up).
 //! OpenAI Chat Completions request-shaping + streaming-chunk walker, ported from
 //! pi-ai's `packages/ai/src/api/openai-completions.ts` at pinned commit
 //! `3da591ab`.

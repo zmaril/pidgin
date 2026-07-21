@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of the slice
+// straitjacket-allow-file:duplication — a faithful transcription of the slice
 // of pi's `utils/estimate.ts` that `super::simple_options` consumes. The
 // per-role/per-block estimation arms mirror pi's hand-rolled `switch`/`if` shape;
 // the clone detector reads them as duplicative by design.

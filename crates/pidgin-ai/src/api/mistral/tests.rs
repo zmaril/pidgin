@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's Mistral
+// straitjacket-allow-file:duplication — these tests transcribe pi's Mistral
 // fixtures and payload-capture assertions. The model/context builders and the
 // per-case chunk objects are near-identical by design; the clone detector reads
 // them as duplicates, but they are distinct, load-bearing wire fixtures kept

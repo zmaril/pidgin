@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — each black-box case is a self-contained
+// straitjacket-allow-file:duplication — each black-box case is a self-contained
 // spawn-assert scenario that deliberately repeats the small temp-dir/agent/project
 // setup and the run_cli(...) invocation shape, mirroring pi's per-file vitest cases;
 // collapsing that scaffolding would obscure what each case actually exercises.

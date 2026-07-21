@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — this module mirrors pi's parallel
+// straitjacket-allow-file:duplication — this module mirrors pi's parallel
 // provider layout: the `OAuthAuth` impl skeleton (name/login_label/login_machine/
 // refresh_machine/to_auth) and the `to_auth` mapping are shared verbatim with the
 // sibling provider modules by design, and the form-encoding, URL-scheme, interval,

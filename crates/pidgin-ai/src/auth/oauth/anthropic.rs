@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — the `to_auth` mapping
+// straitjacket-allow-file:duplication — the `to_auth` mapping
 // (`{ apiKey: credential.access }`) and the `OAuthAuth` impl skeleton
 // (name/login_machine/refresh_machine/to_auth) are shared verbatim with the four
 // provider stubs by design; the clone detector reads those mirrored members

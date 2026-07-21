@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's Bedrock
+// straitjacket-allow-file:duplication — these tests transcribe pi's Bedrock
 // fixtures and payload-capture assertions. The model/context builders and the
 // per-case event objects are near-identical by design; the clone detector reads
 // them as duplicates, but they are distinct, load-bearing wire fixtures kept

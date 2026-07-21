@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests mirror pi's
+// straitjacket-allow-file:duplication — these tests mirror pi's
 // `anthropic-oauth.test.ts` case-by-case: each `#[test]` rebuilds a similar
 // machine-driving scaffold (start → notify → prompt → request → response) so
 // the login/refresh paths are exercised in isolation. The clone detector reads

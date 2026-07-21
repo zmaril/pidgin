@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's OpenAI
+// straitjacket-allow-file:duplication — these tests transcribe pi's OpenAI
 // Responses fixtures verbatim: the `response.*` named-event objects and the
 // per-test model literals are walls of near-identical JSON by design, and the
 // clone detector reads them as duplicates. They are distinct, load-bearing wire

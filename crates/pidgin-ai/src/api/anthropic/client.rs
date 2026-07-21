@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `anthropic-messages.ts` `createClient` header-switching (`createClient`,
 // `mergeHeaders`, `assertRequestAuth`, `shouldUseFineGrainedToolStreamingBeta`).
 // The three auth-mode branches build near-identical `defaultHeaders` maps by

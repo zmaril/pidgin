@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `openai-responses-shared.ts`: the named-event dispatch arms
 // (`reasoning_summary_text.delta` / `reasoning_text.delta` both append to a
 // thinking slot and push a matching `thinking_delta` event; `output_text.delta`
@@ -6,6 +6,10 @@
 // lookup + push shape by design, and the `output_item.done` finalize arms mirror
 // pi's `if/else` chain. The clone detector reads these mirrored arms as
 // duplicates; factoring them would distort the byte-faithful port.
+// straitjacket-allow-file:file-size — TODO(straitjacket): this file is 1587 lines, over
+// the 1500-line ceiling. Declared explicitly so it suppresses only file-size, not every
+// rule (the old bracket form was a silent catch-all). Remove once the file is split into a
+// directory module (see PR follow-up).
 //! OpenAI **Responses API** named-event stream processor, ported from pi-ai's
 //! `packages/ai/src/api/openai-responses-shared.ts` at pinned commit `3da591ab`.
 //!

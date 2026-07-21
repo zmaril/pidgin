@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `anthropic-messages.ts` dispatch: the per-block `content_block_start` arms
 // (`thinking` / `redacted_thinking` both build a Thinking block then push a
 // matching `ThinkingStart` event) and the parallel `dispatch_content_block_*`

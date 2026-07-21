@@ -6,7 +6,7 @@
 //! test builds the Rust faux provider with the identical inputs and asserts the
 //! serialized event sequence matches the fixture exactly.
 
-// straitjacket-allow-file[:duplication] — each `#[test]` builds the same provider
+// straitjacket-allow-file:duplication — each `#[test]` builds the same provider
 // / model / context fixture and asserts on the resulting stream; the parallel
 // arrange-act bodies and the `json_eq` numeric-deep-equality helper (mirroring
 // `tests/roundtrip.rs`) read as duplicates but are distinct, load-bearing cases.

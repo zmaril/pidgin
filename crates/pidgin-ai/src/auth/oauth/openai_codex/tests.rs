@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests mirror pi's
+// straitjacket-allow-file:duplication — these tests mirror pi's
 // `openai-codex-oauth.test.ts` case-by-case: each `#[test]` rebuilds a similar
 // machine-driving scaffold (select → usercode → notify → poll → exchange, or
 // select → auth_url → prompt → exchange) so the browser/device/refresh paths are

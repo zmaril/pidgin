@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — the primitive-coercion match arms and
+// straitjacket-allow-file:duplication — the primitive-coercion match arms and
 // the parallel passing/failing case tables in the tests are a byte-faithful
 // transcription of pi's `validation.ts` coercion rules and `validation.test.ts`
 // cases; the repeated per-type arms and per-case assertions read as duplicates

@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — pi ships no dedicated Radius OAuth
+// straitjacket-allow-file:duplication — pi ships no dedicated Radius OAuth
 // test at the pinned commit, so these are original unit tests. Each `#[test]`
 // rebuilds a similar machine-driving scaffold (start → config → method →
 // request/response) so the browser, device-code, refresh, discovery, and
