@@ -102,7 +102,11 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use pidgin_agent::agent::{Agent, AgentOptions, InitialAgentState, QueueMode};
-use pidgin_agent::types::StreamFn;
+use pidgin_agent::types::{AgentTool, StreamFn};
+
+use crate::core::system_prompt::{build_system_prompt, BuildSystemPromptOptions};
+use crate::core::tools::index::{create_coding_tool_definitions, ToolsOptions};
+use crate::core::tools::tool_definition_wrapper::wrap_tool_definition;
 use pidgin_ai::seams::{AbortSignal, StreamResult};
 use pidgin_ai::{clamp_thinking_level, Context, Model, ModelThinkingLevel, SimpleStreamOptions};
 
@@ -431,6 +435,66 @@ fn build_stream_fn(model_runtime: &ModelRuntime, settings_manager: &SettingsMana
 /// `createAgentSession`, `sdk.ts:164-393`).
 ///
 /// pi's function is `async` and can throw; the ported collaborators are all
+/// The builtin providers used to seed a default [`ModelRuntime`] built by
+/// [`create_agent_session`], with a live reqwest transport bound when
+/// `native-http` is enabled (the shipped CLI default). Mirrors
+/// [`modes::print`](crate::modes::print)'s `builtin_registry_providers` split.
+#[cfg(feature = "native-http")]
+fn live_builtin_providers() -> Vec<pidgin_ai::RegistryProvider> {
+    use pidgin_ai::seams::clock::{Clock, SystemClock};
+    use pidgin_ai::seams::http::HttpTransport;
+    use pidgin_ai::seams::ReqwestTransport;
+
+    let transport: Arc<dyn HttpTransport> = Arc::new(ReqwestTransport::builder().build());
+    let clock: Arc<dyn Clock> = Arc::new(SystemClock::new());
+    pidgin_ai::builtin_providers_with_transport(transport, clock)
+}
+
+/// Without `native-http` the builtins carry no transport: every model routes
+/// `Unimplemented`, matching the reqwest-free default/test build.
+#[cfg(not(feature = "native-http"))]
+fn live_builtin_providers() -> Vec<pidgin_ai::RegistryProvider> {
+    pidgin_ai::builtin_providers()
+}
+
+/// Build the default coding tool set and its matching system prompt for `cwd`,
+/// mirroring [`modes::print::coding_harness_setup`](crate::modes::print). The
+/// per-tool prompt snippets and guidelines are gathered from the active tool
+/// definitions (pi's `AgentSession._rebuildSystemPrompt`) and fed to
+/// [`build_system_prompt`], so the session receives real tools and a non-empty
+/// system prompt.
+fn build_coding_harness(cwd: &str) -> (Vec<AgentTool>, String) {
+    let definitions = create_coding_tool_definitions(cwd, ToolsOptions::default());
+
+    let mut active_tool_names = Vec::with_capacity(definitions.len());
+    let mut tool_snippets: Vec<(String, String)> = Vec::new();
+    let mut prompt_guidelines: Vec<String> = Vec::new();
+    for definition in &definitions {
+        active_tool_names.push(definition.name.clone());
+        if let Some(snippet) = &definition.prompt_snippet {
+            tool_snippets.push((definition.name.clone(), snippet.clone()));
+        }
+        if let Some(guidelines) = &definition.prompt_guidelines {
+            prompt_guidelines.extend(guidelines.iter().cloned());
+        }
+    }
+
+    let system_prompt = build_system_prompt(&BuildSystemPromptOptions {
+        cwd: cwd.to_string(),
+        selected_tools: Some(active_tool_names),
+        tool_snippets,
+        prompt_guidelines,
+        ..Default::default()
+    });
+
+    let tools = definitions
+        .into_iter()
+        .map(|definition| wrap_tool_definition(definition, None))
+        .collect();
+
+    (tools, system_prompt)
+}
+
 /// synchronous and infallible on this offline slice, so this mirror is a plain
 /// synchronous function. See the module docs for the deferred live-provider and
 /// extension-host seams.
@@ -470,6 +534,13 @@ pub fn create_agent_session(options: CreateAgentSessionOptions) -> CreateAgentSe
         ModelRuntime::create(CreateModelRuntimeOptions {
             auth_path,
             models_path,
+            // Bind the live reqwest transport into the builtin provider set under
+            // `native-http` (the shipped CLI default), so an `AgentSession` built
+            // through this path can actually reach a provider. Without the feature
+            // the builtins have no transport and route `Unimplemented`, exactly as
+            // before — the offline/test build is unchanged. Mirrors the split
+            // `modes::print` already applies to its own registry.
+            builtins: Some(live_builtin_providers()),
             ..Default::default()
         })
     });
@@ -604,12 +675,19 @@ pub fn create_agent_session(options: CreateAgentSessionOptions) -> CreateAgentSe
     // is still in scope: both are `!Send`, so the `Send + Sync` closure captures only
     // the extracted `Models` handle plus a value snapshot of the settings.
     let stream_fn = build_stream_fn(&model_runtime, &settings_manager);
+
+    // Build the coding tool set and the matching system prompt (mirrors
+    // `modes::print::coding_harness_setup`). Without this the agent would carry an
+    // empty system prompt — an empty system block with cache_control is rejected
+    // by Anthropic (`400 cache_control cannot be set for empty text blocks`) — and
+    // no tools, so the model could not read/edit/run anything.
+    let (coding_tools, coding_system_prompt) = build_coding_harness(&cwd);
     let agent = Agent::new(AgentOptions {
         initial_state: Some(InitialAgentState {
-            system_prompt: Some(String::new()),
+            system_prompt: Some(coding_system_prompt),
             model: model.clone(),
             thinking_level: Some(thinking_level),
-            tools: Some(Vec::new()),
+            tools: Some(coding_tools),
             ..Default::default()
         }),
         convert_to_llm: Some(convert_to_llm),
