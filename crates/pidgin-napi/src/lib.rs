@@ -638,20 +638,6 @@ pub fn resolve_config_value_or_throw(
     .map_err(|e| napi::Error::from_reason(e.to_string()))
 }
 
-/// `getConfigValueEnvVarName` (resolve-config-value.ts): the single env var a
-/// value references, or `null` (pi's `undefined`).
-#[napi(js_name = "getConfigValueEnvVarName")]
-pub fn get_config_value_env_var_name(config: String) -> Option<String> {
-    pidgin_coding::core::resolve_config_value::get_config_value_env_var_name(&config)
-}
-
-/// `getConfigValueEnvVarNames` (resolve-config-value.ts): all distinct env var
-/// names a value references, in first-seen order.
-#[napi(js_name = "getConfigValueEnvVarNames")]
-pub fn get_config_value_env_var_names(config: String) -> Vec<String> {
-    pidgin_coding::core::resolve_config_value::get_config_value_env_var_names(&config)
-}
-
 /// `getMissingConfigValueEnvVarNames` (resolve-config-value.ts): referenced env
 /// var names that do not currently resolve.
 #[napi(js_name = "getMissingConfigValueEnvVarNames")]
@@ -666,13 +652,6 @@ pub fn get_missing_config_value_env_var_names(
             env.as_ref(),
         ),
     )
-}
-
-/// `isCommandConfigValue` (resolve-config-value.ts): whether a value is a
-/// `!`-prefixed shell command.
-#[napi(js_name = "isCommandConfigValue")]
-pub fn is_command_config_value(config: String) -> bool {
-    pidgin_coding::core::resolve_config_value::is_command_config_value(&config)
 }
 
 /// `isConfigValueConfigured` (resolve-config-value.ts): whether every env var a
@@ -731,13 +710,6 @@ pub fn resolve_headers_or_throw(
     )
     .map_err(|e| napi::Error::from_reason(e.to_string()))?;
     headers_json(resolved)
-}
-
-/// `clearConfigValueCache` (resolve-config-value.ts): clear the process-lifetime
-/// `!command` result cache.
-#[napi(js_name = "clearConfigValueCache")]
-pub fn clear_config_value_cache() {
-    pidgin_coding::core::resolve_config_value::clear_config_value_cache();
 }
 
 // --- coding-agent core: trust-manager ---------------------------------------
