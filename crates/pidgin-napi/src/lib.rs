@@ -207,75 +207,15 @@ pub fn anthropic_parse_sse_stream(
 
 // --- tui width layer (packages/tui/src/utils.ts) ---------------------------
 //
-// Thin wrappers over `pidgin_tui::width`, backing the native `utils.ts` shim.
-// Each mirrors the pi export it replaces; the shim supplies pi's default
-// arguments so the JS-facing signatures stay byte-for-byte pi's.
-
-/// `visibleWidth` (utils.ts): display width of a string, ANSI-aware.
-#[napi(js_name = "visibleWidth")]
-pub fn visible_width(s: String) -> i64 {
-    pidgin_tui::visible_width(&s) as i64
-}
-
-/// `normalizeTerminalOutput` (utils.ts): canonicalize ANSI/control sequences.
-#[napi(js_name = "normalizeTerminalOutput")]
-pub fn normalize_terminal_output(s: String) -> String {
-    pidgin_tui::normalize_terminal_output(&s)
-}
-
-/// `truncateToWidth` (utils.ts): clip to `max_width` columns, ANSI-preserving.
-#[napi(js_name = "truncateToWidth")]
-pub fn truncate_to_width(text: String, max_width: i64, ellipsis: String, pad: bool) -> String {
-    pidgin_tui::truncate_to_width(&text, max_width, &ellipsis, pad)
-}
-
-/// `wrapTextWithAnsi` (utils.ts): hard-wrap to `width` columns, ANSI-preserving.
-#[napi(js_name = "wrapTextWithAnsi")]
-pub fn wrap_text_with_ansi(text: String, width: i64) -> Vec<String> {
-    pidgin_tui::wrap_text_with_ansi(&text, width.max(0) as usize)
-}
-
-/// Result of [`slice_with_width`]; serialized to `{ text, width }`.
-#[napi(object)]
-pub struct SliceWithWidth {
-    pub text: String,
-    pub width: i64,
-}
-
-/// `sliceWithWidth` (utils.ts): slice `length` columns from `start_col`.
-#[napi(js_name = "sliceWithWidth")]
-pub fn slice_with_width(line: String, start_col: i64, length: i64, strict: bool) -> SliceWithWidth {
-    let (text, width) = pidgin_tui::slice_with_width(&line, start_col, length, strict);
-    SliceWithWidth { text, width }
-}
-
-/// Result of [`extract_segments`]; serialized to
-/// `{ before, beforeWidth, after, afterWidth }`.
-#[napi(object)]
-pub struct ExtractSegmentsResult {
-    pub before: String,
-    pub before_width: i64,
-    pub after: String,
-    pub after_width: i64,
-}
-
-/// `extractSegments` (utils.ts): single-pass before/after overlay split.
-#[napi(js_name = "extractSegments")]
-pub fn extract_segments(
-    line: String,
-    before_end: i64,
-    after_start: i64,
-    after_len: i64,
-    strict_after: bool,
-) -> ExtractSegmentsResult {
-    let r = pidgin_tui::extract_segments(&line, before_end, after_start, after_len, strict_after);
-    ExtractSegmentsResult {
-        before: r.before,
-        before_width: r.before_width,
-        after: r.after,
-        after_width: r.after_width,
-    }
-}
+// MODULE 4 (utils): the six width ops (`visibleWidth`, `normalizeTerminalOutput`,
+// `truncateToWidth`, `wrapTextWithAnsi`, `sliceWithWidth`, and `extractSegments`)
+// plus their two result DTOs (`SliceWithWidth`, `ExtractSegmentsResult`) now
+// generate from the fluessig api schema through `crate::generated` +
+// `crate::core_impl`, routing into the `pidgin_tui` width layer. Numeric
+// params/returns are authored as `int32` (JS `number`) and widened to the
+// engine's `i64`/`usize` at the core seam. The hand-written `#[napi]` exports
+// that lived here were deleted; edit `schema/api.json` and rerun `regen.sh`
+// instead of re-adding them.
 
 // --- tui key layer (packages/tui/src/keys.ts) ------------------------------
 //

@@ -11,6 +11,25 @@ fn err(e: impl std::fmt::Display) -> napi::Error {
     napi::Error::from_reason(e.to_string())
 }
 
+/// Result of [`slice_with_width`]; serialized to `{ text, width }`.
+#[napi(object)]
+#[derive(Clone)]
+pub struct SliceWithWidth {
+    pub text: String,
+    pub width: i32,
+}
+
+/// Result of [`extract_segments`]; serialized to
+/// `{ before, beforeWidth, after, afterWidth }`.
+#[napi(object)]
+#[derive(Clone)]
+pub struct ExtractSegmentsResult {
+    pub before: String,
+    pub before_width: i32,
+    pub after: String,
+    pub after_width: i32,
+}
+
 /// The `Pidgin` contract — implement over the engine in `crate::core_impl`.
 pub trait PidginCore: Sized + Send + Sync + 'static {
     fn version() -> String;
@@ -24,6 +43,18 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn decode_kitty_printable(data: String) -> Option<String>;
     fn decode_printable_key(data: String) -> Option<String>;
     fn set_kitty_protocol_active(active: bool) -> ();
+    fn visible_width(s: String) -> i32;
+    fn normalize_terminal_output(s: String) -> String;
+    fn truncate_to_width(text: String, max_width: i32, ellipsis: String, pad: bool) -> String;
+    fn wrap_text_with_ansi(text: String, width: i32) -> Vec<String>;
+    fn slice_with_width(line: String, start_col: i32, length: i32, strict: bool) -> SliceWithWidth;
+    fn extract_segments(
+        line: String,
+        before_end: i32,
+        after_start: i32,
+        after_len: i32,
+        strict_after: bool,
+    ) -> ExtractSegmentsResult;
 }
 
 /// Returns the crate version. Proves the native addon builds and loads.
@@ -96,4 +127,52 @@ pub fn decode_printable_key(data: String) -> Option<String> {
 #[napi(js_name = "setKittyProtocolActive")]
 pub fn set_kitty_protocol_active(active: bool) -> () {
     <crate::core_impl::PidginImpl as PidginCore>::set_kitty_protocol_active(active)
+}
+
+/// `visibleWidth` (utils.ts): display width of a string, ANSI-aware.
+#[napi(js_name = "visibleWidth")]
+pub fn visible_width(s: String) -> i32 {
+    <crate::core_impl::PidginImpl as PidginCore>::visible_width(s)
+}
+
+/// `normalizeTerminalOutput` (utils.ts): canonicalize ANSI/control sequences.
+#[napi(js_name = "normalizeTerminalOutput")]
+pub fn normalize_terminal_output(s: String) -> String {
+    <crate::core_impl::PidginImpl as PidginCore>::normalize_terminal_output(s)
+}
+
+/// `truncateToWidth` (utils.ts): clip to `max_width` columns, ANSI-preserving.
+#[napi(js_name = "truncateToWidth")]
+pub fn truncate_to_width(text: String, max_width: i32, ellipsis: String, pad: bool) -> String {
+    <crate::core_impl::PidginImpl as PidginCore>::truncate_to_width(text, max_width, ellipsis, pad)
+}
+
+/// `wrapTextWithAnsi` (utils.ts): hard-wrap to `width` columns, ANSI-preserving.
+#[napi(js_name = "wrapTextWithAnsi")]
+pub fn wrap_text_with_ansi(text: String, width: i32) -> Vec<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::wrap_text_with_ansi(text, width)
+}
+
+/// `sliceWithWidth` (utils.ts): slice `length` columns from `start_col`.
+#[napi(js_name = "sliceWithWidth")]
+pub fn slice_with_width(line: String, start_col: i32, length: i32, strict: bool) -> SliceWithWidth {
+    <crate::core_impl::PidginImpl as PidginCore>::slice_with_width(line, start_col, length, strict)
+}
+
+/// `extractSegments` (utils.ts): single-pass before/after overlay split.
+#[napi(js_name = "extractSegments")]
+pub fn extract_segments(
+    line: String,
+    before_end: i32,
+    after_start: i32,
+    after_len: i32,
+    strict_after: bool,
+) -> ExtractSegmentsResult {
+    <crate::core_impl::PidginImpl as PidginCore>::extract_segments(
+        line,
+        before_end,
+        after_start,
+        after_len,
+        strict_after,
+    )
 }
