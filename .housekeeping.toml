@@ -35,10 +35,16 @@ allow = [
 # llama/client.rs is the ported llama client seam; its inline TODO(port) markers
 # flag the streaming SSE transport that is deferred to a later port PR — tracked
 # deferrals, not untracked work. Drop this entry once the SSE transport lands.
+# sdk.rs is the ported createAgentSession runtime seam; its inline TODO(follow-up)
+# marker flags the model_runtime rebuild-per-call divergence vs pi (create_agent_session
+# consumes ModelRuntime by value, so the factory rebuilds it from auth.json/models.json
+# on every new/resume/fork) — a tracked deferral, not untracked work. Drop this entry
+# once a shareable / re-lent ModelRuntime lands.
 ignore = [
     "notes/fluessig-integration.md",
     "crates/pidgin-coding/src/core/extensions/runner.rs",
     "crates/pidgin-extensions/src/runner_impl/mod.rs",
     "crates/pidgin-extensions/src/runner_impl/queries.rs",
     "crates/pidgin-coding/src/extensions/llama/client.rs",
+    "crates/pidgin-coding/src/core/sdk.rs",
 ]
