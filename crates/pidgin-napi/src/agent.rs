@@ -98,21 +98,6 @@ pub fn format_skill_invocation(
     ))
 }
 
-/// `parseCommandArgs` (harness/prompt-templates.ts): split an argument string
-/// using simple shell-style single and double quotes.
-#[napi(js_name = "parseCommandArgs")]
-pub fn parse_command_args(args_string: String) -> Vec<String> {
-    pidgin_agent::harness::prompt_templates::parse_command_args(&args_string)
-}
-
-/// `substituteArgs` (harness/prompt-templates.ts): substitute prompt-template
-/// placeholders (`$1`, `$@`, `$ARGUMENTS`, `${@:N}`, `${@:N:L}`) with args.
-#[napi(js_name = "substituteArgs")]
-pub fn substitute_args(content: String, args: Vec<String>) -> String {
-    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
-    pidgin_agent::harness::prompt_templates::substitute_args(&content, &refs)
-}
-
 /// `formatPromptTemplateInvocation` (harness/prompt-templates.ts): substitute
 /// positional arguments into a template's content. pi's `PromptTemplate`
 /// crosses as a JSON object; the argument list crosses as a string array.

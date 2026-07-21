@@ -187,6 +187,15 @@ impl crate::generated::PidginCore for PidginImpl {
     fn format_missing_session_cwd_prompt(issue: crate::generated::SessionCwdIssueJs) -> String {
         pidgin_coding::core::session_cwd::format_missing_session_cwd_prompt(&issue.into())
     }
+
+    fn parse_command_args(args_string: String) -> Vec<String> {
+        pidgin_agent::harness::prompt_templates::parse_command_args(&args_string)
+    }
+
+    fn substitute_args(content: String, args: Vec<String>) -> String {
+        let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+        pidgin_agent::harness::prompt_templates::substitute_args(&content, &refs)
+    }
 }
 
 // --- coding-agent session-cwd seam (core/session-cwd.ts) --------------------
