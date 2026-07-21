@@ -714,50 +714,13 @@ pub fn generate_diff_string(
     serde_json::json!({ "diff": r.diff, "firstChangedLine": first_changed }).to_string()
 }
 
-// --- coding-agent tools: path-utils ----------------------------------------
+// --- coding-agent tools: path-utils -----------------------------------------
 //
-// Thin wrappers over `pidgin_coding::core::tools::path_utils`, backing the
-// native `core/tools/path-utils.ts` shim. `expandPath`/`resolveToCwd` return a
-// Rust `Result`; the shim maps a thrown error back to pi's throw-on-bad-input.
-// The private macOS filename transforms are exposed so the shim can rebuild
-// pi's `resolveReadPath` fs-probe fallback with a real `accessSync` closure.
-// `pathExists`/`resolveReadPathAsync` are not ported and stay in pi's original.
-
-/// `expandPath` (core/tools/path-utils.ts): fold unicode spaces, strip a leading
-/// `@`, expand `~`, convert `file://`. Errors cross as thrown JS errors.
-#[napi(js_name = "expandPath")]
-pub fn expand_path(file_path: String) -> napi::Result<String> {
-    pidgin_coding::core::tools::path_utils::expand_path(&file_path)
-        .map_err(|e| napi::Error::from_reason(e.to_string()))
-}
-
-/// `resolveToCwd` (core/tools/path-utils.ts): resolve `file_path` against `cwd`.
-/// Errors cross as thrown JS errors (pi's `resolvePath` throws on bad input).
-#[napi(js_name = "resolveToCwd")]
-pub fn resolve_to_cwd(file_path: String, cwd: String) -> napi::Result<String> {
-    pidgin_coding::core::tools::path_utils::resolve_to_cwd(&file_path, &cwd)
-        .map_err(|e| napi::Error::from_reason(e.to_string()))
-}
-
-/// Private pi transform `tryMacOSScreenshotPath`, exposed so the shim's
-/// `resolveReadPath` can rebuild pi's fallback ordering natively.
-#[napi(js_name = "pathTryMacosScreenshotPath")]
-pub fn path_try_macos_screenshot_path(file_path: String) -> String {
-    pidgin_coding::core::tools::path_utils::try_macos_screenshot_path(&file_path)
-}
-
-/// Private pi transform `tryNFDVariant`, exposed for the shim's `resolveReadPath`.
-#[napi(js_name = "pathTryNfdVariant")]
-pub fn path_try_nfd_variant(file_path: String) -> String {
-    pidgin_coding::core::tools::path_utils::try_nfd_variant(&file_path)
-}
-
-/// Private pi transform `tryCurlyQuoteVariant`, exposed for the shim's
-/// `resolveReadPath`.
-#[napi(js_name = "pathTryCurlyQuoteVariant")]
-pub fn path_try_curly_quote_variant(file_path: String) -> String {
-    pidgin_coding::core::tools::path_utils::try_curly_quote_variant(&file_path)
-}
+// MODULE 2 (path-utils): the five path ops (`expandPath`, `resolveToCwd`, and
+// the three private macOS filename transforms) now generate from the fluessig
+// api schema through `crate::generated` + `crate::core_impl`. The hand-written
+// `#[napi]` exports that lived here were deleted; edit `schema/api.json` and
+// rerun `regen.sh` instead of re-adding them.
 
 // --- coding-agent core: resolve-config-value --------------------------------
 //

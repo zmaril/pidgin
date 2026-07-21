@@ -25,6 +25,105 @@
               "name": "pidginNativeVersion"
             }
           }
+        },
+        {
+          "name": "expandPath",
+          "doc": "`expandPath` (core/tools/path-utils.ts): fold unicode spaces, strip a leading\n`@`, expand `~`, convert `file://`. Errors cross as thrown JS errors.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": true,
+          "params": [
+            {
+              "name": "filePath",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "expandPath"
+            }
+          }
+        },
+        {
+          "name": "resolveToCwd",
+          "doc": "`resolveToCwd` (core/tools/path-utils.ts): resolve `file_path` against `cwd`.\nErrors cross as thrown JS errors (pi's `resolvePath` throws on bad input).",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": true,
+          "params": [
+            {
+              "name": "filePath",
+              "type": "string"
+            },
+            {
+              "name": "cwd",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "resolveToCwd"
+            }
+          }
+        },
+        {
+          "name": "pathTryMacosScreenshotPath",
+          "doc": "Private pi transform `tryMacOSScreenshotPath`, exposed so the shim's\n`resolveReadPath` can rebuild pi's fallback ordering natively.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "filePath",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "pathTryMacosScreenshotPath"
+            }
+          }
+        },
+        {
+          "name": "pathTryNfdVariant",
+          "doc": "Private pi transform `tryNFDVariant`, exposed for the shim's `resolveReadPath`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "filePath",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "pathTryNfdVariant"
+            }
+          }
+        },
+        {
+          "name": "pathTryCurlyQuoteVariant",
+          "doc": "Private pi transform `tryCurlyQuoteVariant`, exposed for the shim's\n`resolveReadPath`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "filePath",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "pathTryCurlyQuoteVariant"
+            }
+          }
         }
       ]
     }
