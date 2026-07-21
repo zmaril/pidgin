@@ -633,6 +633,188 @@
           }
         }
       ]
+    },
+    {
+      "name": "FauxCore",
+      "doc": "The Rust-backed faux core, exposed to JavaScript as `FauxCore`.\n\nThe JS `registerFauxProvider` shim constructs one of these, keeps the response\nqueue in JS, and calls [`FauxCore::stream_resolved`] (or\n[`FauxCore::empty_queue_result`]) per stream. Cross-call state (call count and\nprompt cache) lives in the wrapped [`FauxProvider`].",
+      "ops": [
+        {
+          "name": "new",
+          "doc": "Build a faux core from pi's `RegisterFauxProviderOptions`, JSON-encoded.",
+          "shape": "ctor",
+          "params": [
+            {
+              "name": "optionsJson",
+              "type": "string"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "setNowMs",
+          "doc": "Set the `now` (epoch milliseconds) the provider reads when stamping the\nempty-queue/aborted message timestamps. The JS shim calls this with\n`Date.now()` before each stream so those timestamps track JS time.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "nowMs",
+              "type": "int64"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setNowMs"
+            }
+          }
+        },
+        {
+          "name": "api",
+          "doc": "The provider's api id (pi's `core.api`).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "api"
+            }
+          }
+        },
+        {
+          "name": "modelsJson",
+          "doc": "The model catalog as a JSON array (pi's `core.models`).",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": true,
+          "params": [],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "modelsJson"
+            }
+          }
+        },
+        {
+          "name": "getModelJson",
+          "doc": "pi's `getModel()`: the model with `id`, or the first model when `id` is\nomitted. Returns `null` when no model matches.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": true,
+          "params": [
+            {
+              "name": "id",
+              "type": {
+                "nullable": "string"
+              }
+            }
+          ],
+          "returns": {
+            "nullable": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "getModelJson"
+            }
+          }
+        },
+        {
+          "name": "bumpCallCount",
+          "doc": "Increment and return the call count (pi's `state.callCount++`). The JS\nshim calls this before resolving a response factory, matching pi's order.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [],
+          "returns": "int64",
+          "bindings": {
+            "node": {
+              "name": "bumpCallCount"
+            }
+          }
+        },
+        {
+          "name": "callCount",
+          "doc": "The current call count without incrementing (pi's `state.callCount`).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [],
+          "returns": "int64",
+          "bindings": {
+            "node": {
+              "name": "callCount"
+            }
+          }
+        },
+        {
+          "name": "streamResolved",
+          "doc": "Stream an already-resolved response message, returning the\n`{ events, message }` result as JSON. The JS shim passes the message it\npopped (or computed from a factory); Rust applies pi's clone + usage\nestimate + delta streaming. `aborted` reproduces the pre-aborted signal\npath (pi's `signal.aborted`).",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": false,
+          "params": [
+            {
+              "name": "modelJson",
+              "type": "string"
+            },
+            {
+              "name": "contextJson",
+              "type": "string"
+            },
+            {
+              "name": "optionsJson",
+              "type": {
+                "nullable": "string"
+              }
+            },
+            {
+              "name": "messageJson",
+              "type": "string"
+            },
+            {
+              "name": "aborted",
+              "type": "boolean"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "streamResolved"
+            }
+          }
+        },
+        {
+          "name": "emptyQueueResult",
+          "doc": "The result pi streams when the response queue is empty (an `error`-stop\nmessage with usage estimated), as JSON.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": false,
+          "params": [
+            {
+              "name": "modelJson",
+              "type": "string"
+            },
+            {
+              "name": "contextJson",
+              "type": "string"
+            },
+            {
+              "name": "optionsJson",
+              "type": {
+                "nullable": "string"
+              }
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "emptyQueueResult"
+            }
+          }
+        }
+      ]
     }
   ]
 }
