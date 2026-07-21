@@ -12,6 +12,9 @@ fn err(e: impl std::fmt::Display) -> napi::Error {
     napi::Error::from_reason(e.to_string())
 }
 
+/// Bulk bytes cross into JS as a Buffer (Arrow IPC payloads and friends).
+pub type Bytes = napi::bindgen_prelude::Buffer;
+
 /// Result of [`slice_with_width`]; serialized to `{ text, width }`.
 #[napi(object)]
 #[derive(Clone)]
@@ -110,6 +113,9 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn has_trust_requiring_project_resources(cwd: String, home_dir: String) -> bool;
     fn fuzzy_match(query: String, text: String) -> FuzzyMatchResult;
     fn fuzzy_filter(texts: Vec<String>, query: String) -> Vec<u32>;
+    fn detect_supported_image_mime_type(
+        buffer: napi::bindgen_prelude::Uint8Array,
+    ) -> Option<String>;
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -448,6 +454,15 @@ pub fn fuzzy_match(query: String, text: String) -> FuzzyMatchResult {
 #[napi(js_name = "fuzzyFilter")]
 pub fn fuzzy_filter(texts: Vec<String>, query: String) -> Vec<u32> {
     <crate::core_impl::PidginImpl as PidginCore>::fuzzy_filter(texts, query)
+}
+
+/// `detectSupportedImageMimeType` (utils/mime.ts): sniff a supported image MIME
+/// type from magic bytes, or `null`.
+#[napi(js_name = "detectSupportedImageMimeType")]
+pub fn detect_supported_image_mime_type(
+    buffer: napi::bindgen_prelude::Uint8Array,
+) -> Option<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::detect_supported_image_mime_type(buffer)
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as

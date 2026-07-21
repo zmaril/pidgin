@@ -185,19 +185,12 @@ pub fn anthropic_parse_sse_stream(
 
 // --- coding-agent utils layer -----------------------------------------------
 //
-// Thin wrappers over `pidgin_coding::utils::*`, backing the hand-written native
-// shims under conformance/shims/packages/coding-agent/src/utils/. Each mirrors
-// the pi export it replaces; the shims re-export the un-ported surface from the
-// preserved pi original and override only these symbols.
-
-/// `detectSupportedImageMimeType` (utils/mime.ts): sniff a supported image MIME
-/// type from magic bytes, or `null`.
-#[napi(js_name = "detectSupportedImageMimeType")]
-pub fn detect_supported_image_mime_type(
-    buffer: napi::bindgen_prelude::Uint8Array,
-) -> Option<String> {
-    pidgin_coding::utils::mime::detect_supported_image_mime_type(&buffer).map(|s| s.to_string())
-}
+// The `detectSupportedImageMimeType` byte-sniffer (utils/mime.ts) now generates
+// from the fluessig api schema through `crate::generated` + `crate::core_impl`,
+// routing into `pidgin_coding::utils::mime`. Its image buffer arg is authored as
+// the fluessig `bytes` scalar (spelled `Uint8Array` in the node `.d.ts`). The
+// hand-written `#[napi]` export that lived here was deleted; edit `schema/api.json`
+// and rerun `regen.sh` instead of re-adding it.
 
 // --- coding-agent http-dispatcher layer -------------------------------------
 //
