@@ -31,6 +31,17 @@ pub struct ExtractSegmentsResult {
     pub after_width: i32,
 }
 
+/// One event emitted by [`StdinBufferCore::process`], mirroring pi's
+/// `"data"` / `"paste"` EventEmitter channels. `kind` is `"data"` for a complete
+/// input sequence (one keypress / escape sequence) or `"paste"` for the body of
+/// a bracketed paste (markers already stripped); `value` is the payload string.
+#[napi(object)]
+#[derive(Clone)]
+pub struct StdinEventJs {
+    pub kind: String,
+    pub value: String,
+}
+
 /// The `Pidgin` contract — implement over the engine in `crate::core_impl`.
 pub trait PidginCore: Sized + Send + Sync + 'static {
     fn version() -> String;
@@ -99,6 +110,15 @@ pub trait FauxCoreCore: Sized + Send + Sync + 'static {
         context_json: String,
         options_json: Option<String>,
     ) -> anyhow::Result<String>;
+}
+
+/// The `StdinBufferCore` contract — implement over the engine in `crate::core_impl`.
+pub trait StdinBufferCoreCore: Sized + Send + Sync + 'static {
+    fn new(timeout_ms: Option<i64>) -> anyhow::Result<Self>;
+    fn process(&self, data: String) -> Vec<StdinEventJs>;
+    fn flush(&self) -> Vec<String>;
+    fn get_buffer(&self) -> String;
+    fn clear(&self) -> ();
 }
 
 /// Returns the crate version. Proves the native addon builds and loads.
@@ -415,5 +435,59 @@ impl FauxCore {
         self.core
             .empty_queue_result(model_json, context_json, options_json)
             .map_err(err)
+    }
+}
+
+/// The Rust-backed stdin splitter, exposed to JavaScript as `StdinBufferCore`.
+///
+/// The JS `StdinBuffer` shim owns one of these, keeps pi's `EventEmitter` surface
+/// and completion timer in TS, and per chunk: converts any `Buffer` to a string,
+/// calls [`StdinBufferCore::process`], and replays the returned events onto the
+/// emitter. All cross-chunk state (buffer, paste mode, pending Kitty codepoint)
+/// lives entirely in the wrapped [`StdinBuffer`].
+#[napi]
+pub struct StdinBufferCore {
+    // pub(crate): the @manual ops in lib.rs extend this class and need the core
+    pub(crate) core: Arc<crate::core_impl::StdinBufferCoreImpl>,
+}
+
+#[napi]
+impl StdinBufferCore {
+    /// Build a buffer. `timeout_ms` mirrors pi's `StdinBufferOptions.timeout`
+    /// (default 10); it is retained for parity — the completion timer itself is
+    /// driven by the JS shim, so this value does not affect native splitting.
+    #[napi(constructor)]
+    pub fn new(timeout_ms: Option<i64>) -> Result<Self> {
+        Ok(Self {
+            core: Arc::new(
+                <crate::core_impl::StdinBufferCoreImpl as StdinBufferCoreCore>::new(timeout_ms)
+                    .map_err(err)?,
+            ),
+        })
+    }
+    /// pi's `StdinBuffer.process`. Accumulate `data`, and return every event the
+    /// buffer produced for this chunk (complete `data` sequences and any
+    /// `paste`), in emission order. The incomplete remainder is retained and can
+    /// be read with [`StdinBufferCore::get_buffer`].
+    #[napi(js_name = "process")]
+    pub fn process(&self, data: String) -> Vec<StdinEventJs> {
+        self.core.process(data)
+    }
+    /// pi's `StdinBuffer.flush`: emit the buffered incomplete remainder verbatim
+    /// as a list of `data` payload strings (empty when nothing is buffered), and
+    /// reset the remainder.
+    #[napi(js_name = "flush")]
+    pub fn flush(&self) -> Vec<String> {
+        self.core.flush()
+    }
+    /// pi's `StdinBuffer.getBuffer`: the currently buffered incomplete remainder.
+    #[napi(js_name = "getBuffer")]
+    pub fn get_buffer(&self) -> String {
+        self.core.get_buffer()
+    }
+    /// pi's `StdinBuffer.clear` / `destroy`: drop all buffered state.
+    #[napi(js_name = "clear")]
+    pub fn clear(&self) -> () {
+        self.core.clear()
     }
 }

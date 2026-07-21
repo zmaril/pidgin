@@ -47,6 +47,22 @@
           "nullable": false
         }
       ]
+    },
+    {
+      "name": "StdinEventJs",
+      "doc": "One event emitted by [`StdinBufferCore::process`], mirroring pi's\n`\"data\"` / `\"paste\"` EventEmitter channels. `kind` is `\"data\"` for a complete\ninput sequence (one keypress / escape sequence) or `\"paste\"` for the body of\na bracketed paste (markers already stripped); `value` is the payload string.",
+      "fields": [
+        {
+          "name": "kind",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "nullable": false
+        }
+      ]
     }
   ],
   "unions": [],
@@ -811,6 +827,93 @@
           "bindings": {
             "node": {
               "name": "emptyQueueResult"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "StdinBufferCore",
+      "doc": "The Rust-backed stdin splitter, exposed to JavaScript as `StdinBufferCore`.\n\nThe JS `StdinBuffer` shim owns one of these, keeps pi's `EventEmitter` surface\nand completion timer in TS, and per chunk: converts any `Buffer` to a string,\ncalls [`StdinBufferCore::process`], and replays the returned events onto the\nemitter. All cross-chunk state (buffer, paste mode, pending Kitty codepoint)\nlives entirely in the wrapped [`StdinBuffer`].",
+      "ops": [
+        {
+          "name": "new",
+          "doc": "Build a buffer. `timeout_ms` mirrors pi's `StdinBufferOptions.timeout`\n(default 10); it is retained for parity — the completion timer itself is\ndriven by the JS shim, so this value does not affect native splitting.",
+          "shape": "ctor",
+          "params": [
+            {
+              "name": "timeoutMs",
+              "type": {
+                "nullable": "int64"
+              }
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "process",
+          "doc": "pi's `StdinBuffer.process`. Accumulate `data`, and return every event the\nbuffer produced for this chunk (complete `data` sequences and any\n`paste`), in emission order. The incomplete remainder is retained and can\nbe read with [`StdinBufferCore::get_buffer`].",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "data",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "list": {
+              "model": "StdinEventJs"
+            }
+          },
+          "bindings": {
+            "node": {
+              "name": "process"
+            }
+          }
+        },
+        {
+          "name": "flush",
+          "doc": "pi's `StdinBuffer.flush`: emit the buffered incomplete remainder verbatim\nas a list of `data` payload strings (empty when nothing is buffered), and\nreset the remainder.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [],
+          "returns": {
+            "list": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "flush"
+            }
+          }
+        },
+        {
+          "name": "getBuffer",
+          "doc": "pi's `StdinBuffer.getBuffer`: the currently buffered incomplete remainder.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "getBuffer"
+            }
+          }
+        },
+        {
+          "name": "clear",
+          "doc": "pi's `StdinBuffer.clear` / `destroy`: drop all buffered state.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "clear"
             }
           }
         }
