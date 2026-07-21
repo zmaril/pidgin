@@ -26,12 +26,14 @@ use std::sync::Arc;
 
 use crate::api::openai_responses::driver;
 use crate::api::openai_responses::OpenAIResponsesOptions;
+use crate::providers::clamp_thinking_level;
 use crate::seams::clock::Clock;
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
 use crate::types::{
-    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, OpenAIResponsesCompat,
-    StopReason, StreamOptions, Usage, UsageCost,
+    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
+    OpenAIResponsesCompat, SimpleStreamOptions, StopReason, StreamOptions, ThinkingLevel, Usage,
+    UsageCost,
 };
 use crate::utils::sse::AssistantEventReader;
 
@@ -112,6 +114,48 @@ fn responses_options(options: Option<&StreamOptions>) -> OpenAIResponsesOptions 
     }
 }
 
+/// Compute the Responses `reasoningEffort` string from the requested reasoning
+/// level, mirroring pi's `streamSimple` (`openai-responses.ts:182-183`):
+/// `clampedReasoning = reasoning ? clampThinkingLevel(model, reasoning) :
+/// undefined`, then `reasoningEffort = clampedReasoning === "off" ? undefined :
+/// clampedReasoning`. Returns `None` when no level is requested or the clamp lands
+/// on `off`, so the driver applies its off-model fallback branch.
+fn reasoning_effort<C>(model: &Model<C>, reasoning: Option<ThinkingLevel>) -> Option<String> {
+    let clamped = clamp_thinking_level(model, to_model_thinking_level(reasoning?));
+    if clamped == ModelThinkingLevel::Off {
+        return None;
+    }
+    Some(model_thinking_level_str(clamped).to_string())
+}
+
+/// Widen a caller's [`ThinkingLevel`] to the model-level [`ModelThinkingLevel`]
+/// the clamp expects (pi's `SimpleStreamOptions.reasoning`, which extends the base
+/// ladder with `off`; a requested level is never `off`).
+fn to_model_thinking_level(level: ThinkingLevel) -> ModelThinkingLevel {
+    match level {
+        ThinkingLevel::Minimal => ModelThinkingLevel::Minimal,
+        ThinkingLevel::Low => ModelThinkingLevel::Low,
+        ThinkingLevel::Medium => ModelThinkingLevel::Medium,
+        ThinkingLevel::High => ModelThinkingLevel::High,
+        ThinkingLevel::Xhigh => ModelThinkingLevel::Xhigh,
+        ThinkingLevel::Max => ModelThinkingLevel::Max,
+    }
+}
+
+/// The lowercase effort string the driver's `buildParams` reads (pi passes the
+/// clamped level verbatim as `reasoningEffort`).
+fn model_thinking_level_str(level: ModelThinkingLevel) -> &'static str {
+    match level {
+        ModelThinkingLevel::Off => "off",
+        ModelThinkingLevel::Minimal => "minimal",
+        ModelThinkingLevel::Low => "low",
+        ModelThinkingLevel::Medium => "medium",
+        ModelThinkingLevel::High => "high",
+        ModelThinkingLevel::Xhigh => "xhigh",
+        ModelThinkingLevel::Max => "max",
+    }
+}
+
 impl Provider for OpenAIResponsesBackend {
     fn api(&self) -> &str {
         OPENAI_RESPONSES_API
@@ -133,6 +177,54 @@ impl Provider for OpenAIResponsesBackend {
         // The buffered driver performs a single synchronous request with no
         // in-flight window to observe an abort against; `signal` is accepted for
         // seam parity and left unobserved here (matching the sibling backends).
+        let timestamp = self.clock.now_ms();
+        driver::stream(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            &responses_options,
+            timestamp,
+        )
+    }
+
+    /// Route the simple, level-based options through the Responses driver so
+    /// `reasoning` reaches the request as `reasoning={effort,summary}` +
+    /// `include:["reasoning.encrypted_content"]`, mirroring pi's `streamSimple`
+    /// (`openai-responses.ts:174-189`).
+    ///
+    /// pi's `streamSimple` clamps the requested level to a supported one and drops
+    /// `"off"` (`reasoningEffort = clampedReasoning === "off" ? undefined :
+    /// clampedReasoning`), then passes `{ ...base, reasoningEffort }` to `stream`.
+    /// The `reasoning`/`include`/off-model-fallback shaping — including the xai
+    /// `include`-always branch — lives in the already-ported driver `buildParams`
+    /// (`openai_responses.rs:244-275`), which mirrors `openai-responses.ts:270-286`.
+    ///
+    /// When no `reasoning` level is requested, this falls back to the raw
+    /// [`stream`](Self::stream) on the base options, so the outgoing request is
+    /// byte-identical to the pre-seam path.
+    fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        // No reasoning: keep the raw request unchanged (map None -> base options).
+        let simple = match options {
+            Some(simple) if simple.reasoning.is_some() => simple,
+            other => return self.stream(model, context, other.map(|o| &o.base), signal),
+        };
+
+        let typed_model = match self.typed_model(model, Some(&simple.base)) {
+            Ok(typed_model) => typed_model,
+            Err(message) => return error_result(model, self.clock.now_ms(), message),
+        };
+
+        // pi `openai-responses.ts:182-183`: clamp the requested level to a supported
+        // one, then drop "off" so the driver's off-model fallback branch applies.
+        let mut responses_options = responses_options(Some(&simple.base));
+        responses_options.reasoning_effort = reasoning_effort(&typed_model, simple.reasoning);
+
         let timestamp = self.clock.now_ms();
         driver::stream(
             self.transport.as_ref(),
@@ -280,6 +372,25 @@ mod tests {
             "provider": "openai",
             "baseUrl": base_url,
             "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 400000,
+            "maxTokens": 128000,
+        }))
+        .unwrap()
+    }
+
+    /// A reasoning-enabled openai-responses `Model<Value>` for `provider`. With no
+    /// `thinkingLevelMap` every base level (minimal/low/medium/high) is supported,
+    /// so `clampThinkingLevel(high)` is `high`.
+    fn reasoning_model(base_url: &str, provider: &str) -> Model {
+        serde_json::from_value(json!({
+            "id": "gpt-5",
+            "name": "GPT-5",
+            "api": "openai-responses",
+            "provider": provider,
+            "baseUrl": base_url,
+            "reasoning": true,
             "input": ["text"],
             "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
             "contextWindow": 400000,
@@ -498,6 +609,125 @@ mod tests {
             AssistantMessageEvent::Error { .. }
         ));
         assert!(scripted.requests().is_empty());
+    }
+
+    // stream_simple with a reasoning level lowers `reasoning={effort,summary:"auto"}`
+    // + `include:["reasoning.encrypted_content"]` into the request body, per pi's
+    // `streamSimple` (`openai-responses.ts:182-183`) + `buildParams`
+    // (`openai-responses.ts:270-286`). `high` clamps to `high` on this model.
+    #[test]
+    fn stream_simple_lowers_reasoning_effort_and_include() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAIResponsesBackend::new(transport, fake_clock());
+
+        let model = reasoning_model("https://api.openai.test/v1", "openai");
+        let options = SimpleStreamOptions {
+            base: StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            reasoning: Some(ThinkingLevel::High),
+            ..SimpleStreamOptions::default()
+        };
+        backend.stream_simple(&model, &user_context(), Some(&options), None);
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            body.get("reasoning"),
+            Some(&json!({ "effort": "high", "summary": "auto" }))
+        );
+        assert_eq!(
+            body.get("include"),
+            Some(&json!(["reasoning.encrypted_content"]))
+        );
+    }
+
+    // On the `xai` provider, `buildParams` always adds the encrypted-content
+    // `include` (`openai-responses.ts:285`); the lowered reasoning block carries it
+    // through. This is the branch azure deliberately does NOT have.
+    #[test]
+    fn stream_simple_xai_always_includes_encrypted_content() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAIResponsesBackend::new(transport, fake_clock());
+
+        let model = reasoning_model("https://api.x.test/v1", "xai");
+        let options = SimpleStreamOptions {
+            base: StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            reasoning: Some(ThinkingLevel::Medium),
+            ..SimpleStreamOptions::default()
+        };
+        backend.stream_simple(&model, &user_context(), Some(&options), None);
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            body.get("reasoning"),
+            Some(&json!({ "effort": "medium", "summary": "auto" }))
+        );
+        assert_eq!(
+            body.get("include"),
+            Some(&json!(["reasoning.encrypted_content"]))
+        );
+    }
+
+    // No reasoning requested falls to the driver's off-model fallback branch
+    // (`reasoning={effort: map.off ?? "none"}`, `openai-responses.ts:280-283`): the
+    // effort is `"none"` (no `off` map entry) and no `include` is emitted.
+    #[test]
+    fn stream_simple_without_reasoning_uses_off_fallback() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAIResponsesBackend::new(transport, fake_clock());
+
+        let model = reasoning_model("https://api.openai.test/v1", "openai");
+        let options = SimpleStreamOptions {
+            base: StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            reasoning: None,
+            ..SimpleStreamOptions::default()
+        };
+        backend.stream_simple(&model, &user_context(), Some(&options), None);
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body.get("reasoning"), Some(&json!({ "effort": "none" })));
+        assert!(body.get("include").is_none());
+    }
+
+    // With no reasoning, stream_simple produces a request byte-identical to the raw
+    // stream on the base options (the compatibility default's guarantee, preserved
+    // by the override's None short-circuit).
+    #[test]
+    fn stream_simple_without_reasoning_matches_raw_stream() {
+        let (scripted_simple, transport_simple) = scripted_hello();
+        let backend_simple = OpenAIResponsesBackend::new(transport_simple, fake_clock());
+        let model = openai_model("https://api.openai.test/v1");
+        let base = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            temperature: Some(0.3),
+            max_tokens: Some(2048),
+            ..StreamOptions::default()
+        };
+        let simple = SimpleStreamOptions {
+            base: base.clone(),
+            reasoning: None,
+            ..SimpleStreamOptions::default()
+        };
+        backend_simple.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let (scripted_raw, transport_raw) = scripted_hello();
+        let backend_raw = OpenAIResponsesBackend::new(transport_raw, fake_clock());
+        backend_raw.stream(&model, &user_context(), Some(&base), None);
+
+        assert_eq!(
+            scripted_simple.requests()[0].body,
+            scripted_raw.requests()[0].body
+        );
     }
 }
 
