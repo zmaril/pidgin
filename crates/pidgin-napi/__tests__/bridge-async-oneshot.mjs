@@ -1,13 +1,16 @@
 // straitjacket-allow-file:duplication
 //
-// This proof harness mirrors the `agent-bridge-primitive.mjs` envelope-protocol
-// scaffold (the `drive` dispatcher + `assert`/`assertEq` helpers + per-condition
-// test shape) on purpose, exactly as the sibling `agent-bridge-{loop,tools,
-// hooks}.mjs` harnesses do (which carry the same bare marker); keeping each
-// harness self-contained reads better than a shared helper module, at the cost
-// of this intentional mirror duplication.
-//
 // Async-oneshot bridge — PROOF HARNESS: the `call_async` variant, in isolation.
+//
+// The `drive` dispatcher plus the `assert`/`assertEq`/`getFailures`/`sleep`
+// helpers come from the shared `./_harness.mjs` (the same scaffold every
+// `agent-bridge-*.mjs` slice imports), so this file does not re-inline them.
+// `AsyncBridge` is loaded from `../index.js` here (the shared harness only
+// exports `AgentBridge`); that tiny `require` prologue is the one fragment this
+// file shares with `_harness.mjs`, and `_harness.mjs` carries the allow-file
+// marker as the clone root, so it stays suppressed. The marker on THIS file
+// guards the residual per-condition test-body mirror it shares with
+// `agent-bridge-primitive.mjs` (both prove the same A–G conditions).
 //
 // Proves the NonBlocking-TSFN + tokio::sync::oneshot round-trip works from a
 // dedicated off-Node worker thread running a fresh current-thread tokio runtime,
@@ -32,69 +35,24 @@
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { assert, assertEq, getFailures, runBridge, sleep } from "./_harness.mjs";
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
 const { AsyncBridge } = require(join(here, "..", "index.js"));
 
-let failures = 0;
-function assert(cond, msg) {
-  if (cond) {
-    console.log(`  ok - ${msg}`);
-  } else {
-    failures += 1;
-    console.log(`  NOT OK - ${msg}`);
-  }
-}
-function assertEq(actual, expected, msg) {
-  assert(
-    JSON.stringify(actual) === JSON.stringify(expected),
-    `${msg} (got ${JSON.stringify(actual)}, want ${JSON.stringify(expected)})`,
-  );
-}
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// A dispatcher factory mirroring the JS side of the envelope protocol: parse the
-// envelope, route by `kind` to a handler, then resolve the awaiting Rust id
-// through the bridge (success -> resolveBridge, throw/reject -> resolveBridgeError).
-// On the terminal `__complete__` envelope it resolves the returned Promise.
-// A handler that returns `undefined` is assumed to have resolved (or deferred)
-// the id itself, so `drive` does not double-resolve it.
+// A dispatcher factory mirroring the JS side of the envelope protocol: routes
+// each envelope by `kind` to a handler from the `handlers` map (called as
+// `handler(payload, id, bridge)`), so a handler may resolve the awaiting Rust id
+// itself and return `undefined`. The envelope parsing, `__complete__` handling,
+// and resolve/error plumbing live in the shared harness (`runBridge`).
 function drive(bridge, spawn, handlers) {
-  return new Promise((resolve, reject) => {
-    const dispatcher = (envelopeJson) => {
-      let env;
-      try {
-        env = JSON.parse(envelopeJson);
-      } catch (e) {
-        reject(e);
-        return;
-      }
-      const { id, kind, payload } = env;
-      if (kind === "__complete__") {
-        bridge.join(); // reap the worker thread before we let the process settle
-        resolve(payload);
-        return;
-      }
+  return runBridge(bridge, spawn, {
+    handle: (kind, payload, id) => {
       const handler = handlers[kind];
-      if (!handler) {
-        bridge.resolveBridgeError(id, JSON.stringify({ __bridge_error: `no handler for ${kind}` }));
-        return;
-      }
-      Promise.resolve()
-        .then(() => handler(payload, id, bridge))
-        .then((result) => {
-          if (result !== undefined) bridge.resolveBridge(id, JSON.stringify(result));
-        })
-        .catch((e) =>
-          bridge.resolveBridgeError(
-            id,
-            JSON.stringify({ __bridge_error: String(e?.message ?? e) }),
-          ),
-        );
-    };
-    spawn(dispatcher);
+      if (!handler) throw new Error(`no handler for ${kind}`);
+      return handler(payload, id, bridge);
+    },
   });
 }
 
@@ -289,10 +247,10 @@ async function main() {
   await testFileMutationQueueFlip();
 
   console.log("");
-  if (failures === 0) {
+  if (getFailures() === 0) {
     console.log("ASYNC-ONESHOT BRIDGE: ALL PROOF CHECKS PASSED");
   } else {
-    console.log(`ASYNC-ONESHOT BRIDGE: ${failures} CHECK(S) FAILED`);
+    console.log(`ASYNC-ONESHOT BRIDGE: ${getFailures()} CHECK(S) FAILED`);
     process.exitCode = 1;
   }
   // No explicit process.exit(): if the worker thread / tokio runtime / TSFN clone
