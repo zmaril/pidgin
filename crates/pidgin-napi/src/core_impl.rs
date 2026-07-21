@@ -931,3 +931,75 @@ impl crate::generated::StdinBufferCoreCore for StdinBufferCoreImpl {
         self.inner.lock().unwrap().clear();
     }
 }
+
+use crate::generated::InputEvent;
+
+/// Internal per-call event cell for [`InputCoreImpl`]. pi's `Input` fires
+/// `onSubmit`/`onEscape` synchronously during `handleInput`; the core cannot
+/// call JS closures, so the wired seams record any submit/escape that fired into
+/// this cell and `handle_input` drains it into an [`InputEvent`] for the shim to
+/// replay.
+#[derive(Default)]
+struct InputEventState {
+    submit: Option<String>,
+    escape: bool,
+}
+
+/// The engine-backed implementation of the generated `InputCore` contract.
+///
+/// Authored `#[fluessig(single_threaded)]`, so the generated handle holds this
+/// core THREAD-CONFINED in a `RefCell<InputCoreImpl>` — no `Arc`, no
+/// `Send`/`Sync` — which is exactly what lets a `!Send` core compile: it owns
+/// pi's `Input` (whose `on_submit`/`on_escape` are non-`Send` boxed closures)
+/// plus an `Rc<RefCell<…>>` event cell captured by those closures. Every op is
+/// `&mut self`, reached from the handle through `RefCell::borrow_mut()`, so the
+/// JS-visible behavior is byte-for-byte unchanged from the pre-swap hand-written
+/// class.
+pub struct InputCoreImpl {
+    inner: pidgin_tui::Input,
+    events: std::rc::Rc<std::cell::RefCell<InputEventState>>,
+}
+
+impl crate::generated::InputCoreCore for InputCoreImpl {
+    fn new() -> anyhow::Result<Self> {
+        let events = std::rc::Rc::new(std::cell::RefCell::new(InputEventState::default()));
+        let mut inner = pidgin_tui::Input::new();
+        {
+            let ev = events.clone();
+            inner.on_submit = Some(Box::new(move |value| {
+                ev.borrow_mut().submit = Some(value);
+            }));
+            let ev = events.clone();
+            inner.on_escape = Some(Box::new(move || {
+                ev.borrow_mut().escape = true;
+            }));
+        }
+        Ok(Self { inner, events })
+    }
+
+    fn get_value(&mut self) -> String {
+        self.inner.get_value()
+    }
+
+    fn set_value(&mut self, value: String) {
+        self.inner.set_value(&value);
+    }
+
+    fn set_focused(&mut self, focused: bool) {
+        self.inner.focused = focused;
+    }
+
+    fn handle_input(&mut self, data: String) -> InputEvent {
+        *self.events.borrow_mut() = InputEventState::default();
+        self.inner.handle_input_str(&data);
+        let ev = self.events.borrow();
+        InputEvent {
+            submit: ev.submit.clone(),
+            escape: ev.escape,
+        }
+    }
+
+    fn render(&mut self, width: u32) -> Vec<String> {
+        self.inner.render_lines(width as usize)
+    }
+}

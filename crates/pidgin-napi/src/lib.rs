@@ -866,99 +866,16 @@ pub fn markdown_render(source: String, width: u32) -> Vec<String> {
 
 // --- tui input layer (packages/tui/src/components/input.ts) -----------------
 //
-// A stateful `#[napi]` class wrapping `pidgin_tui::Input`. The hand-written
-// `input.ts` shim re-implements pi's `Input` class, keeping `onSubmit`/
-// `onEscape` as JS callbacks and the `focused` accessor as JS, and routing the
-// editing/render logic through this core. pi's `handleInput` fires `onSubmit`/
-// `onEscape` synchronously; the core cannot call JS closures, so instead it
-// records any submit/escape that fired during a `handleInput` call and returns
-// it as an [`InputEvent`], which the shim replays onto the JS callbacks. Value
-// and cursor arithmetic is UTF-16 on both sides (as in pi).
-
-/// Event surfaced by [`InputCore::handle_input`] so the JS shim can fire pi's
-/// `onSubmit`/`onEscape` callbacks. `submit` is the submitted value (pi passes
-/// the current value) or `null` when no submit fired; `escape` is `true` when a
-/// cancel/escape fired.
-#[napi(object)]
-pub struct InputEvent {
-    pub submit: Option<String>,
-    pub escape: bool,
-}
-
-#[derive(Default)]
-struct InputEventState {
-    submit: Option<String>,
-    escape: bool,
-}
-
-/// The Rust-backed single-line input core, exposed to JavaScript as
-/// `InputCore`.
-#[napi(js_name = "InputCore")]
-pub struct InputCore {
-    inner: pidgin_tui::Input,
-    events: std::rc::Rc<std::cell::RefCell<InputEventState>>,
-}
-
-#[napi]
-impl InputCore {
-    /// Create an empty input core, wiring pi's `onSubmit`/`onEscape` seams to a
-    /// shared event cell that `handle_input` drains after each call.
-    #[napi(constructor)]
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
-        let events = std::rc::Rc::new(std::cell::RefCell::new(InputEventState::default()));
-        let mut inner = pidgin_tui::Input::new();
-        {
-            let ev = events.clone();
-            inner.on_submit = Some(Box::new(move |value| {
-                ev.borrow_mut().submit = Some(value);
-            }));
-            let ev = events.clone();
-            inner.on_escape = Some(Box::new(move || {
-                ev.borrow_mut().escape = true;
-            }));
-        }
-        Self { inner, events }
-    }
-
-    /// pi's `getValue()`: the current value.
-    #[napi(js_name = "getValue")]
-    pub fn get_value(&self) -> String {
-        self.inner.get_value()
-    }
-
-    /// pi's `setValue(value)`: set the value, clamping the cursor.
-    #[napi(js_name = "setValue")]
-    pub fn set_value(&mut self, value: String) {
-        self.inner.set_value(&value);
-    }
-
-    /// pi's `focused` field setter — routed here because render reads it.
-    #[napi(js_name = "setFocused")]
-    pub fn set_focused(&mut self, focused: bool) {
-        self.inner.focused = focused;
-    }
-
-    /// pi's `handleInput(data)`: process a chunk of terminal input, returning any
-    /// `onSubmit`/`onEscape` that fired so the shim can replay it onto the JS
-    /// callbacks.
-    #[napi(js_name = "handleInput")]
-    pub fn handle_input(&mut self, data: String) -> InputEvent {
-        *self.events.borrow_mut() = InputEventState::default();
-        self.inner.handle_input_str(&data);
-        let ev = self.events.borrow();
-        InputEvent {
-            submit: ev.submit.clone(),
-            escape: ev.escape,
-        }
-    }
-
-    /// pi's `render(width)`: render the input to a single line.
-    #[napi(js_name = "render")]
-    pub fn render(&self, width: u32) -> Vec<String> {
-        self.inner.render_lines(width as usize)
-    }
-}
+// The single-line `Input` component (`InputCore`) now GENERATES from the
+// fluessig api schema through `crate::generated` + `crate::core_impl` (the
+// `InputCoreImpl` engine seam). It is authored `#[fluessig(single_threaded)]`,
+// so the generated handle holds the `!Send` core (pi's `Rc<RefCell<…>>` event
+// cell plus non-`Send` `onSubmit`/`onEscape` closures) THREAD-CONFINED in a
+// `RefCell<Impl>` — no `Arc`, no `Send`/`Sync` bound — rather than the default
+// `Arc<Impl>` handle a `Send` core would use. The JS `input.ts` shim keeps
+// `onSubmit`/`onEscape` as JS callbacks and the `focused` accessor as JS, and
+// replays the [`InputEvent`] the core returns from `handleInput` onto them —
+// unchanged by the swap. See src/generated.rs and schema/api.json. Additive.
 
 // --- tui select-list layer (packages/tui/src/components/select-list.ts) -----
 //

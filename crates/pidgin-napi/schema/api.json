@@ -100,6 +100,22 @@
           "nullable": false
         }
       ]
+    },
+    {
+      "name": "InputEvent",
+      "doc": "Event surfaced by [`InputCore::handle_input`] so the JS shim can fire pi's\n`onSubmit`/`onEscape` callbacks. `submit` is the submitted value (pi passes\nthe current value) or `null` when no submit fired; `escape` is `true` when a\ncancel/escape fired.",
+      "fields": [
+        {
+          "name": "submit",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "escape",
+          "type": "boolean",
+          "nullable": false
+        }
+      ]
     }
   ],
   "unions": [],
@@ -1375,6 +1391,114 @@
           "bindings": {
             "node": {
               "name": "clear"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "InputCore",
+      "doc": "The Rust-backed single-line input core, exposed to JavaScript as\n`InputCore`.",
+      "single_threaded": true,
+      "ops": [
+        {
+          "name": "new",
+          "doc": "Create an empty input core, wiring pi's `onSubmit`/`onEscape` seams to a\nshared event cell that `handle_input` drains after each call.",
+          "shape": "ctor",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "getValue",
+          "doc": "pi's `getValue()`: the current value.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "getValue"
+            }
+          }
+        },
+        {
+          "name": "setValue",
+          "doc": "pi's `setValue(value)`: set the value, clamping the cursor.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "value",
+              "type": "string"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setValue"
+            }
+          }
+        },
+        {
+          "name": "setFocused",
+          "doc": "pi's `focused` field setter — routed here because render reads it.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "focused",
+              "type": "boolean"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setFocused"
+            }
+          }
+        },
+        {
+          "name": "handleInput",
+          "doc": "pi's `handleInput(data)`: process a chunk of terminal input, returning any\n`onSubmit`/`onEscape` that fired so the shim can replay it onto the JS\ncallbacks.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "data",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "model": "InputEvent"
+          },
+          "bindings": {
+            "node": {
+              "name": "handleInput"
+            }
+          }
+        },
+        {
+          "name": "render",
+          "doc": "pi's `render(width)`: render the input to a single line.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "width",
+              "type": "uint32"
+            }
+          ],
+          "returns": {
+            "list": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "render"
             }
           }
         }
