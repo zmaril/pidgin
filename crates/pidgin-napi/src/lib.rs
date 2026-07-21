@@ -235,40 +235,12 @@ pub fn extract_segments(
 
 // --- tui key layer (packages/tui/src/keys.ts) ------------------------------
 //
-// Thin wrappers over `pidgin_tui::keys`, backing the native `keys.ts` shim.
-// The kitty-protocol flag lives in a Rust static, so overriding `parseKey`,
-// the decoders, and `setKittyProtocolActive` together keeps the read/write
-// pair consistent within the single addon instance.
-
-/// `parseKey` (keys.ts): decode a raw key sequence to its canonical id.
-#[napi(js_name = "parseKey")]
-pub fn parse_key(data: String) -> Option<String> {
-    pidgin_tui::parse_key(&data)
-}
-
-/// `matchesKey` (keys.ts): does `data` decode to `key_id`?
-#[napi(js_name = "matchesKey")]
-pub fn matches_key(data: String, key_id: String) -> bool {
-    pidgin_tui::matches_key(&data, &key_id)
-}
-
-/// `decodeKittyPrintable` (keys.ts): printable char from a kitty sequence.
-#[napi(js_name = "decodeKittyPrintable")]
-pub fn decode_kitty_printable(data: String) -> Option<String> {
-    pidgin_tui::decode_kitty_printable(&data)
-}
-
-/// `decodePrintableKey` (keys.ts): printable char from a key sequence.
-#[napi(js_name = "decodePrintableKey")]
-pub fn decode_printable_key(data: String) -> Option<String> {
-    pidgin_tui::decode_printable_key(&data)
-}
-
-/// `setKittyProtocolActive` (keys.ts): toggle kitty-protocol decoding.
-#[napi(js_name = "setKittyProtocolActive")]
-pub fn set_kitty_protocol_active(active: bool) {
-    pidgin_tui::set_kitty_protocol_active(active);
-}
+// MODULE 3 (keys): the five key ops (`parseKey`, `matchesKey`,
+// `decodeKittyPrintable`, `decodePrintableKey`, and `setKittyProtocolActive`)
+// now generate from the fluessig api schema through `crate::generated` +
+// `crate::core_impl`, routing into `pidgin_tui::keys`. The hand-written `#[napi]`
+// exports that lived here were deleted; edit `schema/api.json` and rerun
+// `regen.sh` instead of re-adding them.
 
 // --- coding-agent utils layer -----------------------------------------------
 //
