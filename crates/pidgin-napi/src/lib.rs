@@ -88,6 +88,9 @@ pub mod session_cwd;
 // Coding-agent `utils/paths.ts` helpers, native. `pub mod`: free-fn dead-code.
 pub mod coding_paths;
 
+// Experimental-flag gate (`areExperimentalFeaturesEnabled`, read live via `std::env::var`); see the module doc. Additive; `pub` so the free `#[napi]` fn isn't dead under `--test`.
+pub mod core_experimental;
+
 // The tui autocomplete provider (`AutocompleteCore`): wraps pi's
 // `CombinedAutocompleteProvider` over a native `FileProvider` (std::fs + real
 // `fd`), backing the native `autocomplete.ts` shim. Additive.
