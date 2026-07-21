@@ -1,5 +1,3 @@
-# straitjacket-allow-file[:duplication] — the checkout/toolchain/cache setup
-# necessarily mirrors ci.yml; Actions YAML has no include mechanism for it.
 #
 # PHP binding workflow. Builds the ext-php-rs cdylib and proves it loads in PHP
 # and returns the real pidgin-core version (bindings/php/test.sh). The PHP

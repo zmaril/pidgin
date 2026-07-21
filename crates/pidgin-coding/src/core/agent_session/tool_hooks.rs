@@ -13,8 +13,6 @@
 //! hook alias types. They capture only `Arc` handles (the runner and the two
 //! system-prompt cells) — never the `!Send` [`AgentSession`] itself.
 
-// straitjacket-allow-file:duplication
-
 use std::sync::{Arc, Mutex};
 
 use serde_json::Value;

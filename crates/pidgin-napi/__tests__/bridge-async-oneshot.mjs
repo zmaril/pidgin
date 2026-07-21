@@ -1,4 +1,3 @@
-// straitjacket-allow-file:duplication
 //
 // Async-oneshot bridge — PROOF HARNESS: the `call_async` variant, in isolation.
 //

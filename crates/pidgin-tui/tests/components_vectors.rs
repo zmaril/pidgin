@@ -1,7 +1,3 @@
-// straitjacket-allow-file:duplication — the `load()` vector-reading helper is
-// intentionally the same two-line boilerplate as in width_vectors.rs /
-// keys_vectors.rs; each integration-test binary is standalone and cannot share
-// a private helper without a common module, more indirection than it warrants.
 //! Drives the Rust port of pi's TUI component support layer (fuzzy, word
 //! navigation, word segmentation, kill ring, undo stack, keybindings, and the
 //! util gaps) against vectors extracted from pi itself

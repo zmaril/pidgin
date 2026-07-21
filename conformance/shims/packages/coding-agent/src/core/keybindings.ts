@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication — the private `loadRawConfig` /
-// `toKeybindingsConfig` glue and the `KeybindingsManager` overrides below mirror
-// pi's originals line for line, because those symbols are file-private in pi and
-// cannot be re-exported; the shim must rebuild them around the native default
-// table and migration, so the structural overlap is intentional.
 //
 // Native shim for packages/coding-agent/src/core/keybindings.ts, backed by the
 // pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when

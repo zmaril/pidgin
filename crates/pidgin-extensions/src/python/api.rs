@@ -16,11 +16,6 @@
 //! camelCase JS names become snake_case, matching pidgin's byte-identical binding
 //! convention across host languages.
 
-// straitjacket-allow-file:duplication -- each registration method is deliberate
-// parallel structure (lock the shared collection, build one record, stash the live
-// callable), mirroring the deno `api_ops` register-op block once per `pi` method;
-// it is mirror duplication of the shared `pi` surface, not an accident to hoist.
-
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 

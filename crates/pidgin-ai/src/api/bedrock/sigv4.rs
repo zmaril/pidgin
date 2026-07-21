@@ -1,9 +1,3 @@
-// straitjacket-allow-file:duplication — the per-encoding helpers and the
-// canonical-request assembly repeat the same small byte/hex/HMAC shapes that
-// AWS SigV4 canonicalization is defined in terms of; the clone detector reads
-// the repeated `%XX`/HMAC-chain scaffolding as duplicative, but keeping each
-// step spelled out verbatim mirrors the SDK's `@smithy/signature-v4` structure
-// and is load-bearing for the signature, so the repetition is intentional.
 //! AWS Signature Version 4 request signing for the Amazon Bedrock
 //! non-bearer-token credentials path.
 //!

@@ -1,9 +1,3 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// message/content conversion: `convertMessages`, `convertContentBlocks`,
-// `convertToolResult`, and `normalizeToolCallId` (`api/anthropic-messages.ts`).
-// The per-role and per-block arms are walls of near-identical branch/serde
-// shaping by design; the clone detector reads them as duplicates, but factoring
-// them would distort the byte-faithful port, so the repetition is intentional.
 //! Message and content-block conversion into the Anthropic Messages request
 //! shape, ported from pi-ai's `packages/ai/src/api/anthropic-messages.ts` at
 //! pinned commit `3da591ab`. The cross-model normalization that precedes it

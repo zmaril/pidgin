@@ -7,8 +7,6 @@
 //! out of the leading position so exact provider-prefixed queries rank ahead of
 //! proxy-provider ids.
 
-// straitjacket-allow-file:duplication
-
 /// The minimal model shape the search-text builders consume.
 ///
 /// Mirrors pi's local `ModelSearchItem` interface (`{ id, provider, name? }`)

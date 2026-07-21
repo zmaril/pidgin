@@ -1,9 +1,3 @@
-// straitjacket-allow-file:duplication — the HYBRID `resolveReadPath` below is a
-// faithful line-by-line mirror of pi's original fallback ladder (resolved →
-// AM/PM → NFD → curly → NFD+curly), because the Rust port takes an injected
-// `exists` closure instead of touching the filesystem; the shim must rebuild
-// pi's sync `accessSync` probe over that ordering, so the structural overlap
-// with the preserved pi original is intentional and load-bearing.
 //
 // Native shim for packages/coding-agent/src/core/tools/path-utils.ts, backed by
 // the pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs

@@ -20,10 +20,6 @@
 //! offline faux demo never emits, and depend on the unported `CountdownTimer` and
 //! `keyText` helpers. They land with the `AgentSessionEvent` seam.
 
-// straitjacket-allow-file:duplication — faithful mirror of pi's
-// `StatusIndicator` / `WorkingStatusIndicator` / `IdleStatus`; the loader
-// subclassing shape is reproduced over the ported `pidgin_tui` Loader.
-
 use pidgin_tui::renderer::Component;
 use pidgin_tui::widgets::loader::{ColorFn, Loader, LoaderIndicatorOptions};
 

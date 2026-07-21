@@ -1,7 +1,3 @@
-// straitjacket-allow-file:duplication — the OSC-133 zone-wrapping `render()`
-// override is a faithful mirror of pi's identical override in
-// `assistant-message.ts` (both components carry the same block); the
-// duplication is intentional and matches upstream.
 //! `UserMessage` — renders a user message.
 //!
 //! Byte-exact port of pi's `modes/interactive/components/user-message.ts`

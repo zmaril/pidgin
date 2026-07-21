@@ -1,9 +1,3 @@
-// straitjacket-allow-file:duplication -- the spawn/load/inventory-assert/invoke
-// shape mirrors the sibling deno acceptance tests (deno_pi_runtime_shim.rs,
-// deno_typebox_module_loader.rs, deno_pirate_extension.rs) by design: they all
-// drive the same plane entrypoints over a vendored upstream file. The parallel
-// structure is intentional.
-
 //! Acceptance test proving the pi-tui RENDER-STUB shim (plus the pi-ai /
 //! pi-coding-agent shims and the typebox module loader) lets a REAL upstream pi
 //! tool extension whose display hook imports a pi-tui UI component LOAD, register,

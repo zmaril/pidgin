@@ -23,8 +23,6 @@
 //! agent-backed reads/controls, the idle / pending / trust / system-prompt reads —
 //! are wired faithfully.
 
-// straitjacket-allow-file:duplication
-
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};

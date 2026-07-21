@@ -3,8 +3,6 @@
 //! bridge but cannot run the deno runner that would call it end-to-end), plus a
 //! `bind_extensions` wiring check through the test runner.
 
-// straitjacket-allow-file:duplication
-
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 

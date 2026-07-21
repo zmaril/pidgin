@@ -1,5 +1,3 @@
-// straitjacket-allow-file:duplication — this ESM resolve hook is standalone
-// harness glue for the vector generator; it does not mirror product code.
 //
 // Node ESM resolve hook for `generate_interactive_messages.mjs`. pi's
 // coding-agent components import the pi packages by name

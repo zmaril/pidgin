@@ -1,11 +1,3 @@
-// straitjacket-allow-file:duplication — a faithful transcription of pi's
-// `openai-responses.ts` `createClient` + `stream` request assembly and pre-start
-// error surfacing. Its shape deliberately mirrors the openai-completions and
-// anthropic `driver.rs` pairs (the same empty-`AssistantMessage` error shell, the
-// same only-when-absent Bearer/content-type SDK-default seam, the same
-// `format_api_error` body pass-through, the same streaming-native
-// `stream_streaming`); the clone detector reads that mirrored scaffolding as
-// duplication by design.
 //! OpenAI **Responses API** request assembly + stream driver, ported from pi-ai's
 //! `packages/ai/src/api/openai-responses.ts` `createClient` / `stream` at pinned
 //! commit `3da591ab`.

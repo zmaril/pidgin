@@ -26,11 +26,6 @@
 //! [`AgentEvent`]: crate::types::AgentEvent
 //! [`Models`]: crate::harness::compaction::Models
 
-// straitjacket-allow-file:duplication — the ~19 event payload structs and the
-// per-event result structs are faithful parallel transcriptions of pi's
-// one-interface-per-event source; the repeated `type`/field shapes are
-// intentional mirrors, not extractable duplication.
-
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};

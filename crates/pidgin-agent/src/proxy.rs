@@ -46,13 +46,6 @@
 //!
 //! Source of truth: `vendor/pi/packages/agent/src/proxy.ts`.
 
-// straitjacket-allow-file:duplication — the empty-`AssistantMessage` seed built
-// in `ProxyPartial::new` is a faithful transcription of pi's `streamProxy`
-// initializer and mirrors the same struct-literal shape the pidgin-ai providers
-// (`faux.rs`, `anthropic.rs`) construct against the shared `types.rs` message
-// type; the clone detector reads the identical field walls as duplicates, but
-// the constructor lives on the correct side of the crate boundary by design.
-
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};

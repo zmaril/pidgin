@@ -1,9 +1,3 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// auth `types.ts`: the credential/result/prompt/event structs are walls of
-// near-identical optional fields sharing the same skip-serializing serde shape,
-// and the api-key / OAuth auth traits mirror pi's parallel interface members by
-// design. The clone detector reads these as duplicates; they are distinct,
-// load-bearing boundary declarations kept verbatim to mirror pi's auth surface.
 //! Auth boundary types, ported from pi-ai's `packages/ai/src/auth/types.ts` at
 //! pinned commit `3da591ab`.
 //!

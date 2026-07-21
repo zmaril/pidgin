@@ -40,12 +40,6 @@
 //! documented [`AuthFlowError`] rather than a silent no-op. See the parked plan
 //! `[[ext-oauth-login-reentrant-primitive-parked.md]]`.
 
-// straitjacket-allow-file:duplication -- `get_api_key` and `refresh_token` are
-// deliberate parallel structure (serialize the credential, one-shot invoke the
-// stored provider `oauth` closure, isolate the failure, map the result); they
-// mirror pi's `adaptOAuth` `toAuth` / `refresh` members one-for-one, not an
-// accident to hoist away.
-
 use std::sync::Arc;
 
 use serde_json::{json, Value};

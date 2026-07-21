@@ -31,11 +31,6 @@
 //! The whole file is gated on the `deno` feature — without it, it is empty.
 #![cfg(feature = "deno")]
 
-// straitjacket-allow-file:duplication — faithful port of pi coding-agent's
-// `resource-loader.test.ts` extension cases; the per-`it` fixture setup
-// (mkdir/write real trees, reload, assert) parallels pi by design, and the
-// `env`/`common` helpers mirror the pidgin-coding orchestrator test suite.
-
 use pidgin_coding::core::resource_loader_orchestrator::{
     DefaultResourceLoader, DefaultResourceLoaderOptions, ReloadOptions,
 };

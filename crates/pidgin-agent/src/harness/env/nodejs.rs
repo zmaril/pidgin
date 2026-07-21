@@ -36,11 +36,6 @@
 //!   child via [`std::process::Child::kill`], which is sufficient for the shells
 //!   used here (they `exec` a single external command in the `-c` form).
 
-// straitjacket-allow-file[:duplication] — the file operations share one faithful
-// resolve-path / call-`std::fs` / map-to-`FileError` shape mirroring pi's parallel
-// `node:fs/promises` wrappers; the near-identical io-error-mapping arms are kept
-// distinct rather than collapsed to preserve that one-to-one correspondence.
-
 use std::collections::BTreeMap;
 use std::fs::{self, Metadata, OpenOptions};
 use std::io::{self, Read, Write};

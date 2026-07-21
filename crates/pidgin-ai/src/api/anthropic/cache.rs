@@ -1,7 +1,3 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// `anthropic-messages.ts` cache helpers (`resolveCacheRetention`,
-// `getCacheControl`). The clone detector may read the small option/serde
-// scaffolding as duplicative; it is kept verbatim to mirror pi exactly.
 //! Prompt-cache control resolution, ported from pi-ai's
 //! `packages/ai/src/api/anthropic-messages.ts` (`resolveCacheRetention`,
 //! `getCacheControl`) at pinned commit `3da591ab`.

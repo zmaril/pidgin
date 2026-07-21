@@ -1,5 +1,3 @@
-// straitjacket-allow-file:duplication — a faithful transcription of pi's
-// `remote-catalog-provider.ts` pure helpers.
 //! Persisted pi.dev catalog overlay for a static built-in provider.
 //!
 //! Ported from pi's `core/remote-catalog-provider.ts` at pinned commit

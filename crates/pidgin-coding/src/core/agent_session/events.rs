@@ -1,8 +1,6 @@
 //! The TUI-facing session event union, ported from pi's `AgentSessionEvent`
 //! (`packages/coding-agent/src/core/agent-session.ts:136-165`).
 
-// straitjacket-allow-file:duplication
-
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};

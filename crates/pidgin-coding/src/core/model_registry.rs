@@ -1,7 +1,3 @@
-// straitjacket-allow-file:duplication — a faithful transcription of pi's
-// `model-registry.ts`: a thin facade whose methods each delegate one line to
-// [`ModelRuntime`]. The parallel one-line delegations read as duplication to the
-// clone detector by design.
 //! Synchronous registry facade over [`ModelRuntime`], exposed to extensions.
 //!
 //! Ported from pi's `core/model-registry.ts` at pinned commit `3da591ab`.

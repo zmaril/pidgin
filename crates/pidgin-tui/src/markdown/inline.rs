@@ -1,6 +1,3 @@
-// straitjacket-allow-file:duplication — the per-tokenizer dispatch arms in
-// `inline_tokens` are a faithful 1:1 mirror of marked's `Lexer.inlineTokens`
-// try-each-rule loop; their shared shape is inherent to the parallel port.
 //! Inline tokenizer half of the marked lexer port (see `lexer.rs`). Split out
 //! of `lexer.rs` to keep each file within the file-size budget. The inline
 //! grammar (escape / html tag / link / emphasis / codespan / br / strict

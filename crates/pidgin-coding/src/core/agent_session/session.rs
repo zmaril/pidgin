@@ -10,8 +10,6 @@
 //! turn-runner methods (`prompt`/`steer`/`follow_up`/`compact`/tree-nav/stats/
 //! export) and the runtime/tool-registry wiring land in later PRs.
 
-// straitjacket-allow-file:duplication
-
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};

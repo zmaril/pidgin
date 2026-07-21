@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication faithful mirror of pi coding-agent
-// compaction/branch-summarization.ts; parallel structure to the agent-core copy
-// (crates/pidgin-agent/src/harness/compaction/branch_summarization.rs) is
-// intentional.
-
 //! Branch summarization for tree navigation. When navigating to a different
 //! point in the session tree, this summarizes the branch being left so context
 //! isn't lost. Mirrors

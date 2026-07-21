@@ -1,7 +1,3 @@
-// straitjacket-allow-file:duplication faithful mirror of pi coding-agent
-// compaction/utils.ts; parallel structure to the agent-core copy
-// (crates/pidgin-agent/src/harness/compaction/utils.rs) is intentional.
-
 //! Shared utilities for compaction and branch summarization, mirroring
 //! `packages/coding-agent/src/core/compaction/utils.ts`.
 //!

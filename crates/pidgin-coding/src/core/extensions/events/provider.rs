@@ -7,8 +7,6 @@
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/extensions/types.ts`.
 
-// straitjacket-allow-file:duplication
-
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};

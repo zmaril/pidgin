@@ -1,9 +1,3 @@
-// straitjacket-allow-file[:duplication] — `RuntimeCredentials` is a faithful
-// overlay mirror of the wrapped `CredentialStore`: its `read`/`list`/`modify`/
-// `delete` members repeat the trait's method shapes (and the `ApiKey`
-// credential construction) by design, and the tests rebuild the same
-// `AuthStorage::in_memory` + override fixture per case. The clone detector reads
-// this parallel structure as duplication; it is deliberate.
 //! Non-persistent runtime credential overlay, ported from pi's
 //! `core/runtime-credentials.ts`.
 //!

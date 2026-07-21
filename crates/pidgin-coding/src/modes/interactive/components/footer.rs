@@ -23,10 +23,6 @@
 //! sums per-message usage into the totals here, and takes the cache-hit rate from
 //! the latest assistant entry — both reproduced by the caller).
 
-// straitjacket-allow-file:duplication — faithful line-for-line mirror of pi's
-// `FooterComponent.render`; the layout/padding/truncation arithmetic is
-// duplicated from pi by design so it tracks the upstream source exactly.
-
 use std::collections::BTreeMap;
 
 use pidgin_tui::renderer::Component;

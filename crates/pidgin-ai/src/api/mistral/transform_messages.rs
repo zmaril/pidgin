@@ -1,8 +1,3 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// `api/transform-messages.ts`. The per-block `flatMap` arms and the two-pass
-// synthetic-tool-result insertion mirror pi's hand-rolled control flow; the
-// clone detector reads the repeated `Message`/`ContentBlock` match arms as
-// duplication, but they are distinct, load-bearing transforms kept verbatim.
 //! Cross-provider message normalization, ported from pi-ai's
 //! `packages/ai/src/api/transform-messages.ts` at pinned commit `3da591ab`.
 //!

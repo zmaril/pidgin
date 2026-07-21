@@ -1,7 +1,3 @@
-// straitjacket-allow-file:duplication faithful mirror of pi coding-agent
-// compaction/compaction.ts; parallel structure to the agent-core copy
-// (crates/pidgin-agent/src/harness/compaction/compaction.rs) is intentional.
-
 //! Compaction: token estimation, cut-point detection, and summary generation,
 //! mirroring `packages/coding-agent/src/core/compaction/compaction.ts`.
 //!
@@ -416,7 +412,6 @@ pub fn estimate_tokens(message: &AgentMessage) -> i64 {
         Some("assistant") => {
             let mut chars = 0;
             if let Some(blocks) = message.get("content").and_then(Value::as_array) {
-                // straitjacket-allow:duplication
                 for block in blocks {
                     match block.get("type").and_then(Value::as_str) {
                         Some("text") => {

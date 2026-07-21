@@ -1,8 +1,3 @@
-// straitjacket-allow-file[:duplication] — the two provider-error pattern tables
-// and the per-case classification tests are a byte-faithful transcription of
-// pi's `retry.ts` pattern sets and `retry.test.ts` cases; the repeated pattern
-// literals and parallel `assert!` bodies read as duplicates but are the port's
-// load-bearing fidelity surface.
 //! Provider-error retry classification, ported from pi-ai's
 //! `packages/ai/src/utils/retry.ts` at pinned commit `3da591ab`.
 //!

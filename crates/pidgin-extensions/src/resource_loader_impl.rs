@@ -46,11 +46,6 @@
 //! paths within a single call by `resolved_path`, so a path repeated in one call
 //! loads only once.
 
-// straitjacket-allow-file:duplication -- the per-path load loop mirrors pi's
-// `loadExtensionsInternal` (iterate resolved paths, run each factory, collect an
-// Extension or an error) and the runtime-threading mirrors the seam's stub; the
-// parallel structure is faithful to the ported source, not incidental.
-
 use std::any::Any;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

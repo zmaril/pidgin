@@ -1,7 +1,3 @@
-// straitjacket-allow-file:duplication — this sibling of codegen.mjs necessarily
-// repeats the node:fs/path import block, the here/repoRoot/piRoot path-constant
-// setup, and the tiny directory walk() helper; each script stands alone as its
-// own entry point and the overlap is unavoidable boilerplate.
 //
 // Regenerates conformance/manifest.json from the vendored pi tree.
 // Lists every .ts source module under vendor/pi/packages/*/src/, excluding

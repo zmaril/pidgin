@@ -1,8 +1,3 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// `api/simple-options.ts` (`buildBaseOptions`, `adjustMaxTokensForThinking`,
-// `clampMaxTokensToContext`, `clampReasoning`). The per-level budget and clamp
-// arms mirror pi's hand-rolled shape; the clone detector reads them as
-// duplicative by design.
 //! `streamSimple` support helpers, ported from pi-ai's
 //! `packages/ai/src/api/simple-options.ts` at pinned commit `3da591ab`.
 //!

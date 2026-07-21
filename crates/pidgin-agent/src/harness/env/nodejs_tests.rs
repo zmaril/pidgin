@@ -1,6 +1,3 @@
-// straitjacket-allow-file:duplication — the parallel test bodies mirror pi's
-// `test/harness/nodejs-env.test.ts` cases one-for-one; the shared temp-root
-// setup and assertion shapes read as duplicates by design.
 //! Tests for [`NodeExecutionEnv`], porting
 //! `packages/agent/test/harness/nodejs-env.test.ts`. These exercise the real
 //! filesystem and shell against unique temp directories that are cleaned up on

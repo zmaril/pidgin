@@ -1,7 +1,3 @@
-// straitjacket-allow-file:duplication - these AUTH-composer assertions mirror the
-// sibling credential-blind provider_composer tests' fixture/setup shape (stub
-// handlers, header maps, verbatim pi throw messages) member for member; the
-// parallel structure is a faithful transcription of pi's composer tests, not copied code.
 //! Tests for the provider-composer AUTH layer.
 //!
 //! Assertions are translated from pi's `model-runtime-auth-options.test.ts`

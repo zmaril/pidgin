@@ -1,9 +1,3 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// `types.ts`: the per-provider compat structs are walls of near-identical
-// optional fields, and every content/message struct shares the same
-// skip-serializing serde attribute shape. The clone detector reads these as
-// duplicates; they are distinct, load-bearing boundary declarations kept
-// verbatim to mirror the upstream wire format exactly.
 //! Boundary types ported from pi-ai's `packages/ai/src/types.ts`.
 //!
 //! This is the provider-agnostic core surface every wire dialect converges on:

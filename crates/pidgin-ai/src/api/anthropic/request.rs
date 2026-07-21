@@ -1,8 +1,3 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// `anthropic-messages.ts` `buildParams` and its `AnthropicOptions` surface. The
-// per-field option struct and the conditional param assembly mirror pi's object
-// spreads verbatim; the clone detector may read the serde/option scaffolding as
-// duplicative by design.
 //! Anthropic Messages request-parameter assembly, ported from pi-ai's
 //! `packages/ai/src/api/anthropic-messages.ts` (`buildParams`,
 //! `AnthropicOptions`) at pinned commit `3da591ab`.

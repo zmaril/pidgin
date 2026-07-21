@@ -23,8 +23,6 @@
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/agent-session.ts`.
 
-// straitjacket-allow-file:duplication
-
 use serde_json::{json, Value};
 
 use pidgin_agent::types::AgentMessage;

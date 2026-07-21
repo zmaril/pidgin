@@ -1,6 +1,3 @@
-// straitjacket-allow-file:duplication — this generator's dump()/path/theme
-// boilerplate intentionally mirrors generate_interactive_messages.mjs; each
-// generator is a standalone script.
 //
 // Vector generator for the byte-exact Rust port of pi's llama-extension TUI
 // (PR: port llama ui.ts). ui.ts's internals (frame, HuggingFaceSearch,

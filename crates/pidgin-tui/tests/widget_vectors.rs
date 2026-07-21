@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication — the `load()` vector-reading helper and
-// the per-widget replay loops intentionally mirror the same two-line boilerplate
-// used in components_vectors.rs / width_vectors.rs / keys_vectors.rs; each
-// integration-test binary is standalone and cannot share a private helper
-// without a common module, more indirection than it warrants.
 //! Drives the Rust port of pi's TUI leaf widgets (spacer, text, truncated-text,
 //! box, loader, image) against vectors extracted from pi itself
 //! (`crates/pidgin-tui/vectors/gen/generate_widgets.mjs`). Every assertion is

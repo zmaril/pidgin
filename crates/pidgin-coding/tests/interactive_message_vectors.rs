@@ -1,7 +1,3 @@
-// straitjacket-allow-file:duplication — the `load()` vector-reading helper and
-// the per-component replay loops intentionally mirror the two-line boilerplate
-// the pidgin-tui vector-test binaries use (widget_vectors.rs etc.); each
-// integration-test binary is standalone.
 //! Drives the Rust port of pi's interactive message-render components
 //! (AssistantMessage, UserMessage, ToolExecution) against vectors extracted from
 //! pi itself (`crates/pidgin-coding/vectors/gen/generate_interactive_messages.mjs`).

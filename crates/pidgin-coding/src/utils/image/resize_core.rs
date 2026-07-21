@@ -8,8 +8,6 @@
 //! PNG/JPEG through the crate's codecs. The budget constant, quality list, and
 //! `0.75` shrink factor mirror pi exactly.
 
-// straitjacket-allow-file:duplication
-
 use ::image::imageops::FilterType;
 use ::image::{DynamicImage, ImageEncoder, RgbaImage};
 use base64::engine::general_purpose::STANDARD as BASE64;
