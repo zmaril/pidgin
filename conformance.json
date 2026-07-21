@@ -1,16 +1,16 @@
 {
   "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
   "generated_by": "scripts/conformance.sh",
-  "manifest_native_modules": 39,
+  "manifest_native_modules": 45,
   "rust_backed": {
-    "passing": 538,
-    "total": 3777,
-    "percent": 14.2
+    "passing": 671,
+    "total": 3776,
+    "percent": 17.8
   },
-  "total": 3777,
+  "total": 3776,
   "passing": 2919,
   "failing": 73,
-  "skipped": 785,
+  "skipped": 784,
   "by_package": {
     "agent": {
       "rust_backed_passing": 55,
@@ -24,24 +24,24 @@
       "note": "vitest run, exit 0"
     },
     "ai": {
-      "rust_backed_passing": 62,
-      "rust_backed_percent": 4.8,
-      "total": 1294,
+      "rust_backed_passing": 74,
+      "rust_backed_percent": 5.7,
+      "total": 1293,
       "passing": 556,
       "failing": 0,
-      "skipped": 738,
-      "native": 7,
+      "skipped": 737,
+      "native": 8,
       "status": "ok",
-      "note": "vitest run, exit 0"
+      "note": "vitest run, exit 1"
     },
     "coding-agent": {
-      "rust_backed_passing": 161,
-      "rust_backed_percent": 9.9,
+      "rust_backed_passing": 167,
+      "rust_backed_percent": 10.3,
       "total": 1625,
       "passing": 1505,
       "failing": 73,
       "skipped": 47,
-      "native": 16,
+      "native": 18,
       "status": "ok",
       "note": "vitest run, exit 1"
     },
@@ -57,13 +57,13 @@
       "note": "no tests"
     },
     "tui": {
-      "rust_backed_passing": 260,
-      "rust_backed_percent": 38.3,
+      "rust_backed_passing": 375,
+      "rust_backed_percent": 55.3,
       "total": 678,
       "passing": 678,
       "failing": 0,
       "skipped": 0,
-      "native": 11,
+      "native": 14,
       "status": "ok",
       "note": "node:test per file, 0 file timeout(s)"
     }
@@ -879,7 +879,7 @@
       "file": "packages/ai/test/zen.test.ts",
       "passing": 0,
       "failing": 0,
-      "skipped": 69
+      "skipped": 68
     },
     {
       "package": "coding-agent",
@@ -2308,7 +2308,7 @@
     "passing": 15,
     "failing": 0,
     "skipped": 0,
-    "bin": "/workspace/pidgin/target/release/pidgin",
+    "bin": "/home/runner/work/pidgin/pidgin/target/release/pidgin",
     "status": "ok",
     "note": "vitest run against pidgin binary, exit 0",
     "files": [
