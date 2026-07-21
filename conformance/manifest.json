@@ -940,7 +940,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/utils/retry.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/retry.test.ts"
+      ]
     },
     {
       "package": "ai",
