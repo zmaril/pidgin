@@ -2569,6 +2569,7 @@ dependencies = [
 name = "pidgin-napi"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "fluessig-runtime",
  "indexmap",
  "napi",
