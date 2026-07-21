@@ -82,6 +82,9 @@ mod command_core;
 // strings off pi's `SessionCwdSource`. Additive.
 pub mod session_cwd;
 
+// Coding-agent `utils/paths.ts` helpers, native. `pub mod`: free-fn dead-code.
+pub mod coding_paths;
+
 // The tui autocomplete provider (`AutocompleteCore`): wraps pi's
 // `CombinedAutocompleteProvider` over a native `FileProvider` (std::fs + real
 // `fd`), backing the native `autocomplete.ts` shim. Additive.
