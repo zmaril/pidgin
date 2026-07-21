@@ -22,6 +22,12 @@
 ///   `setKittyProtocolActive`) route into `pidgin_tui::keys`. The kitty-protocol
 ///   flag lives in a Rust static, so the setter and readers share one addon
 ///   instance and stay consistent — identical to the pre-swap hand-written pair.
+/// - the tui width ops (`visibleWidth`, `normalizeTerminalOutput`,
+///   `truncateToWidth`, `wrapTextWithAnsi`, `sliceWithWidth`, `extractSegments`)
+///   route into the `pidgin_tui` width layer, backing the native `utils.ts`
+///   shim. Numeric params/returns cross as `int32` (JS `number`) and are widened
+///   to the engine's `i64`/`usize` at the seam, matching the pre-swap `as i64`
+///   casts — the JS-visible width values are identical.
 pub struct PidginImpl;
 
 impl crate::generated::PidginCore for PidginImpl {
@@ -68,5 +74,57 @@ impl crate::generated::PidginCore for PidginImpl {
 
     fn set_kitty_protocol_active(active: bool) {
         pidgin_tui::set_kitty_protocol_active(active);
+    }
+
+    fn visible_width(s: String) -> i32 {
+        pidgin_tui::visible_width(&s) as i32
+    }
+
+    fn normalize_terminal_output(s: String) -> String {
+        pidgin_tui::normalize_terminal_output(&s)
+    }
+
+    fn truncate_to_width(text: String, max_width: i32, ellipsis: String, pad: bool) -> String {
+        pidgin_tui::truncate_to_width(&text, max_width as i64, &ellipsis, pad)
+    }
+
+    fn wrap_text_with_ansi(text: String, width: i32) -> Vec<String> {
+        pidgin_tui::wrap_text_with_ansi(&text, width.max(0) as usize)
+    }
+
+    fn slice_with_width(
+        line: String,
+        start_col: i32,
+        length: i32,
+        strict: bool,
+    ) -> crate::generated::SliceWithWidth {
+        let (text, width) =
+            pidgin_tui::slice_with_width(&line, start_col as i64, length as i64, strict);
+        crate::generated::SliceWithWidth {
+            text,
+            width: width as i32,
+        }
+    }
+
+    fn extract_segments(
+        line: String,
+        before_end: i32,
+        after_start: i32,
+        after_len: i32,
+        strict_after: bool,
+    ) -> crate::generated::ExtractSegmentsResult {
+        let r = pidgin_tui::extract_segments(
+            &line,
+            before_end as i64,
+            after_start as i64,
+            after_len as i64,
+            strict_after,
+        );
+        crate::generated::ExtractSegmentsResult {
+            before: r.before,
+            before_width: r.before_width as i32,
+            after: r.after,
+            after_width: r.after_width as i32,
+        }
     }
 }

@@ -5,7 +5,50 @@
     "compiler": "1.14.0"
   },
   "source": "pidgin.tsp",
-  "models": [],
+  "models": [
+    {
+      "name": "SliceWithWidth",
+      "doc": "Result of [`slice_with_width`]; serialized to `{ text, width }`.",
+      "fields": [
+        {
+          "name": "text",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "width",
+          "type": "int32",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "ExtractSegmentsResult",
+      "doc": "Result of [`extract_segments`]; serialized to\n`{ before, beforeWidth, after, afterWidth }`.",
+      "fields": [
+        {
+          "name": "before",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "beforeWidth",
+          "type": "int32",
+          "nullable": false
+        },
+        {
+          "name": "after",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "afterWidth",
+          "type": "int32",
+          "nullable": false
+        }
+      ]
+    }
+  ],
   "unions": [],
   "interfaces": [
     {
@@ -227,6 +270,170 @@
           "bindings": {
             "node": {
               "name": "setKittyProtocolActive"
+            }
+          }
+        },
+        {
+          "name": "visibleWidth",
+          "doc": "`visibleWidth` (utils.ts): display width of a string, ANSI-aware.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "s",
+              "type": "string"
+            }
+          ],
+          "returns": "int32",
+          "bindings": {
+            "node": {
+              "name": "visibleWidth"
+            }
+          }
+        },
+        {
+          "name": "normalizeTerminalOutput",
+          "doc": "`normalizeTerminalOutput` (utils.ts): canonicalize ANSI/control sequences.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "s",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "normalizeTerminalOutput"
+            }
+          }
+        },
+        {
+          "name": "truncateToWidth",
+          "doc": "`truncateToWidth` (utils.ts): clip to `max_width` columns, ANSI-preserving.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "text",
+              "type": "string"
+            },
+            {
+              "name": "maxWidth",
+              "type": "int32"
+            },
+            {
+              "name": "ellipsis",
+              "type": "string"
+            },
+            {
+              "name": "pad",
+              "type": "boolean"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "truncateToWidth"
+            }
+          }
+        },
+        {
+          "name": "wrapTextWithAnsi",
+          "doc": "`wrapTextWithAnsi` (utils.ts): hard-wrap to `width` columns, ANSI-preserving.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "text",
+              "type": "string"
+            },
+            {
+              "name": "width",
+              "type": "int32"
+            }
+          ],
+          "returns": {
+            "list": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "wrapTextWithAnsi"
+            }
+          }
+        },
+        {
+          "name": "sliceWithWidth",
+          "doc": "`sliceWithWidth` (utils.ts): slice `length` columns from `start_col`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "line",
+              "type": "string"
+            },
+            {
+              "name": "startCol",
+              "type": "int32"
+            },
+            {
+              "name": "length",
+              "type": "int32"
+            },
+            {
+              "name": "strict",
+              "type": "boolean"
+            }
+          ],
+          "returns": {
+            "model": "SliceWithWidth"
+          },
+          "bindings": {
+            "node": {
+              "name": "sliceWithWidth"
+            }
+          }
+        },
+        {
+          "name": "extractSegments",
+          "doc": "`extractSegments` (utils.ts): single-pass before/after overlay split.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "line",
+              "type": "string"
+            },
+            {
+              "name": "beforeEnd",
+              "type": "int32"
+            },
+            {
+              "name": "afterStart",
+              "type": "int32"
+            },
+            {
+              "name": "afterLen",
+              "type": "int32"
+            },
+            {
+              "name": "strictAfter",
+              "type": "boolean"
+            }
+          ],
+          "returns": {
+            "model": "ExtractSegmentsResult"
+          },
+          "bindings": {
+            "node": {
+              "name": "extractSegments"
             }
           }
         }
