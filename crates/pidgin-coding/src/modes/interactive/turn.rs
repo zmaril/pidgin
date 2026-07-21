@@ -12,14 +12,24 @@
 //!   emits is cloned and forwarded, wrapped as [`ShellEvent::Session`], for the run
 //!   loop to drain and route.
 //!
-//! The worker owns the [`AgentSession`] for its whole lifetime (it is `!Send`, so
-//! it never crosses the thread boundary): at startup it builds an **offline echo**
-//! session ([`build_offline_echo_session`]) and `subscribe`s a forwarding
-//! listener; then each [`TurnCommand::Prompt`] calls [`AgentSession::prompt`],
-//! which runs the whole turn synchronously and emits its events through the
-//! listener. No network, no API key (the offline runtime's faux-auth preflight is
-//! pre-seeded), deterministic — the assistant reply echoes the last user message.
+//! The worker owns an [`AgentSessionRuntime`] for its whole lifetime (the runtime
+//! and the [`AgentSession`] it wraps are both `!Send`, so neither crosses the
+//! thread boundary): at startup it builds the runtime from the **offline echo**
+//! session factory ([`build_offline_echo_runtime_factory`]) and `subscribe`s a
+//! forwarding listener onto the runtime's current session; then each
+//! [`TurnCommand::Prompt`] calls [`AgentSession::prompt`] on that session, which
+//! runs the whole turn synchronously and emits its events through the listener. No
+//! network, no API key (the offline runtime's faux-auth preflight is pre-seeded),
+//! deterministic — the assistant reply echoes the last user message.
+//!
+//! [`TurnCommand::NewSession`], [`TurnCommand::Resume`], and [`TurnCommand::Fork`]
+//! drive the runtime's session lifecycle (`/new`, `/resume <path>`, `/fork
+//! <entry_id>`). Each swap tears down the current session and the factory rebuilds
+//! a fresh one; a `rebind_session` hook re-subscribes the forwarder onto the new
+//! current session so events keep flowing (pi's "unsubscribe old, subscribe new").
 
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
@@ -27,12 +37,27 @@ use std::thread::{self, JoinHandle};
 use pidgin_ai::providers::faux::{faux_assistant_message, faux_text, FauxAssistantOptions};
 
 use super::app::ShellEvent;
-use crate::core::agent_session::{build_offline_echo_session, AgentSessionEvent, OfflineEchoError};
+use crate::core::agent_session::{
+    build_offline_echo_runtime_factory, build_offline_echo_session, create_agent_session_runtime,
+    AgentSession, AgentSessionEvent, AgentSessionRuntimeFactoryOptions, ForkOptions,
+    NewSessionOptions,
+};
+use crate::core::session_manager::SessionManager;
+
+/// The boxed unsubscribe handle returned by [`AgentSession::subscribe`]. Dropping
+/// or calling it removes the forwarding listener from that session's registry.
+type Unsubscribe = Box<dyn FnOnce()>;
 
 /// A command sent from the main thread to the turn worker.
 pub enum TurnCommand {
     /// Run a turn for the submitted prompt text.
     Prompt(String),
+    /// Start a brand-new session in the current cwd (`/new`).
+    NewSession,
+    /// Resume (switch to) a persisted session file at the given path (`/resume`).
+    Resume(String),
+    /// Fork the current session at (or before) the given entry id (`/fork`).
+    Fork(String),
     /// Stop the worker loop and let the thread exit.
     Shutdown,
 }
@@ -46,9 +71,10 @@ pub struct TurnDriver {
 
 impl TurnDriver {
     /// Spawn the turn worker over `cwd`. The worker builds a real offline-echo
-    /// [`AgentSession`] rooted at `cwd` and forwards each emitted
-    /// [`AgentSessionEvent`] over `evt_tx` (wrapped as [`ShellEvent::Session`]) to
-    /// the run loop.
+    /// [`AgentSessionRuntime`](crate::core::agent_session::AgentSessionRuntime)
+    /// rooted at `cwd` and forwards each [`AgentSessionEvent`] the current session
+    /// emits over `evt_tx` (wrapped as [`ShellEvent::Session`]) to the run loop,
+    /// re-subscribing after every `/new`, `/resume`, or `/fork` swap.
     pub fn spawn(evt_tx: Sender<ShellEvent>, cwd: String) -> Self {
         let (cmd_tx, cmd_rx) = std::sync::mpsc::channel::<TurnCommand>();
         let handle = thread::Builder::new()
@@ -92,46 +118,115 @@ impl Drop for TurnDriver {
     }
 }
 
-/// The worker loop: own a real offline-echo [`AgentSession`] and run one turn per
-/// `Prompt`, exiting on `Shutdown` or when the command channel closes.
+/// The worker loop: own a real offline-echo [`AgentSessionRuntime`] and run one
+/// turn per `Prompt`, driving the runtime's `/new`, `/resume`, and `/fork`
+/// lifecycle on the matching commands, exiting on `Shutdown` or when the command
+/// channel closes.
 ///
-/// The [`AgentSession`] is constructed here, on the worker thread, and never
-/// crosses the thread boundary (it is `!Send`); only cloned [`AgentSessionEvent`]s
-/// flow back over `evt_tx`. If the session cannot be built (a faux-provider
-/// registration failure — see [`OfflineEchoError`]), the error is surfaced to the
-/// user as an assistant bubble and the worker drains commands without running
-/// turns rather than panicking.
+/// The runtime (and its current [`AgentSession`]) is constructed here, on the
+/// worker thread, and never crosses the thread boundary (both are `!Send`); only
+/// cloned [`AgentSessionEvent`]s flow back over `evt_tx`. If the runtime cannot be
+/// built — a build-invariant faux-provider failure surfaces as a panic in the
+/// factory, but a missing session cwd surfaces as
+/// [`MissingSessionCwdError`](crate::core::session_cwd::MissingSessionCwdError)
+/// here — the error is shown to the user as an assistant bubble and the worker
+/// drains commands without running turns rather than propagating the failure.
+///
+/// # The rebind seam
+///
+/// A single forwarding listener is subscribed onto the runtime's *current*
+/// session. Its boxed unsubscribe handle lives in an `Rc<RefCell<..>>` that a
+/// `rebind_session` hook rewrites after every swap: the hook drops the outgoing
+/// session's subscription (its session is already disposed) and subscribes the
+/// forwarder onto the new current session, so events keep flowing across `/new`,
+/// `/resume`, and `/fork` (pi's "unsubscribe old, subscribe new").
 fn worker_loop(cmd_rx: &Receiver<TurnCommand>, evt_tx: &Sender<ShellEvent>, cwd: String) {
-    let session = match build_offline_echo_session(cwd) {
-        Ok(session) => session,
+    let mut runtime = match create_agent_session_runtime(
+        build_offline_echo_runtime_factory(),
+        AgentSessionRuntimeFactoryOptions {
+            cwd: cwd.clone(),
+            agent_dir: format!("{cwd}/.agent"),
+            session_manager: SessionManager::in_memory(&cwd),
+            session_start_event: None,
+        },
+    ) {
+        Ok(runtime) => runtime,
         Err(error) => {
-            forward_start_error(evt_tx, &error);
+            forward_notice(
+                evt_tx,
+                format!("Failed to start the offline session: {error}"),
+            );
             drain_until_shutdown(cmd_rx);
             return;
         }
     };
 
-    // Forward every session event to the render loop. The listener takes `&event`,
-    // so it must clone before sending: only `Send` data crosses the boundary.
-    let _unsubscribe = session.subscribe(Arc::new({
+    // The active forwarder's unsubscribe handle, swapped by the rebind hook below.
+    let unsubscribe: Rc<RefCell<Option<Unsubscribe>>> = Rc::new(RefCell::new(Some(
+        subscribe_forwarder(runtime.session(), evt_tx.clone()),
+    )));
+    runtime.set_rebind_session(Some(Box::new({
         let evt_tx = evt_tx.clone();
-        move |event: &AgentSessionEvent| {
-            let _ = evt_tx.send(ShellEvent::Session(Box::new(event.clone())));
+        let unsubscribe = Rc::clone(&unsubscribe);
+        move |new_session: &AgentSession| {
+            // Drop the outgoing subscription first (bind the take() so its borrow
+            // ends before we re-borrow), then forward from the new current session.
+            let previous = unsubscribe.borrow_mut().take();
+            drop(previous);
+            *unsubscribe.borrow_mut() = Some(subscribe_forwarder(new_session, evt_tx.clone()));
         }
-    }));
+    })));
 
     while let Ok(cmd) = cmd_rx.recv() {
         match cmd {
-            // `prompt` runs the whole turn synchronously, emitting its events via
-            // the subscriber above. A `PromptError` (e.g. a preflight rejection) is
-            // ignored here: it is offline-deterministic and covered by the session's
-            // own tests.
+            // `prompt` runs the whole turn synchronously on the current session,
+            // emitting its events via the forwarder. A `PromptError` (e.g. a
+            // preflight rejection) is ignored here: it is offline-deterministic and
+            // covered by the session's own tests.
             TurnCommand::Prompt(text) => {
-                let _ = session.prompt(&text, None, None);
+                let _ = runtime.session().prompt(&text, None, None);
+            }
+            // `/new` tears down the current session and the factory rebuilds a fresh
+            // one; the rebind hook re-subscribes the forwarder onto it. A cancelled
+            // switch (there is no `session_before_switch` handler offline) would
+            // leave the current session in place.
+            TurnCommand::NewSession => {
+                let _ = runtime.new_session(NewSessionOptions::default());
+            }
+            // `/resume <path>` swaps in a persisted session; on a runtime error the
+            // current session is untouched and the failure is shown as a bubble.
+            TurnCommand::Resume(path) => {
+                if let Err(error) = runtime.switch_session(&path) {
+                    forward_notice(evt_tx, format!("Could not resume session: {error}"));
+                }
+            }
+            // `/fork <entry_id>` branches the current session; same error handling.
+            TurnCommand::Fork(entry_id) => {
+                if let Err(error) = runtime.fork(&entry_id, ForkOptions::default()) {
+                    forward_notice(evt_tx, format!("Could not fork session: {error}"));
+                }
             }
             TurnCommand::Shutdown => break,
         }
     }
+
+    // Drop the active subscription before the runtime (and its session) go out of
+    // scope, so no forwarding listener outlives the worker.
+    let remaining = unsubscribe.borrow_mut().take();
+    drop(remaining);
+}
+
+/// Subscribe a forwarding listener onto `session`: each [`AgentSessionEvent`] it
+/// emits is cloned and sent over `evt_tx` (wrapped as [`ShellEvent::Session`]).
+/// Returns the boxed unsubscribe handle so the caller can drop the subscription
+/// when the session is swapped out. The listener takes `&event`, so it clones
+/// before sending — only `Send` data crosses the worker/main boundary.
+fn subscribe_forwarder(session: &AgentSession, evt_tx: Sender<ShellEvent>) -> Unsubscribe {
+    Box::new(
+        session.subscribe(Arc::new(move |event: &AgentSessionEvent| {
+            let _ = evt_tx.send(ShellEvent::Session(Box::new(event.clone())));
+        })),
+    )
 }
 
 /// Drain the command channel until `Shutdown` or close, running no turns. Used
@@ -145,11 +240,12 @@ fn drain_until_shutdown(cmd_rx: &Receiver<TurnCommand>) {
     }
 }
 
-/// Surface a session-build failure to the user as a finished assistant message,
+/// Surface a worker-side notice to the user as a finished assistant message,
 /// forwarded as [`AgentSessionEvent`]s so it flows through the same router path a
 /// real turn does (a `message_start` + `message_end` pair renders one bubble).
-fn forward_start_error(evt_tx: &Sender<ShellEvent>, error: &OfflineEchoError) {
-    let text = format!("Failed to start the offline session: {error}");
+/// Used for a runtime-build failure at startup and for `/resume` / `/fork` runtime
+/// errors, neither of which should propagate out of the worker.
+fn forward_notice(evt_tx: &Sender<ShellEvent>, text: String) {
     let message = faux_assistant_message(vec![faux_text(text)], FauxAssistantOptions::default(), 0);
     let value = serde_json::to_value(message).expect("assistant message serializes");
     let _ = evt_tx.send(ShellEvent::Session(Box::new(

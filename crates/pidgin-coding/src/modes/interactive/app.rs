@@ -270,14 +270,37 @@ impl<W: Write> InteractiveShell<W> {
             // slice. `on_submit` runs while the run loop already holds `&mut Tui`, so
             // it cannot mount the overlay inline; it records a pending render-thread
             // command that the pump drains once that borrow is free. Any args are
-            // ignored (`run_llama_command` takes none).
+            // ignored (`run_llama_command` takes none). Must precede `classify_submit`
+            // so `/llama` is intercepted here rather than falling through as a prompt.
             let trimmed = line.trim();
             if trimmed == "/llama" || trimmed.starts_with("/llama ") {
                 *submit_pending.borrow_mut() = Some(PendingShellCommand::Llama);
                 return;
             }
-            submit_state.borrow_mut().push_user_message(&line);
-            let _ = cmd_tx.send(TurnCommand::Prompt(line));
+            // Intercept the session-lifecycle slash commands before a line would
+            // otherwise be sent as a prompt (pi routes `/new`, `/resume`, `/fork`
+            // through the runtime rather than the model).
+            match classify_submit(&line) {
+                SubmitAction::Prompt(text) => {
+                    submit_state.borrow_mut().push_user_message(&text);
+                    let _ = cmd_tx.send(TurnCommand::Prompt(text));
+                }
+                SubmitAction::NewSession => {
+                    submit_state
+                        .borrow_mut()
+                        .push_notice("Starting a new session.");
+                    let _ = cmd_tx.send(TurnCommand::NewSession);
+                }
+                SubmitAction::Resume(path) => {
+                    let _ = cmd_tx.send(TurnCommand::Resume(path));
+                }
+                SubmitAction::Fork(entry_id) => {
+                    let _ = cmd_tx.send(TurnCommand::Fork(entry_id));
+                }
+                SubmitAction::Notice(message) => {
+                    submit_state.borrow_mut().push_notice(&message);
+                }
+            }
         }));
         let editor = Rc::new(RefCell::new(editor));
         mount_focused_editor(&mut tui, Rc::clone(&editor));
@@ -799,4 +822,111 @@ fn install_exit_policy<W: Write>(run_loop: &mut RunLoop<W>) {
             }
             _ => InputListenerResult::pass(),
         });
+}
+
+/// What a submitted editor line resolves to once slash commands are intercepted.
+///
+/// The submit handler classifies each non-empty line with [`classify_submit`]
+/// before it reaches the turn worker: session-lifecycle slash commands (`/new`,
+/// `/resume`, `/fork`) become their own worker commands (or a deferred-feature
+/// [`Notice`](SubmitAction::Notice)), and everything else is an ordinary
+/// [`Prompt`](SubmitAction::Prompt).
+#[derive(Debug, PartialEq, Eq)]
+enum SubmitAction {
+    /// A normal prompt line — echoed as a user bubble and run as a turn.
+    Prompt(String),
+    /// `/new` — start a brand-new session on the real loop.
+    NewSession,
+    /// `/resume <path>` — resume the persisted session at `path`.
+    Resume(String),
+    /// `/fork <entry_id>` — fork the current session at `entry_id`.
+    Fork(String),
+    /// A slash command that only shows an inline notice (a bare `/resume` or
+    /// `/fork`, whose interactive selector UI is deferred to a follow-up slice).
+    Notice(String),
+}
+
+/// The inline notice shown for a bare `/resume` (its session selector is deferred).
+const RESUME_SELECTOR_DEFERRED: &str =
+    "Session selector is not wired yet — pass a session path: /resume <path>";
+/// The inline notice shown for a bare `/fork` (its entry selector is deferred).
+const FORK_SELECTOR_DEFERRED: &str =
+    "Entry selector is not wired yet — pass an entry id: /fork <entry_id>";
+
+/// Classify a submitted editor line, intercepting the session-lifecycle slash
+/// commands before they would otherwise be sent as a prompt.
+///
+/// The command is the first whitespace-delimited token; its argument is the
+/// remainder, trimmed. `/new` ignores any argument; `/resume` and `/fork` require
+/// one (a bare form resolves to a deferred-selector [`SubmitAction::Notice`]).
+/// Any other line — including one that merely starts with `/` — is a
+/// [`SubmitAction::Prompt`] carrying the original text verbatim.
+fn classify_submit(line: &str) -> SubmitAction {
+    let trimmed = line.trim();
+    let mut parts = trimmed.splitn(2, char::is_whitespace);
+    let command = parts.next().unwrap_or("");
+    let arg = parts.next().map(str::trim).unwrap_or("");
+    match command {
+        "/new" => SubmitAction::NewSession,
+        "/resume" if arg.is_empty() => SubmitAction::Notice(RESUME_SELECTOR_DEFERRED.to_string()),
+        "/resume" => SubmitAction::Resume(arg.to_string()),
+        "/fork" if arg.is_empty() => SubmitAction::Notice(FORK_SELECTOR_DEFERRED.to_string()),
+        "/fork" => SubmitAction::Fork(arg.to_string()),
+        _ => SubmitAction::Prompt(line.to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{classify_submit, SubmitAction, FORK_SELECTOR_DEFERRED, RESUME_SELECTOR_DEFERRED};
+
+    #[test]
+    fn new_command_maps_to_new_session_ignoring_arguments() {
+        assert_eq!(classify_submit("/new"), SubmitAction::NewSession);
+        assert_eq!(classify_submit("  /new  "), SubmitAction::NewSession);
+        // A trailing argument is ignored — `/new` always starts a fresh session.
+        assert_eq!(classify_submit("/new whatever"), SubmitAction::NewSession);
+    }
+
+    #[test]
+    fn resume_requires_a_path_argument() {
+        assert_eq!(
+            classify_submit("/resume /tmp/session.jsonl"),
+            SubmitAction::Resume("/tmp/session.jsonl".to_string())
+        );
+        assert_eq!(
+            classify_submit("/resume"),
+            SubmitAction::Notice(RESUME_SELECTOR_DEFERRED.to_string())
+        );
+    }
+
+    #[test]
+    fn fork_requires_an_entry_id_argument() {
+        assert_eq!(
+            classify_submit("/fork entry-42"),
+            SubmitAction::Fork("entry-42".to_string())
+        );
+        assert_eq!(
+            classify_submit("/fork"),
+            SubmitAction::Notice(FORK_SELECTOR_DEFERRED.to_string())
+        );
+    }
+
+    #[test]
+    fn plain_lines_and_unknown_slashes_stay_prompts() {
+        assert_eq!(
+            classify_submit("hello there"),
+            SubmitAction::Prompt("hello there".to_string())
+        );
+        // A word that merely starts with `/new` is not the command token.
+        assert_eq!(
+            classify_submit("/newsletter"),
+            SubmitAction::Prompt("/newsletter".to_string())
+        );
+        // An unrecognized slash command is passed through verbatim as a prompt.
+        assert_eq!(
+            classify_submit("/unknown arg"),
+            SubmitAction::Prompt("/unknown arg".to_string())
+        );
+    }
 }

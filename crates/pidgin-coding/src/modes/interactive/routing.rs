@@ -144,8 +144,10 @@ impl ChatState {
     /// Append a plain notice line to the chat list (the shell's notification
     /// surface). Used by the render-thread `/llama` intercept to surface the
     /// `run_llama_command` notification sink and any `UiError::Failed` message,
-    /// since the offline shell has no dedicated notification region wired yet
-    /// (header/status are placeholder chrome — see [`super::app`]).
+    /// and by the submit handler for slash-command feedback (`/new`, a bare
+    /// `/resume` / `/fork`, etc.), since the offline shell has no dedicated
+    /// notification region wired yet (header/status are placeholder chrome — see
+    /// [`super::app`]).
     pub fn push_notice(&mut self, text: &str) {
         let notice = pidgin_tui::widgets::Text::new(text, 0, 0, None);
         self.entries
