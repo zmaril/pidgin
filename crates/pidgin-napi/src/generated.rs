@@ -4,11 +4,21 @@
 #![allow(clippy::all)]
 
 // The fixed prelude — generated code uses fully-qualified paths elsewhere.
+use napi::bindgen_prelude::Result;
 use napi_derive::napi;
+
+fn err(e: impl std::fmt::Display) -> napi::Error {
+    napi::Error::from_reason(e.to_string())
+}
 
 /// The `Pidgin` contract — implement over the engine in `crate::core_impl`.
 pub trait PidginCore: Sized + Send + Sync + 'static {
     fn version() -> String;
+    fn expand_path(file_path: String) -> anyhow::Result<String>;
+    fn resolve_to_cwd(file_path: String, cwd: String) -> anyhow::Result<String>;
+    fn path_try_macos_screenshot_path(file_path: String) -> String;
+    fn path_try_nfd_variant(file_path: String) -> String;
+    fn path_try_curly_quote_variant(file_path: String) -> String;
 }
 
 /// Returns the crate version. Proves the native addon builds and loads.
@@ -17,4 +27,38 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
 #[napi(js_name = "pidginNativeVersion")]
 pub fn version() -> String {
     <crate::core_impl::PidginImpl as PidginCore>::version()
+}
+
+/// `expandPath` (core/tools/path-utils.ts): fold unicode spaces, strip a leading
+/// `@`, expand `~`, convert `file://`. Errors cross as thrown JS errors.
+#[napi(js_name = "expandPath")]
+pub fn expand_path(file_path: String) -> Result<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::expand_path(file_path).map_err(err)
+}
+
+/// `resolveToCwd` (core/tools/path-utils.ts): resolve `file_path` against `cwd`.
+/// Errors cross as thrown JS errors (pi's `resolvePath` throws on bad input).
+#[napi(js_name = "resolveToCwd")]
+pub fn resolve_to_cwd(file_path: String, cwd: String) -> Result<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::resolve_to_cwd(file_path, cwd).map_err(err)
+}
+
+/// Private pi transform `tryMacOSScreenshotPath`, exposed so the shim's
+/// `resolveReadPath` can rebuild pi's fallback ordering natively.
+#[napi(js_name = "pathTryMacosScreenshotPath")]
+pub fn path_try_macos_screenshot_path(file_path: String) -> String {
+    <crate::core_impl::PidginImpl as PidginCore>::path_try_macos_screenshot_path(file_path)
+}
+
+/// Private pi transform `tryNFDVariant`, exposed for the shim's `resolveReadPath`.
+#[napi(js_name = "pathTryNfdVariant")]
+pub fn path_try_nfd_variant(file_path: String) -> String {
+    <crate::core_impl::PidginImpl as PidginCore>::path_try_nfd_variant(file_path)
+}
+
+/// Private pi transform `tryCurlyQuoteVariant`, exposed for the shim's
+/// `resolveReadPath`.
+#[napi(js_name = "pathTryCurlyQuoteVariant")]
+pub fn path_try_curly_quote_variant(file_path: String) -> String {
+    <crate::core_impl::PidginImpl as PidginCore>::path_try_curly_quote_variant(file_path)
 }

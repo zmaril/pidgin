@@ -19,6 +19,11 @@ napi = { version = "2", default-features = false, features = ["napi9"] }
 napi-derive = "2"
 serde = { workspace = true }
 serde_json = { workspace = true }
+# The fluessig-generated core trait (`src/generated.rs`) types every fallible op
+# as `anyhow::Result<T>`, so `core_impl` maps the engine's error types through
+# `anyhow::Error`. Added when the first fallible op (module 2, `expandPath`/
+# `resolveToCwd`) joined the schema.
+anyhow = { workspace = true }
 # The exec-tool run layer (ls/write/bash) is async (tokio). The tool bindings
 # drive it to completion with `block_on` on a dedicated multi-thread runtime;
 # napi calls arrive on node's thread with no ambient tokio runtime, so a direct
