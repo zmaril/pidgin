@@ -33,3 +33,9 @@ fluessig-runtime = { git = "https://github.com/zmaril/fluessig", rev = "1fed77aa
 
 [build-dependencies]
 napi-build = "2"
+
+[dev-dependencies]
+# Exhaustive model checker used by the in-crate `#[cfg(test)] mod
+# bridge_async::stateright_bridge` to drive the real `BridgeShared` registry
+# over every reachable transition (see that module).
+stateright = "0.31"

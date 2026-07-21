@@ -621,6 +621,15 @@ fn extract_error_message(raw: &str) -> String {
 /// this test fails. A minimal hand-rolled reader over `serde_json::Value` decodes
 /// the ITF subset the spec emits (`{"#bigint":"N"}`, `{"#set":[...]}`, a string
 /// `tag` for the `Event`), so no heavy new dependency is added.
+/// Exhaustive Stateright model of the same registry protocol: it drives the REAL
+/// [`BridgeShared`] over every reachable transition (not one exported trace) and
+/// checks the same three invariants as `specs/bridge_async.qnt`, named 1:1 with
+/// the Quint spec. Kept in its own child-module file to leave this file's line
+/// budget untouched; it has the identical `super::` private access `itf_replay`
+/// relies on.
+#[cfg(test)]
+mod stateright_bridge;
+
 #[cfg(test)]
 mod itf_replay {
     use std::collections::{BTreeSet, HashMap};
