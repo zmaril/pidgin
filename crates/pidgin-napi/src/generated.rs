@@ -190,6 +190,21 @@ pub trait InputCoreCore: Sized + 'static {
     fn render(&mut self, width: u32) -> Vec<String>;
 }
 
+/// The `SelectListCore` contract — implement over the engine in `crate::core_impl`.
+pub trait SelectListCoreCore: Sized + 'static {
+    fn new(
+        items_json: String,
+        max_visible: i64,
+        min_primary_column_width: Option<i64>,
+        max_primary_column_width: Option<i64>,
+    ) -> anyhow::Result<Self>;
+    fn set_filter(&mut self, filter: String) -> ();
+    fn set_selected_index(&mut self, index: i64) -> ();
+    fn handle_input(&mut self, key_data: String) -> ();
+    fn get_selected_item_json(&mut self) -> anyhow::Result<Option<String>>;
+    fn render(&mut self, width: u32) -> Vec<String>;
+}
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `pidginNativeVersion`.
@@ -767,6 +782,68 @@ impl InputCore {
         self.core.borrow_mut().handle_input(data)
     }
     /// pi's `render(width)`: render the input to a single line.
+    #[napi(js_name = "render")]
+    pub fn render(&self, width: u32) -> Vec<String> {
+        self.core.borrow_mut().render(width)
+    }
+}
+
+/// The Rust-backed select-list core, exposed to JavaScript as `SelectListCore`.
+/// Constructed with an identity theme and no `truncatePrimary` override; the
+/// shim only builds one when pi's theme is identity and no override is set.
+#[napi]
+pub struct SelectListCore {
+    // pub(crate): the @manual ops in lib.rs extend this class and need the core
+    pub(crate) core: RefCell<crate::core_impl::SelectListCoreImpl>,
+}
+
+#[napi]
+impl SelectListCore {
+    /// Build a core from pi's `items` (JSON array of `{ value, label,
+    /// description? }`), `maxVisible`, and the optional
+    /// `minPrimaryColumnWidth`/`maxPrimaryColumnWidth` layout bounds.
+    #[napi(constructor)]
+    pub fn new(
+        items_json: String,
+        max_visible: i64,
+        min_primary_column_width: Option<i64>,
+        max_primary_column_width: Option<i64>,
+    ) -> Result<Self> {
+        Ok(Self {
+            core: RefCell::new(
+                <crate::core_impl::SelectListCoreImpl as SelectListCoreCore>::new(
+                    items_json,
+                    max_visible,
+                    min_primary_column_width,
+                    max_primary_column_width,
+                )
+                .map_err(err)?,
+            ),
+        })
+    }
+    /// pi's `setFilter(filter)`: case-insensitive `value` prefix filter.
+    #[napi(js_name = "setFilter")]
+    pub fn set_filter(&self, filter: String) -> () {
+        self.core.borrow_mut().set_filter(filter)
+    }
+    /// pi's `setSelectedIndex(index)`: clamp the selection into range.
+    #[napi(js_name = "setSelectedIndex")]
+    pub fn set_selected_index(&self, index: i64) -> () {
+        self.core.borrow_mut().set_selected_index(index)
+    }
+    /// pi's `handleInput(keyData)`: move/confirm/cancel. Callbacks are handled by
+    /// the shim's original instance; the core only advances selection state.
+    #[napi(js_name = "handleInput")]
+    pub fn handle_input(&self, key_data: String) -> () {
+        self.core.borrow_mut().handle_input(key_data)
+    }
+    /// pi's `getSelectedItem()` as JSON (`{ value, label, description? }`), or
+    /// `null` when the filtered list is empty.
+    #[napi(js_name = "getSelectedItemJson")]
+    pub fn get_selected_item_json(&self) -> Result<Option<String>> {
+        self.core.borrow_mut().get_selected_item_json().map_err(err)
+    }
+    /// pi's `render(width)`: render the list to lines (identity theme baked in).
     #[napi(js_name = "render")]
     pub fn render(&self, width: u32) -> Vec<String> {
         self.core.borrow_mut().render(width)

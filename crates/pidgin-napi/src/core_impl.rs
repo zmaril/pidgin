@@ -1003,3 +1003,96 @@ impl crate::generated::InputCoreCore for InputCoreImpl {
         self.inner.render_lines(width as usize)
     }
 }
+
+/// Deserialized shape of pi's select-list `items` (a JSON array of `{ value,
+/// label, description? }`) as they cross into [`SelectListCoreImpl::new`].
+#[derive(serde::Deserialize)]
+struct SelectItemIn {
+    value: String,
+    label: String,
+    description: Option<String>,
+}
+
+/// The identity theme baked into [`SelectListCoreImpl`]: every theme hook is the
+/// identity function. pi's real theme hooks are JS closures that cannot cross
+/// the addon boundary, so the shim only routes `render` through this core when
+/// pi's theme is identity and no `truncatePrimary` override is set.
+fn identity_select_theme() -> pidgin_tui::SelectListTheme {
+    pidgin_tui::SelectListTheme {
+        selected_prefix: Box::new(|s| s.to_string()),
+        selected_text: Box::new(|s| s.to_string()),
+        description: Box::new(|s| s.to_string()),
+        scroll_info: Box::new(|s| s.to_string()),
+        no_match: Box::new(|s| s.to_string()),
+    }
+}
+
+/// The engine-backed implementation of the generated `SelectListCore` contract.
+///
+/// Authored `#[fluessig(single_threaded)]`, so the generated handle holds this
+/// core THREAD-CONFINED in a `RefCell<SelectListCoreImpl>` — no `Arc`, no
+/// `Send`/`Sync` — which is exactly what lets a `!Send` core compile: it owns
+/// pi's `SelectList`, whose baked-in [`SelectListTheme`] hooks are non-`Send`
+/// boxed closures (`Box<dyn Fn(&str) -> String>`). Every op is `&mut self`,
+/// reached from the handle through `RefCell::borrow_mut()`, so the JS-visible
+/// behavior is byte-for-byte unchanged from the pre-swap hand-written class.
+pub struct SelectListCoreImpl {
+    inner: pidgin_tui::SelectList,
+}
+
+impl crate::generated::SelectListCoreCore for SelectListCoreImpl {
+    fn new(
+        items_json: String,
+        max_visible: i64,
+        min_primary_column_width: Option<i64>,
+        max_primary_column_width: Option<i64>,
+    ) -> anyhow::Result<Self> {
+        let items_in: Vec<SelectItemIn> =
+            serde_json::from_str(&items_json).map_err(|e| anyhow::anyhow!("invalid items: {e}"))?;
+        let items: Vec<pidgin_tui::SelectItem> = items_in
+            .into_iter()
+            .map(|i| pidgin_tui::SelectItem {
+                value: i.value,
+                label: i.label,
+                description: i.description,
+            })
+            .collect();
+        let layout = pidgin_tui::SelectListLayoutOptions {
+            min_primary_column_width,
+            max_primary_column_width,
+            truncate_primary: None,
+        };
+        Ok(Self {
+            inner: pidgin_tui::SelectList::new(items, max_visible, identity_select_theme(), layout),
+        })
+    }
+
+    fn set_filter(&mut self, filter: String) {
+        self.inner.set_filter(&filter);
+    }
+
+    fn set_selected_index(&mut self, index: i64) {
+        self.inner.set_selected_index(index);
+    }
+
+    fn handle_input(&mut self, key_data: String) {
+        self.inner.handle_input_str(&key_data);
+    }
+
+    fn get_selected_item_json(&mut self) -> anyhow::Result<Option<String>> {
+        match self.inner.get_selected_item() {
+            Some(item) => serde_json::to_string(&serde_json::json!({
+                "value": item.value,
+                "label": item.label,
+                "description": item.description,
+            }))
+            .map(Some)
+            .map_err(|e| anyhow::anyhow!(e.to_string())),
+            None => Ok(None),
+        }
+    }
+
+    fn render(&mut self, width: u32) -> Vec<String> {
+        self.inner.render_lines(width as usize)
+    }
+}
