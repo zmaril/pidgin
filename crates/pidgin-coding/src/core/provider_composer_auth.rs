@@ -619,7 +619,7 @@ pub fn compose_oauth_auth(
 /// `refreshToken` / `getApiKey` closures, mapping the callback surface onto
 /// `interaction.notify` / `interaction.prompt`. pidgin-ai's [`OAuthAuth`] is the
 /// pull flow machine, so the re-inversion — presenting the push login as a
-/// suspend/resume machine — lives in [`crate::auth::oauth::extension`] behind a
+/// suspend/resume machine — lives in [`super::extension_oauth_adapt`] behind a
 /// thread + channel bridge. This function just hands that adapter the config's
 /// [`ExtensionOAuthConfig::login`] callable; it is only reached when composing an
 /// *extension* OAuth provider.
