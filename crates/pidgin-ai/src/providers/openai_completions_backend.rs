@@ -23,12 +23,14 @@ use std::sync::Arc;
 
 use crate::api::openai_completions::driver;
 use crate::api::openai_completions::OpenAICompletionsOptions;
+use crate::providers::clamp_thinking_level;
 use crate::seams::clock::Clock;
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
 use crate::types::{
-    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model,
-    OpenAICompletionsCompat, StopReason, StreamOptions, Usage, UsageCost,
+    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
+    OpenAICompletionsCompat, SimpleStreamOptions, StopReason, StreamOptions, ThinkingLevel, Usage,
+    UsageCost,
 };
 use crate::utils::sse::AssistantEventReader;
 
@@ -148,6 +150,93 @@ impl Provider for OpenAICompletionsBackend {
             &openai_options,
             timestamp,
         )
+    }
+
+    /// Lower the simple, level-based `reasoning` onto the completions request as
+    /// `reasoning_effort`, mirroring pi's `streamSimple`
+    /// (`openai-completions.ts:513-530`): clamp the requested level to the model's
+    /// supported ladder via `clampThinkingLevel`, drop a clamp to `off` (⇒ no
+    /// `reasoning_effort`), and hand the effort to the driver, whose
+    /// `thinkingFormat` switch (`openai-completions.ts:638-712`) shapes the per-
+    /// provider field (zai / qwen / deepseek / openrouter / together / ...).
+    ///
+    /// When no `reasoning` level is requested, this falls back to the raw
+    /// [`stream`](Self::stream) on the base options, so the outgoing request is
+    /// byte-identical to the pre-seam path.
+    fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        // No reasoning: keep the raw request unchanged (map None -> base options).
+        let simple = match options {
+            Some(simple) if simple.reasoning.is_some() => simple,
+            other => return self.stream(model, context, other.map(|o| &o.base), signal),
+        };
+
+        let mut typed_model: Model<OpenAICompletionsCompat> = match reserialize_model(model) {
+            Ok(typed_model) => typed_model,
+            Err(error) => {
+                return error_result(
+                    model,
+                    self.clock.now_ms(),
+                    format!("OpenAI model is not compatible with openai-completions: {error}"),
+                )
+            }
+        };
+
+        if let Some(base_url) = simple.base.base_url.as_ref() {
+            typed_model.base_url = base_url.clone();
+        }
+
+        let mut openai_options = map_options(&typed_model, Some(&simple.base));
+        // pi `openai-completions.ts:521-522`:
+        //   clampedReasoning = clampThinkingLevel(model, options.reasoning)
+        //   reasoningEffort  = clampedReasoning === "off" ? undefined : clampedReasoning
+        openai_options.reasoning_effort = simple.reasoning.and_then(|level| {
+            to_thinking_level(clamp_thinking_level(
+                &typed_model,
+                to_model_thinking_level(level),
+            ))
+        });
+
+        let timestamp = self.clock.now_ms();
+        driver::stream(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            &openai_options,
+            timestamp,
+        )
+    }
+}
+
+/// Widen a caller's [`ThinkingLevel`] to the model-level [`ModelThinkingLevel`]
+/// pi's `clampThinkingLevel` expects (a requested level is never `off`).
+fn to_model_thinking_level(level: ThinkingLevel) -> ModelThinkingLevel {
+    match level {
+        ThinkingLevel::Minimal => ModelThinkingLevel::Minimal,
+        ThinkingLevel::Low => ModelThinkingLevel::Low,
+        ThinkingLevel::Medium => ModelThinkingLevel::Medium,
+        ThinkingLevel::High => ModelThinkingLevel::High,
+        ThinkingLevel::Xhigh => ModelThinkingLevel::Xhigh,
+        ThinkingLevel::Max => ModelThinkingLevel::Max,
+    }
+}
+
+/// Narrow a clamped [`ModelThinkingLevel`] back to the driver's [`ThinkingLevel`],
+/// dropping `off` (pi's `reasoningEffort = clamped === "off" ? undefined : clamped`).
+fn to_thinking_level(level: ModelThinkingLevel) -> Option<ThinkingLevel> {
+    match level {
+        ModelThinkingLevel::Off => None,
+        ModelThinkingLevel::Minimal => Some(ThinkingLevel::Minimal),
+        ModelThinkingLevel::Low => Some(ThinkingLevel::Low),
+        ModelThinkingLevel::Medium => Some(ThinkingLevel::Medium),
+        ModelThinkingLevel::High => Some(ThinkingLevel::High),
+        ModelThinkingLevel::Xhigh => Some(ThinkingLevel::Xhigh),
+        ModelThinkingLevel::Max => Some(ThinkingLevel::Max),
     }
 }
 
@@ -642,6 +731,175 @@ mod tests {
             Some(4096)
         );
         assert!(body.get("temperature").is_none());
+    }
+
+    // -----------------------------------------------------------------------
+    // stream_simple: reasoning lowering (pi `openai-completions.ts:513-530`)
+    // -----------------------------------------------------------------------
+
+    /// A reasoning-capable openai-completions `Model<Value>` on the default
+    /// OpenAI-style `thinkingFormat` (provider `openai`, no thinking_level_map),
+    /// targeting `base_url`.
+    fn openai_reasoning_model(base_url: &str) -> Model {
+        serde_json::from_value(json!({
+            "id": "o3-mini",
+            "name": "o3 mini",
+            "api": "openai-completions",
+            "provider": "openai",
+            "baseUrl": base_url,
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 4096,
+        }))
+        .unwrap()
+    }
+
+    /// A reasoning-capable openrouter model (`thinkingFormat = openrouter`), so the
+    /// driver shapes reasoning as the nested `reasoning: { effort }` object.
+    fn openrouter_reasoning_model(base_url: &str) -> Model {
+        serde_json::from_value(json!({
+            "id": "some/reasoner",
+            "name": "OpenRouter Reasoner",
+            "api": "openai-completions",
+            "provider": "openrouter",
+            "baseUrl": base_url,
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 4096,
+        }))
+        .unwrap()
+    }
+
+    // Reasoning `high` on a default OpenAI-style reasoning model lowers to
+    // `reasoning_effort: "high"` in the outgoing body (pi `openai-completions.ts:521-522`
+    // clamp + drop-off, then the driver's default `reasoning_effort` branch
+    // `:704-706`).
+    #[test]
+    fn stream_simple_reasoning_sets_reasoning_effort() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAICompletionsBackend::new(transport, fake_clock());
+        let model = openai_reasoning_model("https://api.openai.test/v1");
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body["reasoning_effort"], json!("high"));
+    }
+
+    // A lower level (`low`) threads through the same path to `reasoning_effort: "low"`.
+    #[test]
+    fn stream_simple_reasoning_low_sets_reasoning_effort() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAICompletionsBackend::new(transport, fake_clock());
+        let model = openai_reasoning_model("https://api.openai.test/v1");
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::Low),
+            None,
+        );
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body["reasoning_effort"], json!("low"));
+    }
+
+    // A `thinkingFormat = openrouter` model shapes the same lowered effort as the
+    // nested `reasoning: { effort: "high" }` object (pi `openai-completions.ts:673-682`
+    // / driver `:1300-1311`), asserted param-exact.
+    #[test]
+    fn stream_simple_reasoning_openrouter_variant() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAICompletionsBackend::new(transport, fake_clock());
+        let model = openrouter_reasoning_model("https://openrouter.ai/api/v1");
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body["reasoning"], json!({ "effort": "high" }));
+        // The nested-object shape supersedes the flat field for this format.
+        assert!(body.get("reasoning_effort").is_none());
+    }
+
+    // A reasoning level requested against a NON-reasoning model clamps to `off`
+    // (pi `clampThinkingLevel` over `["off"]`), so `reasoningEffort` becomes
+    // `undefined` and no reasoning field is emitted -- byte-identical to the raw
+    // `stream` path.
+    #[test]
+    fn stream_simple_off_clamp_omits_reasoning_effort() {
+        let model = openai_model("https://api.openai.test/v1");
+        let base = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (raw_scripted, raw_transport) = scripted_hello();
+        let raw_backend = OpenAICompletionsBackend::new(raw_transport, fake_clock());
+        raw_backend.stream(&model, &user_context(), Some(&base), None);
+
+        let (simple_scripted, simple_transport) = scripted_hello();
+        let simple_backend = OpenAICompletionsBackend::new(simple_transport, fake_clock());
+        let simple = SimpleStreamOptions::new(base.clone(), Some(ThinkingLevel::High), None);
+        simple_backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let raw_body: Value =
+            serde_json::from_str(raw_scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        let simple_body: Value =
+            serde_json::from_str(simple_scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(raw_body, simple_body);
+        assert!(simple_body.get("reasoning_effort").is_none());
+        assert!(simple_body.get("reasoning").is_none());
+    }
+
+    // NO-REASONING zero-regression: `stream_simple` with `reasoning: None` builds a
+    // request byte-identical to the raw `stream` path -- no `reasoning_effort` is
+    // added.
+    #[test]
+    fn stream_simple_without_reasoning_matches_raw_stream() {
+        let model = openai_reasoning_model("https://api.openai.test/v1");
+        let base = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (raw_scripted, raw_transport) = scripted_hello();
+        let raw_backend = OpenAICompletionsBackend::new(raw_transport, fake_clock());
+        raw_backend.stream(&model, &user_context(), Some(&base), None);
+
+        let (simple_scripted, simple_transport) = scripted_hello();
+        let simple_backend = OpenAICompletionsBackend::new(simple_transport, fake_clock());
+        let simple = SimpleStreamOptions::from_base(base.clone());
+        simple_backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let raw_body: Value =
+            serde_json::from_str(raw_scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        let simple_body: Value =
+            serde_json::from_str(simple_scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(raw_body, simple_body);
+        assert!(simple_body.get("reasoning_effort").is_none());
     }
 }
 
