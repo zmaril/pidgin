@@ -20,7 +20,8 @@
 //!   `mergeProviderAttributionHeaders`, and calls `modelRuntime.streamSimple(...)`.
 //!   The port builds a `Send + Sync` [`StreamFn`](pidgin_agent::types::StreamFn)
 //!   that captures a standalone ai [`Models`](pidgin_ai::providers::registry::Models)
-//!   handle extracted from the runtime ([`ModelRuntime::stream_models_handle`]) plus
+//!   handle cloned from the runtime (`Models: Clone`, sharing the original
+//!   `auth_context`) plus
 //!   a value snapshot of the retry/timeout/telemetry settings read once at factory
 //!   time (the [`SettingsManager`] and [`ModelRuntime`] are both `!Send`, so neither
 //!   is captured), and delegates through the shared
@@ -347,9 +348,10 @@ impl ModelRuntimeView for ModelRuntime {
 ///
 /// The returned closure is `Send + Sync`, so it captures neither the `!Send`
 /// [`ModelRuntime`] nor the `!Send` [`SettingsManager`]: it takes a standalone ai
-/// [`Models`](pidgin_ai::providers::registry::Models) handle extracted from the
-/// runtime ([`ModelRuntime::stream_models_handle`]) and a value snapshot of the
-/// retry / timeout / telemetry settings, both read once here at factory time.
+/// [`Models`](pidgin_ai::providers::registry::Models) handle cloned from the
+/// runtime (`Models: Clone`, so the clone shares the runtime's original
+/// `auth_context` rather than reconstructing a fresh one) and a value snapshot of
+/// the retry / timeout / telemetry settings, both read once here at factory time.
 ///
 /// Per call it mirrors pi's option resolution: `timeout_ms`,
 /// `websocket_connect_timeout_ms`, `max_retries`, and `max_retry_delay_ms` fall
@@ -361,7 +363,7 @@ impl ModelRuntimeView for ModelRuntime {
 /// exactly as pi passes `options?.sessionId`. The extension
 /// `before_provider_headers` header hook (pi `sdk.ts:320-322`) is deferred (#186).
 fn build_stream_fn(model_runtime: &ModelRuntime, settings_manager: &SettingsManager) -> StreamFn {
-    let models = model_runtime.stream_models_handle();
+    let models = model_runtime.models.clone();
     let provider_retry = settings_manager.get_provider_retry_settings();
     let http_idle_timeout_ms = settings_manager
         .get_http_idle_timeout_ms()

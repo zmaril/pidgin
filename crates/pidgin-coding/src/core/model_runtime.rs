@@ -171,7 +171,7 @@ pub struct ModelRuntime {
     models_path: Option<String>,
     allow_model_network: bool,
     config: ModelConfig,
-    models: Models,
+    pub(super) models: Models,
     snapshot: ModelRuntimeSnapshot,
 }
 
@@ -518,30 +518,6 @@ impl ModelRuntime {
             options,
             signal,
         )
-    }
-
-    /// A standalone [`Models`] handle sharing this runtime's composed provider set,
-    /// for capture into the `Send + Sync` sdk `stream_fn` closure.
-    ///
-    /// The ai [`Models`] is not `Clone` and its `auth_context` is not exposed, so a
-    /// live-shared handle cannot be lent out of the by-value `models` field (which
-    /// stays owned by this runtime once it is moved into the
-    /// [`AgentSessionConfig`](super::agent_session::AgentSessionConfig)). This
-    /// reconstructs an owned collection over the same `Arc<RegistryProvider>`
-    /// provider set with a fresh [`DefaultAuthContext`] over the process
-    /// environment — behaviorally identical to the runtime's own auth context (the
-    /// only context [`ModelRuntime::create`] ever installs, a stateless
-    /// [`SystemEnv`] reader). The provider set is snapshotted at call time; later
-    /// `reload_config` / `register_provider` mutations are not reflected in the
-    /// returned handle (the same rebuild-per-call sharing gap already tracked for
-    /// the runtime itself in the sdk module docs).
-    pub fn stream_models_handle(&self) -> Models {
-        let mut models =
-            Models::with_auth_context(Arc::new(DefaultAuthContext::new(SystemEnv::new())));
-        for provider in self.models.get_providers() {
-            models.set_provider_arc(provider.clone());
-        }
-        models
     }
 
     /// Whether a provider resolves to an OAuth credential (pi's `isUsingOAuth`,
