@@ -1,0 +1,35 @@
+{
+  "fluessig": {
+    "format": 1,
+    "emitter": "hinzu-api-fluessig",
+    "compiler": "0.1.0"
+  },
+  "source": "@earendil-works/pi-orchestrator (via hinzu api-fluessig)",
+  "scalars": [],
+  "unions": [],
+  "enums": [
+    {
+      "name": "InstanceStatus",
+      "variants": [
+        {
+          "name": "starting"
+        },
+        {
+          "name": "online"
+        },
+        {
+          "name": "stopping"
+        },
+        {
+          "name": "stopped"
+        },
+        {
+          "name": "error"
+        }
+      ]
+    }
+  ],
+  "entities": [],
+  "relationProperties": [],
+  "valueStructs": []
+}

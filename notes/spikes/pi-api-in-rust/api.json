@@ -1,0 +1,1030 @@
+{
+  "fluessig": {
+    "format": 1,
+    "emitter": "hinzu-api-fluessig",
+    "compiler": "0.1.0"
+  },
+  "source": "@earendil-works/pi-orchestrator (via hinzu api-fluessig)",
+  "models": [
+    {
+      "name": "ErrorResponse",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "ok",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "error",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "InstanceRecord",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "enum": "InstanceStatus"
+          },
+          "nullable": false
+        },
+        {
+          "name": "cwd",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "createdAt",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "lastSeenAt",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "sessionId",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "sessionFile",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "radiusPiId",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "InstanceSummary",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "enum": "InstanceStatus"
+          },
+          "nullable": false
+        },
+        {
+          "name": "cwd",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "sessionId",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "sessionFile",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "radiusPiId",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "IpcRequestHandler",
+      "fields": []
+    },
+    {
+      "name": "ListRequest",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "ListResponse",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "instances",
+          "type": {
+            "list": {
+              "model": "InstanceSummary"
+            }
+          },
+          "nullable": true
+        },
+        {
+          "name": "ok",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "error",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "MachineRecord",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "createdAt",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "lastSeenAt",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "RadiusRegistration",
+      "fields": [
+        {
+          "name": "heartbeatIntervalMs",
+          "type": "float64",
+          "nullable": false
+        },
+        {
+          "name": "expiresInMs",
+          "type": "float64",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "RequestMap",
+      "fields": [
+        {
+          "name": "spawn",
+          "type": {
+            "model": "SpawnRequest"
+          },
+          "nullable": false
+        },
+        {
+          "name": "list",
+          "type": {
+            "model": "ListRequest"
+          },
+          "nullable": false
+        },
+        {
+          "name": "stop",
+          "type": {
+            "model": "StopRequest"
+          },
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "model": "StatusRequest"
+          },
+          "nullable": false
+        },
+        {
+          "name": "rpc",
+          "type": {
+            "model": "RpcRequest"
+          },
+          "nullable": false
+        },
+        {
+          "name": "rpc_stream",
+          "type": {
+            "model": "RpcStreamRequest"
+          },
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "ResponseBase",
+      "fields": [
+        {
+          "name": "ok",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "error",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "ResponseMap",
+      "fields": [
+        {
+          "name": "spawn",
+          "type": {
+            "model": "SpawnResponse"
+          },
+          "nullable": false
+        },
+        {
+          "name": "list",
+          "type": {
+            "model": "ListResponse"
+          },
+          "nullable": false
+        },
+        {
+          "name": "stop",
+          "type": {
+            "model": "StopResponse"
+          },
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "model": "StatusResponse"
+          },
+          "nullable": false
+        },
+        {
+          "name": "rpc",
+          "type": {
+            "model": "RpcBridgeResponse"
+          },
+          "nullable": false
+        },
+        {
+          "name": "rpc_stream",
+          "type": {
+            "model": "RpcReadyResponse"
+          },
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "RpcBridgeResponse",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "response",
+          "type": "Json",
+          "nullable": false
+        },
+        {
+          "name": "ok",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "error",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "RpcReadyResponse",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "instance",
+          "type": {
+            "model": "InstanceSummary"
+          },
+          "nullable": true
+        },
+        {
+          "name": "ok",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "error",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "RpcRequest",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "instanceId",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "command",
+          "type": "Json",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "RpcStreamRequest",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "instanceId",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "SpawnRequest",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "cwd",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "provider",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "model",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "SpawnResponse",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "instance",
+          "type": {
+            "model": "InstanceSummary"
+          },
+          "nullable": true
+        },
+        {
+          "name": "ok",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "error",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "StatusRequest",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "instanceId",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "StatusResponse",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "instance",
+          "type": {
+            "model": "InstanceSummary"
+          },
+          "nullable": true
+        },
+        {
+          "name": "ok",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "error",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "StopRequest",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "instanceId",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "StopResponse",
+      "fields": [
+        {
+          "name": "type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "instanceId",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "ok",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "error",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    }
+  ],
+  "unions": [
+    {
+      "name": "SpawnResponseOrErrorResponseUnion",
+      "variants": [
+        {
+          "tag": "spawnResponse",
+          "type": {
+            "model": "SpawnResponse"
+          }
+        },
+        {
+          "tag": "errorResponse",
+          "type": {
+            "model": "ErrorResponse"
+          }
+        }
+      ]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "OrchestratorSupervisor",
+      "ops": [
+        {
+          "name": "getInstance",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": {
+              "model": "InstanceRecord"
+            }
+          }
+        },
+        {
+          "name": "getLiveInstance",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": {
+              "model": "InstanceRecord"
+            }
+          }
+        },
+        {
+          "name": "handleRpc",
+          "shape": "unary",
+          "async": true,
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "string"
+            },
+            {
+              "name": "command",
+              "type": "Json"
+            }
+          ],
+          "returns": {
+            "nullable": "Json"
+          }
+        },
+        {
+          "name": "listInstances",
+          "shape": "unary",
+          "params": [],
+          "returns": {
+            "list": {
+              "model": "InstanceRecord"
+            }
+          }
+        },
+        {
+          "name": "listLiveInstances",
+          "shape": "unary",
+          "params": [],
+          "returns": {
+            "list": {
+              "model": "InstanceRecord"
+            }
+          }
+        },
+        {
+          "name": "openRpcStream",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "string"
+            },
+            {
+              "name": "onEvent",
+              "type": "Json"
+            },
+            {
+              "name": "onUiRequest",
+              "type": "Json"
+            }
+          ],
+          "returns": {
+            "nullable": "Json"
+          }
+        },
+        {
+          "name": "recoverAfterRestart",
+          "shape": "unary",
+          "async": true,
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "shutdown",
+          "shape": "unary",
+          "async": true,
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "spawnInstance",
+          "shape": "unary",
+          "async": true,
+          "params": [
+            {
+              "name": "options",
+              "type": "Json"
+            }
+          ],
+          "returns": {
+            "model": "InstanceRecord"
+          }
+        },
+        {
+          "name": "stopInstance",
+          "shape": "unary",
+          "async": true,
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": {
+              "model": "InstanceRecord"
+            }
+          }
+        },
+        {
+          "name": "updateInstance",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "instance",
+              "type": {
+                "model": "InstanceRecord"
+              }
+            }
+          ],
+          "returns": "void"
+        }
+      ]
+    },
+    {
+      "name": "PiOrchestrator",
+      "doc": "Free functions of `@earendil-works/pi-orchestrator`, grouped as one interface.",
+      "ops": [
+        {
+          "name": "createRpcProcessInstance",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "options",
+              "type": "Json"
+            }
+          ],
+          "returns": "Json"
+        },
+        {
+          "name": "deleteMachine",
+          "shape": "unary",
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "encodeMessage",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "message",
+              "type": "Json"
+            }
+          ],
+          "returns": "string"
+        },
+        {
+          "name": "getAuthPath",
+          "shape": "unary",
+          "params": [],
+          "returns": "string"
+        },
+        {
+          "name": "getInstance",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": {
+              "model": "InstanceRecord"
+            }
+          }
+        },
+        {
+          "name": "getInstancesPath",
+          "shape": "unary",
+          "params": [],
+          "returns": "string"
+        },
+        {
+          "name": "getMachinePath",
+          "shape": "unary",
+          "params": [],
+          "returns": "string"
+        },
+        {
+          "name": "getOrchestratorDir",
+          "shape": "unary",
+          "params": [],
+          "returns": "string"
+        },
+        {
+          "name": "getSocketPath",
+          "shape": "unary",
+          "params": [],
+          "returns": "string"
+        },
+        {
+          "name": "handleIpcRequest",
+          "shape": "unary",
+          "async": true,
+          "params": [
+            {
+              "name": "request",
+              "type": {
+                "model": "SpawnRequest"
+              }
+            }
+          ],
+          "returns": {
+            "union": "SpawnResponseOrErrorResponseUnion"
+          }
+        },
+        {
+          "name": "loadInstances",
+          "shape": "unary",
+          "params": [],
+          "returns": {
+            "list": {
+              "model": "InstanceRecord"
+            }
+          }
+        },
+        {
+          "name": "loadMachine",
+          "shape": "unary",
+          "params": [],
+          "returns": {
+            "nullable": {
+              "model": "MachineRecord"
+            }
+          }
+        },
+        {
+          "name": "openRpcStream",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "string"
+            },
+            {
+              "name": "onResponse",
+              "type": "Json"
+            },
+            {
+              "name": "onSessionEvent",
+              "type": "Json"
+            },
+            {
+              "name": "onUiRequest",
+              "type": "Json"
+            }
+          ],
+          "returns": {
+            "nullable": "Json"
+          }
+        },
+        {
+          "name": "parseRequestLine",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "line",
+              "type": "string"
+            }
+          ],
+          "returns": "Json"
+        },
+        {
+          "name": "parseResponseLine",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "line",
+              "type": "string"
+            }
+          ],
+          "returns": "Json"
+        },
+        {
+          "name": "removeInstance",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "instanceId",
+              "type": "string"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "saveInstances",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "instances",
+              "type": {
+                "list": {
+                  "model": "InstanceRecord"
+                }
+              }
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "saveMachine",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "machine",
+              "type": {
+                "model": "MachineRecord"
+              }
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "sendIpcRequest",
+          "shape": "unary",
+          "async": true,
+          "params": [
+            {
+              "name": "request",
+              "type": "Json"
+            }
+          ],
+          "returns": "Json"
+        },
+        {
+          "name": "serve",
+          "shape": "unary",
+          "async": true,
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "startIpcServer",
+          "shape": "unary",
+          "async": true,
+          "params": [
+            {
+              "name": "handler",
+              "type": {
+                "model": "IpcRequestHandler"
+              }
+            }
+          ],
+          "returns": "Json"
+        },
+        {
+          "name": "upsertInstance",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "instance",
+              "type": {
+                "model": "InstanceRecord"
+              }
+            }
+          ],
+          "returns": "void"
+        }
+      ]
+    },
+    {
+      "name": "RpcProcessInstance",
+      "ops": [
+        {
+          "name": "dispose",
+          "shape": "unary",
+          "async": true,
+          "params": [],
+          "returns": "void"
+        },
+        {
+          "name": "handleUiResponse",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "response",
+              "type": "Json"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "onEvent",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "listener",
+              "type": "Json"
+            }
+          ],
+          "returns": "Json"
+        },
+        {
+          "name": "onExit",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "listener",
+              "type": "Json"
+            }
+          ],
+          "returns": "Json"
+        },
+        {
+          "name": "send",
+          "shape": "unary",
+          "async": true,
+          "params": [
+            {
+              "name": "command",
+              "type": "Json"
+            }
+          ],
+          "returns": "Json"
+        },
+        {
+          "name": "setUiRequestHandler",
+          "shape": "unary",
+          "params": [
+            {
+              "name": "handler",
+              "type": "Json",
+              "optional": true
+            }
+          ],
+          "returns": "void"
+        }
+      ]
+    }
+  ]
+}
