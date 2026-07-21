@@ -1096,3 +1096,82 @@ impl crate::generated::SelectListCoreCore for SelectListCoreImpl {
         self.inner.render_lines(width as usize)
     }
 }
+
+/// Clamp a JS-supplied dimension to a terminal size: negatives become 0.
+fn tui_to_usize(value: i64) -> usize {
+    value.max(0) as usize
+}
+
+/// The engine-backed implementation of the generated `TuiCore` contract.
+///
+/// Authored `#[fluessig(single_threaded)]`, so the generated handle holds this
+/// core THREAD-CONFINED in a `RefCell<TuiCoreImpl>` — no `Arc`, no `Send`/`Sync`
+/// — which is exactly what lets a `!Send` core compile: it owns pi's
+/// `Tui<LoggingTerminal>`, whose differential renderer holds
+/// `Rc<RefCell<dyn Component>>` children and non-`Send` closures. Every op is
+/// `&mut self`, reached from the handle through `RefCell::borrow_mut()`, so the
+/// JS-visible behavior is byte-for-byte unchanged from the pre-swap hand-written
+/// class.
+pub struct TuiCoreImpl {
+    tui: pidgin_tui::Tui<pidgin_tui::LoggingTerminal>,
+}
+
+impl crate::generated::TuiCoreCore for TuiCoreImpl {
+    fn new(cols: i64, rows: i64, show_hardware_cursor: bool) -> anyhow::Result<Self> {
+        let terminal = pidgin_tui::LoggingTerminal::new(tui_to_usize(cols), tui_to_usize(rows));
+        Ok(Self {
+            tui: pidgin_tui::Tui::new(terminal, show_hardware_cursor),
+        })
+    }
+
+    fn set_size(&mut self, cols: i64, rows: i64) {
+        self.tui
+            .terminal_mut()
+            .resize(tui_to_usize(cols), tui_to_usize(rows));
+    }
+
+    fn set_clear_on_shrink(&mut self, enabled: bool) {
+        self.tui.set_clear_on_shrink(enabled);
+    }
+
+    fn set_termux(&mut self, termux: bool) {
+        self.tui.set_termux(termux);
+    }
+
+    fn set_images_capable(&mut self, capable: bool) {
+        self.tui.set_images_capable(capable);
+    }
+
+    fn set_base_lines(&mut self, lines: Vec<String>) {
+        self.tui.set_base_lines(lines);
+    }
+
+    fn tick(&mut self, force: bool) -> anyhow::Result<()> {
+        self.tui.request_render(force);
+        self.tui.flush().map_err(|e| anyhow::anyhow!(e.to_string()))
+    }
+
+    fn take_writes(&mut self) -> String {
+        self.tui.take_writes()
+    }
+
+    fn full_redraws(&mut self) -> i64 {
+        self.tui.full_redraws() as i64
+    }
+
+    fn cursor_row(&mut self) -> i64 {
+        self.tui.cursor_row()
+    }
+
+    fn hardware_cursor_row(&mut self) -> i64 {
+        self.tui.hardware_cursor_row()
+    }
+
+    fn previous_viewport_top(&mut self) -> i64 {
+        self.tui.previous_viewport_top()
+    }
+
+    fn max_lines_rendered(&mut self) -> i64 {
+        self.tui.max_lines_rendered()
+    }
+}

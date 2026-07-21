@@ -1632,6 +1632,237 @@
           }
         }
       ]
+    },
+    {
+      "name": "TuiCore",
+      "doc": "The Rust-backed differential renderer, exposed to JavaScript as `TuiCore`.\n\nThe JS `TUI` shim owns one of these, keeps pi's component tree / overlay /\nfocus / input logic in JS, and per frame: renders its components to lines,\npushes them via [`TuiCore::set_base_lines`], drives one render with\n[`TuiCore::tick`], drains the write stream with [`TuiCore::take_writes`], and\nforwards it to the JS terminal. The renderer's cross-frame diff state\n(previous lines, cursor rows, full-redraw ladder) lives entirely in the\nwrapped [`Tui`].",
+      "single_threaded": true,
+      "ops": [
+        {
+          "name": "new",
+          "doc": "Build a renderer over an in-memory logging terminal of `cols` x `rows`.\n`show_hardware_cursor` mirrors pi's `PI_HARDWARE_CURSOR` opt-in.",
+          "shape": "ctor",
+          "params": [
+            {
+              "name": "cols",
+              "type": "int64"
+            },
+            {
+              "name": "rows",
+              "type": "int64"
+            },
+            {
+              "name": "showHardwareCursor",
+              "type": "boolean"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "setSize",
+          "doc": "Update the terminal dimensions the next render reads (pi reads\n`terminal.columns`/`rows` each `doRender`; the width/height-change full\nredraw is decided inside `tick` by comparing against the previous frame).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "cols",
+              "type": "int64"
+            },
+            {
+              "name": "rows",
+              "type": "int64"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setSize"
+            }
+          }
+        },
+        {
+          "name": "setClearOnShrink",
+          "doc": "pi's `setClearOnShrink`: clear empty rows when content shrinks.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "enabled",
+              "type": "boolean"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setClearOnShrink"
+            }
+          }
+        },
+        {
+          "name": "setTermux",
+          "doc": "Model `isTermuxSession()`: on Termux, height changes do not force a full\nredraw. The shim calls this per frame from `process.env.TERMUX_VERSION`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "termux",
+              "type": "boolean"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setTermux"
+            }
+          }
+        },
+        {
+          "name": "setImagesCapable",
+          "doc": "Model terminal image capability (gates pi's `queryCellSize`). Not needed\nfor the base render diff, but kept for surface parity.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "capable",
+              "type": "boolean"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setImagesCapable"
+            }
+          }
+        },
+        {
+          "name": "setBaseLines",
+          "doc": "Replace the entire base frame with pre-rendered `lines` (pi's TS\ncomponents rendered to `string[]`). Backed by a single line-buffer child.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "lines",
+              "type": {
+                "list": "string"
+              }
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setBaseLines"
+            }
+          }
+        },
+        {
+          "name": "tick",
+          "doc": "Drive exactly one render: `request_render(force)` then `flush()`. This is\nthe deterministic, timer-free equivalent of a single fire of pi's\ncoalesced scheduler (one `waitForRender()`). `force` resets the diff state\nfor a full redraw (pi's `requestRender(true)`).",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": false,
+          "params": [
+            {
+              "name": "force",
+              "type": "boolean"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "tick"
+            }
+          }
+        },
+        {
+          "name": "takeWrites",
+          "doc": "Drain the accumulated write stream (pi's\n`LoggingVirtualTerminal.getWrites()` + `clearWrites()`): the exact bytes\nthis frame emitted, then reset the sink.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "takeWrites"
+            }
+          }
+        },
+        {
+          "name": "fullRedraws",
+          "doc": "Number of full redraws performed (pi's `fullRedraws` getter).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [],
+          "returns": "int64",
+          "bindings": {
+            "node": {
+              "name": "fullRedraws"
+            }
+          }
+        },
+        {
+          "name": "cursorRow",
+          "doc": "Logical cursor row (end of rendered content).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [],
+          "returns": "int64",
+          "bindings": {
+            "node": {
+              "name": "cursorRow"
+            }
+          }
+        },
+        {
+          "name": "hardwareCursorRow",
+          "doc": "Actual hardware cursor row (pi's `hardwareCursorRow`).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [],
+          "returns": "int64",
+          "bindings": {
+            "node": {
+              "name": "hardwareCursorRow"
+            }
+          }
+        },
+        {
+          "name": "previousViewportTop",
+          "doc": "Previous viewport top (resize-aware cursor bookkeeping).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [],
+          "returns": "int64",
+          "bindings": {
+            "node": {
+              "name": "previousViewportTop"
+            }
+          }
+        },
+        {
+          "name": "maxLinesRendered",
+          "doc": "High-water working area (max lines ever rendered since last clear).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [],
+          "returns": "int64",
+          "bindings": {
+            "node": {
+              "name": "maxLinesRendered"
+            }
+          }
+        }
+      ]
     }
   ]
 }
