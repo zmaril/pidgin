@@ -104,7 +104,7 @@ use std::sync::Arc;
 use pidgin_agent::agent::{Agent, AgentOptions, InitialAgentState, QueueMode};
 use pidgin_agent::types::StreamFn;
 use pidgin_ai::seams::{AbortSignal, StreamResult};
-use pidgin_ai::{clamp_thinking_level, Context, Model, ModelThinkingLevel, StreamOptions};
+use pidgin_ai::{clamp_thinking_level, Context, Model, ModelThinkingLevel, SimpleStreamOptions};
 
 use crate::core::agent_session::{AgentSession, AgentSessionConfig, ScopedModel};
 use crate::core::auth::auth_guidance::format_no_models_available_message;
@@ -377,7 +377,7 @@ fn build_stream_fn(model_runtime: &ModelRuntime, settings_manager: &SettingsMana
     Arc::new(
         move |model: &Model,
               context: &Context,
-              options: Option<&StreamOptions>,
+              options: Option<&SimpleStreamOptions>,
               signal: Option<&AbortSignal>|
               -> StreamResult {
             // pi: `effectiveTimeoutMs = httpIdleTimeoutMs === 0 ? 2147483647 : httpIdleTimeoutMs`.
@@ -387,30 +387,33 @@ fn build_stream_fn(model_runtime: &ModelRuntime, settings_manager: &SettingsMana
             } else {
                 http_idle_timeout_ms
             };
-            // pi's `??` fallbacks: caller option, then the settings snapshot.
+            // pi's `??` fallbacks: caller option, then the settings snapshot. The
+            // retry/timeout tuning lives on the base StreamOptions; the caller's
+            // `reasoning`/`thinking_budgets` ride alongside and are preserved by the
+            // clone below so they reach the drivers.
             let timeout_ms = options
-                .and_then(|o| o.timeout_ms)
+                .and_then(|o| o.base.timeout_ms)
                 .or_else(|| provider_retry.timeout_ms.map(|ms| ms as u64))
                 .unwrap_or(effective_timeout_ms);
             let websocket_connect_timeout_ms = options
-                .and_then(|o| o.websocket_connect_timeout_ms)
+                .and_then(|o| o.base.websocket_connect_timeout_ms)
                 .or(websocket_connect_timeout_ms);
             let max_retries = options
-                .and_then(|o| o.max_retries)
+                .and_then(|o| o.base.max_retries)
                 .or_else(|| provider_retry.max_retries.map(|n| n as u32));
             let max_retry_delay_ms = options
-                .and_then(|o| o.max_retry_delay_ms)
+                .and_then(|o| o.base.max_retry_delay_ms)
                 .unwrap_or(provider_retry.max_retry_delay_ms as u64);
 
             // Build the effective options on top of the caller's (pi's `{ ...options, ... }`).
             let mut opts = options.cloned().unwrap_or_default();
-            opts.timeout_ms = Some(timeout_ms);
-            opts.websocket_connect_timeout_ms = websocket_connect_timeout_ms;
-            opts.max_retries = max_retries;
-            opts.max_retry_delay_ms = Some(max_retry_delay_ms);
+            opts.base.timeout_ms = Some(timeout_ms);
+            opts.base.websocket_connect_timeout_ms = websocket_connect_timeout_ms;
+            opts.base.max_retries = max_retries;
+            opts.base.max_retry_delay_ms = Some(max_retry_delay_ms);
 
             // pi threads `options?.sessionId` into `mergeProviderAttributionHeaders`.
-            let session_id = opts.session_id.clone();
+            let session_id = opts.base.session_id.clone();
             stream_simple_with_attribution(
                 &models,
                 telemetry_enabled,

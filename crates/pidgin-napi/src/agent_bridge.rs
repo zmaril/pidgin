@@ -108,7 +108,7 @@ use pidgin_ai::seams::provider::AbortSignal;
 use pidgin_ai::seams::StreamResult;
 use pidgin_ai::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, ContentBlock, Context, Message, Model,
-    StopReason, StreamOptions, Usage, UsageCost,
+    SimpleStreamOptions, StopReason, StreamOptions, Usage, UsageCost,
 };
 
 /// The `kind` reserved for the terminal completion envelope. The JS dispatcher
@@ -593,7 +593,7 @@ impl AgentBridge {
             let stream_fn: StreamFn = Arc::new(
                 move |model: &Model,
                       ctx: &Context,
-                      options: Option<&StreamOptions>,
+                      options: Option<&SimpleStreamOptions>,
                       signal: Option<&AbortSignal>| {
                     let aborted = signal.is_some_and(AbortSignal::is_aborted);
                     let payload = json!({

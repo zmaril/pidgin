@@ -19,13 +19,13 @@
 use std::sync::Arc;
 
 use crate::api::mistral::driver;
-use crate::api::mistral::{MistralModel, MistralOptions};
+use crate::api::mistral::{MistralModel, MistralOptions, SimpleMistralOptions};
 use crate::seams::clock::Clock;
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
 use crate::types::{
-    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, StopReason,
-    StreamOptions, Usage, UsageCost,
+    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
+    SimpleStreamOptions, StopReason, StreamOptions, ThinkingLevel, Usage, UsageCost,
 };
 use crate::utils::sse::AssistantEventReader;
 
@@ -144,6 +144,82 @@ impl Provider for MistralBackend {
             api_key,
             timestamp,
         )
+    }
+
+    /// Route the simple, level-based options through the driver's
+    /// `stream_simple` so `reasoning` reaches the request as the model's
+    /// prompt-mode / reasoning-effort configuration, mirroring pi's
+    /// `streamSimple` (`mistral-conversations.ts:110`).
+    ///
+    /// When no `reasoning` level is requested, this falls back to the raw
+    /// [`stream`](Self::stream) on the base options, so the outgoing request is
+    /// byte-identical to the pre-seam path.
+    fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        // No reasoning: keep the raw request unchanged (map None -> base options).
+        let simple = match options {
+            Some(simple) if simple.reasoning.is_some() => simple,
+            other => return self.stream(model, context, other.map(|o| &o.base), signal),
+        };
+
+        let mut typed_model: MistralModel = match reserialize_model(model) {
+            Ok(typed_model) => typed_model,
+            Err(error) => {
+                return error_result(
+                    model,
+                    self.clock.now_ms(),
+                    format!("Mistral model is not compatible with mistral-conversations: {error}"),
+                )
+            }
+        };
+
+        if let Some(base_url) = simple.base.base_url.as_ref() {
+            typed_model.base_url = base_url.clone();
+        }
+
+        let simple_options = mistral_simple_options(simple);
+        let api_key = simple.base.api_key.as_deref();
+        let timestamp = self.clock.now_ms();
+        driver::stream_simple(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            &simple_options,
+            api_key,
+            timestamp,
+        )
+    }
+}
+
+/// Map the seam-level [`SimpleStreamOptions`] onto the Mistral driver's local
+/// simple-options struct (the reasoning-mode input pi's `streamSimple` reads).
+fn mistral_simple_options(simple: &SimpleStreamOptions) -> SimpleMistralOptions {
+    let base = &simple.base;
+    SimpleMistralOptions {
+        reasoning: simple.reasoning.map(to_model_thinking_level),
+        temperature: base.temperature,
+        max_tokens: base.max_tokens,
+        session_id: base.session_id.clone(),
+        cache_retention: base.cache_retention,
+    }
+}
+
+/// Widen a caller's [`ThinkingLevel`] to the model-level [`ModelThinkingLevel`]
+/// the reasoning-mode resolver expects (pi's `SimpleStreamOptions.reasoning`,
+/// which extends the base ladder with `off`; a requested level is never `off`).
+fn to_model_thinking_level(level: ThinkingLevel) -> ModelThinkingLevel {
+    match level {
+        ThinkingLevel::Minimal => ModelThinkingLevel::Minimal,
+        ThinkingLevel::Low => ModelThinkingLevel::Low,
+        ThinkingLevel::Medium => ModelThinkingLevel::Medium,
+        ThinkingLevel::High => ModelThinkingLevel::High,
+        ThinkingLevel::Xhigh => ModelThinkingLevel::Xhigh,
+        ThinkingLevel::Max => ModelThinkingLevel::Max,
     }
 }
 
@@ -476,6 +552,80 @@ mod tests {
             serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
         assert_eq!(body["maxTokens"], json!(8192));
         assert!(body.get("temperature").is_none());
+    }
+
+    // -----------------------------------------------------------------------
+    // streamSimple: reasoning mode (pi `mistral-conversations.ts:110`)
+    // -----------------------------------------------------------------------
+
+    /// A reasoning-capable mistral `Model<Value>` in the `reasoningEffort` class
+    /// (`mistral-medium-3.5`), targeting `base_url`.
+    fn mistral_reasoning_model(base_url: &str) -> Model {
+        serde_json::from_value(json!({
+            "id": "mistral-medium-3.5",
+            "name": "Mistral Medium 3.5",
+            "api": "mistral-conversations",
+            "provider": "mistral",
+            "baseUrl": base_url,
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 128000,
+            "maxTokens": 8192,
+        }))
+        .unwrap()
+    }
+
+    // Reasoning `high` on a `reasoningEffort`-class model lowers to
+    // `reasoningEffort: "high"` in the outgoing body (cf. pi
+    // `mistral-conversations.ts:121-129`).
+    #[test]
+    fn stream_simple_reasoning_sets_reasoning_effort() {
+        let (scripted, transport) = scripted_hello();
+        let backend = MistralBackend::new(transport, fake_clock());
+        let model = mistral_reasoning_model("https://api.mistral.test");
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-mistral-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body["reasoningEffort"], json!("high"));
+    }
+
+    // NO-REASONING zero-regression: `stream_simple` with `reasoning: None` builds
+    // a request byte-identical to the raw `stream` path -- no `reasoningEffort` /
+    // `promptMode` is added.
+    #[test]
+    fn stream_simple_without_reasoning_matches_raw_stream() {
+        let model = mistral_model("https://api.mistral.test");
+        let base = StreamOptions {
+            api_key: Some("sk-mistral-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (raw_scripted, raw_transport) = scripted_hello();
+        let raw_backend = MistralBackend::new(raw_transport, fake_clock());
+        raw_backend.stream(&model, &user_context(), Some(&base), None);
+
+        let (simple_scripted, simple_transport) = scripted_hello();
+        let simple_backend = MistralBackend::new(simple_transport, fake_clock());
+        let simple = SimpleStreamOptions::from_base(base.clone());
+        simple_backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let raw_body: Value =
+            serde_json::from_str(raw_scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        let simple_body: Value =
+            serde_json::from_str(simple_scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(raw_body, simple_body);
+        assert!(simple_body.get("reasoningEffort").is_none());
+        assert!(simple_body.get("promptMode").is_none());
     }
 
     // Incremental over the one-chunk ScriptedTransport (default `send_streaming`)

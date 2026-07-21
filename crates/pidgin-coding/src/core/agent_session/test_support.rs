@@ -35,8 +35,8 @@ use pidgin_agent::types::{AgentMessage, AgentTool, AgentToolResult, AgentToolUpd
 use pidgin_ai::providers::faux::{faux_assistant_message, FauxAssistantOptions};
 use pidgin_ai::seams::{AbortSignal, StreamResult};
 use pidgin_ai::{
-    AssistantMessage, AssistantMessageEvent, ContentBlock, Context, Model, ModelCost, StopReason,
-    StreamOptions,
+    AssistantMessage, AssistantMessageEvent, ContentBlock, Context, Model, ModelCost,
+    SimpleStreamOptions, StopReason,
 };
 
 use crate::core::extensions::command::{CommandContext, RegisteredCommand, ResolvedCommand};
@@ -563,7 +563,7 @@ pub(crate) fn create_harness(options: HarnessOptions) -> Harness {
     let stream_fn: pidgin_agent::types::StreamFn = Arc::new(
         move |_model: &Model,
               context: &Context,
-              _options: Option<&StreamOptions>,
+              _options: Option<&SimpleStreamOptions>,
               _signal: Option<&AbortSignal>| {
             stream_call_count.fetch_add(1, Ordering::SeqCst);
             let message = {

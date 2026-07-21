@@ -63,7 +63,7 @@ use pidgin_ai::providers::faux::{faux_assistant_message, FauxAssistantOptions};
 use pidgin_ai::seams::{AbortSignal, StreamResult};
 use pidgin_ai::{
     AssistantMessage, AssistantMessageEvent, ContentBlock, Context, Message, Modality, Model,
-    ModelCost, StopReason, StreamOptions, UserContent,
+    ModelCost, SimpleStreamOptions, StopReason, UserContent,
 };
 
 use crate::core::extensions::events::session::SessionStartEvent;
@@ -157,7 +157,7 @@ fn echo_stream_fn() -> StreamFn {
     Arc::new(
         |_model: &Model,
          context: &Context,
-         _options: Option<&StreamOptions>,
+         _options: Option<&SimpleStreamOptions>,
          _signal: Option<&AbortSignal>| {
             let echoed = last_user_text(context);
             mock_stream(assistant_text(&echoed))
@@ -262,7 +262,7 @@ fn faux_stream_fn(responses: Vec<FauxResponse>) -> StreamFn {
     Arc::new(
         move |_model: &Model,
               context: &Context,
-              _options: Option<&StreamOptions>,
+              _options: Option<&SimpleStreamOptions>,
               _signal: Option<&AbortSignal>| {
             let message = {
                 let mut guard = scripted.lock().unwrap();

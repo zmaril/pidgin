@@ -35,7 +35,7 @@ use pidgin_agent::agent::{Agent, AgentOptions, InitialAgentState};
 use pidgin_agent::types::{AgentMessage, StreamFn};
 use pidgin_ai::seams::{AbortSignal, StreamResult};
 use pidgin_ai::{
-    AssistantMessage, AssistantMessageEvent, Context, Model, StopReason, StreamOptions,
+    AssistantMessage, AssistantMessageEvent, Context, Model, SimpleStreamOptions, StopReason,
 };
 
 use crate::core::agent_session::test_support::{assistant_text, faux_model, FauxResponse};
@@ -366,7 +366,7 @@ fn faux_stream_fn(
     Arc::new(
         move |_model: &Model,
               context: &Context,
-              _options: Option<&StreamOptions>,
+              _options: Option<&SimpleStreamOptions>,
               _signal: Option<&AbortSignal>| {
             call_count.fetch_add(1, Ordering::SeqCst);
             let message = {
