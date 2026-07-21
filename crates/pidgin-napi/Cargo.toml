@@ -15,7 +15,7 @@ pidgin-ai = { path = "../pidgin-ai" }
 pidgin-coding = { path = "../pidgin-coding" }
 pidgin-tui = { path = "../pidgin-tui" }
 indexmap = { version = "2", features = ["serde"] }
-napi = { version = "2", default-features = false, features = ["napi9"] }
+napi = { version = "3", default-features = false, features = ["napi9"] }
 napi-derive = "2"
 serde = { workspace = true }
 serde_json = { workspace = true }
