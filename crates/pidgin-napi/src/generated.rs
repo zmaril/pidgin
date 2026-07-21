@@ -6,6 +6,7 @@
 // The fixed prelude — generated code uses fully-qualified paths elsewhere.
 use napi::bindgen_prelude::Result;
 use napi_derive::napi;
+use std::cell::RefCell;
 use std::sync::Arc;
 
 fn err(e: impl std::fmt::Display) -> napi::Error {
@@ -62,6 +63,17 @@ pub struct SessionCwdIssueJs {
 pub struct FuzzyMatchResult {
     pub matches: bool,
     pub score: f64,
+}
+
+/// Event surfaced by [`InputCore::handle_input`] so the JS shim can fire pi's
+/// `onSubmit`/`onEscape` callbacks. `submit` is the submitted value (pi passes
+/// the current value) or `null` when no submit fired; `escape` is `true` when a
+/// cancel/escape fired.
+#[napi(object)]
+#[derive(Clone)]
+pub struct InputEvent {
+    pub submit: Option<String>,
+    pub escape: bool,
 }
 
 /// The `Pidgin` contract — implement over the engine in `crate::core_impl`.
@@ -166,6 +178,16 @@ pub trait StdinBufferCoreCore: Sized + Send + Sync + 'static {
     fn flush(&self) -> Vec<String>;
     fn get_buffer(&self) -> String;
     fn clear(&self) -> ();
+}
+
+/// The `InputCore` contract — implement over the engine in `crate::core_impl`.
+pub trait InputCoreCore: Sized + 'static {
+    fn new() -> anyhow::Result<Self>;
+    fn get_value(&mut self) -> String;
+    fn set_value(&mut self, value: String) -> ();
+    fn set_focused(&mut self, focused: bool) -> ();
+    fn handle_input(&mut self, data: String) -> InputEvent;
+    fn render(&mut self, width: u32) -> Vec<String>;
 }
 
 /// Returns the crate version. Proves the native addon builds and loads.
@@ -699,5 +721,54 @@ impl StdinBufferCore {
     #[napi(js_name = "clear")]
     pub fn clear(&self) -> () {
         self.core.clear()
+    }
+}
+
+/// The Rust-backed single-line input core, exposed to JavaScript as
+/// `InputCore`.
+#[napi]
+pub struct InputCore {
+    // pub(crate): the @manual ops in lib.rs extend this class and need the core
+    pub(crate) core: RefCell<crate::core_impl::InputCoreImpl>,
+}
+
+#[napi]
+impl InputCore {
+    /// Create an empty input core, wiring pi's `onSubmit`/`onEscape` seams to a
+    /// shared event cell that `handle_input` drains after each call.
+    #[napi(constructor)]
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            core: RefCell::new(
+                <crate::core_impl::InputCoreImpl as InputCoreCore>::new().map_err(err)?,
+            ),
+        })
+    }
+    /// pi's `getValue()`: the current value.
+    #[napi(js_name = "getValue")]
+    pub fn get_value(&self) -> String {
+        self.core.borrow_mut().get_value()
+    }
+    /// pi's `setValue(value)`: set the value, clamping the cursor.
+    #[napi(js_name = "setValue")]
+    pub fn set_value(&self, value: String) -> () {
+        self.core.borrow_mut().set_value(value)
+    }
+    /// pi's `focused` field setter — routed here because render reads it.
+    #[napi(js_name = "setFocused")]
+    pub fn set_focused(&self, focused: bool) -> () {
+        self.core.borrow_mut().set_focused(focused)
+    }
+    /// pi's `handleInput(data)`: process a chunk of terminal input, returning any
+    /// `onSubmit`/`onEscape` that fired so the shim can replay it onto the JS
+    /// callbacks.
+    #[napi(js_name = "handleInput")]
+    pub fn handle_input(&self, data: String) -> InputEvent {
+        self.core.borrow_mut().handle_input(data)
+    }
+    /// pi's `render(width)`: render the input to a single line.
+    #[napi(js_name = "render")]
+    pub fn render(&self, width: u32) -> Vec<String> {
+        self.core.borrow_mut().render(width)
     }
 }
