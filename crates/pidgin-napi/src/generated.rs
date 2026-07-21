@@ -70,6 +70,7 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn find_word_backward(text: String, cursor: i32) -> i32;
     fn find_word_forward(text: String, cursor: i32) -> i32;
     fn parse_git_url(source: String) -> Option<String>;
+    fn strip_ansi(value: String) -> String;
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -262,6 +263,13 @@ pub fn find_word_forward(text: String, cursor: i32) -> i32 {
 #[napi(js_name = "parseGitUrl")]
 pub fn parse_git_url(source: String) -> Option<String> {
     <crate::core_impl::PidginImpl as PidginCore>::parse_git_url(source)
+}
+
+/// `stripAnsi` (utils/ansi.ts): remove ANSI escape sequences (OSC + CSI). The
+/// shim keeps pi's non-string `TypeError` guard, so only strings reach here.
+#[napi(js_name = "stripAnsi")]
+pub fn strip_ansi(value: String) -> String {
+    <crate::core_impl::PidginImpl as PidginCore>::strip_ansi(value)
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as

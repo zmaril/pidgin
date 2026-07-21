@@ -519,6 +519,25 @@
               "name": "parseGitUrl"
             }
           }
+        },
+        {
+          "name": "stripAnsi",
+          "doc": "`stripAnsi` (utils/ansi.ts): remove ANSI escape sequences (OSC + CSI). The\nshim keeps pi's non-string `TypeError` guard, so only strings reach here.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "value",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "stripAnsi"
+            }
+          }
         }
       ]
     },
