@@ -59,6 +59,7 @@ use std::ops::ControlFlow;
 
 use serde_json::Value;
 
+use crate::api::github_copilot_headers::build_copilot_dynamic_headers;
 use crate::seams::http::{HttpRequest, HttpTransport};
 use crate::seams::provider::StreamResult;
 use crate::types::{
@@ -188,6 +189,7 @@ fn serialize_body(body: &Value) -> String {
 pub fn assemble_request(
     model: &OpenAICompletionsModel,
     compat: &ResolvedCompat,
+    context: &Context,
     body: String,
     api_key: &str,
     model_headers: Option<&BTreeMap<String, String>>,
@@ -199,8 +201,16 @@ pub fn assemble_request(
     if let Some(model_headers) = model_headers {
         merge_into(&mut headers, model_headers);
     }
-    // github-copilot dynamic vision headers (`buildCopilotDynamicHeaders`) are a
-    // sibling concern and are not assembled here.
+    // pi's `createClient` (`openai-completions.ts:541`): for github-copilot,
+    // `Object.assign(headers, buildCopilotDynamicHeaders(...))` after `model.headers`
+    // and before session-affinity / optionsHeaders, so the dynamic headers override
+    // `model.headers` but a caller header still wins.
+    if model.provider == "github-copilot" {
+        merge_into(
+            &mut headers,
+            &build_copilot_dynamic_headers(&context.messages),
+        );
+    }
     if let Some(session_id) = session_id {
         apply_session_affinity(&mut headers, compat, session_id);
     }
@@ -335,6 +345,7 @@ pub fn stream<T: HttpTransport + ?Sized>(
     let request = assemble_request(
         &lean,
         &compat,
+        context,
         serialize_body(&body),
         &client_key,
         model.headers.as_ref(),
@@ -466,6 +477,7 @@ pub fn stream_streaming<'a, T: HttpTransport + ?Sized>(
     let request = assemble_request(
         &lean,
         &compat,
+        context,
         serialize_body(&body),
         &client_key,
         model.headers.as_ref(),
