@@ -889,4 +889,44 @@ mod tests {
         // Still exactly the one anthropic request; the not-yet-ported dialect made none.
         assert_eq!(scripted.requests().len(), 1);
     }
+
+    // (c/iii) The remaining real multi-api providers whose every declared dialect
+    // is registered — cloudflare-ai-gateway and github-copilot (anthropic-messages
+    // + openai-completions + openai-responses) and xai (openai-completions +
+    // openai-responses). Unlike opencode (which exercises the Unimplemented
+    // fallback for a dialect it does not carry), each of these assembles to a
+    // *fully bound* ByApi map: every declared api name resolves to a backend, so
+    // the map keys equal the declared api set with no leg omitted. This pins the
+    // auto-assembly as complete for these providers off the registered backends
+    // alone, with no per-provider wiring.
+    #[test]
+    fn multi_api_providers_bind_every_declared_leg() {
+        let (_scripted, transport) = scripted_hellos(0);
+        let clock = fake_clock();
+        for id in ["cloudflare-ai-gateway", "github-copilot", "xai"] {
+            let apis = catalog_provider_apis(id);
+            assert!(
+                apis.len() > 1,
+                "{id} is a mixed-dialect provider (declares multiple api names)"
+            );
+            // Every declared dialect must be one this registry backs today, so the
+            // ByApi assembly leaves no leg on the no-API-implementation path.
+            for api in &apis {
+                assert!(
+                    backend_for_api(api, &transport, &clock).is_some(),
+                    "{id}'s declared dialect {api} must have a registered backend"
+                );
+            }
+
+            let map = match api_routing_for(&apis, &transport, &clock) {
+                ApiRouting::ByApi(map) => map,
+                _ => panic!("{id} must assemble to ByApi over its registered legs"),
+            };
+            let bound: BTreeSet<String> = map.keys().cloned().collect();
+            assert_eq!(
+                bound, apis,
+                "{id}'s ByApi map must bind a backend for every declared leg"
+            );
+        }
+    }
 }
