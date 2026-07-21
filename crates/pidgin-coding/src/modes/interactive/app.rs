@@ -31,14 +31,17 @@ use std::cell::RefCell;
 use std::io::Write;
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
+use std::sync::Arc;
 use std::time::Duration;
 
 use pidgin_tui::{
-    mount_focused_editor, Editor, EditorOptions, EditorTheme, InputListenerResult, ProcessTerminal,
-    RenderError, RunLoop, SelectListTheme, SharedLines, Terminal, TerminalInput, Tui,
+    mount_focused_editor, tui_keybindings, Editor, EditorOptions, EditorTheme, InputListenerResult,
+    KeybindingsManager, ProcessTerminal, RenderError, RunLoop, SelectListTheme, SharedLines,
+    Terminal, TerminalInput, Tui,
 };
 
 use super::components::{FooterComponent, FooterData, IdleStatus};
+use super::extension_ui::{InputSource, TuiExtensionUi};
 use super::routing::{ChatRegion, ChatState, StatusRegion, StatusSlot, StatusView};
 use super::theme::{
     create_theme, parse_theme_json, ActiveTheme, ColorMode, InteractiveThemeController, RgbColor,
@@ -47,7 +50,11 @@ use super::theme::{
 };
 use super::turn::{TurnCommand, TurnDriver};
 use crate::core::agent_session::AgentSessionEvent;
+use crate::core::extensions::types::{ExtensionContext, ExtensionUi, NotifyLevel, UiError};
 use crate::core::settings_manager::{SettingsManager, SettingsManagerCreateOptions};
+use crate::extensions::llama::{
+    create_llama_provider, run_llama_command, LlamaClient, NotifyFn, DEFAULT_LLAMA_SERVER_URL,
+};
 
 /// The default 256-color interactive theme, embedded so the shell needs no theme
 /// file on disk. Byte-identical to pi's `dark.json` (the PR-4A vector source).
@@ -117,6 +124,45 @@ impl<W: Write> ThemeControllerUi for Tui<ProcessTerminal<W>> {
     }
 }
 
+/// A render-thread shell-intercepted command: an editor line the shell handles
+/// itself on the render/main thread rather than forwarding to the turn worker as
+/// an [`AgentSession`](crate::core::agent_session) prompt.
+///
+/// # Why this is a render-thread intercept (a documented pidgin divergence)
+///
+/// `/llama` is intercepted here and driven **directly on the render/main thread**
+/// — it is *not* routed through `AgentSession` extension-dispatch. This is the
+/// same class of divergence (and carries the same justification) as pidgin's
+/// `/new` · `/resume` · `/fork` shell commands, and is sanctioned by the
+/// team-memory policy `builtin-ext-rust-native-policy`: a native builtin may be
+/// serviced on the render thread when the ported extension-dispatch path cannot
+/// reach the live TUI surface.
+///
+/// The forcing constraint is pidgin's locked `!Send` thread split: the
+/// [`AgentSession`](crate::core::agent_session) (and the extension-runner that
+/// would dispatch `/llama`) live on the **worker** thread, while the [`Tui`] —
+/// which `run_llama_command` must mount its overlay onto — lives on the
+/// **render/main** thread. Threading a live [`TuiExtensionUi`] over the `&mut Tui`
+/// out to the worker, mounting an overlay there, and driving its input pump would
+/// need a cross-thread interactive mount-and-drive handoff, which does not exist.
+/// So the shell mounts the llama TUI where the `Tui` already is: on the render
+/// thread, from the pump, once `on_submit` has returned and the `&mut Tui` borrow
+/// it held is free.
+///
+/// ## Future slice (Option A) — NOT to be built ad hoc
+///
+/// The faithful long-term path is to route `/llama` through `AgentSession`
+/// extension-dispatch: a native `ExtensionRunner` + a `create_command_context`
+/// that mints a live [`TuiExtensionUi`], plus the cross-thread mount-and-drive
+/// handoff that carries the interactive overlay from the worker back to the render
+/// thread. That cross-thread interactive handoff is *adjacent* to the parked
+/// reentrant / preemptible-primitives packet and must land with it — it must not
+/// be built ad hoc.
+enum PendingShellCommand {
+    /// `/llama` — mount the llama model-manager overlay on the render thread.
+    Llama,
+}
+
 /// The interactive shell: the composed container tree, the shared chat-region
 /// state, the shared active theme, the theme controller, and the offline turn
 /// worker, over a `Tui<ProcessTerminal<W>>`.
@@ -137,6 +183,10 @@ pub struct InteractiveShell<W: Write> {
     turn: TurnDriver,
     evt_tx: Sender<ShellEvent>,
     evt_rx: Receiver<ShellEvent>,
+    /// The render-thread shell command recorded by the editor's `on_submit` (which
+    /// runs while the run loop already holds `&mut Tui`, so it cannot mount inline).
+    /// The pump drains it after `on_submit` returns, when the `&mut Tui` is free.
+    pending_shell_command: Rc<RefCell<Option<PendingShellCommand>>>,
 }
 
 impl<W: Write> InteractiveShell<W> {
@@ -199,12 +249,31 @@ impl<W: Write> InteractiveShell<W> {
         // (7) editor — the focused prompt. Submit pushes the user bubble and
         // forwards the prompt to the worker (pi's `setupEditorSubmitHandler` ->
         // `session.prompt`, here `-> AgentSession::prompt` on the worker).
+        let pending_shell_command: Rc<RefCell<Option<PendingShellCommand>>> =
+            Rc::new(RefCell::new(None));
+
         let mut editor = Editor::new(editor_theme(), EditorOptions::default());
         editor.set_terminal_rows(rows);
         let submit_state = Rc::clone(&chat_state);
         let cmd_tx = turn.sender();
+        let submit_pending = Rc::clone(&pending_shell_command);
         editor.on_submit = Some(Box::new(move |line: String| {
             if line.is_empty() {
+                return;
+            }
+            // Render-thread shell-intercept: `/llama` is handled by the shell on
+            // the render/main thread (NOT routed through the worker's `AgentSession`
+            // extension-dispatch) — a documented pidgin divergence, same class and
+            // justification as `/new` · `/resume` · `/fork`, sanctioned by the
+            // team-memory policy `builtin-ext-rust-native-policy`. See
+            // [`PendingShellCommand`] for the full rationale and the Option A future
+            // slice. `on_submit` runs while the run loop already holds `&mut Tui`, so
+            // it cannot mount the overlay inline; it records a pending render-thread
+            // command that the pump drains once that borrow is free. Any args are
+            // ignored (`run_llama_command` takes none).
+            let trimmed = line.trim();
+            if trimmed == "/llama" || trimmed.starts_with("/llama ") {
+                *submit_pending.borrow_mut() = Some(PendingShellCommand::Llama);
                 return;
             }
             submit_state.borrow_mut().push_user_message(&line);
@@ -269,6 +338,7 @@ impl<W: Write> InteractiveShell<W> {
             turn,
             evt_tx,
             evt_rx,
+            pending_shell_command,
         }
     }
 
@@ -337,7 +407,13 @@ impl<W: Write> InteractiveShell<W> {
     /// agent event to the chat region and re-render.
     fn process_event(&mut self, event: ShellEvent) -> Result<(), RenderError> {
         match event {
-            ShellEvent::Bytes(bytes) => self.run_loop.feed_bytes(&bytes),
+            ShellEvent::Bytes(bytes) => {
+                // Feeding the bytes may fire the editor's `on_submit` (e.g. Enter on
+                // a `/llama` line), which records a pending render-thread command;
+                // drain it now that the run loop's `&mut Tui` borrow is free.
+                self.run_loop.feed_bytes(&bytes)?;
+                self.take_and_run_pending()
+            }
             ShellEvent::Resize(columns, rows) => self.run_loop.resize(columns, rows),
             ShellEvent::Session(event) => {
                 self.chat_state.borrow_mut().handle_event(&event);
@@ -356,6 +432,143 @@ impl<W: Write> InteractiveShell<W> {
         self.run_loop.tui_mut().request_render(true);
         self.run_loop.tui_mut().flush()
     }
+
+    /// Drain and run any render-thread shell command the editor's `on_submit`
+    /// recorded (see [`PendingShellCommand`]). Called from the pump right after an
+    /// input feed, so the `&mut Tui` the run loop held during `on_submit` is free.
+    fn take_and_run_pending(&mut self) -> Result<(), RenderError> {
+        let pending = self.pending_shell_command.borrow_mut().take();
+        match pending {
+            Some(PendingShellCommand::Llama) => self.mount_llama(),
+            None => Ok(()),
+        }
+    }
+
+    /// Mount and drive the llama model-manager overlay on the render thread (pi's
+    /// `/llama` handler; see [`PendingShellCommand`] for why this runs here rather
+    /// than through worker-side extension-dispatch).
+    ///
+    /// Constructs the synchronous [`LlamaClient`] + [`LlamaProviderController`]
+    /// against the default server (`http://127.0.0.1:8080`), a [`TuiExtensionUi`]
+    /// over the live `&mut Tui` and an input source that pulls decoded chunks off
+    /// the shell's own event channel, and a concrete sized [`ExtensionContext`]
+    /// whose `ui()` returns that host, then calls [`run_llama_command`] — the exact
+    /// construction the `llama_mount_seam` seam test mirrors, only with the live
+    /// shell's `Tui` and channel in place of the test's mock terminal and scripted
+    /// input.
+    fn mount_llama(&mut self) -> Result<(), RenderError> {
+        // Client + provider against the default llama.cpp management server. Off the
+        // `native-http` feature (the default lean build) no live transport is bound,
+        // so the catalog read fails fast and `run_llama_command` shows its
+        // connection-error dialog — the shell surfaces the same "unavailable" frame
+        // it would for a real down server.
+        let transport = llama_transport();
+        let env: Arc<dyn pidgin_ai::seams::storage::ExecutionEnv> =
+            Arc::new(pidgin_ai::seams::storage::SystemEnv::new());
+        let client = match LlamaClient::new(Arc::clone(&transport), DEFAULT_LLAMA_SERVER_URL, None)
+        {
+            Ok(client) => Rc::new(client),
+            // DEFAULT_LLAMA_SERVER_URL is a compile-time-valid http URL, so this is
+            // unreachable; surface it as a notice rather than panicking.
+            Err(error) => {
+                self.chat_state
+                    .borrow_mut()
+                    .push_notice(&format!("/llama unavailable: {error}"));
+                return self.render();
+            }
+        };
+        let provider = Rc::new(create_llama_provider(transport, env));
+
+        // `run_llama_command`'s owned notification sink (its `'static` loop cannot
+        // borrow the host): route each informational notice to the shell's chat
+        // notice surface.
+        let notify: NotifyFn = {
+            let chat = Rc::clone(&self.chat_state);
+            Rc::new(move |message: &str, _level: NotifyLevel| {
+                chat.borrow_mut().push_notice(message);
+            })
+        };
+
+        let theme = self.active.current().clone();
+        let keybindings = KeybindingsManager::new(tui_keybindings(), Vec::new());
+        let chat_for_error = Rc::clone(&self.chat_state);
+
+        // Disjoint field borrows: the input source reads `self.evt_rx` (shared)
+        // while the host holds `self.run_loop`'s `&mut Tui` (exclusive). During the
+        // synchronous mount the pump is parked here, so this input source is the
+        // sole reader of the channel; it yields raw decoded key chunks (Enter /
+        // arrows / etc., the same form the seam test scripts) and drops any
+        // non-input event (a modal overlay owns the loop while it is up).
+        let error_message = {
+            let input: InputSource<'_> = {
+                let evt_rx = &self.evt_rx;
+                Box::new(move || loop {
+                    match evt_rx.recv() {
+                        Ok(ShellEvent::Bytes(bytes)) => {
+                            return Some(String::from_utf8_lossy(&bytes).into_owned())
+                        }
+                        Ok(_) => continue,
+                        Err(_) => return None,
+                    }
+                })
+            };
+            let tui = self.run_loop.tui_mut();
+            let host = TuiExtensionUi::new(tui, theme, keybindings, input);
+            let ctx = LlamaMountCtx { ui: &host };
+            match run_llama_command(&ctx, client, provider, notify) {
+                Ok(()) | Err(UiError::Unavailable) => None,
+                // The host's `custom` already notified its own sink; the shell's
+                // notice surface is separate, so surface the failure here too.
+                Err(UiError::Failed(message)) => Some(message),
+            }
+        };
+
+        if let Some(message) = error_message {
+            chat_for_error.borrow_mut().push_notice(&message);
+        }
+        // Repaint the base chat now the overlay is unmounted.
+        self.render()
+    }
+}
+
+/// A concrete, sized [`ExtensionContext`] for the render-thread `/llama` mount:
+/// its `ui()` returns the live [`TuiExtensionUi`] host. Mirrors the seam test's
+/// `HostCtx`; being sized on the render thread means `run_llama_command`'s
+/// `C: ExtensionContext` binds without any `?Sized` widening.
+struct LlamaMountCtx<'a> {
+    ui: &'a dyn ExtensionUi,
+}
+
+impl ExtensionContext for LlamaMountCtx<'_> {
+    fn ui(&self) -> &dyn ExtensionUi {
+        self.ui
+    }
+}
+
+/// The HTTP transport backing the render-thread `/llama` client.
+///
+/// Under `native-http` (the shipped CLI binary's default) this is the live
+/// reqwest transport, so `/llama` reaches a real llama.cpp server. Off the feature
+/// (the lean default build, incl. `cargo test`) no live transport exists, so the
+/// transport fails every request with a connection error — `run_llama_command`
+/// then shows its "unavailable" dialog exactly as for a down server. Mirrors
+/// [`crate::modes::print`]'s `native-http` split for the builtin registry.
+#[cfg(feature = "native-http")]
+fn llama_transport() -> Arc<dyn pidgin_ai::seams::http::HttpTransport> {
+    Arc::new(pidgin_ai::seams::ReqwestTransport::builder().build())
+}
+
+#[cfg(not(feature = "native-http"))]
+fn llama_transport() -> Arc<dyn pidgin_ai::seams::http::HttpTransport> {
+    use pidgin_ai::seams::http::{HostTransport, HttpRequest, HttpResponse};
+    Arc::new(HostTransport::new(|_request: &HttpRequest| {
+        // `fetch failed` is the message `run_llama_command`'s `is_connection_error`
+        // recognizes, so this maps to the "Could not connect to the server." dialog.
+        Err::<HttpResponse, _>(std::io::Error::new(
+            std::io::ErrorKind::ConnectionRefused,
+            "fetch failed",
+        ))
+    }))
 }
 
 impl InteractiveShell<std::io::Stdout> {
@@ -415,14 +628,23 @@ impl InteractiveShell<std::io::Stdout> {
                 },
             };
             match event {
-                Some(ShellEvent::Bytes(bytes)) => self.run_loop.feed_bytes(&bytes)?,
+                Some(ShellEvent::Bytes(bytes)) => {
+                    self.run_loop.feed_bytes(&bytes)?;
+                    // Enter on a `/llama` line records a pending render-thread
+                    // command in `on_submit`; mount it now the `&mut Tui` is free.
+                    self.take_and_run_pending()?;
+                }
                 Some(ShellEvent::Resize(columns, rows)) => self.run_loop.resize(columns, rows)?,
                 Some(ShellEvent::Session(session_event)) => {
                     self.chat_state.borrow_mut().handle_event(&session_event);
                     self.render()?;
                 }
                 Some(ShellEvent::Shutdown) => break,
-                None => self.fire_pending_timeout()?,
+                None => {
+                    self.fire_pending_timeout()?;
+                    // A flushed input timeout can also complete a `/llama` submit.
+                    self.take_and_run_pending()?;
+                }
             }
         }
         Ok(())

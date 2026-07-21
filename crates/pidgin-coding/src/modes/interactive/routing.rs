@@ -141,6 +141,18 @@ impl ChatState {
             .push(Rc::new(RefCell::new(user)) as SharedComponent);
     }
 
+    /// Append a plain notice line to the chat list (the shell's notification
+    /// surface). Used by the render-thread `/llama` intercept to surface the
+    /// `run_llama_command` notification sink and any `UiError::Failed` message,
+    /// since the offline shell has no dedicated notification region wired yet
+    /// (header/status are placeholder chrome — see [`super::app`]).
+    pub fn push_notice(&mut self, text: &str) {
+        let notice = pidgin_tui::widgets::Text::new(text, 0, 0, None);
+        self.entries
+            .borrow_mut()
+            .push(Rc::new(RefCell::new(notice)) as SharedComponent);
+    }
+
     /// Route one [`AgentSessionEvent`] to the chat region, mirroring the
     /// message-list branches of pi's `handleEvent`.
     pub fn handle_event(&mut self, event: &AgentSessionEvent) {

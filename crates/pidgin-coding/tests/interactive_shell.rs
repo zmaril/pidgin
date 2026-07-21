@@ -131,6 +131,47 @@ fn typed_prompt_then_real_echo_turn_renders_user_line_and_assistant_reply() {
     );
 }
 
+/// The render-thread `/llama` intercept: typing `/llama` + Enter in the shell does
+/// not send a prompt to the turn worker; instead the pump mounts the llama
+/// model-manager overlay on the render thread (`run_llama_command` over a live
+/// `TuiExtensionUi`). With no `native-http` transport bound (the default test
+/// build) the catalog read fails fast, so the mounted view renders its
+/// "unavailable" connection-error dialog; selecting **Close** (Down + Enter)
+/// unwinds `run_llama_command` and unmounts the overlay, and the shell terminates.
+#[test]
+fn typing_llama_mounts_and_closes_the_model_manager_overlay() {
+    let buffer = Arc::new(Mutex::new(Vec::<u8>::new()));
+    let sink = SharedSink(Arc::clone(&buffer));
+    let terminal = ProcessTerminal::with_size(sink, 80, 24).manage_raw_mode(false);
+    let mut shell = InteractiveShell::new(terminal);
+
+    // Pre-buffer the overlay's close input on the shell's event channel: while the
+    // synchronous mount runs, its input source is the sole reader of this channel,
+    // so it pulls Down (move to "Close") then Enter (confirm) out of the queue.
+    let input_tx = shell.event_sender();
+    input_tx.send(bytes("\x1b[B")).expect("queue down");
+    input_tx.send(bytes("\r")).expect("queue enter");
+
+    // Type `/llama` and submit it. The submit is intercepted (no prompt is sent),
+    // and the pump mounts the overlay after `feed_bytes` returns.
+    shell
+        .run_events(vec![bytes("/llama"), bytes("\r")])
+        .expect("shell runs clean");
+
+    let written = strip_ansi(&String::from_utf8_lossy(&buffer.lock().unwrap()));
+    // The llama view surface rendered (its connection-error frame), proving the
+    // overlay mounted on the render thread.
+    assert!(
+        written.contains("llama.cpp unavailable"),
+        "the llama overlay did not render: {written:?}"
+    );
+    // And it unmounted once the run completed (Close selected).
+    assert!(
+        !shell.run_loop().tui().has_overlay(),
+        "the llama overlay should be unmounted after the run completes"
+    );
+}
+
 /// The live worker path: a real `TurnDriver` owns a real offline-echo
 /// `AgentSession` on its worker thread; a queued prompt runs the whole turn and
 /// its `AgentSessionEvent`s come back over the channel (as `ShellEvent::Session`),
