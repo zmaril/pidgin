@@ -1503,6 +1503,135 @@
           }
         }
       ]
+    },
+    {
+      "name": "SelectListCore",
+      "doc": "The Rust-backed select-list core, exposed to JavaScript as `SelectListCore`.\nConstructed with an identity theme and no `truncatePrimary` override; the\nshim only builds one when pi's theme is identity and no override is set.",
+      "single_threaded": true,
+      "ops": [
+        {
+          "name": "new",
+          "doc": "Build a core from pi's `items` (JSON array of `{ value, label,\ndescription? }`), `maxVisible`, and the optional\n`minPrimaryColumnWidth`/`maxPrimaryColumnWidth` layout bounds.",
+          "shape": "ctor",
+          "params": [
+            {
+              "name": "itemsJson",
+              "type": "string"
+            },
+            {
+              "name": "maxVisible",
+              "type": "int64"
+            },
+            {
+              "name": "minPrimaryColumnWidth",
+              "type": {
+                "nullable": "int64"
+              }
+            },
+            {
+              "name": "maxPrimaryColumnWidth",
+              "type": {
+                "nullable": "int64"
+              }
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "setFilter",
+          "doc": "pi's `setFilter(filter)`: case-insensitive `value` prefix filter.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "filter",
+              "type": "string"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setFilter"
+            }
+          }
+        },
+        {
+          "name": "setSelectedIndex",
+          "doc": "pi's `setSelectedIndex(index)`: clamp the selection into range.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "index",
+              "type": "int64"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setSelectedIndex"
+            }
+          }
+        },
+        {
+          "name": "handleInput",
+          "doc": "pi's `handleInput(keyData)`: move/confirm/cancel. Callbacks are handled by\nthe shim's original instance; the core only advances selection state.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [
+            {
+              "name": "keyData",
+              "type": "string"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "handleInput"
+            }
+          }
+        },
+        {
+          "name": "getSelectedItemJson",
+          "doc": "pi's `getSelectedItem()` as JSON (`{ value, label, description? }`), or\n`null` when the filtered list is empty.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": true,
+          "params": [],
+          "returns": {
+            "nullable": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "getSelectedItemJson"
+            }
+          }
+        },
+        {
+          "name": "render",
+          "doc": "pi's `render(width)`: render the list to lines (identity theme baked in).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "width",
+              "type": "uint32"
+            }
+          ],
+          "returns": {
+            "list": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "render"
+            }
+          }
+        }
+      ]
     }
   ]
 }

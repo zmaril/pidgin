@@ -879,112 +879,13 @@ pub fn markdown_render(source: String, width: u32) -> Vec<String> {
 
 // --- tui select-list layer (packages/tui/src/components/select-list.ts) -----
 //
-// A stateful `#[napi]` class wrapping `pidgin_tui::SelectList`. pi's `render`
-// composes JS theme callbacks (`selectedText`, `description`, `scrollInfo`,
-// `noMatch`, `selectedPrefix`) and an optional `truncatePrimary` override — JS
-// closures that cannot cross the addon boundary. The hand-written
-// `select-list.ts` shim therefore routes `render` through this core ONLY when
-// the theme functions are all identity and no `truncatePrimary` override is
-// supplied (the core bakes in an identity theme and no override); every other
-// construction delegates to pi's original class. Item text and layout bounds
-// cross as JSON / numbers; selection and filter state live in the core so the
-// shim can keep it in sync for `render`.
-
-#[derive(serde::Deserialize)]
-struct SelectItemIn {
-    value: String,
-    label: String,
-    description: Option<String>,
-}
-
-fn identity_select_theme() -> pidgin_tui::SelectListTheme {
-    pidgin_tui::SelectListTheme {
-        selected_prefix: Box::new(|s| s.to_string()),
-        selected_text: Box::new(|s| s.to_string()),
-        description: Box::new(|s| s.to_string()),
-        scroll_info: Box::new(|s| s.to_string()),
-        no_match: Box::new(|s| s.to_string()),
-    }
-}
-
-/// The Rust-backed select-list core, exposed to JavaScript as `SelectListCore`.
-/// Constructed with an identity theme and no `truncatePrimary` override; the
-/// shim only builds one when pi's theme is identity and no override is set.
-#[napi(js_name = "SelectListCore")]
-pub struct SelectListCore {
-    inner: pidgin_tui::SelectList,
-}
-
-#[napi]
-impl SelectListCore {
-    /// Build a core from pi's `items` (JSON array of `{ value, label,
-    /// description? }`), `maxVisible`, and the optional
-    /// `minPrimaryColumnWidth`/`maxPrimaryColumnWidth` layout bounds.
-    #[napi(constructor)]
-    pub fn new(
-        items_json: String,
-        max_visible: i64,
-        min_primary_column_width: Option<i64>,
-        max_primary_column_width: Option<i64>,
-    ) -> napi::Result<Self> {
-        let items_in: Vec<SelectItemIn> = serde_json::from_str(&items_json)
-            .map_err(|e| napi::Error::from_reason(format!("invalid items: {e}")))?;
-        let items: Vec<pidgin_tui::SelectItem> = items_in
-            .into_iter()
-            .map(|i| pidgin_tui::SelectItem {
-                value: i.value,
-                label: i.label,
-                description: i.description,
-            })
-            .collect();
-        let layout = pidgin_tui::SelectListLayoutOptions {
-            min_primary_column_width,
-            max_primary_column_width,
-            truncate_primary: None,
-        };
-        Ok(Self {
-            inner: pidgin_tui::SelectList::new(items, max_visible, identity_select_theme(), layout),
-        })
-    }
-
-    /// pi's `setFilter(filter)`: case-insensitive `value` prefix filter.
-    #[napi(js_name = "setFilter")]
-    pub fn set_filter(&mut self, filter: String) {
-        self.inner.set_filter(&filter);
-    }
-
-    /// pi's `setSelectedIndex(index)`: clamp the selection into range.
-    #[napi(js_name = "setSelectedIndex")]
-    pub fn set_selected_index(&mut self, index: i64) {
-        self.inner.set_selected_index(index);
-    }
-
-    /// pi's `handleInput(keyData)`: move/confirm/cancel. Callbacks are handled by
-    /// the shim's original instance; the core only advances selection state.
-    #[napi(js_name = "handleInput")]
-    pub fn handle_input(&mut self, key_data: String) {
-        self.inner.handle_input_str(&key_data);
-    }
-
-    /// pi's `getSelectedItem()` as JSON (`{ value, label, description? }`), or
-    /// `null` when the filtered list is empty.
-    #[napi(js_name = "getSelectedItemJson")]
-    pub fn get_selected_item_json(&self) -> napi::Result<Option<String>> {
-        match self.inner.get_selected_item() {
-            Some(item) => serde_json::to_string(&serde_json::json!({
-                "value": item.value,
-                "label": item.label,
-                "description": item.description,
-            }))
-            .map(Some)
-            .map_err(|e| napi::Error::from_reason(e.to_string())),
-            None => Ok(None),
-        }
-    }
-
-    /// pi's `render(width)`: render the list to lines (identity theme baked in).
-    #[napi(js_name = "render")]
-    pub fn render(&self, width: u32) -> Vec<String> {
-        self.inner.render_lines(width as usize)
-    }
-}
+// The select-list `SelectListCore` now GENERATES from the fluessig api schema
+// through `crate::generated` + `crate::core_impl` (the `SelectListCoreImpl`
+// engine seam). It is authored `#[fluessig(single_threaded)]`, so the generated
+// handle holds the `!Send` core THREAD-CONFINED in a `RefCell<Impl>` — no `Arc`,
+// no `Send`/`Sync` bound — which is exactly what lets it compile: the core owns
+// pi's `SelectList`, whose baked-in identity theme hooks are non-`Send` boxed
+// closures (`Box<dyn Fn(&str) -> String>`). The JS `select-list.ts` shim keeps
+// pi's theme callbacks and `truncatePrimary` override in JS and only routes
+// `render` through this core when the theme is identity and no override is set —
+// unchanged by the swap. See src/generated.rs and schema/api.json. Additive.
