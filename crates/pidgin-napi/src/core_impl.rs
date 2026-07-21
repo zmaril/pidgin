@@ -196,6 +196,22 @@ impl crate::generated::PidginCore for PidginImpl {
         let refs: Vec<&str> = args.iter().map(String::as_str).collect();
         pidgin_agent::harness::prompt_templates::substitute_args(&content, &refs)
     }
+
+    fn get_config_value_env_var_name(config: String) -> Option<String> {
+        pidgin_coding::core::resolve_config_value::get_config_value_env_var_name(&config)
+    }
+
+    fn get_config_value_env_var_names(config: String) -> Vec<String> {
+        pidgin_coding::core::resolve_config_value::get_config_value_env_var_names(&config)
+    }
+
+    fn is_command_config_value(config: String) -> bool {
+        pidgin_coding::core::resolve_config_value::is_command_config_value(&config)
+    }
+
+    fn clear_config_value_cache() {
+        pidgin_coding::core::resolve_config_value::clear_config_value_cache();
+    }
 }
 
 // --- coding-agent session-cwd seam (core/session-cwd.ts) --------------------

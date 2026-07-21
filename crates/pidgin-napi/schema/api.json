@@ -680,6 +680,81 @@
               "name": "substituteArgs"
             }
           }
+        },
+        {
+          "name": "getConfigValueEnvVarName",
+          "doc": "`getConfigValueEnvVarName` (resolve-config-value.ts): the single env var a\nvalue references, or `null` (pi's `undefined`).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "config",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "getConfigValueEnvVarName"
+            }
+          }
+        },
+        {
+          "name": "getConfigValueEnvVarNames",
+          "doc": "`getConfigValueEnvVarNames` (resolve-config-value.ts): all distinct env var\nnames a value references, in first-seen order.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "config",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "list": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "getConfigValueEnvVarNames"
+            }
+          }
+        },
+        {
+          "name": "isCommandConfigValue",
+          "doc": "`isCommandConfigValue` (resolve-config-value.ts): whether a value is a\n`!`-prefixed shell command.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "config",
+              "type": "string"
+            }
+          ],
+          "returns": "boolean",
+          "bindings": {
+            "node": {
+              "name": "isCommandConfigValue"
+            }
+          }
+        },
+        {
+          "name": "clearConfigValueCache",
+          "doc": "`clearConfigValueCache` (resolve-config-value.ts): clear the process-lifetime\n`!command` result cache.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": false,
+          "params": [],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "clearConfigValueCache"
+            }
+          }
         }
       ]
     },

@@ -91,6 +91,10 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn format_missing_session_cwd_prompt(issue: SessionCwdIssueJs) -> String;
     fn parse_command_args(args_string: String) -> Vec<String>;
     fn substitute_args(content: String, args: Vec<String>) -> String;
+    fn get_config_value_env_var_name(config: String) -> Option<String>;
+    fn get_config_value_env_var_names(config: String) -> Vec<String>;
+    fn is_command_config_value(config: String) -> bool;
+    fn clear_config_value_cache() -> ();
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -336,6 +340,34 @@ pub fn parse_command_args(args_string: String) -> Vec<String> {
 #[napi(js_name = "substituteArgs")]
 pub fn substitute_args(content: String, args: Vec<String>) -> String {
     <crate::core_impl::PidginImpl as PidginCore>::substitute_args(content, args)
+}
+
+/// `getConfigValueEnvVarName` (resolve-config-value.ts): the single env var a
+/// value references, or `null` (pi's `undefined`).
+#[napi(js_name = "getConfigValueEnvVarName")]
+pub fn get_config_value_env_var_name(config: String) -> Option<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::get_config_value_env_var_name(config)
+}
+
+/// `getConfigValueEnvVarNames` (resolve-config-value.ts): all distinct env var
+/// names a value references, in first-seen order.
+#[napi(js_name = "getConfigValueEnvVarNames")]
+pub fn get_config_value_env_var_names(config: String) -> Vec<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::get_config_value_env_var_names(config)
+}
+
+/// `isCommandConfigValue` (resolve-config-value.ts): whether a value is a
+/// `!`-prefixed shell command.
+#[napi(js_name = "isCommandConfigValue")]
+pub fn is_command_config_value(config: String) -> bool {
+    <crate::core_impl::PidginImpl as PidginCore>::is_command_config_value(config)
+}
+
+/// `clearConfigValueCache` (resolve-config-value.ts): clear the process-lifetime
+/// `!command` result cache.
+#[napi(js_name = "clearConfigValueCache")]
+pub fn clear_config_value_cache() -> () {
+    <crate::core_impl::PidginImpl as PidginCore>::clear_config_value_cache()
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as
