@@ -26,6 +26,7 @@ use serde_json::Value;
 use tokio::sync::{mpsc, oneshot};
 
 use pidgin_coding::core::extensions::discovery::{DiscoveredExtension, ExtensionLanguage};
+use pidgin_coding::core::extensions::notify::NotifySink;
 
 use crate::api_ops::{self, SharedInventory};
 use crate::dispatch::{self, HookInvocation, StoredInvocation};
@@ -34,6 +35,7 @@ use crate::loader;
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 
 /// The implementation language of an extension entrypoint, controlling whether
 /// its source is transpiled (TypeScript) or evaluated as-is (JavaScript).
@@ -98,6 +100,12 @@ enum Command {
         args: Value,
         reply: oneshot::Sender<Result<StoredInvocation, String>>,
     },
+    /// Put a host [`NotifySink`] into the runtime's `OpState`, so `op_notify`
+    /// (JS `ctx.ui.notify`) delivers into it. Fire-and-forget control command,
+    /// no reply: it is ordered before any later `Invoke*` command on the same
+    /// channel, so a sink bound before a command dispatch is in place when the
+    /// dispatch's `ctx.ui.notify` fires.
+    SetNotifySink { sink: Arc<dyn NotifySink> },
     /// Drain in-flight work and stop the runtime thread.
     Shutdown { reply: oneshot::Sender<()> },
 }
@@ -262,6 +270,20 @@ impl JsPlaneHandle {
             .map_err(|e| anyhow!(e))
     }
 
+    /// Bind a host [`NotifySink`] into the runtime `OpState`, so JS
+    /// `ctx.ui.notify` (the `op_notify` op) delivers each notification into it.
+    ///
+    /// Synchronous and fire-and-forget: it enqueues a `SetNotifySink` control
+    /// command on the plane's command channel and returns immediately. Because
+    /// the plane services commands in FIFO order on its owning thread, a sink
+    /// bound before an [`invoke_stored`](Self::invoke_stored) /
+    /// [`invoke_hook`](Self::invoke_hook) call is in `OpState` by the time that
+    /// dispatch's handler fires `ctx.ui.notify`. Rebinding replaces the prior
+    /// sink (`OpState::put` overwrites by type).
+    pub fn set_notify_sink(&self, sink: Arc<dyn NotifySink>) {
+        let _ = self.tx.send(Command::SetNotifySink { sink });
+    }
+
     /// Shut the runtime thread down cleanly, waiting for it to join.
     pub async fn shutdown(mut self) {
         let (reply, rx) = oneshot::channel();
@@ -350,6 +372,10 @@ fn js_plane_thread(mut rx: mpsc::UnboundedReceiver<Command>) {
                     let res =
                         dispatch::invoke_stored_on_runtime(&mut runtime, &kind, &name, &args).await;
                     let _ = reply.send(res.map_err(|e| e.to_string()));
+                }
+                Command::SetNotifySink { sink } => {
+                    // Put the host sink into OpState; op_notify borrows it there.
+                    runtime.op_state().borrow_mut().put(sink);
                 }
                 Command::Shutdown { reply } => {
                     let _ = reply.send(());

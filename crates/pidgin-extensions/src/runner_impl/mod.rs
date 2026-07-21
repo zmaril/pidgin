@@ -53,6 +53,7 @@ use pidgin_coding::core::extensions::events::tool::{
 };
 use pidgin_coding::core::extensions::events::turn::MessageEndEvent;
 use pidgin_coding::core::extensions::loader::{Extension, ExtensionRuntime};
+use pidgin_coding::core::extensions::notify::NotifySink;
 use pidgin_coding::core::extensions::runner::{
     ExtensionCommandContextHost, ExtensionDispatchEvent, ExtensionEmitOutcome,
     ExtensionErrorListener, ExtensionMode, ExtensionRunner as ExtensionRunnerTrait,
@@ -342,6 +343,12 @@ impl ExtensionRunnerTrait for DenoExtensionRunner {
 
     fn bind_command_context(&self, actions: Option<Arc<dyn ExtensionCommandContextHost>>) {
         self.bindings.lock().unwrap().command_context_host = actions;
+    }
+
+    fn bind_notify_sink(&self, sink: Arc<dyn NotifySink>) {
+        // Deliver the sink into the plane's OpState; op_notify borrows it there
+        // when JS `ctx.ui.notify` fires on the plane worker thread.
+        self.inner.plane().set_notify_sink(sink);
     }
 
     fn on_error(&self, listener: ExtensionErrorListener) -> UnsubscribeFn {

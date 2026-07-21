@@ -73,6 +73,7 @@ use pidgin_coding::core::extensions::events::turn::MessageEndEvent;
 use pidgin_coding::core::extensions::loader::{
     Extension, ExtensionLoadError, ExtensionLoader, ExtensionRuntime, LoadExtensionsResult,
 };
+use pidgin_coding::core::extensions::notify::NotifySink;
 use pidgin_coding::core::extensions::runner::{
     ExtensionCommandContextHost, ExtensionDispatchEvent, ExtensionEmitOutcome,
     ExtensionErrorListener, ExtensionMode, ExtensionRunner as ExtensionRunnerTrait,
@@ -638,6 +639,12 @@ impl ExtensionRunnerTrait for CombinedExtensionRunner {
     fn bind_command_context(&self, actions: Option<Arc<dyn ExtensionCommandContextHost>>) {
         for inner in &self.inners {
             inner.bind_command_context(actions.clone());
+        }
+    }
+
+    fn bind_notify_sink(&self, sink: Arc<dyn NotifySink>) {
+        for inner in &self.inners {
+            inner.bind_notify_sink(Arc::clone(&sink));
         }
     }
 

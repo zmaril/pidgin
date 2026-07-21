@@ -28,10 +28,14 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use deno_core::{extension, op2, OpState};
 use serde::Deserialize;
 use serde_json::Value;
+
+use pidgin_coding::core::extensions::notify::NotifySink;
+use pidgin_coding::core::extensions::types::NotifyLevel;
 
 use crate::inventory::{
     CommandRecord, FlagRecord, HookRecord, Inventory, ProviderRecord, RendererRecord,
@@ -246,6 +250,27 @@ fn op_unregister_provider(state: &mut OpState, #[string] name: String) {
         .retain(|p| p.name != name);
 }
 
+/// Parse pi's notify level union (`"info" | "warning" | "error"`) into a
+/// [`NotifyLevel`], defaulting to [`NotifyLevel::Info`] for anything else.
+fn parse_level(level: &str) -> NotifyLevel {
+    match level {
+        "warning" => NotifyLevel::Warning,
+        "error" => NotifyLevel::Error,
+        _ => NotifyLevel::Info,
+    }
+}
+
+/// `ctx.ui.notify(message, level)` — DELIVER the notification into the host
+/// [`NotifySink`] bound in `OpState` (via `JsPlaneHandle::set_notify_sink`), if
+/// one is bound; otherwise a no-op (the notification is dropped, matching the
+/// pre-seam behavior). Fire-and-forget and void-returning, faithful to pi.
+#[op2(fast)]
+fn op_notify(state: &mut OpState, #[string] message: String, #[string] level: String) {
+    if let Some(sink) = state.try_borrow::<Arc<dyn NotifySink>>() {
+        sink.notify(&message, parse_level(&level));
+    }
+}
+
 extension!(
     pidgin_api_ops,
     ops = [
@@ -259,6 +284,7 @@ extension!(
         op_register_entry_renderer,
         op_register_provider,
         op_unregister_provider,
+        op_notify,
     ],
 );
 
@@ -463,13 +489,14 @@ globalThis.__pidgin.makeContext = (data) => {
     setThinkingLevel: noop,
     abort: noop,
     compact: async () => {},
-    // Interactive UI surface (pi's ExtensionUIContext). A faithful no-op subset:
-    // enough shape that a handler touching `ctx.ui` (e.g. pirate's
-    // `ctx.ui.notify(...)`) does not throw. `notify` is SYNC/returns void per pi;
-    // there is no host UI sink wired yet, so it silently drops the notification.
-    // Real TUI/CLI routing is a follow-up (see ext-ctx-ui-surface-slice).
+    // Interactive UI surface (pi's ExtensionUIContext). A faithful no-op subset,
+    // except `notify` which is now DELIVERED: it is SYNC/returns void per pi and
+    // forwards to `op_notify`, which pushes the message into the host NotifySink
+    // bound in OpState (or drops it when none is bound — the pre-seam behavior).
+    // The other ui methods stay no-op stubs (real TUI/CLI routing is a follow-up;
+    // the TUI lane owns the per-frame drain of delivered notifications).
     ui: {
-      notify: (_message, _type) => {},
+      notify: (message, type) => { ops.op_notify(String(message), String(type ?? "info")); },
       custom: async () => undefined,
       select: async () => undefined,
       confirm: async () => false,
