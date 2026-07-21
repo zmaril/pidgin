@@ -13,6 +13,7 @@ pub mod builtins;
 pub mod composer;
 pub mod faux;
 pub mod google_generative_ai_backend;
+pub mod google_vertex_backend;
 pub mod mistral_backend;
 pub mod openai_completions_backend;
 pub mod openai_responses_backend;
@@ -32,6 +33,7 @@ pub use composer::{
     ExtensionOAuthConfig, ProviderAuthConfig,
 };
 pub use google_generative_ai_backend::{GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API};
+pub use google_vertex_backend::{GoogleVertexBackend, GOOGLE_VERTEX_API};
 pub use mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
 pub use openai_completions_backend::{OpenAICompletionsBackend, OPENAI_COMPLETIONS_API};
 pub use openai_responses_backend::{OpenAIResponsesBackend, OPENAI_RESPONSES_API};
