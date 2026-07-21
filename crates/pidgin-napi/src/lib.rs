@@ -165,14 +165,10 @@ pub mod agent_session;
 // schema op can describe; edit the schema and rerun `regen.sh` instead.
 //
 // `pub mod` so the generated free `#[napi]` functions register as crate-reachable
-// (matching the other flipped modules); `#[allow(dead_code, unused_imports)]`
-// because fluessig's node prelude imports the shared streaming/async contract
-// (`Poll`/`PollStream`/`AsyncTask`/…) and emits an `err` helper unconditionally,
-// both unused on a stream-less, infallible-only surface like this first slice.
-// See the report / notes: fluessig's node banner should carry
-// `#![allow(unused_imports)]` (as its PHP banner already does).
+// (matching the other flipped modules). The generated file's own banner carries
+// `#![allow(unused_imports)]`, and fluessig's napi-2 prelude now emits only the
+// imports the surface actually uses, so no module-level allow is needed here.
 mod core_impl;
-#[allow(dead_code, unused_imports)]
 pub mod generated;
 
 /// Parse an Anthropic Messages SSE body into the uniform assistant-message event
