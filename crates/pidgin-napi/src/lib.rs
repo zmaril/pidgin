@@ -96,6 +96,9 @@ mod autocomplete;
 // export functions are reachable from the crate root (not dead under `--test`).
 pub mod error_body;
 
+// Provider-error retry classifier (`isRetryableAssistantError`): an `AssistantMessage` crosses as JSON, pi's ordered pattern tables run natively; `pub` keeps the free `#[napi]` fn crate-reachable. Additive.
+pub mod ai_retry;
+
 /// `createLsTool(...).execute` default path (`ls.ts`): list a directory through
 /// the native `run_ls` port, returning pi's `AgentToolResult` JSON. See
 /// [`tools::ls_execute`].
