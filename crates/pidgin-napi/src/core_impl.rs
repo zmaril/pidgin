@@ -166,6 +166,74 @@ impl crate::generated::PidginCore for PidginImpl {
     fn strip_ansi(value: String) -> String {
         pidgin_coding::utils::ansi::strip_ansi(&value)
     }
+
+    fn get_missing_session_cwd_issue(
+        session_cwd: String,
+        session_file: Option<String>,
+        fallback_cwd: String,
+    ) -> Option<crate::generated::SessionCwdIssueJs> {
+        let source = SessionCwdSourceArgs {
+            cwd: session_cwd,
+            session_file,
+        };
+        pidgin_coding::core::session_cwd::get_missing_session_cwd_issue(&source, &fallback_cwd)
+            .map(crate::generated::SessionCwdIssueJs::from)
+    }
+
+    fn format_missing_session_cwd_error(issue: crate::generated::SessionCwdIssueJs) -> String {
+        pidgin_coding::core::session_cwd::format_missing_session_cwd_error(&issue.into())
+    }
+
+    fn format_missing_session_cwd_prompt(issue: crate::generated::SessionCwdIssueJs) -> String {
+        pidgin_coding::core::session_cwd::format_missing_session_cwd_prompt(&issue.into())
+    }
+}
+
+// --- coding-agent session-cwd seam (core/session-cwd.ts) --------------------
+//
+// The decisions live in `pidgin_coding::core::session_cwd` (the empty-cwd guard
+// and the `existsSync` -> `Path::exists` probe); the shim reads the two strings
+// off pi's `SessionCwdSource` JS-side and passes them here. `MissingSessionCwdError`
+// class identity stays in TS. These From impls and the source adapter bridge the
+// generated `SessionCwdIssueJs` DTO to pi's `SessionCwdIssue`, reaching the SAME
+// underlying logic the pre-swap hand-written exports called.
+use pidgin_coding::core::session_cwd::{SessionCwdIssue, SessionCwdSource as CoreSessionCwdSource};
+
+impl From<SessionCwdIssue> for crate::generated::SessionCwdIssueJs {
+    fn from(issue: SessionCwdIssue) -> Self {
+        Self {
+            session_file: issue.session_file,
+            session_cwd: issue.session_cwd,
+            fallback_cwd: issue.fallback_cwd,
+        }
+    }
+}
+
+impl From<crate::generated::SessionCwdIssueJs> for SessionCwdIssue {
+    fn from(issue: crate::generated::SessionCwdIssueJs) -> Self {
+        Self {
+            session_file: issue.session_file,
+            session_cwd: issue.session_cwd,
+            fallback_cwd: issue.fallback_cwd,
+        }
+    }
+}
+
+/// The two strings the shim reads from pi's `SessionCwdSource` (`getCwd()` /
+/// `getSessionFile()`), adapting them to the Rust trait so the real port owns
+/// the empty-cwd guard and filesystem probe — no logic is reimplemented here.
+struct SessionCwdSourceArgs {
+    cwd: String,
+    session_file: Option<String>,
+}
+
+impl CoreSessionCwdSource for SessionCwdSourceArgs {
+    fn get_cwd(&self) -> &str {
+        &self.cwd
+    }
+    fn get_session_file(&self) -> Option<&str> {
+        self.session_file.as_deref()
+    }
 }
 
 // --- tui keybindings layer (packages/tui/src/keybindings.ts) ----------------

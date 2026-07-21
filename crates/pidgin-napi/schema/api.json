@@ -63,6 +63,27 @@
           "nullable": false
         }
       ]
+    },
+    {
+      "name": "SessionCwdIssueJs",
+      "doc": "pi's `SessionCwdIssue`: a resumed session whose stored working directory is\ngone. `sessionFile` is the persisted session path, `sessionCwd` the stored\n(now-missing) directory, `fallbackCwd` the directory to continue in.",
+      "fields": [
+        {
+          "name": "sessionFile",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "sessionCwd",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "fallbackCwd",
+          "type": "string",
+          "nullable": false
+        }
+      ]
     }
   ],
   "unions": [],
@@ -536,6 +557,81 @@
           "bindings": {
             "node": {
               "name": "stripAnsi"
+            }
+          }
+        },
+        {
+          "name": "getMissingSessionCwdIssue",
+          "doc": "pi's `getMissingSessionCwdIssue`. Given the source's stored cwd and optional\nsession file (read JS-side from `SessionCwdSource`) plus the fallback cwd,\nreport a [`SessionCwdIssueJs`] when the source is a persisted session whose\nstored cwd is non-empty and absent on disk; otherwise `None` (pi's\n`undefined`).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "sessionCwd",
+              "type": "string"
+            },
+            {
+              "name": "sessionFile",
+              "type": {
+                "nullable": "string"
+              }
+            },
+            {
+              "name": "fallbackCwd",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": {
+              "model": "SessionCwdIssueJs"
+            }
+          },
+          "bindings": {
+            "node": {
+              "name": "getMissingSessionCwdIssue"
+            }
+          }
+        },
+        {
+          "name": "formatMissingSessionCwdError",
+          "doc": "pi's `formatMissingSessionCwdError`: the human-readable error text for an\nissue (backs the JS `MissingSessionCwdError` message).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "issue",
+              "type": {
+                "model": "SessionCwdIssueJs"
+              }
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "formatMissingSessionCwdError"
+            }
+          }
+        },
+        {
+          "name": "formatMissingSessionCwdPrompt",
+          "doc": "pi's `formatMissingSessionCwdPrompt`: the interactive prompt text for an\nissue.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "issue",
+              "type": {
+                "model": "SessionCwdIssueJs"
+              }
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "formatMissingSessionCwdPrompt"
             }
           }
         }

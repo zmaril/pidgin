@@ -42,6 +42,17 @@ pub struct StdinEventJs {
     pub value: String,
 }
 
+/// pi's `SessionCwdIssue`: a resumed session whose stored working directory is
+/// gone. `sessionFile` is the persisted session path, `sessionCwd` the stored
+/// (now-missing) directory, `fallbackCwd` the directory to continue in.
+#[napi(object)]
+#[derive(Clone)]
+pub struct SessionCwdIssueJs {
+    pub session_file: Option<String>,
+    pub session_cwd: String,
+    pub fallback_cwd: String,
+}
+
 /// The `Pidgin` contract — implement over the engine in `crate::core_impl`.
 pub trait PidginCore: Sized + Send + Sync + 'static {
     fn version() -> String;
@@ -71,6 +82,13 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn find_word_forward(text: String, cursor: i32) -> i32;
     fn parse_git_url(source: String) -> Option<String>;
     fn strip_ansi(value: String) -> String;
+    fn get_missing_session_cwd_issue(
+        session_cwd: String,
+        session_file: Option<String>,
+        fallback_cwd: String,
+    ) -> Option<SessionCwdIssueJs>;
+    fn format_missing_session_cwd_error(issue: SessionCwdIssueJs) -> String;
+    fn format_missing_session_cwd_prompt(issue: SessionCwdIssueJs) -> String;
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -270,6 +288,38 @@ pub fn parse_git_url(source: String) -> Option<String> {
 #[napi(js_name = "stripAnsi")]
 pub fn strip_ansi(value: String) -> String {
     <crate::core_impl::PidginImpl as PidginCore>::strip_ansi(value)
+}
+
+/// pi's `getMissingSessionCwdIssue`. Given the source's stored cwd and optional
+/// session file (read JS-side from `SessionCwdSource`) plus the fallback cwd,
+/// report a [`SessionCwdIssueJs`] when the source is a persisted session whose
+/// stored cwd is non-empty and absent on disk; otherwise `None` (pi's
+/// `undefined`).
+#[napi(js_name = "getMissingSessionCwdIssue")]
+pub fn get_missing_session_cwd_issue(
+    session_cwd: String,
+    session_file: Option<String>,
+    fallback_cwd: String,
+) -> Option<SessionCwdIssueJs> {
+    <crate::core_impl::PidginImpl as PidginCore>::get_missing_session_cwd_issue(
+        session_cwd,
+        session_file,
+        fallback_cwd,
+    )
+}
+
+/// pi's `formatMissingSessionCwdError`: the human-readable error text for an
+/// issue (backs the JS `MissingSessionCwdError` message).
+#[napi(js_name = "formatMissingSessionCwdError")]
+pub fn format_missing_session_cwd_error(issue: SessionCwdIssueJs) -> String {
+    <crate::core_impl::PidginImpl as PidginCore>::format_missing_session_cwd_error(issue)
+}
+
+/// pi's `formatMissingSessionCwdPrompt`: the interactive prompt text for an
+/// issue.
+#[napi(js_name = "formatMissingSessionCwdPrompt")]
+pub fn format_missing_session_cwd_prompt(issue: SessionCwdIssueJs) -> String {
+    <crate::core_impl::PidginImpl as PidginCore>::format_missing_session_cwd_prompt(issue)
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as
