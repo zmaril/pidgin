@@ -50,6 +50,7 @@ use super::theme::{
 };
 use super::turn::{TurnCommand, TurnDriver};
 use crate::core::agent_session::AgentSessionEvent;
+use crate::core::extensions::notify;
 use crate::core::extensions::types::{ExtensionContext, ExtensionUi, NotifyLevel, UiError};
 use crate::core::settings_manager::{SettingsManager, SettingsManagerCreateOptions};
 use crate::extensions::llama::{
@@ -83,8 +84,45 @@ pub enum ShellEvent {
     /// Boxed: `AgentSessionEvent` is large relative to the other variants, so
     /// boxing keeps `ShellEvent` small (clippy `large_enum_variant`).
     Session(Box<AgentSessionEvent>),
+    /// A `ctx.ui.notify` delivered from the extension plane (#267's
+    /// [`NotifySink`](notify::NotifySink) DELIVERY seam), forwarded over this
+    /// unified channel by a bound [`ShellNotifySink`] so the idle pump's blocking
+    /// `recv()` wakes and repaints the notice.
+    Notify(notify::Notification),
     /// An explicit shutdown request.
     Shutdown,
+}
+
+/// The host [`NotifySink`](notify::NotifySink) bound onto the interactive shell's
+/// extension runner: a `ctx.ui.notify` fired on the (off-thread) extension plane
+/// is forwarded as a [`ShellEvent::Notify`] over the shell's unified event
+/// channel, so it lands on the main/render thread and wakes the idle pump.
+///
+/// Constructed on the turn-worker thread (where the runner lives) and bound via
+/// [`ExtensionRunner::bind_notify_sink`](crate::core::extensions::runner::ExtensionRunner::bind_notify_sink).
+/// It is `Send + Sync` because `Sender<ShellEvent>` is (and [`ShellEvent`] is
+/// `Send`), which the sink trait requires.
+pub struct ShellNotifySink {
+    tx: Sender<ShellEvent>,
+}
+
+impl ShellNotifySink {
+    /// Build a sink that forwards each notification into `tx` (a clone of the
+    /// shell's `evt_tx`).
+    pub fn new(tx: Sender<ShellEvent>) -> Self {
+        Self { tx }
+    }
+}
+
+impl notify::NotifySink for ShellNotifySink {
+    fn notify(&self, message: &str, level: NotifyLevel) {
+        // Fire-and-forget, faithful to pi's void notify: a closed channel (the
+        // shell has torn down) silently drops the message.
+        let _ = self.tx.send(ShellEvent::Notify(notify::Notification {
+            message: message.to_string(),
+            level,
+        }));
+    }
 }
 
 /// `Tui<ProcessTerminal<W>>` as the theme controller's UI surface.
@@ -442,6 +480,17 @@ impl<W: Write> InteractiveShell<W> {
                 self.chat_state.borrow_mut().handle_event(&event);
                 self.render()
             }
+            ShellEvent::Notify(notification) => {
+                // Route the plane's notification into the chat region as a notice
+                // (the shell has no dedicated notification surface yet — see
+                // `ChatState::push_notice`). `push_notice` is text-only; the
+                // severity in `notification.level` is preserved on the event for a
+                // future level-styled notice.
+                self.chat_state
+                    .borrow_mut()
+                    .push_notice(&notification.message);
+                self.render()
+            }
             ShellEvent::Shutdown => {
                 self.run_loop.request_exit();
                 Ok(())
@@ -660,6 +709,14 @@ impl InteractiveShell<std::io::Stdout> {
                 Some(ShellEvent::Resize(columns, rows)) => self.run_loop.resize(columns, rows)?,
                 Some(ShellEvent::Session(session_event)) => {
                     self.chat_state.borrow_mut().handle_event(&session_event);
+                    self.render()?;
+                }
+                Some(ShellEvent::Notify(notification)) => {
+                    // A notification forwarded from the extension plane: render it
+                    // as a notice (mirrors the headless `process_event` arm).
+                    self.chat_state
+                        .borrow_mut()
+                        .push_notice(&notification.message);
                     self.render()?;
                 }
                 Some(ShellEvent::Shutdown) => break,

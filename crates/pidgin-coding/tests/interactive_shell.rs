@@ -172,6 +172,60 @@ fn typing_llama_mounts_and_closes_the_model_manager_overlay() {
     );
 }
 
+/// The notify-drain seam (#267's `ctx.ui.notify` DELIVERY -> this TUI lane's
+/// render): a [`ShellNotifySink`] — the exact host sink the turn worker binds onto
+/// its extension runner — forwards a notification as a `ShellEvent::Notify`, which
+/// the shell's headless event loop routes into the chat region as a notice and
+/// repaints. Proves the drain path end-to-end (sink -> `ShellEvent::Notify` ->
+/// `push_notice` -> rendered) without V8: the sink is driven directly, standing in
+/// for the plane's `ctx.ui.notify` (whose deno end is #267's own gated test). No
+/// overlay is mounted and the message is not lost.
+#[test]
+fn notify_sink_forwards_a_notification_and_renders_it_as_a_notice() {
+    use pidgin_coding::core::extensions::notify::NotifySink;
+    use pidgin_coding::core::extensions::types::NotifyLevel;
+    use pidgin_coding::modes::interactive::ShellNotifySink;
+
+    let buffer = Arc::new(Mutex::new(Vec::<u8>::new()));
+    let sink = SharedSink(Arc::clone(&buffer));
+    let terminal = ProcessTerminal::with_size(sink, 80, 24).manage_raw_mode(false);
+    let mut shell = InteractiveShell::new(terminal);
+
+    // Build the production host sink (the same type the worker binds onto its
+    // runner) over a channel and fire a notification through its `NotifySink`
+    // surface — the plane's `ctx.ui.notify` lands here in #267; this is the drain.
+    let (tx, rx) = std::sync::mpsc::channel::<ShellEvent>();
+    let notify_sink = ShellNotifySink::new(tx);
+    notify_sink.notify("Arrr! Pirate mode enabled!", NotifyLevel::Info);
+
+    // The sink forwarded exactly one `ShellEvent::Notify` carrying the message and
+    // its level (the level rides the event for a future level-styled notice).
+    let events: Vec<ShellEvent> = rx.try_iter().collect();
+    assert!(
+        matches!(
+            events.as_slice(),
+            [ShellEvent::Notify(n)]
+                if n.message == "Arrr! Pirate mode enabled!" && n.level == NotifyLevel::Info
+        ),
+        "sink should forward one Notify carrying the message + level"
+    );
+
+    // Drive the events through the shell's headless loop: the Notify arm routes the
+    // message into the chat region via `push_notice` and repaints.
+    shell.run_events(events).expect("shell runs clean");
+
+    let written = strip_ansi(&String::from_utf8_lossy(&buffer.lock().unwrap()));
+    assert!(
+        written.contains("Arrr! Pirate mode enabled!"),
+        "the notification should render as a chat notice: {written:?}"
+    );
+    // A notice is an inline chat entry, never an overlay — nothing should be mounted.
+    assert!(
+        !shell.run_loop().tui().has_overlay(),
+        "a notify notice must not mount an overlay"
+    );
+}
+
 /// The live worker path: a real `TurnDriver` owns a real offline-echo
 /// `AgentSession` on its worker thread; a queued prompt runs the whole turn and
 /// its `AgentSessionEvent`s come back over the channel (as `ShellEvent::Session`),

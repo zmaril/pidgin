@@ -36,7 +36,7 @@ use std::thread::{self, JoinHandle};
 
 use pidgin_ai::providers::faux::{faux_assistant_message, faux_text, FauxAssistantOptions};
 
-use super::app::ShellEvent;
+use super::app::{ShellEvent, ShellNotifySink};
 use crate::core::agent_session::{
     build_offline_echo_runtime_factory, build_offline_echo_session, create_agent_session_runtime,
     AgentSession, AgentSessionEvent, AgentSessionRuntimeFactoryOptions, ForkOptions,
@@ -161,6 +161,14 @@ fn worker_loop(cmd_rx: &Receiver<TurnCommand>, evt_tx: &Sender<ShellEvent>, cwd:
         }
     };
 
+    // Bind the host notify sink onto the current session's extension runner so a
+    // `ctx.ui.notify` from the plane forwards into the shell's unified channel (as
+    // `ShellEvent::Notify`). The offline-echo session's default `StubExtensionRunner`
+    // inherits `bind_notify_sink`'s no-op, so this is inert offline but is the live
+    // seam once a real (deno/combined) runner drives the session — additive either
+    // way. Re-bound on every session swap by the rebind hook below.
+    bind_notify_sink(runtime.session(), evt_tx);
+
     // The active forwarder's unsubscribe handle, swapped by the rebind hook below.
     let unsubscribe: Rc<RefCell<Option<Unsubscribe>>> = Rc::new(RefCell::new(Some(
         subscribe_forwarder(runtime.session(), evt_tx.clone()),
@@ -174,6 +182,9 @@ fn worker_loop(cmd_rx: &Receiver<TurnCommand>, evt_tx: &Sender<ShellEvent>, cwd:
             let previous = unsubscribe.borrow_mut().take();
             drop(previous);
             *unsubscribe.borrow_mut() = Some(subscribe_forwarder(new_session, evt_tx.clone()));
+            // Re-bind the notify sink onto the fresh session's runner (the swap
+            // replaced the runner along with the session).
+            bind_notify_sink(new_session, &evt_tx);
         }
     })));
 
@@ -214,6 +225,17 @@ fn worker_loop(cmd_rx: &Receiver<TurnCommand>, evt_tx: &Sender<ShellEvent>, cwd:
     // scope, so no forwarding listener outlives the worker.
     let remaining = unsubscribe.borrow_mut().take();
     drop(remaining);
+}
+
+/// Bind a [`ShellNotifySink`] onto `session`'s extension runner, so a plane-side
+/// `ctx.ui.notify` is forwarded over `evt_tx` as a [`ShellEvent::Notify`]. Called
+/// at worker startup and after every session swap (each swap replaces the runner).
+/// A no-op against the offline-echo `StubExtensionRunner` (whose `bind_notify_sink`
+/// is the default no-op); live once a real runner drives the session.
+fn bind_notify_sink(session: &AgentSession, evt_tx: &Sender<ShellEvent>) {
+    session
+        .extension_runner()
+        .bind_notify_sink(Arc::new(ShellNotifySink::new(evt_tx.clone())));
 }
 
 /// Subscribe a forwarding listener onto `session`: each [`AgentSessionEvent`] it

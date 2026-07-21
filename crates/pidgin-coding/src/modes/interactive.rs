@@ -8,4 +8,4 @@ pub mod routing;
 pub mod theme;
 pub mod turn;
 
-pub use app::{InteractiveShell, ShellEvent};
+pub use app::{InteractiveShell, ShellEvent, ShellNotifySink};
