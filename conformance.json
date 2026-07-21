@@ -1,11 +1,11 @@
 {
   "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
   "generated_by": "scripts/conformance.sh",
-  "manifest_native_modules": 45,
+  "manifest_native_modules": 48,
   "rust_backed": {
-    "passing": 671,
+    "passing": 780,
     "total": 3776,
-    "percent": 17.8
+    "percent": 20.7
   },
   "total": 3776,
   "passing": 2919,
@@ -13,13 +13,13 @@
   "skipped": 784,
   "by_package": {
     "agent": {
-      "rust_backed_passing": 55,
-      "rust_backed_percent": 30.6,
+      "rust_backed_passing": 73,
+      "rust_backed_percent": 40.6,
       "total": 180,
       "passing": 180,
       "failing": 0,
       "skipped": 0,
-      "native": 5,
+      "native": 7,
       "status": "ok",
       "note": "vitest run, exit 0"
     },
@@ -35,13 +35,13 @@
       "note": "vitest run, exit 1"
     },
     "coding-agent": {
-      "rust_backed_passing": 167,
-      "rust_backed_percent": 10.3,
+      "rust_backed_passing": 258,
+      "rust_backed_percent": 15.9,
       "total": 1625,
       "passing": 1505,
       "failing": 73,
       "skipped": 47,
-      "native": 18,
+      "native": 19,
       "status": "ok",
       "note": "vitest run, exit 1"
     },
