@@ -66,6 +66,7 @@ use pidgin_ai::{
     ModelCost, StopReason, StreamOptions, UserContent,
 };
 
+use crate::core::extensions::events::session::SessionStartEvent;
 use crate::core::model_runtime::{CreateModelRuntimeOptions, ModelRuntime, ModelsPath};
 use crate::core::provider_composer::{ExtensionModelConfig, ProviderConfigInput};
 use crate::core::resource_loader_orchestrator::{
@@ -74,6 +75,9 @@ use crate::core::resource_loader_orchestrator::{
 use crate::core::session_manager::SessionManager;
 use crate::core::settings_manager::SettingsManager;
 
+use super::runtime::{
+    AgentSessionRuntimeFactoryOptions, AgentSessionRuntimeResult, CreateAgentSessionRuntimeFactory,
+};
 use super::session::{AgentSession, AgentSessionConfig};
 
 /// The offline faux provider id. Present only to satisfy the offline preflight;
@@ -134,7 +138,15 @@ impl std::error::Error for OfflineEchoError {}
 /// **Offline only.** See the module docs: the returned session is faux and must
 /// not be wired into a live model path.
 pub fn build_offline_echo_session(cwd: String) -> Result<AgentSession, OfflineEchoError> {
-    let stream_fn: StreamFn = Arc::new(
+    let session_manager = SessionManager::in_memory(&cwd);
+    build_offline_session(cwd, echo_stream_fn(), session_manager, None)
+}
+
+/// The default faux [`StreamFn`] shared by [`build_offline_echo_session`] and
+/// [`build_offline_echo_runtime_factory`]: it echoes the text of the last
+/// user-role message in each request context back as the assistant reply.
+fn echo_stream_fn() -> StreamFn {
+    Arc::new(
         |_model: &Model,
          context: &Context,
          _options: Option<&StreamOptions>,
@@ -142,8 +154,43 @@ pub fn build_offline_echo_session(cwd: String) -> Result<AgentSession, OfflineEc
             let echoed = last_user_text(context);
             mock_stream(assistant_text(&echoed))
         },
-    );
-    build_offline_session(cwd, stream_fn)
+    )
+}
+
+/// Build a [`CreateAgentSessionRuntimeFactory`] that stands up **offline echo**
+/// [`AgentSession`]s for an [`AgentSessionRuntime`](super::runtime::AgentSessionRuntime).
+///
+/// Unlike [`build_offline_echo_session`] (which hardcodes an in-memory manager and
+/// no `session_start` event), the returned factory threads the runtime-supplied
+/// `session_manager` and `session_start_event` through to the built session, so the
+/// runtime can drive `/new`, `/resume`, and `/fork` — each of which opens or
+/// branches its own manager and carries a `session_start` metadata event — against
+/// the offline echo assistant. The resolved `cwd` is echoed back and there is never
+/// a model-fallback warning offline (`model_fallback_message` is always `None`).
+///
+/// The factory type is infallible, but the offline session build can only fail when
+/// registering the fixed faux provider config — a build invariant, not a runtime
+/// condition — so a failure there panics rather than being surfaced through the
+/// runtime.
+///
+/// **Offline only.** See the module docs: every session the factory builds is faux
+/// and must not be wired into a live model path.
+pub fn build_offline_echo_runtime_factory() -> CreateAgentSessionRuntimeFactory {
+    Box::new(|options: AgentSessionRuntimeFactoryOptions| {
+        let cwd = options.cwd;
+        let session = build_offline_session(
+            cwd.clone(),
+            echo_stream_fn(),
+            options.session_manager,
+            options.session_start_event,
+        )
+        .expect("offline echo faux provider registers");
+        AgentSessionRuntimeResult {
+            session,
+            cwd,
+            model_fallback_message: None,
+        }
+    })
 }
 
 /// Build a ready-to-drive **offline faux** [`AgentSession`] whose assistant
@@ -183,16 +230,27 @@ pub fn build_faux_session(
             mock_stream(message)
         },
     );
-    build_offline_session(cwd, stream_fn)
+    let session_manager = SessionManager::in_memory(&cwd);
+    build_offline_session(cwd, stream_fn, session_manager, None)
 }
 
-/// The shared offline construction both public builders call: wire `stream_fn`
-/// into a real [`Agent`], an in-memory session/settings, and an offline model
-/// runtime with the faux provider registered and its auth seeded. The **only**
-/// fallible step is registering the faux provider.
+/// The shared offline construction every builder calls: wire `stream_fn` into a
+/// real [`Agent`], the caller-supplied `session_manager`/`session_start_event`, an
+/// in-memory settings manager, and an offline model runtime with the faux provider
+/// registered and its auth seeded. The **only** fallible step is registering the
+/// faux provider.
+///
+/// The `session_manager` and `session_start_event` are parameterized (rather than
+/// hardcoded to [`SessionManager::in_memory`] / `None`) so the runtime factory
+/// ([`build_offline_echo_runtime_factory`]) can hand the runtime-opened manager and
+/// `session_start` metadata straight through for `/new`, `/resume`, and `/fork`.
+/// The `agent_dir` is derived from `cwd` (`{cwd}/.agent`), matching the harness this
+/// builder lifts.
 fn build_offline_session(
     cwd: String,
     stream_fn: StreamFn,
+    session_manager: SessionManager,
+    session_start_event: Option<SessionStartEvent>,
 ) -> Result<AgentSession, OfflineEchoError> {
     let agent_dir = format!("{cwd}/.agent");
     let model_runtime = build_offline_model_runtime()?;
@@ -220,7 +278,7 @@ fn build_offline_session(
 
     Ok(AgentSession::new(AgentSessionConfig {
         agent,
-        session_manager: SessionManager::in_memory(&cwd),
+        session_manager,
         settings_manager,
         cwd,
         scoped_models: Vec::new(),
@@ -233,7 +291,7 @@ fn build_offline_session(
         base_tools_override: None,
         // `None` selects the default `StubExtensionRunner` (no extensions).
         extension_runner: None,
-        session_start_event: None,
+        session_start_event,
         summarization_models: None,
     }))
 }
@@ -395,6 +453,10 @@ mod tests {
     use serde_json::Value;
 
     use crate::core::agent_session::events::AgentSessionEvent;
+    use crate::core::agent_session::runtime::{
+        create_agent_session_runtime, ForkOptions, NewSessionOptions,
+    };
+    use crate::core::extensions::events::session::ForkPosition;
 
     /// A throwaway cwd for an offline session.
     fn temp_cwd() -> (tempfile::TempDir, String) {
@@ -513,6 +575,88 @@ mod tests {
             assistant_texts(&session).iter().any(|text| text == canned),
             "expected the persisted assistant message to be the canned response, saw: {:?}",
             assistant_texts(&session)
+        );
+    }
+
+    /// Drive an `AgentSessionRuntime` built from the offline-echo factory end to
+    /// end: the initial session echoes a turn, `/new` rebuilds a working session
+    /// that echoes again, and an in-memory `/fork` leaves a session that still
+    /// echoes — confirming the factory is reused faithfully for every swap.
+    #[test]
+    fn runtime_factory_echoes_across_new_and_fork() {
+        let (_dir, cwd) = temp_cwd();
+        let session_manager = SessionManager::in_memory(&cwd);
+        let mut runtime = create_agent_session_runtime(
+            build_offline_echo_runtime_factory(),
+            AgentSessionRuntimeFactoryOptions {
+                cwd: cwd.clone(),
+                agent_dir: format!("{cwd}/.agent"),
+                session_manager,
+                session_start_event: None,
+            },
+        )
+        .expect("build offline echo runtime");
+
+        // The initial session echoes the last user message.
+        runtime
+            .session()
+            .prompt("hello", None, None)
+            .expect("initial echo turn runs");
+        assert!(
+            assistant_texts(runtime.session())
+                .iter()
+                .any(|text| text == "hello"),
+            "expected the initial session to echo \"hello\", saw: {:?}",
+            assistant_texts(runtime.session())
+        );
+
+        // `/new` tears down the current session and the factory rebuilds a fresh,
+        // working one that still echoes.
+        let switch = runtime.new_session(NewSessionOptions::default());
+        assert!(!switch.cancelled, "new_session was unexpectedly cancelled");
+        assert!(
+            runtime.session().messages().is_empty(),
+            "expected the new session to start empty"
+        );
+        runtime
+            .session()
+            .prompt("world", None, None)
+            .expect("post-/new echo turn runs");
+        assert!(
+            assistant_texts(runtime.session())
+                .iter()
+                .any(|text| text == "world"),
+            "expected the rebuilt session to echo \"world\", saw: {:?}",
+            assistant_texts(runtime.session())
+        );
+
+        // An in-memory `/fork` at the current leaf rebuilds another working
+        // session that echoes.
+        let leaf_id = runtime
+            .session()
+            .session_manager()
+            .get_leaf_id()
+            .map(String::from)
+            .expect("forked-from session has a leaf entry");
+        let fork = runtime
+            .fork(
+                &leaf_id,
+                ForkOptions {
+                    position: Some(ForkPosition::At),
+                },
+            )
+            .expect("in-memory fork succeeds");
+        assert!(!fork.cancelled, "fork was unexpectedly cancelled");
+        runtime
+            .session()
+            .prompt("again", None, None)
+            .expect("post-fork echo turn runs");
+        assert!(
+            assistant_texts(runtime.session())
+                .iter()
+                .any(|text| text == "again"),
+            "expected the forked session to echo \"again\", saw: {:?}",
+            assistant_texts(runtime.session())
         );
     }
 }
