@@ -28,6 +28,11 @@
 ///   shim. Numeric params/returns cross as `int32` (JS `number`) and are widened
 ///   to the engine's `i64`/`usize` at the seam, matching the pre-swap `as i64`
 ///   casts — the JS-visible width values are identical.
+/// - the tui word-navigation ops (`findWordBackward`, `findWordForward`) route
+///   into `pidgin_tui::word_navigation`'s default-segmenter path, backing the
+///   native `word-navigation.ts` shim. Cursors are UTF-16 string indices crossing
+///   as `int32` (JS `number`) and widened to the engine's `usize` at the seam —
+///   the JS-visible cursor values are identical to the pre-swap wrappers.
 pub struct PidginImpl;
 
 impl crate::generated::PidginCore for PidginImpl {
@@ -126,5 +131,21 @@ impl crate::generated::PidginCore for PidginImpl {
             after: r.after,
             after_width: r.after_width as i32,
         }
+    }
+
+    fn find_word_backward(text: String, cursor: i32) -> i32 {
+        pidgin_tui::find_word_backward(
+            &text,
+            cursor as usize,
+            &pidgin_tui::WordNavOptions::default(),
+        ) as i32
+    }
+
+    fn find_word_forward(text: String, cursor: i32) -> i32 {
+        pidgin_tui::find_word_forward(
+            &text,
+            cursor as usize,
+            &pidgin_tui::WordNavOptions::default(),
+        ) as i32
     }
 }

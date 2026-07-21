@@ -436,6 +436,52 @@
               "name": "extractSegments"
             }
           }
+        },
+        {
+          "name": "findWordBackward",
+          "doc": "`findWordBackward` (word-navigation.ts), default segmentation: cursor after\nmoving one word backward from `cursor` (UTF-16 index).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "text",
+              "type": "string"
+            },
+            {
+              "name": "cursor",
+              "type": "int32"
+            }
+          ],
+          "returns": "int32",
+          "bindings": {
+            "node": {
+              "name": "findWordBackward"
+            }
+          }
+        },
+        {
+          "name": "findWordForward",
+          "doc": "`findWordForward` (word-navigation.ts), default segmentation: cursor after\nmoving one word forward from `cursor` (UTF-16 index).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "text",
+              "type": "string"
+            },
+            {
+              "name": "cursor",
+              "type": "int32"
+            }
+          ],
+          "returns": "int32",
+          "bindings": {
+            "node": {
+              "name": "findWordForward"
+            }
+          }
         }
       ]
     }
