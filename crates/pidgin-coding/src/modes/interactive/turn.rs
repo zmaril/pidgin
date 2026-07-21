@@ -39,10 +39,39 @@ use pidgin_ai::providers::faux::{faux_assistant_message, faux_text, FauxAssistan
 use super::app::{ShellEvent, ShellNotifySink};
 use crate::core::agent_session::{
     build_offline_echo_runtime_factory, build_offline_echo_session, create_agent_session_runtime,
-    AgentSession, AgentSessionEvent, AgentSessionRuntimeFactoryOptions, ForkOptions,
-    NewSessionOptions,
+    AgentSession, AgentSessionEvent, AgentSessionRuntimeFactoryOptions,
+    CreateAgentSessionRuntimeFactory, ForkOptions, NewSessionOptions,
 };
+use crate::core::sdk::{build_create_runtime_factory, CreateAgentSessionRuntimeFixedOptions};
 use crate::core::session_manager::SessionManager;
+use crate::core::skills::get_agent_dir;
+
+/// A zero-arg constructor for the runtime factory the worker drives. It is a
+/// plain `fn` pointer (not a boxed closure) so it is `Send` and can cross into
+/// the worker thread, where it is invoked to build the (`!Send`) factory locally.
+pub type RuntimeFactoryMaker = fn() -> CreateAgentSessionRuntimeFactory;
+
+/// The offline-echo factory maker: every turn echoes the last user message. Used
+/// by [`TurnDriver::spawn`] and the shell's default/test path.
+pub fn offline_echo_maker() -> CreateAgentSessionRuntimeFactory {
+    build_offline_echo_runtime_factory()
+}
+
+/// The live factory maker: builds real, credentialed [`AgentSession`]s that reach
+/// a provider (under `native-http`) via [`build_create_runtime_factory`]. The
+/// model is resolved from settings / first-available; tools default to the full
+/// coding set. Used by [`TurnDriver::spawn_live`].
+pub fn live_maker() -> CreateAgentSessionRuntimeFactory {
+    build_create_runtime_factory(CreateAgentSessionRuntimeFixedOptions {
+        model: None,
+        thinking_level: None,
+        scoped_models: Vec::new(),
+        no_tools: None,
+        tools: None,
+        exclude_tools: None,
+        custom_tools: Vec::new(),
+    })
+}
 
 /// The boxed unsubscribe handle returned by [`AgentSession::subscribe`]. Dropping
 /// or calling it removes the forwarding listener from that session's registry.
@@ -76,10 +105,32 @@ impl TurnDriver {
     /// emits over `evt_tx` (wrapped as [`ShellEvent::Session`]) to the run loop,
     /// re-subscribing after every `/new`, `/resume`, or `/fork` swap.
     pub fn spawn(evt_tx: Sender<ShellEvent>, cwd: String) -> Self {
+        // Offline echo: agent_dir is a per-cwd throwaway (auth is faux-seeded, so
+        // the dir is never read for credentials).
+        let agent_dir = format!("{cwd}/.agent");
+        Self::spawn_with(evt_tx, cwd, agent_dir, offline_echo_maker)
+    }
+
+    /// Spawn a **live** turn worker: real, credentialed [`AgentSession`]s that
+    /// reach a provider. `agent_dir` is the real config dir (`get_agent_dir()`)
+    /// so `auth.json` / `models.json` resolve; the model is chosen from settings
+    /// or the first available provider.
+    pub fn spawn_live(evt_tx: Sender<ShellEvent>, cwd: String) -> Self {
+        Self::spawn_with(evt_tx, cwd, get_agent_dir(), live_maker)
+    }
+
+    /// Spawn a worker driving the runtime the `make_factory` maker builds, rooted
+    /// at `cwd` with `agent_dir` for credential/catalog resolution.
+    pub fn spawn_with(
+        evt_tx: Sender<ShellEvent>,
+        cwd: String,
+        agent_dir: String,
+        make_factory: RuntimeFactoryMaker,
+    ) -> Self {
         let (cmd_tx, cmd_rx) = std::sync::mpsc::channel::<TurnCommand>();
         let handle = thread::Builder::new()
             .name("pidgin-interactive-turn".to_string())
-            .spawn(move || worker_loop(&cmd_rx, &evt_tx, cwd))
+            .spawn(move || worker_loop(&cmd_rx, &evt_tx, cwd, agent_dir, make_factory))
             .expect("spawn interactive turn worker thread");
         Self {
             cmd_tx,
@@ -140,12 +191,18 @@ impl Drop for TurnDriver {
 /// session's subscription (its session is already disposed) and subscribes the
 /// forwarder onto the new current session, so events keep flowing across `/new`,
 /// `/resume`, and `/fork` (pi's "unsubscribe old, subscribe new").
-fn worker_loop(cmd_rx: &Receiver<TurnCommand>, evt_tx: &Sender<ShellEvent>, cwd: String) {
+fn worker_loop(
+    cmd_rx: &Receiver<TurnCommand>,
+    evt_tx: &Sender<ShellEvent>,
+    cwd: String,
+    agent_dir: String,
+    make_factory: RuntimeFactoryMaker,
+) {
     let mut runtime = match create_agent_session_runtime(
-        build_offline_echo_runtime_factory(),
+        make_factory(),
         AgentSessionRuntimeFactoryOptions {
             cwd: cwd.clone(),
-            agent_dir: format!("{cwd}/.agent"),
+            agent_dir,
             session_manager: SessionManager::in_memory(&cwd),
             session_start_event: None,
         },

@@ -228,9 +228,26 @@ pub struct InteractiveShell<W: Write> {
 }
 
 impl<W: Write> InteractiveShell<W> {
-    /// Build the shell over `terminal`, composing pi's container tree and wiring
-    /// the editor submit handler to the turn worker.
+    /// Build the shell over `terminal` with the **offline echo** turn worker
+    /// (deterministic, no network/key). This is the default used by headless
+    /// tests and the faux example.
     pub fn new(terminal: ProcessTerminal<W>) -> Self {
+        Self::build(terminal, false)
+    }
+
+    /// Build the shell with the **live** turn worker: real, credentialed
+    /// [`AgentSession`](crate::core::agent_session) turns that reach a provider
+    /// (under `native-http`), with the model resolved from settings / the first
+    /// available provider. Falls back to a clean error turn when no model is
+    /// configured.
+    pub fn new_live(terminal: ProcessTerminal<W>) -> Self {
+        Self::build(terminal, true)
+    }
+
+    /// Build the shell over `terminal`, composing pi's container tree and wiring
+    /// the editor submit handler to the turn worker. `live` selects the live
+    /// provider-backed worker over the offline-echo one.
+    fn build(terminal: ProcessTerminal<W>, live: bool) -> Self {
         let rows = terminal.rows();
         let cwd = std::env::current_dir()
             .map(|p| p.display().to_string())
@@ -246,7 +263,11 @@ impl<W: Write> InteractiveShell<W> {
         // (1) header — placeholder chrome (PR-4C).
         let header = SharedLines::new();
         header.set(vec![
-            "pidgin interactive shell (offline echo)".to_string(),
+            if live {
+                "pidgin interactive shell".to_string()
+            } else {
+                "pidgin interactive shell (offline echo)".to_string()
+            },
             "type a message and press Enter; Ctrl-C twice / Esc twice / Ctrl-D to exit".to_string(),
             String::new(),
         ]);
@@ -280,9 +301,14 @@ impl<W: Write> InteractiveShell<W> {
             cwd.clone(),
         )));
 
-        // The turn worker (offline faux) and the event channel it forwards to.
+        // The turn worker and the event channel it forwards to: offline echo by
+        // default, or the live provider-backed worker when `live` is set.
         let (evt_tx, evt_rx) = std::sync::mpsc::channel::<ShellEvent>();
-        let turn = TurnDriver::spawn(evt_tx.clone(), cwd.clone());
+        let turn = if live {
+            TurnDriver::spawn_live(evt_tx.clone(), cwd.clone())
+        } else {
+            TurnDriver::spawn(evt_tx.clone(), cwd.clone())
+        };
 
         // (7) editor — the focused prompt. Submit pushes the user bubble and
         // forwards the prompt to the worker (pi's `setupEditorSubmitHandler` ->

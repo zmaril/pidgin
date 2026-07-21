@@ -178,8 +178,21 @@ pub fn run(argv: &[String]) -> i32 {
             }
         },
         AppMode::Interactive => {
-            err_line("Error: interactive mode is not yet implemented in pidgin");
-            1
+            // Launch the interactive shell over the controlling terminal with the
+            // live provider-backed turn worker: a resolved model reaches a real
+            // provider (under `native-http`); with no model configured, turns
+            // surface a clean error in the shell rather than echoing.
+            use pidgin_coding::modes::interactive::InteractiveShell;
+            use pidgin_tui::ProcessTerminal;
+            let terminal = ProcessTerminal::new(std::io::stdout());
+            let mut shell = InteractiveShell::new_live(terminal);
+            match shell.run() {
+                Ok(()) => 0,
+                Err(e) => {
+                    err_line(&format!("Error: {e:?}"));
+                    1
+                }
+            }
         }
         AppMode::Print | AppMode::Json => {
             // Resolve the model and drive the completion up to the provider seam.
