@@ -40,8 +40,6 @@
 //!   shape, [`ExtensionLoadError`] `{path, error}`, and the `Box<dyn
 //!   ExtensionLoader>` holding pattern are faithful and unchanged.
 
-// straitjacket-allow-file:duplication
-
 use crate::core::event_bus::EventBus;
 use crate::core::source_info::SourceInfo;
 

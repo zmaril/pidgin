@@ -1,6 +1,3 @@
-// straitjacket-allow-file:duplication -- the subprocess-spawn harness
-// (CARGO_BIN_EXE_pidgin + Command::output) parallels black_box_cli.rs by design;
-// this file is the deno-gated end-to-end probe and stays independent of it.
 //! End-to-end `deno`-gated probe: `pidgin -e <ext.ts>` drives the REAL extension
 //! loader and reports the loaded command/tool to stderr.
 //!

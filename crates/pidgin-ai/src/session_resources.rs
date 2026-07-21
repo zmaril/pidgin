@@ -27,9 +27,6 @@
 //!   [`AggregateCleanupError`], which owns the collected errors and renders the
 //!   same message.
 
-// straitjacket-allow-file:duplication — a faithful transcription of pi-ai's
-// `session-resources.ts`; its registry shape parallels `compat.rs` by design.
-
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt;

@@ -1,6 +1,3 @@
-// straitjacket-allow-file:duplication — the ported `bash_execution_to_text` and
-// `convert_to_llm` test bodies mirror pi's parallel cases and build near-identical
-// message literals by design; the clone detector reads these as duplicates.
 //! Synthesized harness messages and LLM conversion, mirroring
 //! `packages/agent/src/harness/messages.ts`.
 //!

@@ -32,11 +32,6 @@
 //! HTTP is only exercised when radius is *enabled* (credentials present); with
 //! radius disabled — the default — `serve()` performs no HTTP at all.
 
-// straitjacket-allow-file:duplication — the tempdir `TestEnv` scaffold and the
-// production seam wiring parallel the equivalents in `handler.rs` and
-// `supervisor/tests.rs`; the repetition is a faithful mirror of the same
-// injected-seam setup, not extractable shared logic.
-
 use std::io;
 use std::path::Path;
 use std::sync::Arc;

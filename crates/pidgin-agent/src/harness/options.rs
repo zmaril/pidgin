@@ -14,11 +14,6 @@
 //! The compaction [`Models`] trait is imported from
 //! [`crate::harness::compaction`] and never redefined.
 
-// straitjacket-allow-file:duplication — `PendingSessionWrite`'s per-variant
-// draft structs are the `SessionTreeEntry` variants with their base fields
-// (`id`/`parentId`/`timestamp`) removed; the parallel field shapes mirror
-// `harness/types.rs` by construction, not by extractable duplication.
-
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt;

@@ -22,8 +22,6 @@
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/extensions/types.ts`.
 
-// straitjacket-allow-file:duplication
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 

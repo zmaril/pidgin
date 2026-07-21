@@ -1,7 +1,3 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// Claude-Code tool-name table and `convertTools` (`anthropic-messages.ts`). The
-// per-tool object assembly mirrors pi verbatim; the clone detector may read the
-// small scaffolding as duplicative by design.
 //! Tool-name normalization and tool serialization, ported from pi-ai's
 //! `packages/ai/src/api/anthropic-messages.ts` at pinned commit `3da591ab`. The
 //! deferred-tool splitting (`utils/deferred-tools.ts`) lives in the sibling

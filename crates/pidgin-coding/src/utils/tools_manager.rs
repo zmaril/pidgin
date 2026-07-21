@@ -23,8 +23,6 @@
 //! to pi's Node-style strings. Every downstream comparison then matches pi
 //! byte-for-byte (`plat == "darwin"`, `architecture == "arm64"`, and so on).
 
-// straitjacket-allow-file:duplication
-
 use std::path::{Path, PathBuf};
 
 /// Application name pi interpolates into the GitHub `User-Agent`. pi imports

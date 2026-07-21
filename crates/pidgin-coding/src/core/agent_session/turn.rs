@@ -27,8 +27,6 @@
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/agent-session.ts`.
 
-// straitjacket-allow-file:duplication
-
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 

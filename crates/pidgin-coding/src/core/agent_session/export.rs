@@ -24,8 +24,6 @@
 //! (`modes/rpc/session.rs::export_html`); both collaborators layer on once
 //! `pidgin-tui` and the settings→theme-color resolution land.
 
-// straitjacket-allow-file:duplication
-
 use std::path::Path;
 
 use pidgin_agent::types::AgentTool;

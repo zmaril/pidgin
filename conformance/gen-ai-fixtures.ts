@@ -1,6 +1,3 @@
-// straitjacket-allow-file:duplication — each fixture literal below is a distinct
-// boundary-type sample; their object shapes necessarily rhyme (they share the pi
-// content-block/message field vocabulary) but every one is load-bearing.
 //
 // Fixture generator for crates/pidgin-ai boundary-type round-trip tests.
 //

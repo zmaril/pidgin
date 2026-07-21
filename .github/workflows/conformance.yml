@@ -1,5 +1,3 @@
-# straitjacket-allow-file[:duplication] — the checkout/toolchain/cache setup
-# necessarily mirrors ci.yml; Actions YAML has no include mechanism for it.
 #
 # Conformance workflow. Two responsibilities, deliberately split by severity:
 #

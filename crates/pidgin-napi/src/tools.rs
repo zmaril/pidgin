@@ -31,11 +31,6 @@
 //! does not hit the "Cannot start a runtime from within a runtime" panic. The
 //! ops futures are only `block_on`'d, never spawned.
 
-// straitjacket-allow-file:duplication — the three tool bindings share one
-// faithful parse-input / run / serialize-AgentToolResult shape at the Node
-// boundary; the near-identical bodies mirror pi's per-tool `execute` surface
-// and are kept distinct so each tool's JSON contract stays explicit.
-
 use std::sync::LazyLock;
 
 use serde::Deserialize;

@@ -26,12 +26,6 @@
 //! not crash. They record nothing and belong to PR-F (hook dispatch + session
 //! wiring). See [`BOOTSTRAP_JS`].
 
-// straitjacket-allow-file:duplication -- the op bodies are deliberate parallel
-// structure (borrow the shared inventory, parse the metadata payload, push one
-// record); the same register-op shape recurs once per ExtensionAPI method, so it
-// is mirror duplication of pi's createExtensionAPI method block, not an accident
-// to hoist away.
-
 use std::cell::RefCell;
 use std::rc::Rc;
 

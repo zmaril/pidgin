@@ -1,10 +1,3 @@
-// straitjacket-allow-file[:duplication] — these tests mirror pi's
-// `xai-oauth.test.ts` case-by-case: each `#[test]` rebuilds a similar
-// machine-driving scaffold (device request → notify → poll waits → response) so
-// each device-flow / refresh path is exercised in isolation. The clone detector
-// reads the repeated scaffolding and the shared form/JSON test helpers as
-// duplication; it is deliberate, load-bearing per-case fixtures kept parallel to
-// the pi test they transcribe.
 //! Unit tests for the xAI OAuth device-code flow, mirroring pi-ai's
 //! `packages/ai/test/xai-oauth.test.ts` at pinned commit `3da591ab`.
 

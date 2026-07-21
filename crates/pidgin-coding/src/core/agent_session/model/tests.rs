@@ -9,8 +9,6 @@
 //! `#[ignore]`d — every scenario is reachable under the sync/eager,
 //! session-actor model.
 
-// straitjacket-allow-file:duplication
-
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 

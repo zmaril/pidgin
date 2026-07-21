@@ -2,11 +2,6 @@
 //! acceptance tests. Ported from `crates/pidgin-coding/tests/common/mod.rs`
 //! (only the path/write/symlink helpers the moved extension cases need).
 
-// straitjacket-allow-file:duplication -- a faithful mirror of the path/write/
-// symlink helpers in `crates/pidgin-coding/tests/common/mod.rs`; a crate-boundary
-// test-helper file cannot be shared across crates, so the small overlap is
-// intentional mirror duplication, not an accident to hoist away.
-
 // The test binary that includes this module uses a subset of these helpers, so
 // per-binary `dead_code` is expected and allowed.
 #![allow(dead_code)]

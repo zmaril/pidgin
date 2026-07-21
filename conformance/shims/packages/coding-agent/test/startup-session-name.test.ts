@@ -1,4 +1,3 @@
-// straitjacket-allow-file:duplication — byte-faithful mirror of pi's CLI test file, repointed only at the pidgin binary (PIDGIN_BIN); the shared temp-dir/spawn boilerplate is pi's own parallel test structure.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

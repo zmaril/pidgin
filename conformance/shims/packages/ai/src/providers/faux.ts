@@ -36,10 +36,6 @@
 //      test that mutates `getModel().thinkingLevelMap` and reads it back through
 //      the session observes the mutation.
 //
-// straitjacket-allow-file[:duplication] — the error-path `AssistantMessage` built
-// here is a faithful transcription of pi's own zero-usage/error message shape
-// (the same literal `api-messages`/`anthropic-messages` shims emit); the clone
-// detector reads it as a duplicate, but it is pi's exact boundary contract.
 
 export * from "./faux.__pi_original__.ts";
 

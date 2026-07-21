@@ -10,11 +10,6 @@
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/extensions/runner.ts`.
 
-// straitjacket-allow-file:duplication -- each emitter is a deliberate parallel
-// mirror of one emitXxx method in runner.ts (seed fold, loop handlers, build
-// event, invoke, isolate error, fold result); the shape recurs per hook, so it
-// is faithful-port duplication, not an accident to hoist away.
-
 use anyhow::Result;
 use serde::de::DeserializeOwned;
 use serde_json::{json, Map, Value};

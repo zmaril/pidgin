@@ -1,6 +1,3 @@
-// straitjacket-allow-file:duplication — this generator's dump()/paths boilerplate
-// intentionally mirrors generate_components.mjs / generate_keys.mjs; each
-// generator is a standalone script.
 // straitjacket-allow-file:emoji — the CJK/emoji literals are UTF-8 width test
 // data fed to pi's own render functions, not decorative prose (mirrors
 // generate_components.mjs's emoji allow-file).

@@ -23,12 +23,6 @@
 //! V8 blob that 403s in-sandbox. Without the feature the file is empty.
 #![cfg(feature = "deno")]
 
-// straitjacket-allow-file:duplication — the temp-root fixture (mkdir project/
-// agent/home, inject RealExtensionLoader, reload) mirrors `deno_resource_loader.rs`
-// by design: both wire the real loader through the same seam, and the `common`
-// path helpers are the shared per-binary mirror. The parallel structure is
-// intentional, not incidental.
-
 use std::path::PathBuf;
 
 use pidgin_coding::core::extensions::discovery::{

@@ -1,8 +1,3 @@
-// straitjacket-allow-file[:duplication] — the buildParams wiring and the
-// parse/napi wrappers mirror the direct Gemini driver by design (pi keeps the
-// two Google drivers as near-duplicate copies diverging only in client/auth
-// construction). The clone detector reads the shared shape as duplication; the
-// Vertex-specific surface here is the auth resolution and client-config build.
 //! Google Vertex AI (`@google/genai`, `vertexai: true`) streaming driver, ported
 //! from pi-ai's `packages/ai/src/api/google-vertex.ts` at pinned commit
 //! `3da591ab`.

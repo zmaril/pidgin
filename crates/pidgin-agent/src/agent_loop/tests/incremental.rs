@@ -16,10 +16,6 @@
 //!   terminal messages as the buffered path — for a plain text turn AND for a
 //!   `tool_use` turn that loops back through tool execution.
 
-// straitjacket-allow-file:duplication — the buffered and incremental fixtures are
-// deliberately parallel so each assertion pins one path against the other; the
-// clone detector reads the mirrored setups as duplicates.
-
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 

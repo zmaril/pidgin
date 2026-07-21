@@ -140,16 +140,6 @@
 //! - **Object-identity assertions** (`.toBe` on `state.model/tools/messages`): a
 //!   JSON boundary cannot preserve JS reference identity.
 
-// straitjacket-allow-file:duplication — this is the async-oneshot faithful port
-// of the `agent_bridge.rs` blocking primitive: the envelope shape, the
-// `id -> reply` registry, the three release paths (deliver / abort-drain /
-// double-resolve no-op), and the `BridgeOutcome` / `BridgeError` outcome enums
-// are deliberate parallel structure of the same rendezvous pattern, differing
-// only in the reply-channel type (tokio `oneshot` vs std `SyncSender`). Keeping
-// the two variants as self-contained sibling modules (per the coordinator's
-// ruling) reads far better than a generic that erases the block-vs-await
-// difference, at the cost of this intentional mirror duplication.
-
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};

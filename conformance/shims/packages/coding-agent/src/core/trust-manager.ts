@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication — the `ProjectTrustStore` class body below
-// is a faithful mirror of pi's class shape (constructor + get/getEntry/set/
-// setMany), because the Rust port exposes those as stateless functions over the
-// agent dir; the shim rebuilds pi's thin class around them, so the structural
-// overlap with the preserved pi original is intentional.
 //
 // Native shim for packages/coding-agent/src/core/trust-manager.ts, backed by the
 // pidgin Rust addon (`pidgin-napi`). Installed by conformance/codegen.mjs when

@@ -1,6 +1,3 @@
-// straitjacket-allow-file:duplication — the ported capture tests mirror pi's
-// parallel scenarios and drive the in-memory env with near-identical setup by
-// design; the clone detector reads these test bodies as duplicates.
 //! Shell-output capture, mirroring
 //! `packages/agent/src/harness/utils/shell-output.ts`.
 //!

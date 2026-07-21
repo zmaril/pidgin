@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication — the header-merge, `x-goog-api-key`
-// only-when-absent injection, and `serialize_body` helper mirror the direct-Gemini
-// assembler by design (pi keeps the two Google clients as near-duplicate copies
-// diverging only in the derived URL). The clone detector reads the shared shape as
-// duplication; the Vertex-specific surface here is the Express + ADC request URLs.
 //! The Google Vertex AI request assembler, the `createClientWithApiKey` /
 //! `createClient`-equivalent half of pi-ai's `google-vertex.ts` at pinned commit
 //! `3da591ab`.

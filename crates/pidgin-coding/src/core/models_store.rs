@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication — a faithful transcription of pi's
-// `models-store.ts`. The in-memory and file-backed stores expose the same
-// `read`/`write`/`delete` shape over different substrates, so their method
-// bodies are deliberately parallel; the clone detector reads that mirror as
-// duplication.
 //! Locked JSON storage for dynamically refreshed provider catalogs.
 //!
 //! Ported from pi's `core/models-store.ts` at pinned commit `3da591ab`.

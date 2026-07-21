@@ -1,6 +1,3 @@
-# straitjacket-allow-file[:duplication] — the checkout/toolchain/cache setup
-# necessarily mirrors ci.yml and php.yml; Actions YAML has no include mechanism
-# for it.
 #
 # Python binding workflow. Builds the PyO3 cdylib, then proves the extension
 # imports and drives a real (offline, faux) agent turn (bindings/python/

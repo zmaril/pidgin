@@ -5,11 +5,6 @@
 //!
 //! Source of truth: `vendor/pi/packages/coding-agent/src/core/extensions/runner.ts`.
 
-// straitjacket-allow-file:duplication -- the command-collision resolution mirrors
-// pi's `resolveRegisteredCommands` and the tool/flag folds mirror
-// `getAllRegisteredTools` / `getFlagValues`; the structure is faithful to the
-// ported source.
-
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 

@@ -15,8 +15,6 @@
 //! `$` without the multiline flag, matches only at the very end of the string —
 //! not before a trailing newline — so behavior is byte-identical).
 
-// straitjacket-allow-file:duplication
-
 use fancy_regex::Regex;
 use std::sync::LazyLock;
 

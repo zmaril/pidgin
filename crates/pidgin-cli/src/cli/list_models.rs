@@ -5,8 +5,6 @@
 //! message text. `console.log` maps to [`out_line`] (stdout unless taken over),
 //! `console.error` to [`err_line`] (always stderr).
 
-// straitjacket-allow-file:duplication
-
 use pidgin_coding::core::auth::auth_guidance::format_no_models_available_message;
 use pidgin_coding::core::model_runtime::ModelRuntime;
 use pidgin_core::ai::{Modality, Model};

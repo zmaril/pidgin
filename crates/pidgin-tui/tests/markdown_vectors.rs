@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication — this replay harness reproduces the
-// chalk (level-3) `applyStyle` contract to build the per-case custom
-// default-text-style themes; the same `chalk` shape now also backs
-// `markdown::default_markdown_theme`, but here it is test scaffolding for
-// arbitrary vector-replay themes, kept verbatim on purpose.
 //! Replays the markdown render vectors extracted from pi's OWN `Markdown`
 //! component (`crates/pidgin-tui/vectors/gen/generate_markdown.mjs`, driven
 //! through pi's renderer) and asserts the Rust port emits a byte-identical

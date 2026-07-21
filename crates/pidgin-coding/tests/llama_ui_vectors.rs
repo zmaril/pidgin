@@ -1,7 +1,3 @@
-// straitjacket-allow-file:duplication — the `load()` vector-reading helper and
-// the per-surface replay loops mirror the two-line boilerplate the other
-// interactive vector-test binaries use (interactive_message_vectors.rs etc.);
-// each integration-test binary is standalone.
 //! Drives the Rust port of pi's llama-extension TUI against vectors extracted
 //! from pi itself (`crates/pidgin-coding/vectors/gen/generate_llama_ui.mjs`).
 //! Every assertion is byte-identical: pi's render output is the source of truth.

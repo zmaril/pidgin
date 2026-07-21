@@ -9,8 +9,6 @@
 //! process (see the crate-level non-port note in [`super`]). `resize_image` is
 //! kept as the faithful entry seam callers use.
 
-// straitjacket-allow-file:duplication
-
 use super::resize_core::{resize_image_in_process, ImageResizeOptions, ResizedImage};
 
 /// Resize an image to fit within the max dimensions and encoded file size.

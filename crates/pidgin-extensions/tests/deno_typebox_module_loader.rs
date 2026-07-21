@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication -- the spawn/load/inventory-assert shape
-// mirrors the sibling deno acceptance tests (deno_pirate_extension.rs,
-// deno_example_extension.rs) by design: they all drive the same plane entrypoints
-// over a vendored upstream file. The parallel structure is intentional.
-
 //! Acceptance test proving the bare-specifier MODULE LOADER lets a REAL upstream
 //! pi tool-registering extension load on pidgin's plane.
 //!

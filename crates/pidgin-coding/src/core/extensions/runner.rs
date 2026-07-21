@@ -41,12 +41,6 @@
 //!   [`ExtensionCommandContextHost`]. `AgentSession` implements each in one `impl`
 //!   block and passes `Arc<dyn ...>`.
 
-// straitjacket-allow-file:duplication -- the StubExtensionRunner no-op emitter
-// defaults are transcribed verbatim by the real ExtensionRunner impls
-// (PythonExtensionRunner in crates/pidgin-extensions/src/python/runner.rs, and
-// the deno DenoExtensionRunner); the parallel no-op block is the shared
-// ExtensionRunner seam's sanctioned default, not incidental repetition.
-
 use std::collections::BTreeMap;
 use std::sync::Arc;
 

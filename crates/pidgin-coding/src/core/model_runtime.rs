@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication — a faithful transcription of pi's
-// `model-runtime.ts`. The provider-composition lifecycle (`recomposeProvider`
-// fast paths, the `providerIds` union, register/unregister mirrors) and the
-// snapshot recomputation repeat the same provider-keyed traversal shapes; the
-// clone detector reads that deliberate parallel structure as duplication.
 //! The stateful configured-model runtime.
 //!
 //! Ported from pi's `core/model-runtime.ts` at pinned commit `3da591ab`.

@@ -1,12 +1,3 @@
-// straitjacket-allow-file:duplication — a faithful transcription of the AUTH
-// layer of pi's `provider-composer.ts`. The composed `ApiKeyAuth`/`OAuthAuth`
-// handlers mirror pi's parallel `resolve`/`check`/`toAuth` closures member for
-// member, and the `config`/`extension` field-precedence helpers repeat the same
-// `extension ?? config` / merge shape the credential-blind half (ported in
-// pidgin-coding's `provider_composer.rs`) also uses. The clone detector reads
-// these repeated precedence runs and parallel handler bodies as duplicates; they
-// are distinct, load-bearing auth-composition rules kept verbatim to mirror pi's
-// per-request auth resolution.
 //! Provider-composer AUTH layer.
 //!
 //! Ported from the credential-*aware* half of pi's

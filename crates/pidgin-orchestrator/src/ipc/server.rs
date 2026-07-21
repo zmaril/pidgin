@@ -26,10 +26,6 @@
 //! agent — is **deferred** until pidgin-coding emits live agent events; until
 //! then the bridge faithfully relays whatever `Value` frames the handler produces.
 
-// straitjacket-allow-file:duplication — the connection state machine and the
-// error-frame construction parallel pi's server.ts closely; the repetition is a
-// faithful mirror of pi's control flow, not extractable shared logic.
-
 use std::future::Future;
 use std::io;
 use std::path::Path;

@@ -1,7 +1,3 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
-// `splitDeferredTools` (`utils/deferred-tools.ts`). The ordered-map bookkeeping
-// mirrors pi verbatim; the clone detector may read the small scaffolding as
-// duplicative by design.
 //! Deferred-tool splitting, ported from pi-ai's
 //! `packages/ai/src/utils/deferred-tools.ts` at pinned commit `3da591ab`.
 //!

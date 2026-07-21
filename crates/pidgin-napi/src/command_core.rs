@@ -38,10 +38,6 @@
 //! Both methods are pure and synchronous (the machines carry no tokio runtime),
 //! so the JS driver owns all async/subprocess concerns.
 
-// straitjacket-allow-file:duplication — the op dispatcher's per-op arms share a
-// faithful "parse params / build machine" shape at the Node boundary; the arms
-// mirror pi's package-manager operations and are kept distinct.
-
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use serde::Deserialize;

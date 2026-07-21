@@ -1,8 +1,3 @@
-// straitjacket-allow-file:duplication — the `load()` vector-reading helper is
-// intentionally the same two-line boilerplate as in keys_vectors.rs /
-// width_vectors.rs; each integration test binary is standalone and cannot share
-// a private helper without a common module, which is more indirection than a
-// two-line reader warrants.
 //! Drives the real terminal backend's input pipeline
 //! ([`pidgin_tui::ProcessTerminal::feed`]) against the very same `parse_key`
 //! vectors extracted from pi (`vectors/gen/generate_keys.mjs`). The terminal

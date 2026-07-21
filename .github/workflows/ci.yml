@@ -1,5 +1,3 @@
-# straitjacket-allow-file[:duplication] — per-job `needs:`/`if:` gating and the
-# shared checkout/toolchain/cache setup necessarily repeat across jobs in Actions YAML
 name: ci
 
 on:

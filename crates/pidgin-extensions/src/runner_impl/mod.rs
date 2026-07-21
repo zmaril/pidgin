@@ -25,11 +25,6 @@
 //! This is the `exec-tools-async-vs-sync-agenttool` pattern, the same one
 //! `RealExtensionLoader` uses.
 
-// straitjacket-allow-file:duplication -- the sync trait methods each wrap one
-// async engine emitter with the same bridge shape (adapt borrows to owned,
-// block_on off-ambient, isolate errors to the default); the parallel structure
-// mirrors the ported `runner.ts` façade, not incidental repetition.
-
 mod context;
 mod queries;
 

@@ -19,8 +19,6 @@
 //! `highlight(code, opts)` in `try { … } catch { return code.split("\n"); }`,
 //! falling back to raw, unhighlighted lines (theme.ts:1138-1157).
 
-// straitjacket-allow-file:duplication
-
 use std::collections::HashMap;
 use std::sync::OnceLock;
 

@@ -21,8 +21,6 @@
 //! discriminant. The TUI-facing [`AgentSessionEvent::ThinkingLevelChanged`] is
 //! emitted through the session's own listener registry.
 
-// straitjacket-allow-file:duplication
-
 use serde_json::{json, Value};
 
 use pidgin_agent::types::ThinkingLevel;

@@ -13,8 +13,6 @@
 //! written, the query semantics, and the timeout are identical to pi; only the
 //! async shell is dropped.
 
-// straitjacket-allow-file:duplication
-
 use crate::renderer::Tui;
 use crate::terminal::Terminal;
 use crate::terminal_colors::{RgbColor, TerminalColorScheme};

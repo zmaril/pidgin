@@ -38,11 +38,6 @@
 //! opaque [`serde_json::Value`] frames the RPC child produces, but no live agent
 //! generates them.
 
-// straitjacket-allow-file:duplication — the live-instance state machine, the
-// per-field record updates, and the coordinator callbacks parallel pi's
-// supervisor.ts closely; the repetition is a faithful mirror of pi's control
-// flow, not extractable shared logic.
-
 use std::collections::HashMap;
 use std::fmt;
 use std::future::Future;
