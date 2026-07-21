@@ -162,6 +162,10 @@ impl crate::generated::PidginCore for PidginImpl {
         obj.insert("pinned".to_string(), serde_json::json!(parsed.pinned));
         Some(serde_json::Value::Object(obj).to_string())
     }
+
+    fn strip_ansi(value: String) -> String {
+        pidgin_coding::utils::ansi::strip_ansi(&value)
+    }
 }
 
 // --- tui keybindings layer (packages/tui/src/keybindings.ts) ----------------

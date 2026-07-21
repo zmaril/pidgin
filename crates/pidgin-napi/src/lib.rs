@@ -193,13 +193,6 @@ pub fn anthropic_parse_sse_stream(
 // the pi export it replaces; the shims re-export the un-ported surface from the
 // preserved pi original and override only these symbols.
 
-/// `stripAnsi` (utils/ansi.ts): remove ANSI escape sequences (OSC + CSI). The
-/// shim keeps pi's non-string `TypeError` guard, so only strings reach here.
-#[napi(js_name = "stripAnsi")]
-pub fn strip_ansi(value: String) -> String {
-    pidgin_coding::utils::ansi::strip_ansi(&value)
-}
-
 /// `detectSupportedImageMimeType` (utils/mime.ts): sniff a supported image MIME
 /// type from magic bytes, or `null`.
 #[napi(js_name = "detectSupportedImageMimeType")]
