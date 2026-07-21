@@ -826,6 +826,50 @@
               "name": "isNewerPackageVersion"
             }
           }
+        },
+        {
+          "name": "getProjectTrustParentPath",
+          "doc": "`getProjectTrustParentPath` (trust-manager.ts): the nearest ancestor path, or\n`null` at a filesystem root (pi's `undefined`).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "cwd",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "getProjectTrustParentPath"
+            }
+          }
+        },
+        {
+          "name": "hasTrustRequiringProjectResources",
+          "doc": "`hasTrustRequiringProjectResources` (trust-manager.ts): whether `cwd` carries\nproject-local resources that must be gated by trust. The shim passes pi's\n`process.env.HOME || homedir()` as `home_dir`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "cwd",
+              "type": "string"
+            },
+            {
+              "name": "homeDir",
+              "type": "string"
+            }
+          ],
+          "returns": "boolean",
+          "bindings": {
+            "node": {
+              "name": "hasTrustRequiringProjectResources"
+            }
+          }
         }
       ]
     },

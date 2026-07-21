@@ -252,6 +252,16 @@ impl crate::generated::PidginCore for PidginImpl {
             &current_version,
         )
     }
+
+    fn get_project_trust_parent_path(cwd: String) -> Option<String> {
+        pidgin_coding::core::trust_manager::get_project_trust_parent_path(&cwd)
+    }
+
+    fn has_trust_requiring_project_resources(cwd: String, home_dir: String) -> bool {
+        pidgin_coding::core::trust_manager::has_trust_requiring_project_resources_with_home(
+            &cwd, &home_dir,
+        )
+    }
 }
 
 // --- coding-agent session-cwd seam (core/session-cwd.ts) --------------------
