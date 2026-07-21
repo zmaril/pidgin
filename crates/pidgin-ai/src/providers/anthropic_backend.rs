@@ -115,14 +115,48 @@ impl Provider for AnthropicMessagesBackend {
         &'a self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         _signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
+        // Reasoning requested: lower it onto the incremental request through the
+        // driver's `stream_streaming_simple`, mirroring the buffered
+        // `stream_simple`. This is full pi parity — pi's single
+        // `streamAssistantResponse` (`agent-loop.ts:281`) streams incrementally
+        // AND honors reasoning through the one `streamSimple` path.
+        if let Some(simple) = options.filter(|o| o.reasoning.is_some()) {
+            let mut typed_model: Model<AnthropicMessagesCompat> = match reserialize_model(model) {
+                Ok(typed_model) => typed_model,
+                Err(error) => {
+                    return AssistantEventReader::from_buffered(error_result(
+                        model,
+                        self.clock.now_ms(),
+                        format!(
+                            "Anthropic model is not compatible with anthropic-messages: {error}"
+                        ),
+                    ));
+                }
+            };
+            if let Some(base_url) = simple.base.base_url.as_ref() {
+                typed_model.base_url = base_url.clone();
+            }
+            let driver_options = driver_simple_options(simple);
+            let timestamp = self.clock.now_ms();
+            return driver::stream_streaming_simple(
+                self.transport.as_ref(),
+                &typed_model,
+                context,
+                &driver_options,
+                timestamp,
+            );
+        }
+
+        // No reasoning: byte-identical to the pre-widening base incremental path.
         // Same model/options assembly as `stream`, but the request runs through
         // the driver's incremental `stream_streaming` entry point: the returned
         // reader pulls one chunk at a time off the transport, so a streaming
         // transport surfaces real per-frame timing while the buffered `stream`
         // path is left untouched.
+        let options = options.map(|o| &o.base);
         let mut typed_model: Model<AnthropicMessagesCompat> = match reserialize_model(model) {
             Ok(typed_model) => typed_model,
             Err(error) => {
@@ -515,6 +549,60 @@ mod tests {
         assert_eq!(body["thinking"]["budget_tokens"], json!(8192));
     }
 
+    // FULL INCREMENTAL PARITY: `stream_incremental` carrying a reasoning level
+    // lowers it onto the request param-exactly, identically to the buffered
+    // `stream_simple` -- pi streams incrementally AND honors reasoning through
+    // one `streamSimple` (`agent-loop.ts:281`). Non-adaptive model + `medium`
+    // -> `thinking.type=enabled`, `budget_tokens=8192`, the same as the buffered
+    // `stream_simple_budget_reasoning_sets_budget_tokens` assertion.
+    #[test]
+    fn stream_incremental_budget_reasoning_sets_budget_tokens() {
+        let model = anthropic_reasoning_model(false);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::Medium),
+            None,
+        );
+
+        let (scripted, transport) = scripted_hello();
+        let backend = AnthropicMessagesBackend::new(transport, fake_clock());
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&simple), None);
+        // Drain the reader so the request is actually issued.
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        let body = request_body(&scripted);
+        assert_eq!(body["thinking"]["type"], json!("enabled"));
+        assert_eq!(body["thinking"]["budget_tokens"], json!(8192));
+    }
+
+    // Adaptive model + reasoning `high` on the INCREMENTAL path -> adaptive
+    // thinking with the mapped `effort` output_config, byte-identical to the
+    // buffered `stream_simple_adaptive_reasoning_sets_effort`.
+    #[test]
+    fn stream_incremental_adaptive_reasoning_sets_effort() {
+        let model = anthropic_reasoning_model(true);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+
+        let (scripted, transport) = scripted_hello();
+        let backend = AnthropicMessagesBackend::new(transport, fake_clock());
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&simple), None);
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        let body = request_body(&scripted);
+        assert_eq!(body["thinking"]["type"], json!("adaptive"));
+        assert_eq!(body["output_config"], json!({ "effort": "high" }));
+    }
+
     /// A `Models` collection whose sole provider (`anthropic`) routes through the
     /// backend over `transport`, resolving auth against `env`.
     fn models_with_anthropic_backend(
@@ -663,7 +751,12 @@ mod tests {
 
         let (scripted, transport) = scripted_hello();
         let backend = AnthropicMessagesBackend::new(transport, fake_clock());
-        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
 
         assert_eq!(events, buffered.events);
@@ -698,7 +791,12 @@ mod tests {
             ..StreamOptions::default()
         };
 
-        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let start = Instant::now();
         let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
         for event in reader.by_ref() {
@@ -751,6 +849,39 @@ mod tests {
             reader.result().and_then(|r| r.as_ref().ok()),
             Some(&buffered.message)
         );
+        assert_eq!(
+            scripted.requests()[0]
+                .headers
+                .get("x-api-key")
+                .map(String::as_str),
+            Some("sk-env-secret")
+        );
+    }
+
+    // The widened `Models::stream_incremental` seam THREADS reasoning end-to-end:
+    // a reasoning-bearing `SimpleStreamOptions` survives applyAuth (which resolves
+    // against the base only) + the base/reasoning recombination, and reaches the
+    // backend, which lowers it onto the incremental request. This is the
+    // incremental sibling of the #309 `stream_simple` widening -- reasoning is no
+    // longer dropped at the provider boundary.
+    #[test]
+    fn models_stream_incremental_threads_reasoning_to_request() {
+        let model = anthropic_reasoning_model(false);
+        let (scripted, transport) = scripted_hello();
+        let env = MemoryEnv::new().with_env("ANTHROPIC_API_KEY", "sk-env-secret");
+        let models = models_with_anthropic_backend(env, transport, &model);
+
+        let simple =
+            SimpleStreamOptions::new(StreamOptions::default(), Some(ThinkingLevel::Medium), None);
+        let mut reader = models.stream_incremental(&model, &user_context(), Some(&simple), None);
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        // The reasoning level lowered onto the outbound request...
+        let body = request_body(&scripted);
+        assert_eq!(body["thinking"]["type"], json!("enabled"));
+        assert_eq!(body["thinking"]["budget_tokens"], json!(8192));
+        // ...and the resolved env api key still threads through the recombined
+        // base options (applyAuth ran against the base, not the reasoning).
         assert_eq!(
             scripted.requests()[0]
                 .headers

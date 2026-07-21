@@ -116,9 +116,15 @@ impl Provider for OpenAICompletionsBackend {
         &'a self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         _signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
+        // The incremental driver path cannot lower `reasoning` yet (per-driver
+        // incremental lowering is a follow-up, tracked with the buffered
+        // `stream_simple` override for this dialect), so guard against silently
+        // dropping a reasoning request before streaming on the base options.
+        crate::seams::provider::debug_assert_incremental_reasoning_unlowered(options, self.api());
+        let options = options.map(|o| &o.base);
         // Same model/options assembly as `stream`, but the request runs through the
         // driver's incremental `stream_streaming` entry point: the returned reader
         // pulls one chunk at a time off the transport, so a streaming transport
@@ -598,7 +604,12 @@ mod tests {
 
         let (scripted, transport) = scripted_hello();
         let backend = OpenAICompletionsBackend::new(transport, fake_clock());
-        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
 
         assert_eq!(events, buffered.events);
@@ -619,6 +630,30 @@ mod tests {
         );
     }
 
+    // GUARD: this dialect's incremental path cannot lower reasoning yet, so a
+    // reasoning-bearing `SimpleStreamOptions` on `stream_incremental` must NOT be
+    // silently dropped -- it trips the seam's `debug_assert` guard (the doc-guard
+    // both #309 co-signs requested). Proves reasoning reaches the backend and is
+    // caught rather than ignored.
+    #[test]
+    #[should_panic(expected = "reasoning must not be silently dropped")]
+    fn stream_incremental_reasoning_trips_guard() {
+        let model = openai_model("https://api.openai.test/v1");
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(crate::types::ThinkingLevel::High),
+            None,
+        );
+
+        let (_scripted, transport) = scripted_hello();
+        let backend = OpenAICompletionsBackend::new(transport, fake_clock());
+        // The guard fires before any request is assembled.
+        let _reader = backend.stream_incremental(&model, &user_context(), Some(&simple), None);
+    }
+
     // Over a per-frame sleeping transport, the yielded events span multiple sleeping
     // chunks -- non-zero inter-event spread -- while resolving to the same "Hello"
     // message as the buffered path.
@@ -636,7 +671,12 @@ mod tests {
             ..StreamOptions::default()
         };
 
-        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let start = Instant::now();
         let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
         for event in reader.by_ref() {
@@ -1088,7 +1128,12 @@ mod native_http_tests {
             ..StreamOptions::default()
         };
 
-        let mut reader = backend.stream_incremental(&model, &context, Some(&options), None);
+        let mut reader = backend.stream_incremental(
+            &model,
+            &context,
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let start = Instant::now();
         let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
         for event in reader.by_ref() {

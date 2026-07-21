@@ -327,10 +327,66 @@ pub fn stream_streaming<'a, T: HttpTransport + ?Sized>(
     }
 }
 
+/// Lower the simple, level-based `reasoning`/`thinking_budgets` onto the driver's
+/// [`AnthropicOptions`], mirroring pi's `streamSimple` (`anthropic-messages.ts:786`).
+///
+/// Shared by the buffered [`stream_simple`] and the incremental
+/// [`stream_streaming_simple`] so both lower reasoning identically — the single
+/// source of truth pi keeps in its one `streamSimple` path.
+fn lower_simple_options(
+    model: &Model<AnthropicMessagesCompat>,
+    context: &Context,
+    options: &SimpleStreamOptions,
+) -> AnthropicOptions {
+    let base = build_base_options(model, context, options);
+
+    let Some(reasoning) = options.reasoning else {
+        // No reasoning requested: thinking explicitly disabled.
+        return AnthropicOptions {
+            thinking_enabled: Some(false),
+            ..base
+        };
+    };
+
+    let force_adaptive = model
+        .compat
+        .as_ref()
+        .and_then(|c| c.force_adaptive_thinking)
+        .unwrap_or(false);
+
+    if force_adaptive {
+        // Adaptive-thinking models: use an effort level.
+        let effort = map_thinking_level_to_effort(model, Some(reasoning));
+        return AnthropicOptions {
+            thinking_enabled: Some(true),
+            effort: Some(effort),
+            ..base
+        };
+    }
+
+    // Older models: budget-based thinking.
+    let adjusted = adjust_max_tokens_for_thinking(
+        base.max_tokens,
+        model.max_tokens,
+        reasoning,
+        options.thinking_budgets.as_ref(),
+    );
+    let max_tokens = clamp_max_tokens_to_context(model, context, adjusted.max_tokens);
+    let thinking_budget = adjusted
+        .thinking_budget
+        .min(max_tokens.saturating_sub(1024));
+    AnthropicOptions {
+        max_tokens: Some(max_tokens),
+        thinking_enabled: Some(true),
+        thinking_budget_tokens: Some(thinking_budget),
+        ..base
+    }
+}
+
 /// Stream a response from the simple, level-based options, mirroring pi's
 /// `streamSimple()` (`anthropic-messages.ts:786`). It maps `reasoning` onto the
-/// adaptive-effort or budget-based thinking configuration and delegates to
-/// [`stream`].
+/// adaptive-effort or budget-based thinking configuration via
+/// [`lower_simple_options`] and delegates to [`stream`].
 pub fn stream_simple<T: HttpTransport + ?Sized>(
     transport: &T,
     model: &Model<AnthropicMessagesCompat>,
@@ -348,50 +404,34 @@ pub fn stream_simple<T: HttpTransport + ?Sized>(
         return error_result(model, timestamp, message);
     }
 
-    let base = build_base_options(model, context, options);
+    let opts = lower_simple_options(model, context, options);
+    stream(transport, model, context, &opts, timestamp)
+}
 
-    let Some(reasoning) = options.reasoning else {
-        // No reasoning requested: thinking explicitly disabled.
-        let opts = AnthropicOptions {
-            thinking_enabled: Some(false),
-            ..base
-        };
-        return stream(transport, model, context, &opts, timestamp);
-    };
-
-    let force_adaptive = model
-        .compat
-        .as_ref()
-        .and_then(|c| c.force_adaptive_thinking)
-        .unwrap_or(false);
-
-    if force_adaptive {
-        // Adaptive-thinking models: use an effort level.
-        let effort = map_thinking_level_to_effort(model, Some(reasoning));
-        let opts = AnthropicOptions {
-            thinking_enabled: Some(true),
-            effort: Some(effort),
-            ..base
-        };
-        return stream(transport, model, context, &opts, timestamp);
+/// The incremental sibling of [`stream_simple`]: lower `reasoning` onto the
+/// request exactly as the buffered path does (via [`lower_simple_options`]), then
+/// run the driver's incremental [`stream_streaming`] entry point so a streaming
+/// transport surfaces real per-frame timing. This mirrors pi's single
+/// `streamAssistantResponse` (`agent-loop.ts:281`), which streams incrementally
+/// AND honors reasoning through the one `streamSimple` path.
+pub fn stream_streaming_simple<'a, T: HttpTransport + ?Sized>(
+    transport: &'a T,
+    model: &Model<AnthropicMessagesCompat>,
+    context: &Context,
+    options: &SimpleStreamOptions,
+    timestamp: i64,
+) -> AssistantEventReader<'a> {
+    // pi asserts auth synchronously at the top of streamSimple; encoded here as a
+    // pre-start error reader to keep the function total, matching
+    // [`stream_streaming`].
+    if let Err(message) = assert_request_auth(
+        &model.provider,
+        options.api_key.as_deref(),
+        options.headers.as_ref(),
+    ) {
+        return error_reader(model, timestamp, message);
     }
 
-    // Older models: budget-based thinking.
-    let adjusted = adjust_max_tokens_for_thinking(
-        base.max_tokens,
-        model.max_tokens,
-        reasoning,
-        options.thinking_budgets.as_ref(),
-    );
-    let max_tokens = clamp_max_tokens_to_context(model, context, adjusted.max_tokens);
-    let thinking_budget = adjusted
-        .thinking_budget
-        .min(max_tokens.saturating_sub(1024));
-    let opts = AnthropicOptions {
-        max_tokens: Some(max_tokens),
-        thinking_enabled: Some(true),
-        thinking_budget_tokens: Some(thinking_budget),
-        ..base
-    };
-    stream(transport, model, context, &opts, timestamp)
+    let opts = lower_simple_options(model, context, options);
+    stream_streaming(transport, model, context, &opts, timestamp)
 }

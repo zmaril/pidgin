@@ -144,28 +144,73 @@ pub trait Provider: Send + Sync {
     }
 
     /// Stream a response for `model` as an incremental pull reader, the additive
-    /// per-frame counterpart to [`stream`](Self::stream).
+    /// per-frame counterpart to [`stream`](Self::stream), carrying the same
+    /// simple, level-based [`SimpleStreamOptions`] the buffered
+    /// [`stream_simple`](Self::stream_simple) does — so `reasoning` reaches this
+    /// seam instead of being dropped at the provider boundary. This is the
+    /// incremental sibling of the #309 `stream_simple` widening.
     ///
-    /// # Compatibility default: not incremental
+    /// # Compatibility default: not incremental, reasoning guarded
     ///
-    /// The default runs the eager [`stream`](Self::stream) and replays its
-    /// materialized [`StreamResult`] through
-    /// [`AssistantEventReader::from_buffered`], so a non-overriding provider (the
-    /// faux provider and every seam-only backend) keeps its exact buffered
-    /// behavior with ~0 inter-event spread. Real backends override this to stream
-    /// per frame off the wire (see
+    /// The default extracts the base [`StreamOptions`], runs the eager
+    /// [`stream`](Self::stream), and replays its materialized [`StreamResult`]
+    /// through [`AssistantEventReader::from_buffered`], so a non-overriding
+    /// provider (the faux provider and every seam-only backend) keeps its exact
+    /// buffered behavior with ~0 inter-event spread and a request byte-identical
+    /// to the pre-widening path. Real backends override this to stream per frame
+    /// off the wire (see
     /// [`AnthropicMessagesBackend`](crate::providers::AnthropicMessagesBackend)),
-    /// where the inter-frame timing becomes observable. Nothing on the hot path
-    /// calls this yet; the agent-loop consumer wiring is a follow-up.
+    /// where the inter-frame timing becomes observable.
+    ///
+    /// Because this default cannot lower `reasoning` onto the raw stream, it
+    /// [`debug_assert_incremental_reasoning_unlowered`] first: a reasoning request
+    /// on a driver whose incremental path cannot lower it yet trips a
+    /// `debug_assert` in dev/test and is a documented no-op in release, so
+    /// reasoning is never *silently* dropped — the guard the #309 co-signs asked
+    /// for.
     fn stream_incremental<'a>(
         &'a self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
-        AssistantEventReader::from_buffered(self.stream(model, context, options, signal))
+        debug_assert_incremental_reasoning_unlowered(options, self.api());
+        AssistantEventReader::from_buffered(self.stream(
+            model,
+            context,
+            options.map(|o| &o.base),
+            signal,
+        ))
     }
+}
+
+/// Debug-time guard for an incremental stream path that cannot lower `reasoning`
+/// yet.
+///
+/// The incremental seam ([`Provider::stream_incremental`]) carries the full
+/// [`SimpleStreamOptions`] — its `reasoning` level included — so a backend whose
+/// incremental driver path supports thinking can lower it (the Anthropic and
+/// Mistral backends do). A backend that cannot lower reasoning on its incremental
+/// path yet (per-driver incremental lowering is a follow-up, tracked alongside
+/// the buffered `stream_simple` overrides for openai-completions,
+/// openai-responses, azure-responses, bedrock, and the google dialects) calls
+/// this so a reasoning request is never *silently* dropped: it trips a
+/// `debug_assert` in dev/test builds and is a documented no-op in release,
+/// exactly the doc-guard both #309 co-signs requested.
+///
+/// `reasoning` is `None` when thinking is off (the level enum has no `off`
+/// variant), so a present level is always an active reasoning request.
+pub(crate) fn debug_assert_incremental_reasoning_unlowered(
+    options: Option<&SimpleStreamOptions>,
+    driver: &str,
+) {
+    debug_assert!(
+        options.and_then(|o| o.reasoning).is_none(),
+        "incremental stream for `{driver}` received a reasoning request it cannot \
+         lower yet; per-driver incremental reasoning lowering is a follow-up — \
+         reasoning must not be silently dropped"
+    );
 }
 
 #[cfg(test)]
