@@ -199,36 +199,6 @@ pub fn detect_supported_image_mime_type(
     pidgin_coding::utils::mime::detect_supported_image_mime_type(&buffer).map(|s| s.to_string())
 }
 
-/// `normalizeChangelogLinks` (utils/changelog.ts): rewrite inline markdown links
-/// for a release. `version_json` is the JSON-serialized `string | ChangelogEntry`
-/// the shim passes; a bare JSON string is a raw version, a JSON object is a
-/// `ChangelogEntry`.
-#[napi(js_name = "normalizeChangelogLinks")]
-pub fn normalize_changelog_links(markdown: String, version_json: String) -> napi::Result<String> {
-    use pidgin_coding::utils::changelog::{normalize_changelog_links, ChangelogEntry};
-    let value: serde_json::Value =
-        serde_json::from_str(&version_json).map_err(|e| napi::Error::from_reason(e.to_string()))?;
-    match value {
-        serde_json::Value::String(s) => Ok(normalize_changelog_links(&markdown, s.as_str())),
-        serde_json::Value::Object(map) => {
-            let entry = ChangelogEntry {
-                major: map.get("major").and_then(|v| v.as_u64()).unwrap_or(0),
-                minor: map.get("minor").and_then(|v| v.as_u64()).unwrap_or(0),
-                patch: map.get("patch").and_then(|v| v.as_u64()).unwrap_or(0),
-                content: map
-                    .get("content")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string(),
-            };
-            Ok(normalize_changelog_links(&markdown, &entry))
-        }
-        _ => Err(napi::Error::from_reason(
-            "version must be a string or ChangelogEntry object",
-        )),
-    }
-}
-
 /// `comparePackageVersions` (utils/version-check.ts): compare two semver
 /// strings, mapping `Ordering` to `-1`/`0`/`1`. `None` (incomparable) crosses as
 /// JS `null`; the shim converts it to `undefined` to match pi's `number |

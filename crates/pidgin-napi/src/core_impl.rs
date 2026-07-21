@@ -212,6 +212,30 @@ impl crate::generated::PidginCore for PidginImpl {
     fn clear_config_value_cache() {
         pidgin_coding::core::resolve_config_value::clear_config_value_cache();
     }
+
+    fn normalize_changelog_links(markdown: String, version_json: String) -> anyhow::Result<String> {
+        use pidgin_coding::utils::changelog::{normalize_changelog_links, ChangelogEntry};
+        let value: serde_json::Value = serde_json::from_str(&version_json)?;
+        match value {
+            serde_json::Value::String(s) => Ok(normalize_changelog_links(&markdown, s.as_str())),
+            serde_json::Value::Object(map) => {
+                let entry = ChangelogEntry {
+                    major: map.get("major").and_then(|v| v.as_u64()).unwrap_or(0),
+                    minor: map.get("minor").and_then(|v| v.as_u64()).unwrap_or(0),
+                    patch: map.get("patch").and_then(|v| v.as_u64()).unwrap_or(0),
+                    content: map
+                        .get("content")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                };
+                Ok(normalize_changelog_links(&markdown, &entry))
+            }
+            _ => Err(anyhow::anyhow!(
+                "version must be a string or ChangelogEntry object"
+            )),
+        }
+    }
 }
 
 // --- coding-agent session-cwd seam (core/session-cwd.ts) --------------------

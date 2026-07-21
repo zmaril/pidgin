@@ -95,6 +95,7 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn get_config_value_env_var_names(config: String) -> Vec<String>;
     fn is_command_config_value(config: String) -> bool;
     fn clear_config_value_cache() -> ();
+    fn normalize_changelog_links(markdown: String, version_json: String) -> anyhow::Result<String>;
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -368,6 +369,16 @@ pub fn is_command_config_value(config: String) -> bool {
 #[napi(js_name = "clearConfigValueCache")]
 pub fn clear_config_value_cache() -> () {
     <crate::core_impl::PidginImpl as PidginCore>::clear_config_value_cache()
+}
+
+/// `normalizeChangelogLinks` (utils/changelog.ts): rewrite inline markdown links
+/// for a release. `version_json` is the JSON-serialized `string | ChangelogEntry`
+/// the shim passes; a bare JSON string is a raw version, a JSON object is a
+/// `ChangelogEntry`.
+#[napi(js_name = "normalizeChangelogLinks")]
+pub fn normalize_changelog_links(markdown: String, version_json: String) -> Result<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::normalize_changelog_links(markdown, version_json)
+        .map_err(err)
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as

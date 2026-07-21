@@ -755,6 +755,29 @@
               "name": "clearConfigValueCache"
             }
           }
+        },
+        {
+          "name": "normalizeChangelogLinks",
+          "doc": "`normalizeChangelogLinks` (utils/changelog.ts): rewrite inline markdown links\nfor a release. `version_json` is the JSON-serialized `string | ChangelogEntry`\nthe shim passes; a bare JSON string is a raw version, a JSON object is a\n`ChangelogEntry`.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": true,
+          "params": [
+            {
+              "name": "markdown",
+              "type": "string"
+            },
+            {
+              "name": "versionJson",
+              "type": "string"
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "normalizeChangelogLinks"
+            }
+          }
         }
       ]
     },
