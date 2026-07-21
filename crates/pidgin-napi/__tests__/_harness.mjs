@@ -1,3 +1,5 @@
+// straitjacket-allow-file:duplication — parallel bridge-test harness/seam scaffolds that share setup boilerplate by design
+//
 // Shared scaffolding for the agent-bridge-*.mjs tests.
 //
 // These bridge tests each drove the native `AgentBridge` addon with the same
