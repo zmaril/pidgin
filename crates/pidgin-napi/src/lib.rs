@@ -19,8 +19,13 @@ use serde_json::Value;
 
 // TUI renderer surface (`TuiCore`): drives pi's differential render path
 // (`TUI::doRender`) natively. The JS shim feeds pre-rendered lines in and drains
-// the write stream out; overlays/focus/input stay in pi's TS. Additive.
-mod tui;
+// the write stream out; overlays/focus/input stay in pi's TS. Now generated from
+// the fluessig api schema through `crate::generated` + `crate::core_impl` (the
+// `TuiCoreImpl` engine seam). It is authored `#[fluessig(single_threaded)]`, so
+// the generated handle holds the `!Send` core (pi's `Tui<LoggingTerminal>`, with
+// `Rc<RefCell<dyn Component>>` children and non-`Send` closures) THREAD-CONFINED
+// in a `RefCell<Impl>` — no `Arc`, no `Send`/`Sync` bound. See src/generated.rs
+// and schema/api.json. Additive.
 
 // TUI stdin-buffer surface (`StdinBufferCore`): drives pi's `StdinBuffer`
 // escape-sequence splitter / bracketed-paste / Kitty-dedup state machine

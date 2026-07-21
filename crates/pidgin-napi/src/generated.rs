@@ -205,6 +205,23 @@ pub trait SelectListCoreCore: Sized + 'static {
     fn render(&mut self, width: u32) -> Vec<String>;
 }
 
+/// The `TuiCore` contract — implement over the engine in `crate::core_impl`.
+pub trait TuiCoreCore: Sized + 'static {
+    fn new(cols: i64, rows: i64, show_hardware_cursor: bool) -> anyhow::Result<Self>;
+    fn set_size(&mut self, cols: i64, rows: i64) -> ();
+    fn set_clear_on_shrink(&mut self, enabled: bool) -> ();
+    fn set_termux(&mut self, termux: bool) -> ();
+    fn set_images_capable(&mut self, capable: bool) -> ();
+    fn set_base_lines(&mut self, lines: Vec<String>) -> ();
+    fn tick(&mut self, force: bool) -> anyhow::Result<()>;
+    fn take_writes(&mut self) -> String;
+    fn full_redraws(&mut self) -> i64;
+    fn cursor_row(&mut self) -> i64;
+    fn hardware_cursor_row(&mut self) -> i64;
+    fn previous_viewport_top(&mut self) -> i64;
+    fn max_lines_rendered(&mut self) -> i64;
+}
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `pidginNativeVersion`.
@@ -847,5 +864,109 @@ impl SelectListCore {
     #[napi(js_name = "render")]
     pub fn render(&self, width: u32) -> Vec<String> {
         self.core.borrow_mut().render(width)
+    }
+}
+
+/// The Rust-backed differential renderer, exposed to JavaScript as `TuiCore`.
+///
+/// The JS `TUI` shim owns one of these, keeps pi's component tree / overlay /
+/// focus / input logic in JS, and per frame: renders its components to lines,
+/// pushes them via [`TuiCore::set_base_lines`], drives one render with
+/// [`TuiCore::tick`], drains the write stream with [`TuiCore::take_writes`], and
+/// forwards it to the JS terminal. The renderer's cross-frame diff state
+/// (previous lines, cursor rows, full-redraw ladder) lives entirely in the
+/// wrapped [`Tui`].
+#[napi]
+pub struct TuiCore {
+    // pub(crate): the @manual ops in lib.rs extend this class and need the core
+    pub(crate) core: RefCell<crate::core_impl::TuiCoreImpl>,
+}
+
+#[napi]
+impl TuiCore {
+    /// Build a renderer over an in-memory logging terminal of `cols` x `rows`.
+    /// `show_hardware_cursor` mirrors pi's `PI_HARDWARE_CURSOR` opt-in.
+    #[napi(constructor)]
+    pub fn new(cols: i64, rows: i64, show_hardware_cursor: bool) -> Result<Self> {
+        Ok(Self {
+            core: RefCell::new(
+                <crate::core_impl::TuiCoreImpl as TuiCoreCore>::new(
+                    cols,
+                    rows,
+                    show_hardware_cursor,
+                )
+                .map_err(err)?,
+            ),
+        })
+    }
+    /// Update the terminal dimensions the next render reads (pi reads
+    /// `terminal.columns`/`rows` each `doRender`; the width/height-change full
+    /// redraw is decided inside `tick` by comparing against the previous frame).
+    #[napi(js_name = "setSize")]
+    pub fn set_size(&self, cols: i64, rows: i64) -> () {
+        self.core.borrow_mut().set_size(cols, rows)
+    }
+    /// pi's `setClearOnShrink`: clear empty rows when content shrinks.
+    #[napi(js_name = "setClearOnShrink")]
+    pub fn set_clear_on_shrink(&self, enabled: bool) -> () {
+        self.core.borrow_mut().set_clear_on_shrink(enabled)
+    }
+    /// Model `isTermuxSession()`: on Termux, height changes do not force a full
+    /// redraw. The shim calls this per frame from `process.env.TERMUX_VERSION`.
+    #[napi(js_name = "setTermux")]
+    pub fn set_termux(&self, termux: bool) -> () {
+        self.core.borrow_mut().set_termux(termux)
+    }
+    /// Model terminal image capability (gates pi's `queryCellSize`). Not needed
+    /// for the base render diff, but kept for surface parity.
+    #[napi(js_name = "setImagesCapable")]
+    pub fn set_images_capable(&self, capable: bool) -> () {
+        self.core.borrow_mut().set_images_capable(capable)
+    }
+    /// Replace the entire base frame with pre-rendered `lines` (pi's TS
+    /// components rendered to `string[]`). Backed by a single line-buffer child.
+    #[napi(js_name = "setBaseLines")]
+    pub fn set_base_lines(&self, lines: Vec<String>) -> () {
+        self.core.borrow_mut().set_base_lines(lines)
+    }
+    /// Drive exactly one render: `request_render(force)` then `flush()`. This is
+    /// the deterministic, timer-free equivalent of a single fire of pi's
+    /// coalesced scheduler (one `waitForRender()`). `force` resets the diff state
+    /// for a full redraw (pi's `requestRender(true)`).
+    #[napi(js_name = "tick")]
+    pub fn tick(&self, force: bool) -> Result<()> {
+        self.core.borrow_mut().tick(force).map_err(err)
+    }
+    /// Drain the accumulated write stream (pi's
+    /// `LoggingVirtualTerminal.getWrites()` + `clearWrites()`): the exact bytes
+    /// this frame emitted, then reset the sink.
+    #[napi(js_name = "takeWrites")]
+    pub fn take_writes(&self) -> String {
+        self.core.borrow_mut().take_writes()
+    }
+    /// Number of full redraws performed (pi's `fullRedraws` getter).
+    #[napi(js_name = "fullRedraws")]
+    pub fn full_redraws(&self) -> i64 {
+        self.core.borrow_mut().full_redraws()
+    }
+    /// Logical cursor row (end of rendered content).
+    #[napi(js_name = "cursorRow")]
+    pub fn cursor_row(&self) -> i64 {
+        self.core.borrow_mut().cursor_row()
+    }
+    /// Actual hardware cursor row (pi's `hardwareCursorRow`).
+    #[napi(js_name = "hardwareCursorRow")]
+    pub fn hardware_cursor_row(&self) -> i64 {
+        self.core.borrow_mut().hardware_cursor_row()
+    }
+    /// Previous viewport top (resize-aware cursor bookkeeping).
+    #[napi(js_name = "previousViewportTop")]
+    pub fn previous_viewport_top(&self) -> i64 {
+        self.core.borrow_mut().previous_viewport_top()
+    }
+    /// High-water working area (max lines ever rendered since last clear).
+    #[napi(js_name = "maxLinesRendered")]
+    pub fn max_lines_rendered(&self) -> i64 {
+        self.core.borrow_mut().max_lines_rendered()
     }
 }
