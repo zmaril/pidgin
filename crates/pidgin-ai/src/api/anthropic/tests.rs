@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's Anthropic
+// straitjacket-allow-file:duplication — these tests transcribe pi's Anthropic
 // SSE fixtures verbatim: the `message_start` / `content_block_*` / `message_delta`
 // / `message_stop` event objects are walls of near-identical JSON by design, and
 // the clone detector reads them as duplicates. They are distinct, load-bearing

@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `api/bedrock-converse-stream.ts` stream loop: the per-item dispatch arms
 // (`contentBlockStart` / `contentBlockDelta` / `contentBlockStop` build a
 // matching block then push a mirrored event) share pi's hand-rolled shape by

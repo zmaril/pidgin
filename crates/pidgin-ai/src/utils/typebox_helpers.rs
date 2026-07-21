@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — the per-case `StringEnumOptions` +
+// straitjacket-allow-file:duplication — the per-case `StringEnumOptions` +
 // `string_enum` + `assert_eq!` blocks in the tests exercise each option
 // permutation and read as duplicates, but each is a distinct byte-for-byte
 // assertion on the produced schema shape.

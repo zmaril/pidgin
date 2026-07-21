@@ -1,4 +1,4 @@
-<!-- straitjacket-allow-file[:duplication] — design note; illustrative napi/shim code sketches and Pro/Con scaffolding repeat intentionally -->
+<!-- straitjacket-allow-file:duplication — design note; illustrative napi/shim code sketches and Pro/Con scaffolding repeat intentionally -->
 
 # Testing Strategy: Passing pi's Own Test Suite
 

@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — the provider registry mirrors pi's `models.ts`; parallel structure with the ported dialects is intentional
+// straitjacket-allow-file:duplication — the provider registry mirrors pi's `models.ts`; parallel structure with the ported dialects is intentional
 //! The provider registry, ported from pi's `packages/ai/src/models.ts`
 //! (pinned commit `3da591ab`).
 //!

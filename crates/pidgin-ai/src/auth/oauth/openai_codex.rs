@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — this provider mirrors pi's parallel
+// straitjacket-allow-file:duplication — this provider mirrors pi's parallel
 // OAuth provider modules: the `to_auth` mapping (`{ apiKey: credential.access }`),
 // the `OAuthAuth` impl skeleton (name/login_machine/refresh_machine/to_auth), the
 // `parse_authorization_input` branches, and the form-urlencode / percent-decode

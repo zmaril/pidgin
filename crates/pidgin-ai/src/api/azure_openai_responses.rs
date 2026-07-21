@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `azure-openai-responses.ts`, which is itself a thin wrapper mirroring
 // `openai-responses.ts`. `build_params` and the `thinking_level_*` /
 // `thinking_off_*` helpers deliberately track the OpenAI Responses shapes in

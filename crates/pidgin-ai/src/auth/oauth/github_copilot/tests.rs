@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests mirror pi's
+// straitjacket-allow-file:duplication — these tests mirror pi's
 // `github-copilot-oauth.test.ts` case-by-case: each `#[test]` rebuilds a similar
 // machine-driving scaffold (prompt → device-code → notify → poll loop → copilot
 // token → enable-all → models) so the login/refresh paths are exercised in

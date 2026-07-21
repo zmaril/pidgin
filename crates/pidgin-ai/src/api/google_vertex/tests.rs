@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's Vertex
+// straitjacket-allow-file:duplication — these tests transcribe pi's Vertex
 // api-key-resolution fixtures verbatim: the per-case option/model literals and
 // the asserted client-config objects are near-identical by design, and the clone
 // detector reads them as duplicates. They are distinct, load-bearing fixtures

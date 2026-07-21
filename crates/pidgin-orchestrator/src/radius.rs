@@ -38,7 +38,7 @@
 //! supervisor. pi's `index.ts` barrel does not re-export radius, so neither does
 //! this crate's `lib.rs`.
 
-// straitjacket-allow-file[:duplication] — the `format_iso_millis` epoch-to-ISO
+// straitjacket-allow-file:duplication — the `format_iso_millis` epoch-to-ISO
 // helper and the `RadiusEnvGuard` test scaffold faithfully mirror the parallel
 // implementations in `pidgin-coding`'s `session_manager.rs` and `config.rs`.
 

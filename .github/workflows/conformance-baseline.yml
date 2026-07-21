@@ -1,4 +1,4 @@
-# straitjacket-allow-file[:duplication] — the checkout/toolchain/canvas setup
+# straitjacket-allow-file:duplication — the checkout/toolchain/canvas setup
 # necessarily mirrors conformance.yml (and ci.yml); Actions YAML has no include
 # mechanism for it. Keep this setup block in lockstep with conformance.yml.
 #

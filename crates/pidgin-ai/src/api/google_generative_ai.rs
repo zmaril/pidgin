@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — the client-config builder and the
+// straitjacket-allow-file:duplication — the client-config builder and the
 // buildParams wiring mirror pi's `google-vertex.ts` counterparts closely by
 // design (pi keeps the two drivers as near-duplicate copies that diverge only in
 // client/auth construction). The clone detector reads the shared shape as

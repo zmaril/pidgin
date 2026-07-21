@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `anthropic-messages.ts` compat resolution: `getAnthropicCompat` is a wall of
 // near-identical `?? <default>` fallbacks and `defaultSupportsToolReferences`
 // re-implements pi's version regex by hand. The clone detector reads these

@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `api/transform-messages.ts` (`transformMessages` and its helpers). The per-role
 // and per-block arms are walls of near-identical branch/serde shaping by design;
 // the clone detector reads them as duplicates, but factoring them would distort

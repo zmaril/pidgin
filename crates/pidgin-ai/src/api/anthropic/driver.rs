@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `anthropic-messages.ts` `stream` and `streamSimple` drivers. The output-shell
 // construction and the thinking-mode branch selection mirror pi's object
 // literals and `if` ladder verbatim; the clone detector may read the shared

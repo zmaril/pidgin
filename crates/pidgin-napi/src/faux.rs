@@ -18,7 +18,7 @@
 //! `ThreadsafeFunction` is served without one; the boundary is plain synchronous
 //! JSON calls, mirroring the Stage-2 Anthropic shim.
 
-// straitjacket-allow-file[:duplication] — the napi entry points share one faithful
+// straitjacket-allow-file:duplication — the napi entry points share one faithful
 // parse-JSON / build-seams / call-provider / serialize shape at the Node boundary;
 // the near-identical method bodies mirror pi's surface and are kept distinct.
 

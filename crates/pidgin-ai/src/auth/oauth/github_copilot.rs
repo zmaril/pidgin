@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — this provider mirrors the shared
+// straitjacket-allow-file:duplication — this provider mirrors the shared
 // `OAuthAuth` impl skeleton (name/login_machine/refresh_machine/to_auth) and the
 // per-provider request/response scaffolding that the four sibling provider
 // modules also carry; the clone detector reads those mirrored members across the

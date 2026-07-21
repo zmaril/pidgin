@@ -1,5 +1,5 @@
 <?php
-// straitjacket-allow-file[:duplication] — this tiny PHP check() driver mirrors
+// straitjacket-allow-file:duplication — this tiny PHP check() driver mirrors
 // the throwaway/php-hello harness on purpose; both are minimal standalone test
 // loops, and that overlap is expected rather than something to refactor away.
 //

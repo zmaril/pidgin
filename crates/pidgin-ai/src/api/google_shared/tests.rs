@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's Google
+// straitjacket-allow-file:duplication — these tests transcribe pi's Google
 // fixtures verbatim: the hand-built `Model` / `Context` message lists and the
 // per-tool JSON-Schema objects are walls of near-identical struct/JSON literals
 // by design, and the clone detector reads them as duplicates. They are distinct,

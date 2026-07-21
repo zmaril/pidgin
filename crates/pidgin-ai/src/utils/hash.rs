@@ -1,5 +1,8 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `utils/hash.ts`: the two-lane mixing steps are near-identical by design.
+// straitjacket-allow-file:emoji — TODO(straitjacket): a test input string below contains an
+// emoji (🙈) on purpose, exercising non-ASCII hashing. Declared explicitly so it suppresses
+// only emoji, not every rule (the old bracket form was a silent catch-all).
 //! Fast deterministic string hashing, ported from pi-ai's
 //! `packages/ai/src/utils/hash.ts` at pinned commit `3da591ab`.
 //!

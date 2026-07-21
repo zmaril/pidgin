@@ -1,4 +1,4 @@
-<!-- straitjacket-allow-file[:duplication] — the prerequisites and build steps
+<!-- straitjacket-allow-file:duplication — the prerequisites and build steps
      necessarily restate the throwaway/php-hello spike's setup; this is the
      promoted in-tree binding, and the spike stays as the historical record, so
      the overlap is intentional. -->

@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's Anthropic
+// straitjacket-allow-file:duplication — these tests transcribe pi's Anthropic
 // request-shaping fixtures (`anthropic-temperature-compat`,
 // `anthropic-force-adaptive-thinking`, `anthropic-eager-tool-input-compat`,
 // `anthropic-empty-thinking-signature-compat`, `anthropic-cache-write-1h-cost`).

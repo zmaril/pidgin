@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — each `#[test]` rebuilds the same
+// straitjacket-allow-file:duplication — each `#[test]` rebuilds the same
 // scaffold (a `ScriptedTransport` + `FakeClock` + `OAuthFlow` bundle and a fake
 // `OAuthAuth`) by design, so the double-checked-locking paths are each exercised
 // in isolation. The clone detector reads the repeated setup as duplication; it is

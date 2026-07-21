@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `google-shared.ts` plus a Google-specific `transform-messages.ts` port the
 // drivers depend on. The per-branch `convertMessages` arms (user / assistant /
 // toolResult) and the stream-decode block-flush arms are walls of near-identical

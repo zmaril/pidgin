@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's Anthropic
+// straitjacket-allow-file:duplication — these tests transcribe pi's Anthropic
 // driver/header fixtures (`anthropic-eager-tool-input-compat`, the OAuth vs
 // API-key header switching `createClient` exercises, and the buffered-body SSE
 // assertions). The model/context/SSE literals are walls of near-identical JSON

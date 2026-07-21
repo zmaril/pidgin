@@ -14,7 +14,7 @@
 // (`streamSimple`, option/effort types) is re-exported from the original
 // unchanged. The public runtime surface therefore stays byte-for-byte pi's.
 //
-// straitjacket-allow-file[:duplication] — `emptyMessage` below is a faithful
+// straitjacket-allow-file:duplication — `emptyMessage` below is a faithful
 // transcription of pi's zero-usage/error `AssistantMessage` shape (a wall of
 // identical zero fields). The faux shim's error path builds the same contract;
 // the clone detector anchors the cross-file pair here, but both are pi's exact

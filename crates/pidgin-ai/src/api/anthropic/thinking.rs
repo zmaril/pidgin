@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — a faithful transcription of pi's
+// straitjacket-allow-file:duplication — a faithful transcription of pi's
 // `anthropic-messages.ts` thinking types and `mapThinkingLevelToEffort`. The
 // small enums and switch arms mirror pi verbatim; the clone detector may read
 // the serde enum scaffolding as duplicative by design.

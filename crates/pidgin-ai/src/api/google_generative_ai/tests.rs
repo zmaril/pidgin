@@ -1,4 +1,4 @@
-// straitjacket-allow-file[:duplication] — these tests transcribe pi's Google
+// straitjacket-allow-file:duplication — these tests transcribe pi's Google
 // model fixtures verbatim: the hand-built `GoogleModel` helper and the asserted
 // config/chunk JSON literals are near-identical to the sibling Google test files
 // by design, and the clone detector reads them as duplicates. They are distinct,
