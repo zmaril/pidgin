@@ -50,18 +50,17 @@ fn probe_script(command: &str, cwd: &str) -> String {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn create_bash_tool_runs_through_the_bound_host() {
-    // A dedicated multi-thread runtime the RealBashToolHost drives `execute` on.
-    // Kept alive for the whole test so the host's handle stays valid.
-    let exec_rt = tokio::runtime::Builder::new_multi_thread()
-        .worker_threads(2)
-        .enable_all()
-        .build()
-        .expect("multi-thread runtime for the bash host");
+    // The host drives `execute` on THIS test's multi-thread runtime handle (what a
+    // real caller passes). `RealBashToolHost::run` blocks a dedicated std::thread
+    // on `Handle::block_on`, off the async context, so the drive is legal; and
+    // there is no separately-owned runtime to drop at test end (dropping a tokio
+    // runtime from within an async context panics).
+    let handle = tokio::runtime::Handle::current();
 
     // Boot the plane and build the runner over it; bind a real host.
     let plane = Arc::new(JsPlaneHandle::spawn());
     let runner = DenoExtensionRunner::from_loaded(Arc::clone(&plane), Vec::new(), "/project");
-    let host: Arc<dyn BashToolHost> = Arc::new(RealBashToolHost::new(exec_rt.handle().clone()));
+    let host: Arc<dyn BashToolHost> = Arc::new(RealBashToolHost::new(handle));
     runner.bind_bash_host(host);
 
     let cwd = std::env::temp_dir();
