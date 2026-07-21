@@ -14,7 +14,8 @@ use serde_json::Value;
 
 // Stage 3: the faux-provider surface (`FauxCore`), driving the Rust faux
 // provider's deterministic streaming and cache accounting from JS. Additive.
-mod faux;
+// Generated from schema/api.json via fluessig — see src/generated.rs and the
+// `FauxCoreImpl` engine seam in src/core_impl.rs.
 
 // TUI renderer surface (`TuiCore`): drives pi's differential render path
 // (`TUI::doRender`) natively. The JS shim feeds pre-rendered lines in and drains

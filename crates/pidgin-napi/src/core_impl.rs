@@ -459,3 +459,196 @@ impl crate::generated::CommandCoreCore for CommandCoreImpl {
         step_to_json(machine.advance(output))
     }
 }
+
+// --- faux provider surface (ai/src/providers/faux.ts) -----------------------
+//
+// The engine-backed implementation behind the generated `FauxCore` handle class
+// (its ctor + 8 stream/query methods). Wraps one `pidgin_ai::providers::faux::
+// FauxProvider` plus the settable `FakeClock` shared with it, reaching the SAME
+// deterministic delta-streaming + prompt-cache/call-count logic the hand-written
+// `#[napi]` class called before the fluessig swap. The provider carries its own
+// interior mutability (`Mutex`-guarded call count, pending queue, and prompt
+// cache), so — unlike `CommandCore`/`TuiCore` — no extra `Mutex` shim is needed:
+// every method is already `&self`, matching the generated handle receivers. JSON
+// crosses in/out exactly as the pre-swap class defined, and the hand-written
+// parse-error messages (`invalid faux options: …`, `invalid context: …`,
+// `invalid stream options: …`, `invalid model: …`, `invalid message: …`) are
+// reproduced verbatim through `anyhow` (the generated wrapper throws
+// `napi::Error::from_reason(e.to_string())`, and `anyhow::Error`'s `Display`
+// forwards the wrapped error's own message), so the JS-visible behavior is
+// byte-for-byte unchanged.
+//
+// straitjacket-allow-file:duplication is not needed here: the per-method parse /
+// build-seams / call-provider / serialize shape mirrors pi's faux surface and is
+// kept distinct, but lives in one impl block below.
+
+use pidgin_ai::providers::faux::{FauxModelDefinition, FauxProvider, RegisterFauxProviderOptions};
+use pidgin_ai::seams::clock::FakeClock;
+use pidgin_ai::seams::provider::{AbortSignal, Provider};
+use pidgin_ai::types::{AssistantMessage, Context, Modality, ModelCost, StreamOptions};
+
+/// JSON shape of pi's `RegisterFauxProviderOptions` (`faux.ts:105-114`), parsed
+/// at the boundary and mapped onto the builder options.
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct OptionsJson {
+    api: Option<String>,
+    provider: Option<String>,
+    models: Option<Vec<ModelDefJson>>,
+    tokens_per_second: Option<f64>,
+    token_size: Option<TokenSizeJson>,
+}
+
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct TokenSizeJson {
+    min: Option<u32>,
+    max: Option<u32>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ModelDefJson {
+    id: String,
+    name: Option<String>,
+    reasoning: Option<bool>,
+    input: Option<Vec<Modality>>,
+    cost: Option<ModelCost>,
+    context_window: Option<u32>,
+    max_tokens: Option<u32>,
+}
+
+fn build_faux_options(json: &str) -> anyhow::Result<RegisterFauxProviderOptions> {
+    let parsed: OptionsJson = if json.trim().is_empty() {
+        OptionsJson::default()
+    } else {
+        serde_json::from_str(json).map_err(|e| anyhow::anyhow!("invalid faux options: {e}"))?
+    };
+    let token_size = parsed.token_size.unwrap_or_default();
+    Ok(RegisterFauxProviderOptions {
+        api: parsed.api,
+        provider: parsed.provider,
+        models: parsed.models.map(|defs| {
+            defs.into_iter()
+                .map(|d| FauxModelDefinition {
+                    id: d.id,
+                    name: d.name,
+                    reasoning: d.reasoning,
+                    input: d.input,
+                    cost: d.cost,
+                    context_window: d.context_window.map(u64::from),
+                    max_tokens: d.max_tokens.map(u64::from),
+                })
+                .collect()
+        }),
+        tokens_per_second: parsed.tokens_per_second,
+        token_size_min: token_size.min.map(u64::from),
+        token_size_max: token_size.max.map(u64::from),
+    })
+}
+
+fn parse_faux_context(json: &str) -> anyhow::Result<Context> {
+    serde_json::from_str(json).map_err(|e| anyhow::anyhow!("invalid context: {e}"))
+}
+
+fn parse_faux_options(json: Option<String>) -> anyhow::Result<Option<StreamOptions>> {
+    match json {
+        None => Ok(None),
+        Some(s) if s.trim().is_empty() || s == "null" => Ok(None),
+        Some(s) => serde_json::from_str(&s)
+            .map(Some)
+            .map_err(|e| anyhow::anyhow!("invalid stream options: {e}")),
+    }
+}
+
+/// The engine-backed implementation of the generated `FauxCore` contract. Holds
+/// one `FauxProvider` (with its own interior mutability for the call count and
+/// prompt cache) plus the `FakeClock` shared with it; the generated handle class
+/// owns it as `Arc<FauxCoreImpl>` and delegates each `&self` method straight
+/// through, so the JS-visible behavior is byte-for-byte unchanged from the
+/// pre-swap hand-written class.
+pub struct FauxCoreImpl {
+    inner: FauxProvider,
+    clock: FakeClock,
+}
+
+impl crate::generated::FauxCoreCore for FauxCoreImpl {
+    fn new(options_json: String) -> anyhow::Result<Self> {
+        let (inner, clock) = FauxProvider::with_fake_clock(build_faux_options(&options_json)?);
+        Ok(Self { inner, clock })
+    }
+
+    fn set_now_ms(&self, now_ms: i64) {
+        self.clock.set_now_ms(now_ms);
+    }
+
+    fn api(&self) -> String {
+        self.inner.api().to_string()
+    }
+
+    fn models_json(&self) -> anyhow::Result<String> {
+        serde_json::to_string(self.inner.models()).map_err(anyhow::Error::from)
+    }
+
+    fn get_model_json(&self, id: Option<String>) -> anyhow::Result<Option<String>> {
+        match self.inner.get_model(id.as_deref()) {
+            Some(model) => serde_json::to_string(&model)
+                .map(Some)
+                .map_err(anyhow::Error::from),
+            None => Ok(None),
+        }
+    }
+
+    fn bump_call_count(&self) -> i64 {
+        self.inner.bump_call_count() as i64
+    }
+
+    fn call_count(&self) -> i64 {
+        self.inner.call_count() as i64
+    }
+
+    fn stream_resolved(
+        &self,
+        model_json: String,
+        context_json: String,
+        options_json: Option<String>,
+        message_json: String,
+        aborted: bool,
+    ) -> anyhow::Result<String> {
+        let model =
+            serde_json::from_str(&model_json).map_err(|e| anyhow::anyhow!("invalid model: {e}"))?;
+        let context = parse_faux_context(&context_json)?;
+        let options = parse_faux_options(options_json)?;
+        let message: AssistantMessage = serde_json::from_str(&message_json)
+            .map_err(|e| anyhow::anyhow!("invalid message: {e}"))?;
+        let signal = if aborted {
+            Some(AbortSignal::aborted())
+        } else {
+            None
+        };
+        let result = self.inner.stream_resolved(
+            &model,
+            &context,
+            options.as_ref(),
+            message,
+            signal.as_ref(),
+        );
+        serde_json::to_string(&result).map_err(anyhow::Error::from)
+    }
+
+    fn empty_queue_result(
+        &self,
+        model_json: String,
+        context_json: String,
+        options_json: Option<String>,
+    ) -> anyhow::Result<String> {
+        let model =
+            serde_json::from_str(&model_json).map_err(|e| anyhow::anyhow!("invalid model: {e}"))?;
+        let context = parse_faux_context(&context_json)?;
+        let options = parse_faux_options(options_json)?;
+        let result = self
+            .inner
+            .empty_queue_result(&model, &context, options.as_ref());
+        serde_json::to_string(&result).map_err(anyhow::Error::from)
+    }
+}

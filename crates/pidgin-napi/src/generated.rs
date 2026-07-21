@@ -76,6 +76,31 @@ pub trait CommandCoreCore: Sized + Send + Sync + 'static {
     fn advance(&self, output_json: String) -> anyhow::Result<String>;
 }
 
+/// The `FauxCore` contract — implement over the engine in `crate::core_impl`.
+pub trait FauxCoreCore: Sized + Send + Sync + 'static {
+    fn new(options_json: String) -> anyhow::Result<Self>;
+    fn set_now_ms(&self, now_ms: i64) -> ();
+    fn api(&self) -> String;
+    fn models_json(&self) -> anyhow::Result<String>;
+    fn get_model_json(&self, id: Option<String>) -> anyhow::Result<Option<String>>;
+    fn bump_call_count(&self) -> i64;
+    fn call_count(&self) -> i64;
+    fn stream_resolved(
+        &self,
+        model_json: String,
+        context_json: String,
+        options_json: Option<String>,
+        message_json: String,
+        aborted: bool,
+    ) -> anyhow::Result<String>;
+    fn empty_queue_result(
+        &self,
+        model_json: String,
+        context_json: String,
+        options_json: Option<String>,
+    ) -> anyhow::Result<String>;
+}
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `pidginNativeVersion`.
@@ -294,5 +319,101 @@ impl CommandCore {
     #[napi(js_name = "advance")]
     pub fn advance(&self, output_json: String) -> Result<String> {
         self.core.advance(output_json).map_err(err)
+    }
+}
+
+/// The Rust-backed faux core, exposed to JavaScript as `FauxCore`.
+///
+/// The JS `registerFauxProvider` shim constructs one of these, keeps the response
+/// queue in JS, and calls [`FauxCore::stream_resolved`] (or
+/// [`FauxCore::empty_queue_result`]) per stream. Cross-call state (call count and
+/// prompt cache) lives in the wrapped [`FauxProvider`].
+#[napi]
+pub struct FauxCore {
+    // pub(crate): the @manual ops in lib.rs extend this class and need the core
+    pub(crate) core: Arc<crate::core_impl::FauxCoreImpl>,
+}
+
+#[napi]
+impl FauxCore {
+    /// Build a faux core from pi's `RegisterFauxProviderOptions`, JSON-encoded.
+    #[napi(constructor)]
+    pub fn new(options_json: String) -> Result<Self> {
+        Ok(Self {
+            core: Arc::new(
+                <crate::core_impl::FauxCoreImpl as FauxCoreCore>::new(options_json).map_err(err)?,
+            ),
+        })
+    }
+    /// Set the `now` (epoch milliseconds) the provider reads when stamping the
+    /// empty-queue/aborted message timestamps. The JS shim calls this with
+    /// `Date.now()` before each stream so those timestamps track JS time.
+    #[napi(js_name = "setNowMs")]
+    pub fn set_now_ms(&self, now_ms: i64) -> () {
+        self.core.set_now_ms(now_ms)
+    }
+    /// The provider's api id (pi's `core.api`).
+    #[napi(js_name = "api")]
+    pub fn api(&self) -> String {
+        self.core.api()
+    }
+    /// The model catalog as a JSON array (pi's `core.models`).
+    #[napi(js_name = "modelsJson")]
+    pub fn models_json(&self) -> Result<String> {
+        self.core.models_json().map_err(err)
+    }
+    /// pi's `getModel()`: the model with `id`, or the first model when `id` is
+    /// omitted. Returns `null` when no model matches.
+    #[napi(js_name = "getModelJson")]
+    pub fn get_model_json(&self, id: Option<String>) -> Result<Option<String>> {
+        self.core.get_model_json(id).map_err(err)
+    }
+    /// Increment and return the call count (pi's `state.callCount++`). The JS
+    /// shim calls this before resolving a response factory, matching pi's order.
+    #[napi(js_name = "bumpCallCount")]
+    pub fn bump_call_count(&self) -> i64 {
+        self.core.bump_call_count()
+    }
+    /// The current call count without incrementing (pi's `state.callCount`).
+    #[napi(js_name = "callCount")]
+    pub fn call_count(&self) -> i64 {
+        self.core.call_count()
+    }
+    /// Stream an already-resolved response message, returning the
+    /// `{ events, message }` result as JSON. The JS shim passes the message it
+    /// popped (or computed from a factory); Rust applies pi's clone + usage
+    /// estimate + delta streaming. `aborted` reproduces the pre-aborted signal
+    /// path (pi's `signal.aborted`).
+    #[napi(js_name = "streamResolved")]
+    pub fn stream_resolved(
+        &self,
+        model_json: String,
+        context_json: String,
+        options_json: Option<String>,
+        message_json: String,
+        aborted: bool,
+    ) -> Result<String> {
+        self.core
+            .stream_resolved(
+                model_json,
+                context_json,
+                options_json,
+                message_json,
+                aborted,
+            )
+            .map_err(err)
+    }
+    /// The result pi streams when the response queue is empty (an `error`-stop
+    /// message with usage estimated), as JSON.
+    #[napi(js_name = "emptyQueueResult")]
+    pub fn empty_queue_result(
+        &self,
+        model_json: String,
+        context_json: String,
+        options_json: Option<String>,
+    ) -> Result<String> {
+        self.core
+            .empty_queue_result(model_json, context_json, options_json)
+            .map_err(err)
     }
 }
