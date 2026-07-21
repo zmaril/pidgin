@@ -11,14 +11,15 @@ use std::time::Duration;
 
 use serde_json::Map;
 
-use crate::auth::error::AuthFlowError;
-use crate::auth::oauth::flow::{OAuthFlowMachine, Step, StepInput};
-use crate::auth::types::{AuthEvent, AuthPromptKind, OAuthCredential};
-
-use super::{
-    adapt_extension_oauth, ExtensionOAuthLogin, OAuthAuthInfo, OAuthDeviceCodeInfo,
-    OAuthLoginCallbacks, OAuthPrompt, OAuthSelectOption, OAuthSelectPrompt,
+use pidgin_ai::auth::error::AuthFlowError;
+use pidgin_ai::auth::oauth::extension::{
+    ExtensionOAuthLogin, OAuthAuthInfo, OAuthDeviceCodeInfo, OAuthLoginCallbacks, OAuthPrompt,
+    OAuthSelectOption, OAuthSelectPrompt,
 };
+use pidgin_ai::auth::oauth::flow::{OAuthFlowMachine, Step, StepInput};
+use pidgin_ai::auth::types::{AuthEvent, AuthPromptKind, OAuthCredential};
+
+use super::adapt_extension_oauth;
 
 /// Run `f` on a worker thread and fail fast if it does not finish within the
 /// bound — so a bridge deadlock surfaces as a test failure, never a CI hang.
