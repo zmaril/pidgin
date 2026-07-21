@@ -140,6 +140,28 @@ fn reasoning_effort<C>(model: &Model<C>, reasoning: Option<ThinkingLevel>) -> Op
     Some(model_thinking_level_str(clamped).to_string())
 }
 
+/// Lower the simple, level-based `reasoning` onto the driver's typed
+/// [`AzureOpenAIResponsesOptions`] as `reasoning_effort`, mirroring pi's Azure
+/// `streamSimple` (`azure-openai-responses.ts:144-162`).
+///
+/// Shared by the buffered [`AzureOpenAIResponsesBackend::stream_simple`] and the
+/// incremental [`AzureOpenAIResponsesBackend::stream_incremental`] reasoning path so
+/// both lower reasoning identically — the single source of truth pi keeps in its one
+/// `streamSimple` path (pi applies the same shaping regardless of buffered vs
+/// incremental, having a single streaming path). The driver's `buildParams`
+/// (`azure-openai-responses.ts:280-295`) then shapes `reasoning={effort,summary}` +
+/// `include` from the lowered effort — with no xai/github-copilot special-casing.
+fn lower_simple_options(
+    typed_model: &Model<OpenAIResponsesCompat>,
+    simple: &SimpleStreamOptions,
+) -> AzureOpenAIResponsesOptions {
+    // pi `azure-openai-responses.ts:155-156`: clamp the requested level to a
+    // supported one, then drop "off" so the driver's off-model fallback applies.
+    let mut responses_options = responses_options(Some(&simple.base));
+    responses_options.reasoning_effort = reasoning_effort(typed_model, simple.reasoning);
+    responses_options
+}
+
 /// Widen a caller's [`ThinkingLevel`] to the model-level [`ModelThinkingLevel`]
 /// the clamp expects (pi's `SimpleStreamOptions.reasoning`, which extends the base
 /// ladder with `off`; a requested level is never `off`).
@@ -233,10 +255,7 @@ impl Provider for AzureOpenAIResponsesBackend {
             Err(message) => return error_result(model, self.clock.now_ms(), message),
         };
 
-        // pi `azure-openai-responses.ts:155-156`: clamp the requested level to a
-        // supported one, then drop "off" so the driver's off-model fallback applies.
-        let mut responses_options = responses_options(Some(&simple.base));
-        responses_options.reasoning_effort = reasoning_effort(&typed_model, simple.reasoning);
+        let responses_options = lower_simple_options(&typed_model, simple);
 
         let timestamp = self.clock.now_ms();
         driver::stream(
@@ -255,11 +274,40 @@ impl Provider for AzureOpenAIResponsesBackend {
         options: Option<&SimpleStreamOptions>,
         _signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
-        // The incremental driver path cannot lower `reasoning` yet (per-driver
-        // incremental lowering is a follow-up, tracked with the buffered
-        // `stream_simple` override for this dialect), so guard against silently
-        // dropping a reasoning request before streaming on the base options.
-        crate::seams::provider::debug_assert_incremental_reasoning_unlowered(options, self.api());
+        // Reasoning requested: lower it onto the incremental request exactly as the
+        // buffered `stream_simple` does (via the shared `lower_simple_options`), then
+        // run the driver's incremental `stream_streaming` entry point. This is full
+        // pi parity — pi's single `streamAssistantResponse` streams incrementally AND
+        // honors reasoning through the one `streamSimple` path
+        // (`azure-openai-responses.ts:144-162`), whose `reasoning`/`include`/off-
+        // fallback shaping (`azure-openai-responses.ts:280-295`) is applied regardless
+        // of buffered vs incremental (pi has one streaming path). The already-ported
+        // driver `stream_streaming` reads `reasoning_effort` off the options via the
+        // same `prepare_request` the buffered `stream` uses, so no driver change is
+        // needed. Azure's hard api-key requirement is enforced inside that path.
+        if let Some(simple) = options.filter(|o| o.reasoning.is_some()) {
+            let typed_model = match self.typed_model(model, Some(&simple.base)) {
+                Ok(typed_model) => typed_model,
+                Err(message) => {
+                    return AssistantEventReader::from_buffered(error_result(
+                        model,
+                        self.clock.now_ms(),
+                        message,
+                    ));
+                }
+            };
+            let responses_options = lower_simple_options(&typed_model, simple);
+            let timestamp = self.clock.now_ms();
+            return driver::stream_streaming(
+                self.transport.as_ref(),
+                &typed_model,
+                context,
+                &responses_options,
+                timestamp,
+            );
+        }
+
+        // No reasoning: byte-identical to the pre-widening base incremental path.
         let options = options.map(|o| &o.base);
         // Same model/options assembly as `stream`, but the request runs through
         // the driver's incremental `stream_streaming` entry point: the returned
@@ -796,6 +844,162 @@ mod tests {
             .as_deref()
             .unwrap()
             .contains("No API key for provider"));
+        assert!(scripted.requests().is_empty());
+    }
+
+    // -----------------------------------------------------------------------
+    // stream_incremental: reasoning lowering (pi `azure-openai-responses.ts:144-162`)
+    // -----------------------------------------------------------------------
+    //
+    // pi streams incrementally AND honors reasoning through one `streamSimple` path,
+    // so the incremental request carries the same `reasoning={effort,summary}` +
+    // `include` shaping as the buffered `stream_simple` above -- with no
+    // xai/github-copilot special-casing (the branch openai-responses has that Azure
+    // does NOT).
+
+    // FULL INCREMENTAL PARITY: `stream_incremental` carrying a reasoning level lowers
+    // it param-exactly, identically to the buffered `stream_simple` -- `high` on this
+    // model -> `reasoning={effort:"high",summary:"auto"}` + the encrypted-content
+    // `include`, the same as `stream_simple_lowers_reasoning_effort_and_include`.
+    #[test]
+    fn stream_incremental_lowers_reasoning_effort_and_include() {
+        let (scripted, transport) = scripted_hello();
+        let backend = AzureOpenAIResponsesBackend::new(transport, fake_clock());
+
+        let model = reasoning_model("https://my-proxy.example.com/v1");
+        let options = SimpleStreamOptions {
+            base: StreamOptions {
+                api_key: Some("azure-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            reasoning: Some(ThinkingLevel::High),
+            ..SimpleStreamOptions::default()
+        };
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        // Drain the reader so the request is actually issued.
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            body.get("reasoning"),
+            Some(&json!({ "effort": "high", "summary": "auto" }))
+        );
+        assert_eq!(
+            body.get("include"),
+            Some(&json!(["reasoning.encrypted_content"]))
+        );
+    }
+
+    // PARAM-EXACT parity: the incremental reasoning request body is byte-identical to
+    // the buffered `stream_simple` body for the same reasoning level -- proving the
+    // two paths lower reasoning through the one shared `lower_simple_options`.
+    #[test]
+    fn stream_incremental_reasoning_matches_buffered_stream_simple() {
+        let model = reasoning_model("https://my-proxy.example.com/v1");
+        let options = SimpleStreamOptions {
+            base: StreamOptions {
+                api_key: Some("azure-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            reasoning: Some(ThinkingLevel::High),
+            ..SimpleStreamOptions::default()
+        };
+
+        let (buffered_scripted, buffered_transport) = scripted_hello();
+        let buffered_backend = AzureOpenAIResponsesBackend::new(buffered_transport, fake_clock());
+        buffered_backend.stream_simple(&model, &user_context(), Some(&options), None);
+
+        let (incremental_scripted, incremental_transport) = scripted_hello();
+        let incremental_backend =
+            AzureOpenAIResponsesBackend::new(incremental_transport, fake_clock());
+        let mut reader =
+            incremental_backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        assert_eq!(
+            incremental_scripted.requests()[0].body,
+            buffered_scripted.requests()[0].body
+        );
+    }
+
+    // A reasoning-capable model with NO reasoning level requested takes the
+    // byte-identical raw incremental path, and the driver's off-model fallback branch
+    // still applies (`reasoning={effort:"none"}`, no `include`) -- the same
+    // off-fallback the buffered `stream_simple_without_reasoning_uses_off_fallback`
+    // asserts, and byte-identical to the raw `stream_incremental` on the base options.
+    #[test]
+    fn stream_incremental_without_reasoning_off_fallback_matches_raw() {
+        let model = reasoning_model("https://my-proxy.example.com/v1");
+        let base = StreamOptions {
+            api_key: Some("azure-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (simple_scripted, simple_transport) = scripted_hello();
+        let simple_backend = AzureOpenAIResponsesBackend::new(simple_transport, fake_clock());
+        let mut simple_reader = simple_backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(base.clone())),
+            None,
+        );
+        let _simple: Vec<AssistantMessageEvent> = simple_reader.by_ref().collect();
+
+        let (raw_scripted, raw_transport) = scripted_hello();
+        let raw_backend = AzureOpenAIResponsesBackend::new(raw_transport, fake_clock());
+        let mut raw_reader = raw_backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(base.clone())),
+            None,
+        );
+        let _raw: Vec<AssistantMessageEvent> = raw_reader.by_ref().collect();
+
+        let body: Value =
+            serde_json::from_str(simple_scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body.get("reasoning"), Some(&json!({ "effort": "none" })));
+        assert!(body.get("include").is_none());
+        assert_eq!(
+            simple_scripted.requests()[0].body,
+            raw_scripted.requests()[0].body
+        );
+    }
+
+    // Azure's hard api-key requirement (pi `azure-openai-responses.ts:149-152`) is
+    // preserved on the INCREMENTAL reasoning-lowering path: a reasoning request with
+    // no api key surfaces the pre-start `No API key` failure as a single-`error`
+    // reader (the driver's `stream_streaming` enforces it via `prepare_request`) and
+    // makes no request. Mirrors the buffered `stream_simple_missing_api_key_is_a_clean_error`.
+    #[test]
+    fn stream_incremental_missing_api_key_is_a_clean_error() {
+        let scripted = ScriptedTransport::new();
+        let transport: Arc<dyn HttpTransport> = Arc::new(scripted.clone());
+        let backend = AzureOpenAIResponsesBackend::new(transport, fake_clock());
+
+        let model = reasoning_model("https://my-proxy.example.com/v1");
+        let options = SimpleStreamOptions {
+            base: StreamOptions::default(),
+            reasoning: Some(ThinkingLevel::High),
+            ..SimpleStreamOptions::default()
+        };
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        // The pre-stream failure surfaces as a single terminal `error` event
+        // carrying the `No API key` message (never a `start`), mirroring pi's
+        // catch handler. The reader's `result()` is the `Err` variant of the same.
+        match events.last() {
+            Some(AssistantMessageEvent::Error { error, .. }) => {
+                assert_eq!(error.stop_reason, StopReason::Error);
+                assert!(error
+                    .error_message
+                    .as_deref()
+                    .unwrap()
+                    .contains("No API key for provider"));
+            }
+            other => panic!("expected a terminal error event, got {other:?}"),
+        }
         assert!(scripted.requests().is_empty());
     }
 }

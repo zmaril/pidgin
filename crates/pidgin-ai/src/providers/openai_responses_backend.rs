@@ -128,6 +128,28 @@ fn reasoning_effort<C>(model: &Model<C>, reasoning: Option<ThinkingLevel>) -> Op
     Some(model_thinking_level_str(clamped).to_string())
 }
 
+/// Lower the simple, level-based `reasoning` onto the driver's typed
+/// [`OpenAIResponsesOptions`] as `reasoning_effort`, mirroring pi's `streamSimple`
+/// (`openai-responses.ts:174-189`).
+///
+/// Shared by the buffered [`OpenAIResponsesBackend::stream_simple`] and the
+/// incremental [`OpenAIResponsesBackend::stream_incremental`] reasoning path so both
+/// lower reasoning identically — the single source of truth pi keeps in its one
+/// `streamSimple` path (pi applies the same shaping regardless of buffered vs
+/// incremental, having a single streaming path). The driver's `buildParams`
+/// (`openai-responses.ts:270-286`) then shapes `reasoning={effort,summary}` +
+/// `include` — including the xai `include`-always branch — from the lowered effort.
+fn lower_simple_options(
+    typed_model: &Model<OpenAIResponsesCompat>,
+    simple: &SimpleStreamOptions,
+) -> OpenAIResponsesOptions {
+    // pi `openai-responses.ts:182-183`: clamp the requested level to a supported
+    // one, then drop "off" so the driver's off-model fallback branch applies.
+    let mut responses_options = responses_options(Some(&simple.base));
+    responses_options.reasoning_effort = reasoning_effort(typed_model, simple.reasoning);
+    responses_options
+}
+
 /// Widen a caller's [`ThinkingLevel`] to the model-level [`ModelThinkingLevel`]
 /// the clamp expects (pi's `SimpleStreamOptions.reasoning`, which extends the base
 /// ladder with `off`; a requested level is never `off`).
@@ -220,10 +242,7 @@ impl Provider for OpenAIResponsesBackend {
             Err(message) => return error_result(model, self.clock.now_ms(), message),
         };
 
-        // pi `openai-responses.ts:182-183`: clamp the requested level to a supported
-        // one, then drop "off" so the driver's off-model fallback branch applies.
-        let mut responses_options = responses_options(Some(&simple.base));
-        responses_options.reasoning_effort = reasoning_effort(&typed_model, simple.reasoning);
+        let responses_options = lower_simple_options(&typed_model, simple);
 
         let timestamp = self.clock.now_ms();
         driver::stream(
@@ -242,11 +261,39 @@ impl Provider for OpenAIResponsesBackend {
         options: Option<&SimpleStreamOptions>,
         _signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
-        // The incremental driver path cannot lower `reasoning` yet (per-driver
-        // incremental lowering is a follow-up, tracked with the buffered
-        // `stream_simple` override for this dialect), so guard against silently
-        // dropping a reasoning request before streaming on the base options.
-        crate::seams::provider::debug_assert_incremental_reasoning_unlowered(options, self.api());
+        // Reasoning requested: lower it onto the incremental request exactly as the
+        // buffered `stream_simple` does (via the shared `lower_simple_options`), then
+        // run the driver's incremental `stream_streaming` entry point. This is full
+        // pi parity — pi's single `streamAssistantResponse` streams incrementally AND
+        // honors reasoning through the one `streamSimple` path
+        // (`openai-responses.ts:174-189`), whose `reasoning`/`include`/off-fallback
+        // shaping (`openai-responses.ts:270-286`) is applied regardless of buffered
+        // vs incremental (pi has one streaming path). The already-ported driver
+        // `stream_streaming` reads `reasoning_effort` off the options via the same
+        // `prepare_request` the buffered `stream` uses, so no driver change is needed.
+        if let Some(simple) = options.filter(|o| o.reasoning.is_some()) {
+            let typed_model = match self.typed_model(model, Some(&simple.base)) {
+                Ok(typed_model) => typed_model,
+                Err(message) => {
+                    return AssistantEventReader::from_buffered(error_result(
+                        model,
+                        self.clock.now_ms(),
+                        message,
+                    ));
+                }
+            };
+            let responses_options = lower_simple_options(&typed_model, simple);
+            let timestamp = self.clock.now_ms();
+            return driver::stream_streaming(
+                self.transport.as_ref(),
+                &typed_model,
+                context,
+                &responses_options,
+                timestamp,
+            );
+        }
+
+        // No reasoning: byte-identical to the pre-widening base incremental path.
         let options = options.map(|o| &o.base);
         // Same model/options assembly as `stream`, but the request runs through
         // the driver's incremental `stream_streaming` entry point: the returned
@@ -738,6 +785,156 @@ mod tests {
         assert_eq!(
             scripted_simple.requests()[0].body,
             scripted_raw.requests()[0].body
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // stream_incremental: reasoning lowering (pi `openai-responses.ts:174-189`)
+    // -----------------------------------------------------------------------
+    //
+    // pi streams incrementally AND honors reasoning through one `streamSimple` path,
+    // so the incremental request carries the same `reasoning={effort,summary}` +
+    // `include` shaping as the buffered `stream_simple` above.
+
+    // FULL INCREMENTAL PARITY: `stream_incremental` carrying a reasoning level lowers
+    // it param-exactly, identically to the buffered `stream_simple` -- `high` on this
+    // model -> `reasoning={effort:"high",summary:"auto"}` + the encrypted-content
+    // `include`, the same as `stream_simple_lowers_reasoning_effort_and_include`.
+    #[test]
+    fn stream_incremental_lowers_reasoning_effort_and_include() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAIResponsesBackend::new(transport, fake_clock());
+
+        let model = reasoning_model("https://api.openai.test/v1", "openai");
+        let options = SimpleStreamOptions {
+            base: StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            reasoning: Some(ThinkingLevel::High),
+            ..SimpleStreamOptions::default()
+        };
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        // Drain the reader so the request is actually issued.
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            body.get("reasoning"),
+            Some(&json!({ "effort": "high", "summary": "auto" }))
+        );
+        assert_eq!(
+            body.get("include"),
+            Some(&json!(["reasoning.encrypted_content"]))
+        );
+    }
+
+    // On the `xai` provider, `buildParams` always adds the encrypted-content
+    // `include` (`openai-responses.ts:285`) on the INCREMENTAL path too, carried
+    // through the lowered reasoning block. This is the branch azure deliberately does
+    // NOT have. Byte-identical to the buffered
+    // `stream_simple_xai_always_includes_encrypted_content`.
+    #[test]
+    fn stream_incremental_xai_always_includes_encrypted_content() {
+        let (scripted, transport) = scripted_hello();
+        let backend = OpenAIResponsesBackend::new(transport, fake_clock());
+
+        let model = reasoning_model("https://api.x.test/v1", "xai");
+        let options = SimpleStreamOptions {
+            base: StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            reasoning: Some(ThinkingLevel::Medium),
+            ..SimpleStreamOptions::default()
+        };
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(
+            body.get("reasoning"),
+            Some(&json!({ "effort": "medium", "summary": "auto" }))
+        );
+        assert_eq!(
+            body.get("include"),
+            Some(&json!(["reasoning.encrypted_content"]))
+        );
+    }
+
+    // PARAM-EXACT parity: the incremental reasoning request body is byte-identical to
+    // the buffered `stream_simple` body for the same reasoning level -- proving the
+    // two paths lower reasoning through the one shared `lower_simple_options`.
+    #[test]
+    fn stream_incremental_reasoning_matches_buffered_stream_simple() {
+        let model = reasoning_model("https://api.openai.test/v1", "openai");
+        let options = SimpleStreamOptions {
+            base: StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            reasoning: Some(ThinkingLevel::High),
+            ..SimpleStreamOptions::default()
+        };
+
+        let (buffered_scripted, buffered_transport) = scripted_hello();
+        let buffered_backend = OpenAIResponsesBackend::new(buffered_transport, fake_clock());
+        buffered_backend.stream_simple(&model, &user_context(), Some(&options), None);
+
+        let (incremental_scripted, incremental_transport) = scripted_hello();
+        let incremental_backend = OpenAIResponsesBackend::new(incremental_transport, fake_clock());
+        let mut reader =
+            incremental_backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        assert_eq!(
+            incremental_scripted.requests()[0].body,
+            buffered_scripted.requests()[0].body
+        );
+    }
+
+    // A reasoning-capable model with NO reasoning level requested takes the
+    // byte-identical raw incremental path, and the driver's off-model fallback branch
+    // still applies (`reasoning={effort:"none"}`, no `include`) -- the same
+    // off-fallback the buffered `stream_simple_without_reasoning_uses_off_fallback`
+    // asserts, and byte-identical to the raw `stream_incremental` on the base options.
+    #[test]
+    fn stream_incremental_without_reasoning_off_fallback_matches_raw() {
+        let model = reasoning_model("https://api.openai.test/v1", "openai");
+        let base = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (simple_scripted, simple_transport) = scripted_hello();
+        let simple_backend = OpenAIResponsesBackend::new(simple_transport, fake_clock());
+        let mut simple_reader = simple_backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(base.clone())),
+            None,
+        );
+        let _simple: Vec<AssistantMessageEvent> = simple_reader.by_ref().collect();
+
+        let (raw_scripted, raw_transport) = scripted_hello();
+        let raw_backend = OpenAIResponsesBackend::new(raw_transport, fake_clock());
+        let mut raw_reader = raw_backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(base.clone())),
+            None,
+        );
+        let _raw: Vec<AssistantMessageEvent> = raw_reader.by_ref().collect();
+
+        let body: Value =
+            serde_json::from_str(simple_scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body.get("reasoning"), Some(&json!({ "effort": "none" })));
+        assert!(body.get("include").is_none());
+        assert_eq!(
+            simple_scripted.requests()[0].body,
+            raw_scripted.requests()[0].body
         );
     }
 }
