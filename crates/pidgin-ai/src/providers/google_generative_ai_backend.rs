@@ -22,13 +22,16 @@ use std::sync::Arc;
 
 use crate::api::google_generative_ai::driver;
 use crate::api::google_generative_ai::API;
-use crate::api::google_shared::{GoogleModel, GoogleRequestOptions};
+use crate::api::google_shared::{
+    gen_ai_thinking_option, GoogleEffort, GoogleModel, GoogleRequestOptions, GoogleThinkingOption,
+};
+use crate::providers::clamp_thinking_level;
 use crate::seams::clock::Clock;
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
 use crate::types::{
-    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, StopReason,
-    StreamOptions, Usage, UsageCost,
+    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
+    SimpleStreamOptions, StopReason, StreamOptions, ThinkingLevel, Usage, UsageCost,
 };
 use crate::utils::sse::AssistantEventReader;
 
@@ -155,6 +158,87 @@ impl Provider for GoogleGenerativeAiBackend {
             &request_options,
             timestamp,
         )
+    }
+
+    /// Lower the simple, level-based options onto the Google request, mirroring
+    /// pi's `streamSimple` (`google-generative-ai.ts:284-320`).
+    ///
+    /// The seam's `reasoning` level is model-clamped (pi's `clampThinkingLevel`),
+    /// then mapped `off ⇒ high` (google-specific: thinking stays ON, unlike the
+    /// openai dialects that omit) and lowered by
+    /// [`gen_ai_thinking_option`] into either the `thinkingLevel` path
+    /// (Gemini-3-Pro/Flash/Gemma-4) or the `thinkingBudget` path (every other
+    /// model, incl. the `2.5-flash-lite` budget table).
+    ///
+    /// When no `reasoning` is requested, this sets `thinking: { enabled: false }`
+    /// (pi `:295-296`): for a non-reasoning model that emits no `thinkingConfig`
+    /// (byte-identical to the raw request), and for a reasoning model it emits
+    /// pi's `getDisabledThinkingConfig`.
+    fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        _signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        let mut typed_model: GoogleModel = match reserialize_model(model) {
+            Ok(typed_model) => typed_model,
+            Err(error) => {
+                return error_result(
+                    model,
+                    self.clock.now_ms(),
+                    format!("Google model is not compatible with google-generative-ai: {error}"),
+                )
+            }
+        };
+
+        let base = options.map(|o| &o.base);
+        if let Some(base_url) = base.and_then(|b| b.base_url.as_ref()) {
+            typed_model.base_url = base_url.clone();
+        }
+
+        let api_key = base.and_then(|b| b.api_key.clone());
+        let headers = base.and_then(|b| b.headers.clone()).unwrap_or_default();
+
+        let mut request_options = request_options_from(model, base);
+        request_options.thinking = Some(match options.and_then(|o| o.reasoning) {
+            Some(reasoning) => {
+                let clamped = clamp_thinking_level(model, widen_thinking_level(reasoning));
+                let effort = GoogleEffort::from_clamped(clamped);
+                gen_ai_thinking_option(
+                    &typed_model.id,
+                    effort,
+                    options.and_then(|o| o.thinking_budgets.as_ref()),
+                )
+            }
+            // No reasoning: pi's `thinking: { enabled: false }`.
+            None => GoogleThinkingOption::default(),
+        });
+
+        let timestamp = self.clock.now_ms();
+        driver::stream(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            api_key.as_deref(),
+            &headers,
+            &request_options,
+            timestamp,
+        )
+    }
+}
+
+/// Widen a caller's [`ThinkingLevel`] to the model-level [`ModelThinkingLevel`]
+/// that [`clamp_thinking_level`] expects (pi's `SimpleStreamOptions.reasoning`,
+/// which extends the base ladder with `off`; a requested level is never `off`).
+fn widen_thinking_level(level: ThinkingLevel) -> ModelThinkingLevel {
+    match level {
+        ThinkingLevel::Minimal => ModelThinkingLevel::Minimal,
+        ThinkingLevel::Low => ModelThinkingLevel::Low,
+        ThinkingLevel::Medium => ModelThinkingLevel::Medium,
+        ThinkingLevel::High => ModelThinkingLevel::High,
+        ThinkingLevel::Xhigh => ModelThinkingLevel::Xhigh,
+        ThinkingLevel::Max => ModelThinkingLevel::Max,
     }
 }
 
@@ -624,6 +708,234 @@ mod tests {
             serde_json::from_str(scripted.requests()[0].body.as_deref().expect("body"))
                 .expect("json body");
         assert_eq!(body["config"]["maxOutputTokens"], json!(8192));
+    }
+
+    // --- streamSimple reasoning lowering (google-generative-ai.ts:284-509) ---
+
+    /// A reasoning-enabled gen-ai `Model<Value>` with the given `id`. With no
+    /// `thinkingLevelMap`, `clampThinkingLevel` treats `off..high` as all
+    /// supported, so a requested level clamps to itself.
+    fn reasoning_model(id: &str) -> Model {
+        serde_json::from_value(json!({
+            "id": id,
+            "name": id,
+            "api": "google-generative-ai",
+            "provider": "google",
+            "baseUrl": "https://generativelanguage.googleapis.test/v1beta",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 8192,
+        }))
+        .unwrap()
+    }
+
+    fn request_body(scripted: &ScriptedTransport) -> serde_json::Value {
+        serde_json::from_str(scripted.requests()[0].body.as_deref().expect("body"))
+            .expect("json body")
+    }
+
+    fn simple_with_reasoning(level: ThinkingLevel) -> SimpleStreamOptions {
+        SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("AIza-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(level),
+            None,
+        )
+    }
+
+    // A reasoning level on a budget model lowers to `thinkingConfig.thinkingBudget`
+    // = pi's `getGoogleBudget` value (2.5-flash / high = 24576) with
+    // `includeThoughts: true` (google-generative-ai.ts:313-318, :498-505).
+    #[test]
+    fn stream_simple_budget_model_lowers_thinking_budget() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        let model = reasoning_model("gemini-2.5-flash");
+
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::High)),
+            None,
+        );
+
+        let thinking = &request_body(&scripted)["config"]["thinkingConfig"];
+        assert_eq!(thinking["includeThoughts"], json!(true));
+        assert_eq!(thinking["thinkingBudget"], json!(24576));
+        assert!(thinking.get("thinkingLevel").is_none());
+    }
+
+    // The gen-ai `2.5-flash-lite` budget table is distinct from `2.5-flash`
+    // (minimal: 512 vs 128) and is selected ahead of it
+    // (google-generative-ai.ts:488-496).
+    #[test]
+    fn stream_simple_flash_lite_uses_flash_lite_budget_table() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        let model = reasoning_model("gemini-2.5-flash-lite");
+
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::Minimal)),
+            None,
+        );
+
+        assert_eq!(
+            request_body(&scripted)["config"]["thinkingConfig"]["thinkingBudget"],
+            json!(512),
+        );
+    }
+
+    // A reasoning level on a gemini-3/level model lowers to
+    // `thinkingConfig.thinkingLevel` = pi's `getThinkingLevel` enum string, not a
+    // budget (google-generative-ai.ts:303-310, :436-467).
+    #[test]
+    fn stream_simple_level_model_lowers_thinking_level() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        let model = reasoning_model("gemini-3-flash-preview");
+
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::High)),
+            None,
+        );
+
+        let thinking = &request_body(&scripted)["config"]["thinkingConfig"];
+        assert_eq!(thinking["includeThoughts"], json!(true));
+        assert_eq!(thinking["thinkingLevel"], json!("HIGH"));
+        assert!(thinking.get("thinkingBudget").is_none());
+    }
+
+    // A custom per-level `thinkingBudgets` overrides the model budget table
+    // (google-generative-ai.ts:474-476: `customBudgets?.[effort]`).
+    #[test]
+    fn stream_simple_custom_budget_overrides_table() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        let model = reasoning_model("gemini-2.5-flash");
+
+        let options = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("AIza-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            Some(crate::types::ThinkingBudgets {
+                high: Some(4096),
+                ..crate::types::ThinkingBudgets::default()
+            }),
+        );
+        backend.stream_simple(&model, &user_context(), Some(&options), None);
+
+        assert_eq!(
+            request_body(&scripted)["config"]["thinkingConfig"]["thinkingBudget"],
+            json!(4096),
+        );
+    }
+
+    // google-specific: when `clampThinkingLevel` yields `off` (a reasoning model
+    // that supports only `off`), pi maps `off ⇒ high` rather than omitting
+    // (google-generative-ai.ts:300). The request carries the HIGH budget, NOT a
+    // disabled/omitted thinking config.
+    #[test]
+    fn stream_simple_off_clamp_maps_to_high_not_omitted() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        // A reasoning model whose thinking map disables every level but `off`.
+        let model: Model = serde_json::from_value(json!({
+            "id": "gemini-2.5-flash",
+            "name": "Gemini 2.5 Flash",
+            "api": "google-generative-ai",
+            "provider": "google",
+            "baseUrl": "https://generativelanguage.googleapis.test/v1beta",
+            "reasoning": true,
+            "thinkingLevelMap": {
+                "minimal": null, "low": null, "medium": null, "high": null,
+            },
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 8192,
+        }))
+        .unwrap();
+
+        // Even a low requested level clamps to `off`, then maps to `high`.
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::Minimal)),
+            None,
+        );
+
+        let thinking = &request_body(&scripted)["config"]["thinkingConfig"];
+        assert_eq!(thinking["includeThoughts"], json!(true));
+        // high budget for 2.5-flash, proving off => high (not omitted).
+        assert_eq!(thinking["thinkingBudget"], json!(24576));
+    }
+
+    // No reasoning on a NON-reasoning model emits no `thinkingConfig`: the request
+    // is byte-identical to the raw `stream` path.
+    #[test]
+    fn stream_simple_no_reasoning_is_byte_identical_to_raw() {
+        let model = google_model("https://generativelanguage.googleapis.test/v1beta");
+        let base = StreamOptions {
+            api_key: Some("AIza-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (scripted_raw, transport_raw) = scripted_hello();
+        let backend_raw = GoogleGenerativeAiBackend::new(transport_raw, fake_clock());
+        backend_raw.stream(&model, &user_context(), Some(&base), None);
+
+        let (scripted_simple, transport_simple) = scripted_hello();
+        let backend_simple = GoogleGenerativeAiBackend::new(transport_simple, fake_clock());
+        backend_simple.stream_simple(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(base.clone())),
+            None,
+        );
+
+        assert_eq!(
+            scripted_raw.requests()[0].body,
+            scripted_simple.requests()[0].body,
+        );
+        assert!(request_body(&scripted_simple)["config"]
+            .get("thinkingConfig")
+            .is_none());
+    }
+
+    // No reasoning on a REASONING model emits pi's `getDisabledThinkingConfig`
+    // (2.5 => `thinkingBudget: 0`), matching pi's `thinking: { enabled: false }`
+    // path (google-generative-ai.ts:295-296, :383-384, :432-433).
+    #[test]
+    fn stream_simple_no_reasoning_on_reasoning_model_emits_disabled_config() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        let model = reasoning_model("gemini-2.5-flash");
+
+        let base = StreamOptions {
+            api_key: Some("AIza-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(base)),
+            None,
+        );
+
+        assert_eq!(
+            request_body(&scripted)["config"]["thinkingConfig"],
+            json!({ "thinkingBudget": 0 }),
+        );
     }
 }
 

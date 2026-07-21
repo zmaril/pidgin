@@ -37,17 +37,20 @@
 
 use std::sync::Arc;
 
-use crate::api::google_shared::{GoogleModel, GoogleRequestOptions};
+use crate::api::google_shared::{
+    vertex_thinking_option, GoogleEffort, GoogleModel, GoogleRequestOptions, GoogleThinkingOption,
+};
 use crate::api::google_vertex::{
     adc, driver, resolve_api_key, resolve_credentials_path, resolve_location, resolve_project,
     GoogleVertexClientOptions, VertexRequestCredential, API,
 };
+use crate::providers::clamp_thinking_level;
 use crate::seams::clock::Clock;
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
 use crate::types::{
-    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, StopReason,
-    StreamOptions, Usage, UsageCost,
+    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
+    SimpleStreamOptions, StopReason, StreamOptions, ThinkingLevel, Usage, UsageCost,
 };
 use crate::utils::sse::AssistantEventReader;
 
@@ -195,6 +198,93 @@ impl Provider for GoogleVertexBackend {
             &request_options,
             timestamp,
         )
+    }
+
+    /// Lower the simple, level-based options onto the Vertex request, mirroring
+    /// pi's `streamSimple` (`google-vertex.ts:301-335`).
+    ///
+    /// The seam's `reasoning` level is model-clamped (pi's `clampThinkingLevel`),
+    /// then mapped `off ⇒ high` (google-specific: thinking stays ON, unlike the
+    /// openai dialects that omit) and lowered by [`vertex_thinking_option`] into
+    /// either the `thinkingLevel` path (Gemini-3-Pro/Flash — NO Gemma-4 gate,
+    /// unlike gen-ai) or the `thinkingBudget` path (vertex's tables, which have no
+    /// flash-lite branch and default to `-1`).
+    ///
+    /// When no `reasoning` is requested, this sets `thinking: { enabled: false }`
+    /// (pi `:307-311`): for a non-reasoning model that emits no `thinkingConfig`
+    /// (byte-identical to the raw request), and for a reasoning model it emits
+    /// pi's `getDisabledThinkingConfig`. Credential resolution (Express key vs ADC
+    /// Bearer) is identical to the raw [`stream`](Self::stream) path.
+    fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        _signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        let mut typed_model: GoogleModel = match reserialize_model(model) {
+            Ok(typed_model) => typed_model,
+            Err(error) => {
+                return error_result(
+                    model,
+                    self.clock.now_ms(),
+                    format!("Google model is not compatible with google-vertex: {error}"),
+                )
+            }
+        };
+
+        let base = options.map(|o| &o.base);
+        if let Some(base_url) = base.and_then(|b| b.base_url.as_ref()) {
+            typed_model.base_url = base_url.clone();
+        }
+
+        let timestamp = self.clock.now_ms();
+        let api_key = resolve_api_key_from(base);
+        let adc = match self.resolve_adc(&api_key, base, timestamp) {
+            Ok(adc) => adc,
+            Err(message) => return error_result(model, timestamp, message),
+        };
+        let credential = credential_ref(&api_key, &adc);
+        let headers = base.and_then(|b| b.headers.clone()).unwrap_or_default();
+
+        let mut request_options = request_options_from(model, base);
+        request_options.thinking = Some(match options.and_then(|o| o.reasoning) {
+            Some(reasoning) => {
+                let clamped = clamp_thinking_level(model, widen_thinking_level(reasoning));
+                let effort = GoogleEffort::from_clamped(clamped);
+                vertex_thinking_option(
+                    &typed_model.id,
+                    effort,
+                    options.and_then(|o| o.thinking_budgets.as_ref()),
+                )
+            }
+            // No reasoning: pi's `thinking: { enabled: false }`.
+            None => GoogleThinkingOption::default(),
+        });
+
+        driver::stream(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            credential,
+            &headers,
+            &request_options,
+            timestamp,
+        )
+    }
+}
+
+/// Widen a caller's [`ThinkingLevel`] to the model-level [`ModelThinkingLevel`]
+/// that [`clamp_thinking_level`] expects (pi's `SimpleStreamOptions.reasoning`,
+/// which extends the base ladder with `off`; a requested level is never `off`).
+fn widen_thinking_level(level: ThinkingLevel) -> ModelThinkingLevel {
+    match level {
+        ThinkingLevel::Minimal => ModelThinkingLevel::Minimal,
+        ThinkingLevel::Low => ModelThinkingLevel::Low,
+        ThinkingLevel::Medium => ModelThinkingLevel::Medium,
+        ThinkingLevel::High => ModelThinkingLevel::High,
+        ThinkingLevel::Xhigh => ModelThinkingLevel::Xhigh,
+        ThinkingLevel::Max => ModelThinkingLevel::Max,
     }
 }
 
@@ -822,6 +912,210 @@ mod tests {
             serde_json::from_str(scripted.requests()[0].body.as_deref().expect("body"))
                 .expect("json body");
         assert_eq!(body["config"]["maxOutputTokens"], json!(8192));
+    }
+
+    // --- streamSimple reasoning lowering (google-vertex.ts:301-584) ---
+
+    /// A reasoning-enabled vertex `Model<Value>` with the given `id`, over the
+    /// Express (placeholder-base-URL) endpoint. With no `thinkingLevelMap`,
+    /// `clampThinkingLevel` treats `off..high` as all supported.
+    fn vertex_reasoning_model(id: &str) -> Model {
+        serde_json::from_value(json!({
+            "id": id,
+            "name": id,
+            "api": "google-vertex",
+            "provider": "google-vertex",
+            "baseUrl": "https://{location}-aiplatform.googleapis.com/v1/projects/{project}/locations/{location}",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 8192,
+        }))
+        .unwrap()
+    }
+
+    fn express_options() -> StreamOptions {
+        StreamOptions {
+            api_key: Some("AIzaSyExampleRealisticLookingApiKey123456".to_string()),
+            ..StreamOptions::default()
+        }
+    }
+
+    fn request_body(scripted: &ScriptedTransport) -> serde_json::Value {
+        serde_json::from_str(scripted.requests()[0].body.as_deref().expect("body"))
+            .expect("json body")
+    }
+
+    fn simple_with_reasoning(level: ThinkingLevel) -> SimpleStreamOptions {
+        SimpleStreamOptions::new(express_options(), Some(level), None)
+    }
+
+    // A reasoning level on a budget model lowers to `thinkingConfig.thinkingBudget`
+    // = pi's vertex `getGoogleBudget` value (2.5-pro / high = 32768) with
+    // `includeThoughts: true` (google-vertex.ts:328-333, :563-570).
+    #[test]
+    fn stream_simple_budget_model_lowers_thinking_budget() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleVertexBackend::new(transport, fake_clock());
+        let model = vertex_reasoning_model("gemini-2.5-pro");
+
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::High)),
+            None,
+        );
+
+        let thinking = &request_body(&scripted)["config"]["thinkingConfig"];
+        assert_eq!(thinking["includeThoughts"], json!(true));
+        assert_eq!(thinking["thinkingBudget"], json!(32768));
+        assert!(thinking.get("thinkingLevel").is_none());
+    }
+
+    // A reasoning level on a gemini-3/level model lowers to
+    // `thinkingConfig.thinkingLevel` = pi's `getGemini3ThinkingLevel` enum string
+    // (google-vertex.ts:318-325, :528-552). The vertex `THINKING_LEVEL_MAP` enum
+    // serializes to the same wire strings as gen-ai's pass-through.
+    #[test]
+    fn stream_simple_level_model_lowers_thinking_level() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleVertexBackend::new(transport, fake_clock());
+        let model = vertex_reasoning_model("gemini-3-flash-preview");
+
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::High)),
+            None,
+        );
+
+        let thinking = &request_body(&scripted)["config"]["thinkingConfig"];
+        assert_eq!(thinking["includeThoughts"], json!(true));
+        assert_eq!(thinking["thinkingLevel"], json!("HIGH"));
+        assert!(thinking.get("thinkingBudget").is_none());
+    }
+
+    // vertex-specific: a non-2.5, non-gemini-3 budget model falls through both
+    // tables to the `-1` (dynamic) default — unlike gen-ai there is NO flash-lite
+    // table (google-vertex.ts:554-584).
+    #[test]
+    fn stream_simple_budget_default_is_negative_one() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleVertexBackend::new(transport, fake_clock());
+        let model = vertex_reasoning_model("gemini-2.0-flash");
+
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::High)),
+            None,
+        );
+
+        assert_eq!(
+            request_body(&scripted)["config"]["thinkingConfig"]["thinkingBudget"],
+            json!(-1),
+        );
+    }
+
+    // google-specific: when `clampThinkingLevel` yields `off`, pi maps `off ⇒ high`
+    // rather than omitting (google-vertex.ts:315). The request carries the HIGH
+    // budget, NOT a disabled/omitted thinking config.
+    #[test]
+    fn stream_simple_off_clamp_maps_to_high_not_omitted() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleVertexBackend::new(transport, fake_clock());
+        let model: Model = serde_json::from_value(json!({
+            "id": "gemini-2.5-flash",
+            "name": "Gemini 2.5 Flash",
+            "api": "google-vertex",
+            "provider": "google-vertex",
+            "baseUrl": "https://{location}-aiplatform.googleapis.com/v1/projects/{project}/locations/{location}",
+            "reasoning": true,
+            "thinkingLevelMap": {
+                "minimal": null, "low": null, "medium": null, "high": null,
+            },
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 8192,
+        }))
+        .unwrap();
+
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::Minimal)),
+            None,
+        );
+
+        let thinking = &request_body(&scripted)["config"]["thinkingConfig"];
+        assert_eq!(thinking["includeThoughts"], json!(true));
+        // vertex 2.5-flash high budget, proving off => high (not omitted).
+        assert_eq!(thinking["thinkingBudget"], json!(24576));
+    }
+
+    // No reasoning on a NON-reasoning model emits no `thinkingConfig`: the request
+    // is byte-identical to the raw `stream` path.
+    #[test]
+    fn stream_simple_no_reasoning_is_byte_identical_to_raw() {
+        let model: Model = serde_json::from_value(json!({
+            "id": "gemini-2.5-flash",
+            "name": "Gemini 2.5 Flash",
+            "api": "google-vertex",
+            "provider": "google-vertex",
+            "baseUrl": "https://{location}-aiplatform.googleapis.com/v1/projects/{project}/locations/{location}",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 8192,
+        }))
+        .unwrap();
+        let base = express_options();
+
+        let (scripted_raw, transport_raw) = scripted_hello();
+        let backend_raw = GoogleVertexBackend::new(transport_raw, fake_clock());
+        backend_raw.stream(&model, &user_context(), Some(&base), None);
+
+        let (scripted_simple, transport_simple) = scripted_hello();
+        let backend_simple = GoogleVertexBackend::new(transport_simple, fake_clock());
+        backend_simple.stream_simple(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(base.clone())),
+            None,
+        );
+
+        assert_eq!(
+            scripted_raw.requests()[0].body,
+            scripted_simple.requests()[0].body,
+        );
+        assert!(request_body(&scripted_simple)["config"]
+            .get("thinkingConfig")
+            .is_none());
+    }
+
+    // No reasoning on a REASONING model emits pi's `getDisabledThinkingConfig`
+    // (2.5 => `thinkingBudget: 0`), matching pi's `thinking: { enabled: false }`
+    // path (google-vertex.ts:307-311, :481-482, :524-525).
+    #[test]
+    fn stream_simple_no_reasoning_on_reasoning_model_emits_disabled_config() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleVertexBackend::new(transport, fake_clock());
+        let model = vertex_reasoning_model("gemini-2.5-flash");
+
+        backend.stream_simple(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(express_options())),
+            None,
+        );
+
+        assert_eq!(
+            request_body(&scripted)["config"]["thinkingConfig"],
+            json!({ "thinkingBudget": 0 }),
+        );
     }
 }
 
