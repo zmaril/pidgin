@@ -7,6 +7,7 @@
 
 pub mod agent_session;
 pub mod auth;
+pub mod bash_executor;
 pub mod block_images;
 pub mod cache_stats;
 pub mod command_flow;
