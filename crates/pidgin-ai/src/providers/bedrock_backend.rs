@@ -357,12 +357,13 @@ mod tests {
     }
 
     #[test]
-    fn backend_missing_bearer_errors_without_request() {
+    fn backend_missing_credentials_errors_without_request() {
         let (scripted, transport) = scripted_eventstream(hello_eventstream());
         let backend = BedrockBackend::new(transport, fake_clock());
 
         let model = bedrock_model("https://bedrock.test");
-        // No api_key / bearer token anywhere -> clean not-configured error.
+        // No bearer token and no AWS credentials anywhere (the backend's ambient
+        // env is empty) -> clean no-credentials error, no request sent.
         let result = backend.stream(&model, &user_context(), None, None);
 
         assert_eq!(result.message.stop_reason, StopReason::Error);
@@ -371,7 +372,7 @@ mod tests {
             .error_message
             .as_deref()
             .unwrap()
-            .contains("not configured for the bearer-token path"));
+            .contains("no usable credentials"));
         assert!(scripted.requests().is_empty());
     }
 

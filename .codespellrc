@@ -1,4 +1,4 @@
 [codespell]
 skip = ./.git,./node_modules,./target,*.lock,*.svg,*.min.js,*.min.css,*pidgin-tui/tests/vectors*,*.jsonl,*/pidgin-extensions/src/vendor/*
-ignore-words-list = edn,afterall,unparseable,ratatui,wit,addd
+ignore-words-list = edn,afterall,unparseable,ratatui,wit,addd,te
 check-hidden = true

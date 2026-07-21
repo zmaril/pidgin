@@ -69,8 +69,7 @@ use super::model_config::{
 };
 use super::resolve_config_value::{
     clear_config_value_cache, get_config_value_env_var_names, is_command_config_value,
-    is_config_value_configured, resolve_config_value_or_throw, resolve_headers_or_throw,
-    ConfigValueError,
+    is_config_value_configured, resolve_headers_or_throw, ConfigValueError,
 };
 
 /// A model definition inside an extension's `registerProvider` input
@@ -813,89 +812,39 @@ fn into_btree(headers: HashMap<String, String>) -> BTreeMap<String, String> {
     headers.into_iter().collect()
 }
 
-/// Copy a [`BTreeMap`] env/header map into the [`HashMap`] shape the ported
-/// [`resolve_config_value`](super::resolve_config_value) surface consumes.
-fn btree_to_hash(map: &BTreeMap<String, String>) -> HashMap<String, String> {
-    map.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
-}
-
-/// Adapter over [`resolve_config_value`](super::resolve_config_value) that
-/// implements pidgin-ai's [`ConfigValueResolver`](pidgin_ai::ConfigValueResolver)
-/// seam, so the AUTH-layer composer ([`pidgin_ai::compose_model_provider`])
-/// resolves `$ENV` / `!command` / literal config values through pi's ported
-/// resolver. This is the credential-blind half's counterpart to the AUTH half's
-/// resolver seam (`provider-composer.ts` calls `resolve-config-value.ts`
-/// directly; the split port injects it).
-///
-/// pidgin-ai's seam speaks [`BTreeMap`]; the ported resolver speaks
-/// [`HashMap`]. The adapter bridges the two map shapes and the two
-/// `ConfigValueError` types at the boundary.
-pub struct ConfigValueResolverAdapter;
-
-impl pidgin_ai::ConfigValueResolver for ConfigValueResolverAdapter {
-    fn get_env_var_names(&self, value: &str) -> Vec<String> {
-        get_config_value_env_var_names(value)
-    }
-
-    fn is_command(&self, value: &str) -> bool {
-        is_command_config_value(value)
-    }
-
-    fn resolve_or_throw(
-        &self,
-        value: &str,
-        description: &str,
-        env: Option<&BTreeMap<String, String>>,
-    ) -> Result<String, pidgin_ai::ConfigValueError> {
-        let env = env.map(btree_to_hash);
-        resolve_config_value_or_throw(value, description, env.as_ref())
-            .map_err(|error| pidgin_ai::ConfigValueError(error.0))
-    }
-
-    fn resolve_headers_or_throw(
-        &self,
-        headers: Option<&BTreeMap<String, String>>,
-        description: &str,
-        env: Option<&BTreeMap<String, String>>,
-    ) -> Result<Option<BTreeMap<String, String>>, pidgin_ai::ConfigValueError> {
-        let headers = headers.map(btree_to_hash);
-        let env = env.map(btree_to_hash);
-        let resolved = resolve_headers_or_throw(headers.as_ref(), description, env.as_ref())
-            .map_err(|error| pidgin_ai::ConfigValueError(error.0))?;
-        Ok(resolved.map(into_btree))
-    }
-}
-
-/// Map a [`ModelsJsonProvider`]'s auth-relevant fields onto pidgin-ai's
-/// [`ProviderAuthConfig`](pidgin_ai::ProviderAuthConfig), the `config` layer of
-/// the AUTH composer (pi reads `apiKey` / `headers` / `authHeader`).
-pub fn provider_auth_config(config: &ModelsJsonProvider) -> pidgin_ai::ProviderAuthConfig {
-    pidgin_ai::ProviderAuthConfig {
+/// Map a [`ModelsJsonProvider`]'s auth-relevant fields onto the AUTH composer's
+/// [`ProviderAuthConfig`](super::provider_composer_auth::ProviderAuthConfig), the
+/// `config` layer (pi reads `apiKey` / `headers` / `authHeader`).
+pub fn provider_auth_config(
+    config: &ModelsJsonProvider,
+) -> super::provider_composer_auth::ProviderAuthConfig {
+    super::provider_composer_auth::ProviderAuthConfig {
         api_key: config.api_key.clone(),
         headers: config.headers.clone(),
         auth_header: config.auth_header,
     }
 }
 
-/// Map a [`ProviderConfigInput`]'s auth-relevant fields onto pidgin-ai's
-/// [`ExtensionAuthConfig`](pidgin_ai::ExtensionAuthConfig), the `extension` layer
-/// of the AUTH composer. The extension OAuth `login` callable is owned by the
+/// Map a [`ProviderConfigInput`]'s auth-relevant fields onto the AUTH composer's
+/// [`ExtensionAuthConfig`](super::provider_composer_auth::ExtensionAuthConfig),
+/// the `extension` layer. The extension OAuth `login` callable is owned by the
 /// extension plane, so it is passed through as `None` here (config only); the
 /// bridged handler's flow machines report a wiring error until that plane wires
 /// it.
-pub fn extension_auth_config(extension: &ProviderConfigInput) -> pidgin_ai::ExtensionAuthConfig {
-    pidgin_ai::ExtensionAuthConfig {
+pub fn extension_auth_config(
+    extension: &ProviderConfigInput,
+) -> super::provider_composer_auth::ExtensionAuthConfig {
+    super::provider_composer_auth::ExtensionAuthConfig {
         api_key: extension.api_key.clone(),
         headers: extension.headers.clone(),
         auth_header: extension.auth_header,
-        oauth: extension
-            .oauth
-            .as_ref()
-            .map(|oauth| pidgin_ai::ExtensionOAuthConfig {
+        oauth: extension.oauth.as_ref().map(|oauth| {
+            super::provider_composer_auth::ExtensionOAuthConfig {
                 name: oauth.name.clone(),
                 uses_callback_server: oauth.uses_callback_server,
                 login: None,
-            }),
+            }
+        }),
     }
 }
 

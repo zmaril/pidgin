@@ -40,6 +40,13 @@ pub mod terminal_colors;
 // delegates only `serializeConversation` to Rust. Additive.
 pub mod compaction_utils;
 
+// TUI terminal-image surface (`isImageLine`, `encodeKitty`, `renderImage`, the
+// image-header parsers, capability/cell-dimension state, and `hyperlink`):
+// drives pi's `terminal-image.ts` graphics helpers natively. Every export the
+// suite touches runs in Rust; only `detectCapabilities` (which takes a JS
+// closure) stays in pi's TS. Additive.
+pub mod terminal_image;
+
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
 mod oauth;
@@ -67,6 +74,15 @@ pub mod session_cwd;
 // `CombinedAutocompleteProvider` over a native `FileProvider` (std::fs + real
 // `fd`), backing the native `autocomplete.ts` shim. Additive.
 mod autocomplete;
+
+// The provider error-body normalizer surface (`normalizeProviderError`,
+// `formatProviderError`, `truncateErrorText`): drives pi's provider HTTP
+// error-body field-probe / truncation / compose logic natively. The JS shim only
+// splits `Error` vs non-`Error` and plucks the SDK carrier fields; every decision
+// runs in Rust. pi's `safeJsonStringify` (JS-runtime JSON.stringify semantics)
+// stays in the shim's TS. Additive. Public like `agent` so the free `#[napi]`
+// export functions are reachable from the crate root (not dead under `--test`).
+pub mod error_body;
 
 /// `createLsTool(...).execute` default path (`ls.ts`): list a directory through
 /// the native `run_ls` port, returning pi's `AgentToolResult` JSON. See

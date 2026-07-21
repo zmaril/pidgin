@@ -23,6 +23,13 @@
 //! `RunInput`). A `prepareNextTurn` snapshot's returned context has its tools
 //! rebuilt with `build_bridge_tool`, the same reconstruction `run` uses.
 //!
+//! [`AgentBridge::spike_session`] reuses the same blocking `call` seam for the
+//! session cluster: it drives the already-ported Rust session context builder
+//! (`pidgin_agent::harness::session::build_session_context`) with JS-supplied
+//! `entryTransforms` / `entryProjectors` — the two `session.test.ts`
+//! injected-closure cases — as blocking Rust→JS→Rust round-trips. Proof-only: no
+//! new primitive, no manifest / conformance flip.
+//!
 //! # The primitive
 //!
 //! One [`napi::threadsafe_function::ThreadsafeFunction`] per run points at a
@@ -85,6 +92,10 @@ use napi_derive::napi;
 use serde_json::{json, Value};
 
 use pidgin_agent::agent_loop::{run_agent_loop, AgentEventSink};
+use pidgin_agent::harness::session::{
+    build_session_context, ContextEntryTransform, CustomEntryProjector, SessionContextBuildOptions,
+};
+use pidgin_agent::harness::types::{CustomEntry, SessionTreeEntry};
 use pidgin_agent::types::{
     AfterToolCall, AfterToolCallContext, AfterToolCallResult, AgentContext, AgentEvent,
     AgentLoopConfig, AgentLoopTurnUpdate, AgentMessage, AgentTool, AgentToolExecute,
@@ -422,6 +433,105 @@ impl AgentBridge {
         Ok(())
     }
 
+    /// SESSION seam proof: drive the **already-ported** Rust session context
+    /// builder (`pidgin_agent::harness::session::build_session_context`, the Rust
+    /// port of agent-core `session.ts`) with JS-supplied `entryTransforms` /
+    /// `entryProjectors` wired through the BLOCKING [`BridgeChannel::call`] seam.
+    ///
+    /// This is the sibling of what the loop trio does for `streamFn` et al., but
+    /// for the two `session.test.ts` injected-closure cases: the Rust
+    /// `build_context_entries` invokes each `ContextEntryTransform` and
+    /// `session_entry_to_context_messages` invokes each `CustomEntryProjector` as
+    /// a blocking Rust→JS→Rust round-trip. The Rust worker thread parks on
+    /// `rx.recv()` off the Node event loop; JS runs the real test closure
+    /// (`dropCompaction` / the `chat_message` projector) and resolves the id.
+    ///
+    /// `payload_json` is `{ pathEntries: SessionTreeEntry[], transformCount,
+    /// projectorTypes: string[] }`. `pathEntries` is the root-to-leaf path the
+    /// pi `Session.getBranch()` would return; `transformCount` is how many
+    /// `entryTransforms` the case configured (each dispatched by index) and
+    /// `projectorTypes` names the custom types with a configured projector.
+    /// Completes with `{ messages }` — the built `SessionContext.messages`.
+    ///
+    /// PROOF-ONLY: this exercises the `call` seam on the real session shape; it
+    /// does NOT flip `session.ts` native (no manifest / conformance change).
+    ///
+    /// # Unbridgeable-by-design (documented, NOT wired)
+    ///
+    /// The session cluster has one case this seam deliberately does NOT cover:
+    /// `jsonl-repo.ts` `open()` / `create()` return a **live `Session` handle**
+    /// whose method/object identity must survive across calls, and
+    /// `repo.test.ts:16` asserts `expect(await repo.open(metadata)).toBe(session)`.
+    /// A JSON `call` boundary cannot preserve `.toBe` — the bridge is strictly
+    /// JSON-in / JSON-out and **V8 handles never cross it** (the same rule as
+    /// `pidgin-extensions/src/runtime.rs`, and the NativeAgent verdict in
+    /// `native-count-honesty-no-nominal-flips`: a live handle needs a Rust-owned
+    /// state machine + persistent proxy, not a JSON round-trip). That case stays
+    /// delegated/`original`; do not wire it onto this seam.
+    #[napi(js_name = "spikeSession")]
+    pub fn spike_session(&self, dispatcher: JsFunction, payload_json: String) -> Result<()> {
+        let input: SessionInput = serde_json::from_str(&payload_json)
+            .map_err(|e| Error::from_reason(format!("invalid session payload: {e}")))?;
+        let tsfn = make_tsfn(dispatcher)?;
+        self.spawn_worker(tsfn, move |channel| {
+            let SessionInput {
+                path_entries,
+                transform_count,
+                projector_types,
+            } = input;
+
+            let mut options = SessionContextBuildOptions::default();
+
+            // entryTransforms seam: one blocking `entryTransform` round-trip per
+            // configured transform (dispatched by index, applied in order after
+            // the default compaction selection — exactly `buildContextEntries`).
+            // Fallback on abort/error is identity (return the input entries).
+            for index in 0..transform_count as usize {
+                let ch = channel.clone();
+                let transform: ContextEntryTransform =
+                    Box::new(move |entries: Vec<SessionTreeEntry>| {
+                        match ch.call(
+                            "entryTransform",
+                            json!({ "index": index, "entries": &entries }),
+                        ) {
+                            Ok(v) => serde_json::from_value::<Vec<SessionTreeEntry>>(v)
+                                .unwrap_or(entries),
+                            Err(_) => entries,
+                        }
+                    });
+                options.entry_transforms.push(transform);
+            }
+
+            // entryProjectors seam: a blocking `entryProjector` round-trip when a
+            // `custom` entry's type has a configured projector (invoked inside
+            // `sessionEntryToContextMessages`). Fallback is `[]` (pi's `?? []`).
+            for custom_type in projector_types {
+                let ch = channel.clone();
+                let key = custom_type.clone();
+                let projector: CustomEntryProjector = Box::new(
+                    move |entry: &CustomEntry, index: usize, entries: &[SessionTreeEntry]| match ch
+                        .call(
+                            "entryProjector",
+                            json!({
+                                "customType": key,
+                                "entry": entry,
+                                "index": index,
+                                "entries": entries,
+                            }),
+                        ) {
+                        Ok(v) => serde_json::from_value::<Vec<Value>>(v).unwrap_or_default(),
+                        Err(_) => Vec::new(),
+                    },
+                );
+                options.entry_projectors.insert(custom_type, projector);
+            }
+
+            let context = build_session_context(&path_entries, &options);
+            json!({ "messages": context.messages })
+        });
+        Ok(())
+    }
+
     /// STEP-B driver: run the agent loop on a dedicated thread, wiring `streamFn`
     /// and `convertToLlm` through the bridge. `payload_json` is
     /// `{ prompts, context: { systemPrompt, messages }, model, streamOptions?,
@@ -714,6 +824,21 @@ impl AgentBridge {
         });
         *self.shared.thread.lock().unwrap() = Some(handle);
     }
+}
+
+/// The `spikeSession` payload shape parsed at the boundary. `pathEntries` is the
+/// root-to-leaf path (what `Session.getBranch()` returns); `transformCount` and
+/// `projectorTypes` say which injected closures the case configured so Rust wires
+/// a bridge round-trip for each (the closures themselves cannot cross the wire).
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SessionInput {
+    #[serde(default)]
+    path_entries: Vec<SessionTreeEntry>,
+    #[serde(default)]
+    transform_count: u32,
+    #[serde(default)]
+    projector_types: Vec<String>,
 }
 
 /// The `run` payload shape parsed at the boundary.

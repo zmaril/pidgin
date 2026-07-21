@@ -38,6 +38,7 @@ use crate::providers::bedrock_backend::{BedrockBackend, BEDROCK_CONVERSE_STREAM_
 use crate::providers::google_generative_ai_backend::{
     GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API,
 };
+use crate::providers::google_vertex_backend::{GoogleVertexBackend, GOOGLE_VERTEX_API};
 use crate::providers::mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
 use crate::providers::openai_completions_backend::{
     OpenAICompletionsBackend, OPENAI_COMPLETIONS_API,
@@ -246,7 +247,7 @@ pub fn provider_from_catalog(id: &str) -> RegistryProvider {
 /// no change to [`provider_from_catalog_with_transport`] or the assembly in
 /// [`api_routing_for`]. Registered today: `anthropic-messages`,
 /// `openai-completions`, `google-generative-ai`, `mistral`, `openai-responses`,
-/// and `azure-openai-responses`.
+/// `azure-openai-responses`, and `google-vertex`.
 fn backend_for_api(
     api: &str,
     transport: &Arc<dyn HttpTransport>,
@@ -281,9 +282,12 @@ fn backend_for_api(
             transport.clone(),
             clock.clone(),
         ))),
-        // Follow-up (port): register the remaining ported dialects
-        // (google_vertex) here as their transport-aware `Provider`
-        // adapters land.
+        GOOGLE_VERTEX_API => Some(Arc::new(GoogleVertexBackend::new(
+            transport.clone(),
+            clock.clone(),
+        ))),
+        // Follow-up (port): register the remaining ported dialects here as
+        // their transport-aware `Provider` adapters land.
         _ => None,
     }
 }
@@ -730,16 +734,17 @@ mod tests {
 
     // (b) A builtin whose single dialect has no registered backend still resolves
     // to Unimplemented: its stream yields the "no API implementation" error.
-    // `google-vertex` carries only the still-unported `google-vertex` dialect (the
-    // exemplar retargeted off `azure-openai-responses`, which is now registered).
+    // `openai-codex` carries only the still-unported `openai-codex-responses`
+    // dialect (the exemplar retargeted off `google-vertex`, which is now
+    // registered).
     #[test]
-    fn google_vertex_resolves_unimplemented_and_errors_on_stream() {
-        let apis = catalog_provider_apis("google-vertex");
+    fn openai_codex_resolves_unimplemented_and_errors_on_stream() {
+        let apis = catalog_provider_apis("openai-codex");
         assert!(
             !apis.contains(OPENAI_RESPONSES_API)
                 && !apis.contains(ANTHROPIC_MESSAGES_API)
-                && !apis.contains(AZURE_OPENAI_RESPONSES_API),
-            "google-vertex must not carry a registered dialect"
+                && !apis.contains(GOOGLE_VERTEX_API),
+            "openai-codex must not carry a registered dialect"
         );
         let (_scripted, transport) = scripted_hellos(0);
         assert!(
@@ -752,12 +757,12 @@ mod tests {
 
         let (scripted, transport) = scripted_hellos(0);
         let provider =
-            provider_from_catalog_with_transport("google-vertex", &transport, &fake_clock());
+            provider_from_catalog_with_transport("openai-codex", &transport, &fake_clock());
         let model = provider
             .get_models()
             .into_iter()
             .next()
-            .expect("google-vertex lists models");
+            .expect("openai-codex lists models");
         let result = provider.stream(&model, &user_context(), None, None);
 
         assert_eq!(result.message.stop_reason, StopReason::Error);
@@ -777,9 +782,9 @@ mod tests {
     fn multi_api_assembles_byapi_over_registered_only() {
         let mut apis = BTreeSet::new();
         apis.insert(ANTHROPIC_MESSAGES_API.to_string());
-        // `google-vertex` has no ported adapter yet, so it stands in as the
-        // still-unregistered dialect the ByApi assembly must omit.
-        apis.insert("google-vertex".to_string());
+        // `openai-codex-responses` has no ported adapter yet, so it stands in as
+        // the still-unregistered dialect the ByApi assembly must omit.
+        apis.insert("openai-codex-responses".to_string());
 
         let (scripted, transport) = scripted_hellos(1);
         let routing = api_routing_for(&apis, &transport, &fake_clock());
@@ -789,7 +794,7 @@ mod tests {
         };
         assert!(map.contains_key(ANTHROPIC_MESSAGES_API));
         assert!(
-            !map.contains_key("google-vertex"),
+            !map.contains_key("openai-codex-responses"),
             "an unregistered api name must be omitted from the ByApi map"
         );
 
@@ -883,5 +888,45 @@ mod tests {
             .contains("no API implementation"));
         // Still exactly the one anthropic request; the not-yet-ported dialect made none.
         assert_eq!(scripted.requests().len(), 1);
+    }
+
+    // (c/iii) The remaining real multi-api providers whose every declared dialect
+    // is registered — cloudflare-ai-gateway and github-copilot (anthropic-messages
+    // + openai-completions + openai-responses) and xai (openai-completions +
+    // openai-responses). Unlike opencode (which exercises the Unimplemented
+    // fallback for a dialect it does not carry), each of these assembles to a
+    // *fully bound* ByApi map: every declared api name resolves to a backend, so
+    // the map keys equal the declared api set with no leg omitted. This pins the
+    // auto-assembly as complete for these providers off the registered backends
+    // alone, with no per-provider wiring.
+    #[test]
+    fn multi_api_providers_bind_every_declared_leg() {
+        let (_scripted, transport) = scripted_hellos(0);
+        let clock = fake_clock();
+        for id in ["cloudflare-ai-gateway", "github-copilot", "xai"] {
+            let apis = catalog_provider_apis(id);
+            assert!(
+                apis.len() > 1,
+                "{id} is a mixed-dialect provider (declares multiple api names)"
+            );
+            // Every declared dialect must be one this registry backs today, so the
+            // ByApi assembly leaves no leg on the no-API-implementation path.
+            for api in &apis {
+                assert!(
+                    backend_for_api(api, &transport, &clock).is_some(),
+                    "{id}'s declared dialect {api} must have a registered backend"
+                );
+            }
+
+            let map = match api_routing_for(&apis, &transport, &clock) {
+                ApiRouting::ByApi(map) => map,
+                _ => panic!("{id} must assemble to ByApi over its registered legs"),
+            };
+            let bound: BTreeSet<String> = map.keys().cloned().collect();
+            assert_eq!(
+                bound, apis,
+                "{id}'s ByApi map must bind a backend for every declared leg"
+            );
+        }
     }
 }

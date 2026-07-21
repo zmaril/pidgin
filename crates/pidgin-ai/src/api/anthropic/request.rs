@@ -19,9 +19,11 @@ use crate::types::{AnthropicMessagesCompat, CacheRetention, Context, Model};
 
 use super::cache::get_cache_control;
 use super::compat::get_anthropic_compat;
-use super::content::{convert_messages, sanitize_surrogates, transform_messages};
+use super::content::{convert_messages, sanitize_surrogates};
+use super::deferred_tools::split_deferred_tools;
 use super::thinking::{AnthropicEffort, AnthropicThinkingDisplay};
-use super::tools::{convert_tools, normalize_tool_name, split_deferred_tools};
+use super::tools::{convert_tools, normalize_tool_name};
+use super::transform_messages::transform_messages;
 
 /// Anthropic tool-choice behavior (`anthropic-messages.ts:252`). String choices
 /// map to Anthropic's built-in behaviors; `Tool { name }` forces a specific tool.

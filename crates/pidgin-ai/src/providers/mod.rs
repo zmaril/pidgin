@@ -10,9 +10,9 @@ pub mod anthropic_backend;
 pub mod azure_openai_responses_backend;
 pub mod bedrock_backend;
 pub mod builtins;
-pub mod composer;
 pub mod faux;
 pub mod google_generative_ai_backend;
+pub mod google_vertex_backend;
 pub mod mistral_backend;
 pub mod openai_completions_backend;
 pub mod openai_responses_backend;
@@ -25,13 +25,8 @@ pub use builtins::{
     builtin_models, builtin_providers, builtin_providers_with_transport, catalog_model_to_ai,
     provider_from_catalog, provider_from_catalog_with_transport, radius_provider,
 };
-pub use composer::{
-    adapt_oauth, compose_api_key_auth, compose_model_provider, compose_oauth_auth,
-    config_context_env, with_configured_auth, ComposeAuthError, ComposeModelProviderInput,
-    ComposedProvider, ConfigValueError, ConfigValueResolver, ExtensionAuthConfig,
-    ExtensionOAuthConfig, ProviderAuthConfig,
-};
 pub use google_generative_ai_backend::{GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API};
+pub use google_vertex_backend::{GoogleVertexBackend, GOOGLE_VERTEX_API};
 pub use mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
 pub use openai_completions_backend::{OpenAICompletionsBackend, OPENAI_COMPLETIONS_API};
 pub use openai_responses_backend::{OpenAIResponsesBackend, OPENAI_RESPONSES_API};

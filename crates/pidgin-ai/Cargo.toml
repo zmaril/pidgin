@@ -17,6 +17,10 @@ native-http = ["dep:reqwest"]
 [dependencies]
 base64 = "0.22"
 getrandom = "0.4.3"
+# AWS SigV4 request signing for the amazon-bedrock non-bearer credentials path
+# (api/bedrock/sigv4.rs): HMAC-SHA256 signing-key derivation over the sha2
+# digest already vendored below. digest-0.11-compatible.
+hmac = "0.13.0"
 # Context-overflow detection (utils/overflow.rs) compiles pi's provider error
 # patterns as case-insensitive regexes.
 regex = "1"

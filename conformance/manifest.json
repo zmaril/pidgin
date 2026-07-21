@@ -886,7 +886,10 @@
     {
       "package": "ai",
       "src": "packages/ai/src/utils/error-body.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/error-body.test.ts"
+      ]
     },
     {
       "package": "ai",
@@ -2056,7 +2059,10 @@
     {
       "package": "tui",
       "src": "packages/tui/src/terminal-image.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/terminal-image.test.ts"
+      ]
     },
     {
       "package": "tui",

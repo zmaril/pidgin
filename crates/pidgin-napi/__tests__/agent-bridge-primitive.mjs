@@ -1,3 +1,8 @@
+// straitjacket-allow-file:duplication — this harness is the root of the
+// `agent-bridge-*.mjs` / `session-call-seam.mjs` proof-harness family whose
+// `drive` dispatcher + `assert`/`assertEq` scaffold is deliberately mirrored
+// across each self-contained file (the siblings carry the same marker).
+//
 // Bridge slice 1 — STEP A: the core primitive, in isolation.
 //
 // Proves the NonBlocking-TSFN + resolve-channel round-trip works from a
@@ -9,72 +14,27 @@
 //
 // Run: node __tests__/agent-bridge-primitive.mjs   (after `npm run build:debug`)
 
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import {
+  AgentBridge,
+  assert,
+  assertEq,
+  getFailures,
+  runBridge,
+  sleep,
+} from "./_harness.mjs";
 
-const require = createRequire(import.meta.url);
-const here = dirname(fileURLToPath(import.meta.url));
-const { AgentBridge } = require(join(here, "..", "index.js"));
-
-let failures = 0;
-function assert(cond, msg) {
-  if (cond) {
-    console.log(`  ok - ${msg}`);
-  } else {
-    failures += 1;
-    console.log(`  NOT OK - ${msg}`);
-  }
-}
-function assertEq(actual, expected, msg) {
-  assert(
-    JSON.stringify(actual) === JSON.stringify(expected),
-    `${msg} (got ${JSON.stringify(actual)}, want ${JSON.stringify(expected)})`,
-  );
-}
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// A dispatcher factory mirroring the JS side of the envelope protocol: it parses
-// the envelope, routes by `kind` to a handler, then resolves the parked Rust id
-// through the bridge (success → resolveBridge, throw/reject → resolveBridgeError).
-// On the terminal `__complete__` envelope it resolves the returned Promise.
+// A dispatcher factory mirroring the JS side of the envelope protocol: routes
+// each envelope by `kind` to a handler from the `handlers` map (called as
+// `handler(payload, id, bridge)`), so a handler may resolve the parked Rust id
+// itself and return `undefined`. The envelope parsing, `__complete__` handling,
+// and resolve/error plumbing live in the shared harness.
 function drive(bridge, spawn, handlers) {
-  return new Promise((resolve, reject) => {
-    const dispatcher = (envelopeJson) => {
-      let env;
-      try {
-        env = JSON.parse(envelopeJson);
-      } catch (e) {
-        reject(e);
-        return;
-      }
-      const { id, kind, payload } = env;
-      if (kind === "__complete__") {
-        bridge.join(); // reap the loop thread before we let the process settle
-        resolve(payload);
-        return;
-      }
+  return runBridge(bridge, spawn, {
+    handle: (kind, payload, id) => {
       const handler = handlers[kind];
-      if (!handler) {
-        bridge.resolveBridgeError(id, JSON.stringify({ __bridge_error: `no handler for ${kind}` }));
-        return;
-      }
-      // Wrap sync + async handlers uniformly; any throw/rejection surfaces via
-      // resolveBridgeError so the parked Rust thread is released, never hung.
-      Promise.resolve()
-        .then(() => handler(payload, id, bridge))
-        .then((result) => {
-          if (result !== undefined) bridge.resolveBridge(id, JSON.stringify(result));
-        })
-        .catch((e) =>
-          bridge.resolveBridgeError(
-            id,
-            JSON.stringify({ __bridge_error: String(e?.message ?? e) }),
-          ),
-        );
-    };
-    spawn(dispatcher);
+      if (!handler) throw new Error(`no handler for ${kind}`);
+      return handler(payload, id, bridge);
+    },
   });
 }
 
@@ -176,10 +136,10 @@ async function main() {
   await testOutOfOrderConcurrent();
 
   console.log("");
-  if (failures === 0) {
+  if (getFailures() === 0) {
     console.log("STEP A: ALL PRIMITIVE CHECKS PASSED");
   } else {
-    console.log(`STEP A: ${failures} CHECK(S) FAILED`);
+    console.log(`STEP A: ${getFailures()} CHECK(S) FAILED`);
     process.exitCode = 1;
   }
   // No explicit process.exit(): if any TSFN/thread handle leaked, Node would
