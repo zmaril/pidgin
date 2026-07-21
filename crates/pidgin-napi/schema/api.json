@@ -438,6 +438,100 @@
           }
         }
       ]
+    },
+    {
+      "name": "KeybindingsManagerCore",
+      "doc": "The Rust-backed keybindings core, exposed to JavaScript as\n`KeybindingsManagerCore`.",
+      "ops": [
+        {
+          "name": "new",
+          "doc": "Build a core from pi's `definitions`/`userBindings`, each JSON-encoded as\nan ordered array (`[{ id, defaultKeys, description? }]` and\n`[{ id, keys }]`, `keys: null` for an explicit `undefined`).",
+          "shape": "ctor",
+          "params": [
+            {
+              "name": "definitionsJson",
+              "type": "string"
+            },
+            {
+              "name": "userBindingsJson",
+              "type": "string"
+            }
+          ],
+          "returns": "void"
+        },
+        {
+          "name": "matches",
+          "doc": "pi's `matches(data, keybinding)`: does `data` match any bound key?",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "data",
+              "type": "string"
+            },
+            {
+              "name": "keybinding",
+              "type": "string"
+            }
+          ],
+          "returns": "boolean",
+          "bindings": {
+            "node": {
+              "name": "matches"
+            }
+          }
+        },
+        {
+          "name": "getKeys",
+          "doc": "pi's `getKeys(keybinding)`: the keys bound to `keybinding` (empty if\nunknown).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "keybinding",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "list": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "getKeys"
+            }
+          }
+        },
+        {
+          "name": "getConflictsJson",
+          "doc": "pi's `getConflicts()` as JSON: an ordered array of\n`{ key, keybindings }`.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": true,
+          "params": [],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "getConflictsJson"
+            }
+          }
+        },
+        {
+          "name": "getResolvedBindingsJson",
+          "doc": "pi's `getResolvedBindings()` as JSON: an ordered array of `[id, keys]`\npairs, in definition order. The shim rebuilds pi's `key | key[]` shape.",
+          "shape": "unary",
+          "infallible": false,
+          "readonly": true,
+          "params": [],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "getResolvedBindingsJson"
+            }
+          }
+        }
+      ]
     }
   ]
 }

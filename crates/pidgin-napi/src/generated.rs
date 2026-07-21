@@ -6,6 +6,7 @@
 // The fixed prelude — generated code uses fully-qualified paths elsewhere.
 use napi::bindgen_prelude::Result;
 use napi_derive::napi;
+use std::sync::Arc;
 
 fn err(e: impl std::fmt::Display) -> napi::Error {
     napi::Error::from_reason(e.to_string())
@@ -55,6 +56,15 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
         after_len: i32,
         strict_after: bool,
     ) -> ExtractSegmentsResult;
+}
+
+/// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
+pub trait KeybindingsManagerCoreCore: Sized + Send + Sync + 'static {
+    fn new(definitions_json: String, user_bindings_json: String) -> anyhow::Result<Self>;
+    fn matches(&self, data: String, keybinding: String) -> bool;
+    fn get_keys(&self, keybinding: String) -> Vec<String>;
+    fn get_conflicts_json(&self) -> anyhow::Result<String>;
+    fn get_resolved_bindings_json(&self) -> anyhow::Result<String>;
 }
 
 /// Returns the crate version. Proves the native addon builds and loads.
@@ -175,4 +185,54 @@ pub fn extract_segments(
         after_len,
         strict_after,
     )
+}
+
+/// The Rust-backed keybindings core, exposed to JavaScript as
+/// `KeybindingsManagerCore`.
+#[napi]
+pub struct KeybindingsManagerCore {
+    // pub(crate): the @manual ops in lib.rs extend this class and need the core
+    pub(crate) core: Arc<crate::core_impl::KeybindingsManagerCoreImpl>,
+}
+
+#[napi]
+impl KeybindingsManagerCore {
+    /// Build a core from pi's `definitions`/`userBindings`, each JSON-encoded as
+    /// an ordered array (`[{ id, defaultKeys, description? }]` and
+    /// `[{ id, keys }]`, `keys: null` for an explicit `undefined`).
+    #[napi(constructor)]
+    pub fn new(definitions_json: String, user_bindings_json: String) -> Result<Self> {
+        Ok(Self {
+            core: Arc::new(
+                <crate::core_impl::KeybindingsManagerCoreImpl as KeybindingsManagerCoreCore>::new(
+                    definitions_json,
+                    user_bindings_json,
+                )
+                .map_err(err)?,
+            ),
+        })
+    }
+    /// pi's `matches(data, keybinding)`: does `data` match any bound key?
+    #[napi(js_name = "matches")]
+    pub fn matches(&self, data: String, keybinding: String) -> bool {
+        self.core.matches(data, keybinding)
+    }
+    /// pi's `getKeys(keybinding)`: the keys bound to `keybinding` (empty if
+    /// unknown).
+    #[napi(js_name = "getKeys")]
+    pub fn get_keys(&self, keybinding: String) -> Vec<String> {
+        self.core.get_keys(keybinding)
+    }
+    /// pi's `getConflicts()` as JSON: an ordered array of
+    /// `{ key, keybindings }`.
+    #[napi(js_name = "getConflictsJson")]
+    pub fn get_conflicts_json(&self) -> Result<String> {
+        self.core.get_conflicts_json().map_err(err)
+    }
+    /// pi's `getResolvedBindings()` as JSON: an ordered array of `[id, keys]`
+    /// pairs, in definition order. The shim rebuilds pi's `key | key[]` shape.
+    #[napi(js_name = "getResolvedBindingsJson")]
+    pub fn get_resolved_bindings_json(&self) -> Result<String> {
+        self.core.get_resolved_bindings_json().map_err(err)
+    }
 }

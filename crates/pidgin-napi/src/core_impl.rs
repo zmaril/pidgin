@@ -128,3 +128,101 @@ impl crate::generated::PidginCore for PidginImpl {
         }
     }
 }
+
+// --- tui keybindings layer (packages/tui/src/keybindings.ts) ----------------
+//
+// The engine-backed implementation behind the generated `KeybindingsManagerCore`
+// handle class (its ctor + `matches`/`getKeys`/`getConflictsJson`/
+// `getResolvedBindingsJson` methods). Wraps `pidgin_tui::KeybindingsManager`,
+// reaching the SAME resolution logic the hand-written `#[napi]` class called
+// before the fluessig swap. The core is immutable per construction (all `&self`);
+// the shim's `setUserBindings` builds a fresh core. Definitions and user bindings
+// cross as ordered JSON arrays (not objects) so JS insertion order is preserved
+// without relying on serde_json's `preserve_order` feature.
+
+/// JSON shape of a keybinding definition crossing into the ctor
+/// (`[{ id, defaultKeys, description? }]`).
+#[derive(serde::Deserialize)]
+struct KeybindingDefinitionIn {
+    id: String,
+    #[serde(rename = "defaultKeys")]
+    default_keys: Vec<String>,
+    description: Option<String>,
+}
+
+/// JSON shape of a user binding crossing into the ctor (`[{ id, keys }]`).
+#[derive(serde::Deserialize)]
+struct UserBindingIn {
+    id: String,
+    // `null` = pi's explicit `undefined` (falls back to the default keys).
+    keys: Option<Vec<String>>,
+}
+
+/// The engine-backed implementation of the generated `KeybindingsManagerCore`
+/// contract. Holds one immutable `pidgin_tui::KeybindingsManager`; the generated
+/// handle class owns it as `Arc<KeybindingsManagerCoreImpl>` and delegates each
+/// method straight through, so the JS-visible behavior is byte-for-byte unchanged
+/// from the pre-swap hand-written class. The ctor reproduces the hand-written
+/// parse-error messages (`invalid definitions: …` / `invalid userBindings: …`)
+/// via `anyhow`, which the generated wrapper throws through
+/// `napi::Error::from_reason(e.to_string())`.
+pub struct KeybindingsManagerCoreImpl {
+    inner: pidgin_tui::KeybindingsManager,
+}
+
+impl crate::generated::KeybindingsManagerCoreCore for KeybindingsManagerCoreImpl {
+    fn new(definitions_json: String, user_bindings_json: String) -> anyhow::Result<Self> {
+        let defs_in: Vec<KeybindingDefinitionIn> = serde_json::from_str(&definitions_json)
+            .map_err(|e| anyhow::anyhow!("invalid definitions: {e}"))?;
+        let user_in: Vec<UserBindingIn> = serde_json::from_str(&user_bindings_json)
+            .map_err(|e| anyhow::anyhow!("invalid userBindings: {e}"))?;
+
+        let defs_owned: Vec<(String, pidgin_tui::KeybindingDefinition)> = defs_in
+            .into_iter()
+            .map(|d| {
+                (
+                    d.id,
+                    pidgin_tui::KeybindingDefinition {
+                        default_keys: d.default_keys,
+                        description: d.description,
+                    },
+                )
+            })
+            .collect();
+        let definitions: Vec<(&str, pidgin_tui::KeybindingDefinition)> = defs_owned
+            .iter()
+            .map(|(id, def)| (id.as_str(), def.clone()))
+            .collect();
+        let user_bindings: Vec<(&str, Option<Vec<String>>)> = user_in
+            .iter()
+            .map(|u| (u.id.as_str(), u.keys.clone()))
+            .collect();
+
+        Ok(Self {
+            inner: pidgin_tui::KeybindingsManager::new(definitions, user_bindings),
+        })
+    }
+
+    fn matches(&self, data: String, keybinding: String) -> bool {
+        self.inner.matches(&data, &keybinding)
+    }
+
+    fn get_keys(&self, keybinding: String) -> Vec<String> {
+        self.inner.get_keys(&keybinding)
+    }
+
+    fn get_conflicts_json(&self) -> anyhow::Result<String> {
+        let conflicts: Vec<serde_json::Value> = self
+            .inner
+            .get_conflicts()
+            .into_iter()
+            .map(|c| serde_json::json!({ "key": c.key, "keybindings": c.keybindings }))
+            .collect();
+        serde_json::to_string(&conflicts).map_err(anyhow::Error::from)
+    }
+
+    fn get_resolved_bindings_json(&self) -> anyhow::Result<String> {
+        let resolved: Vec<(String, Vec<String>)> = self.inner.get_resolved_bindings();
+        serde_json::to_string(&resolved).map_err(anyhow::Error::from)
+    }
+}
