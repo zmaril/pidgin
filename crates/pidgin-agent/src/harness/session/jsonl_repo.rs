@@ -1,8 +1,6 @@
-//! Session repositories and fork utilities, mirroring
-//! `packages/agent/src/harness/session/{repo-utils,memory-repo,jsonl-repo}.ts`.
+//! JSONL session repository, mirroring
+//! `packages/agent/src/harness/session/jsonl-repo.ts`.
 
-use std::cell::RefCell;
-use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -10,150 +8,10 @@ use std::rc::Rc;
 use serde_json::{Map, Value};
 
 use super::jsonl_storage::{load_jsonl_session_metadata, JsonlCreateOptions, JsonlSessionStorage};
+use super::repo_utils::{create_session_id, get_entries_to_fork, ForkOptions};
 use super::session::Session;
-use super::storage::{InMemorySessionStorage, SessionStorage};
-use super::uuid::uuidv7;
-use crate::harness::types::{SessionError, SessionErrorCode, SessionMetadata, SessionTreeEntry};
-
-/// Where to fork relative to a target entry. Mirrors pi's `position` option.
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum ForkPosition {
-    /// Path up to (and excluding) the target, which must be a user message.
-    Before,
-    /// Path up to and including the target.
-    At,
-}
-
-/// Options for forking a session. Mirrors the fork option subset of
-/// `SessionForkOptions`.
-#[derive(Default)]
-pub struct ForkOptions {
-    pub entry_id: Option<String>,
-    pub position: Option<ForkPosition>,
-    pub id: Option<String>,
-}
-
-/// Generate a full uuidv7 session id. Mirrors `createSessionId`.
-pub fn create_session_id() -> String {
-    uuidv7()
-}
-
-/// Compute the entries a fork should copy. Mirrors `getEntriesToFork`.
-pub fn get_entries_to_fork(
-    storage: &dyn SessionStorage,
-    entry_id: Option<&str>,
-    position: Option<ForkPosition>,
-) -> Result<Vec<SessionTreeEntry>, SessionError> {
-    let Some(entry_id) = entry_id else {
-        return Ok(storage.get_entries());
-    };
-    let target = storage.get_entry(entry_id).ok_or_else(|| {
-        SessionError::new(
-            SessionErrorCode::InvalidForkTarget,
-            format!("Entry {entry_id} not found"),
-        )
-    })?;
-    let effective_leaf_id: Option<String> = if position.unwrap_or(ForkPosition::Before)
-        == ForkPosition::At
-    {
-        Some(target.id().to_string())
-    } else {
-        let is_user_message = matches!(
-            &target,
-            SessionTreeEntry::Message(e) if e.message.get("role").and_then(Value::as_str) == Some("user")
-        );
-        if !is_user_message {
-            return Err(SessionError::new(
-                SessionErrorCode::InvalidForkTarget,
-                format!("Entry {entry_id} is not a user message"),
-            ));
-        }
-        target.parent_id().map(str::to_string)
-    };
-    storage.get_path_to_root(effective_leaf_id.as_deref())
-}
-
-/// In-memory session repository. Mirrors `InMemorySessionRepo`.
-pub struct InMemorySessionRepo {
-    sessions: RefCell<HashMap<String, Rc<InMemorySessionStorage>>>,
-}
-
-impl Default for InMemorySessionRepo {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl InMemorySessionRepo {
-    pub fn new() -> Self {
-        Self {
-            sessions: RefCell::new(HashMap::new()),
-        }
-    }
-
-    pub fn create(&self, id: Option<&str>) -> Session {
-        let metadata = SessionMetadata::in_memory(
-            id.map(str::to_string).unwrap_or_else(create_session_id),
-            super::storage::now_iso(),
-        );
-        let storage = Rc::new(InMemorySessionStorage::with_options(
-            None,
-            Some(metadata.clone()),
-        ));
-        self.sessions
-            .borrow_mut()
-            .insert(metadata.id, storage.clone());
-        Session::new(storage)
-    }
-
-    pub fn open(&self, metadata: &SessionMetadata) -> Result<Session, SessionError> {
-        let storage = self.sessions.borrow().get(&metadata.id).cloned();
-        match storage {
-            Some(storage) => Ok(Session::new(storage)),
-            None => Err(SessionError::new(
-                SessionErrorCode::NotFound,
-                format!("Session not found: {}", metadata.id),
-            )),
-        }
-    }
-
-    pub fn list(&self) -> Vec<SessionMetadata> {
-        self.sessions
-            .borrow()
-            .values()
-            .map(|storage| storage.get_metadata())
-            .collect()
-    }
-
-    pub fn delete(&self, metadata: &SessionMetadata) {
-        self.sessions.borrow_mut().remove(&metadata.id);
-    }
-
-    pub fn fork(
-        &self,
-        source_metadata: &SessionMetadata,
-        options: ForkOptions,
-    ) -> Result<Session, SessionError> {
-        let source = self.open(source_metadata)?;
-        let forked_entries = get_entries_to_fork(
-            source.get_storage().as_ref(),
-            options.entry_id.as_deref(),
-            options.position,
-        )?;
-        let metadata = SessionMetadata::in_memory(
-            options.id.unwrap_or_else(create_session_id),
-            super::storage::now_iso(),
-        );
-        let storage = Rc::new(InMemorySessionStorage::with_options(
-            Some(forked_entries),
-            Some(metadata.clone()),
-        ));
-        self.sessions
-            .borrow_mut()
-            .insert(metadata.id, storage.clone());
-        Ok(Session::new(storage))
-    }
-}
+use super::storage::{now_iso, SessionStorage};
+use crate::harness::types::{SessionError, SessionErrorCode, SessionMetadata};
 
 /// Options for [`JsonlSessionRepo::create`]/`fork`. Mirrors
 /// `JsonlSessionCreateOptions`.
@@ -212,7 +70,7 @@ impl JsonlSessionRepo {
 
     pub fn create(&self, options: JsonlCreate) -> Result<Session, SessionError> {
         let id = options.id.unwrap_or_else(create_session_id);
-        let created_at = super::storage::now_iso();
+        let created_at = now_iso();
         let session_dir = self.session_dir(&options.cwd);
         fs::create_dir_all(&session_dir).map_err(|e| {
             SessionError::storage(format!("Failed to create session directory: {e}"))
@@ -296,7 +154,7 @@ impl JsonlSessionRepo {
             fork.position,
         )?;
         let id = create.id.unwrap_or_else(create_session_id);
-        let created_at = super::storage::now_iso();
+        let created_at = now_iso();
         let session_dir = self.session_dir(&create.cwd);
         fs::create_dir_all(&session_dir).map_err(|e| {
             SessionError::storage(format!("Failed to create session directory: {e}"))
