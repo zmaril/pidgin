@@ -56,8 +56,9 @@ use regex::Regex;
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
-use crate::api::anthropic::estimate::estimate_context_tokens;
-use crate::api::anthropic::simple_options::ThinkingBudgets as AdjustThinkingBudgets;
+use crate::api::anthropic::simple_options::{
+    clamp_max_tokens_to_context_window, ThinkingBudgets as AdjustThinkingBudgets,
+};
 use crate::types::{
     CacheRetention, ContentBlock, Message, Modality, ModelCost, ThinkingLevel, ThinkingLevelMap,
     ToolResultMessage, UserContent,
@@ -761,29 +762,15 @@ fn is_gov_cloud_bedrock_target(
 // streamSimple support (`bedrock-converse-stream.ts:392`, `simple-options.ts`)
 // ---------------------------------------------------------------------------
 
-/// pi's `clampMaxTokensToContext` (`simple-options.ts:15`), ported for
-/// [`BedrockModel`]. The sibling Anthropic port (`api/anthropic/simple_options.rs`)
-/// types the same helper to `Model<AnthropicMessagesCompat>`, so Bedrock needs its
-/// own over its lean model slice; it reuses the shared context-token estimator
-/// pi imports from `utils/estimate.ts`.
+/// pi's `clampMaxTokensToContext` (`simple-options.ts:15`) for a [`BedrockModel`],
+/// delegating to the shared window-keyed core (`api/anthropic/simple_options.rs`)
+/// so pi's single helper stays a single implementation across dialects.
 pub(crate) fn clamp_max_tokens_to_context(
     model: &BedrockModel,
     context: &Context,
     max_tokens: u64,
 ) -> u64 {
-    /// `simple-options.ts:12`.
-    const CONTEXT_SAFETY_TOKENS: i64 = 4096;
-    /// `simple-options.ts:13`.
-    const MIN_MAX_TOKENS: i64 = 1;
-
-    let max_tokens = max_tokens as i64;
-    if model.context_window == 0 {
-        return MIN_MAX_TOKENS.max(max_tokens) as u64;
-    }
-    let available = model.context_window as i64
-        - estimate_context_tokens(context).tokens
-        - CONTEXT_SAFETY_TOKENS;
-    max_tokens.min(MIN_MAX_TOKENS.max(available)) as u64
+    clamp_max_tokens_to_context_window(model.context_window, context, max_tokens)
 }
 
 /// Project the Bedrock per-level budget map onto the struct shape pi's shared
