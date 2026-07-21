@@ -68,6 +68,15 @@ pub mod session_cwd;
 // `fd`), backing the native `autocomplete.ts` shim. Additive.
 mod autocomplete;
 
+// The provider error-body normalizer surface (`normalizeProviderError`,
+// `formatProviderError`, `truncateErrorText`): drives pi's provider HTTP
+// error-body field-probe / truncation / compose logic natively. The JS shim only
+// splits `Error` vs non-`Error` and plucks the SDK carrier fields; every decision
+// runs in Rust. pi's `safeJsonStringify` (JS-runtime JSON.stringify semantics)
+// stays in the shim's TS. Additive. Public like `agent` so the free `#[napi]`
+// export functions are reachable from the crate root (not dead under `--test`).
+pub mod error_body;
+
 /// `createLsTool(...).execute` default path (`ls.ts`): list a directory through
 /// the native `run_ls` port, returning pi's `AgentToolResult` JSON. See
 /// [`tools::ls_execute`].
