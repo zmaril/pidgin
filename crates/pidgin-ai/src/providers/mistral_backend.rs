@@ -108,14 +108,50 @@ impl Provider for MistralBackend {
         &'a self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         _signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
+        // Reasoning requested: lower it onto the incremental request through the
+        // driver's `stream_streaming_simple`, mirroring the buffered
+        // `stream_simple`. This is full pi parity — pi's single
+        // `streamAssistantResponse` (`agent-loop.ts:281`) streams incrementally
+        // AND honors reasoning through the one `streamSimple` path.
+        if let Some(simple) = options.filter(|o| o.reasoning.is_some()) {
+            let mut typed_model: MistralModel = match reserialize_model(model) {
+                Ok(typed_model) => typed_model,
+                Err(error) => {
+                    return AssistantEventReader::from_buffered(error_result(
+                        model,
+                        self.clock.now_ms(),
+                        format!(
+                            "Mistral model is not compatible with mistral-conversations: {error}"
+                        ),
+                    ));
+                }
+            };
+            if let Some(base_url) = simple.base.base_url.as_ref() {
+                typed_model.base_url = base_url.clone();
+            }
+            let simple_options = mistral_simple_options(simple);
+            let api_key = simple.base.api_key.as_deref();
+            let timestamp = self.clock.now_ms();
+            return driver::stream_streaming_simple(
+                self.transport.as_ref(),
+                &typed_model,
+                context,
+                &simple_options,
+                api_key,
+                timestamp,
+            );
+        }
+
+        // No reasoning: byte-identical to the pre-widening base incremental path.
         // Same model/options assembly as `stream`, but the request runs through
         // the driver's incremental `stream_streaming` entry point: the returned
         // reader pulls one chunk at a time off the transport, so a streaming
         // transport surfaces real per-frame timing while the buffered `stream`
         // path is left untouched.
+        let options = options.map(|o| &o.base);
         let mut typed_model: MistralModel = match reserialize_model(model) {
             Ok(typed_model) => typed_model,
             Err(error) => {
@@ -525,8 +561,12 @@ mod tests {
         // Incremental path threads the identical knobs.
         let (scripted_incr, transport_incr) = scripted_hello();
         let backend_incr = MistralBackend::new(transport_incr, fake_clock());
-        let mut reader =
-            backend_incr.stream_incremental(&model, &user_context(), Some(&options), None);
+        let mut reader = backend_incr.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let _: Vec<AssistantMessageEvent> = reader.by_ref().collect();
         let body_incr: Value =
             serde_json::from_str(scripted_incr.requests()[0].body.as_deref().unwrap()).unwrap();
@@ -599,6 +639,32 @@ mod tests {
         assert_eq!(body["reasoningEffort"], json!("high"));
     }
 
+    // FULL INCREMENTAL PARITY: `stream_incremental` carrying reasoning `high`
+    // lowers to `reasoningEffort: "high"` param-exactly, identically to the
+    // buffered `stream_simple` -- pi streams incrementally AND honors reasoning
+    // through one `streamSimple` (`agent-loop.ts:281`).
+    #[test]
+    fn stream_incremental_reasoning_sets_reasoning_effort() {
+        let (scripted, transport) = scripted_hello();
+        let backend = MistralBackend::new(transport, fake_clock());
+        let model = mistral_reasoning_model("https://api.mistral.test");
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-mistral-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&simple), None);
+        // Drain the reader so the request is actually issued.
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+
+        let body: Value =
+            serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap();
+        assert_eq!(body["reasoningEffort"], json!("high"));
+    }
+
     // NO-REASONING zero-regression: `stream_simple` with `reasoning: None` builds
     // a request byte-identical to the raw `stream` path -- no `reasoningEffort` /
     // `promptMode` is added.
@@ -645,7 +711,12 @@ mod tests {
 
         let (scripted, transport) = scripted_hello();
         let backend = MistralBackend::new(transport, fake_clock());
-        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
 
         assert_eq!(events, buffered.events);
@@ -740,7 +811,12 @@ mod tests {
             ..StreamOptions::default()
         };
 
-        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&options), None);
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let start = Instant::now();
         let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
         for event in reader.by_ref() {
@@ -977,7 +1053,12 @@ mod native_http_tests {
             ..StreamOptions::default()
         };
 
-        let mut reader = backend.stream_incremental(&model, &context, Some(&options), None);
+        let mut reader = backend.stream_incremental(
+            &model,
+            &context,
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let start = Instant::now();
         let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
         for event in reader.by_ref() {

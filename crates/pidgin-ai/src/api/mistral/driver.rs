@@ -368,6 +368,32 @@ pub fn stream_simple<T: HttpTransport + ?Sized>(
     stream(transport, model, context, &resolved, api_key, timestamp)
 }
 
+/// The incremental sibling of [`stream_simple`]: resolve the requested reasoning
+/// level onto the prompt-mode / reasoning-effort configuration exactly as the
+/// buffered path does (via [`resolve_simple_options`]), then run the driver's
+/// incremental [`stream_streaming`] entry point so a streaming transport surfaces
+/// real per-frame timing. Mirrors pi's single `streamAssistantResponse`
+/// (`agent-loop.ts:281`), which streams incrementally AND honors reasoning
+/// through the one `streamSimple` path.
+pub fn stream_streaming_simple<'a, T: HttpTransport + ?Sized>(
+    transport: &'a T,
+    model: &MistralModel,
+    context: &Context,
+    options: &SimpleMistralOptions,
+    api_key: Option<&str>,
+    timestamp: i64,
+) -> AssistantEventReader<'a> {
+    // pi asserts the credential synchronously at the top of streamSimple; encoded
+    // here as a pre-start error reader to keep the function total, matching
+    // [`stream_streaming`].
+    if let Err(message) = assert_request_auth(&model.provider, api_key) {
+        return error_reader(model, timestamp, message);
+    }
+
+    let resolved = resolve_simple_options(model, options);
+    stream_streaming(transport, model, context, &resolved, api_key, timestamp)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -332,15 +332,16 @@ impl RegistryProvider {
 
     /// The incremental counterpart to [`stream`](Self::stream): dispatch to the
     /// backend for `model.api` via its
-    /// [`stream_incremental`](StreamBackend::stream_incremental) and return the
-    /// pull reader. A model whose api has no backend yields the "no API
-    /// implementation" error, replayed through
-    /// [`AssistantEventReader::from_buffered`].
+    /// [`stream_incremental`](StreamBackend::stream_incremental), carrying the
+    /// requested `reasoning`/`thinking_budgets` (the incremental sibling of
+    /// [`stream_simple`](Self::stream_simple)), and return the pull reader. A model
+    /// whose api has no backend yields the "no API implementation" error, replayed
+    /// through [`AssistantEventReader::from_buffered`].
     pub fn stream_incremental<'a>(
         &'a self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
         match self.api.backend_for(&model.api) {
@@ -748,7 +749,7 @@ impl Models {
         &'a self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
         let provider = match self.require_provider(model) {
@@ -757,11 +758,22 @@ impl Models {
                 return AssistantEventReader::from_buffered(error_result(model, message))
             }
         };
-        let (request_model, request_options) = match self.apply_auth(model, options) {
+        // Auth resolution runs against the base options (auth carries no
+        // reasoning), then the resolved base is recombined with the caller's
+        // `reasoning`/`thinking_budgets` before dispatch — mirroring
+        // [`stream_simple`](Self::stream_simple) so the incremental path carries
+        // reasoning to the driver instead of dropping it at the seam.
+        let base = options.map(|o| &o.base);
+        let (request_model, request_base) = match self.apply_auth(model, base) {
             Ok(resolved) => resolved,
             Err(message) => {
                 return AssistantEventReader::from_buffered(error_result(model, message))
             }
+        };
+        let request_options = SimpleStreamOptions {
+            base: request_base,
+            reasoning: options.and_then(|o| o.reasoning),
+            thinking_budgets: options.and_then(|o| o.thinking_budgets),
         };
         provider.stream_incremental(&request_model, context, Some(&request_options), signal)
     }

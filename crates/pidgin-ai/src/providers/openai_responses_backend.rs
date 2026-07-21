@@ -239,9 +239,15 @@ impl Provider for OpenAIResponsesBackend {
         &'a self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         _signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
+        // The incremental driver path cannot lower `reasoning` yet (per-driver
+        // incremental lowering is a follow-up, tracked with the buffered
+        // `stream_simple` override for this dialect), so guard against silently
+        // dropping a reasoning request before streaming on the base options.
+        crate::seams::provider::debug_assert_incremental_reasoning_unlowered(options, self.api());
+        let options = options.map(|o| &o.base);
         // Same model/options assembly as `stream`, but the request runs through
         // the driver's incremental `stream_streaming` entry point: the returned
         // reader pulls one chunk at a time off the transport, so a streaming
@@ -550,7 +556,12 @@ mod tests {
 
         let (_scripted2, transport2) = scripted_hello();
         let backend2 = OpenAIResponsesBackend::new(transport2, fake_clock());
-        let mut reader = backend2.stream_incremental(&model, &user_context(), Some(&options), None);
+        let mut reader = backend2.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
 
         assert_eq!(events, buffered.events);
@@ -875,7 +886,12 @@ mod native_http_tests {
             ..StreamOptions::default()
         };
 
-        let mut reader = backend.stream_incremental(&model, &context, Some(&options), None);
+        let mut reader = backend.stream_incremental(
+            &model,
+            &context,
+            Some(&SimpleStreamOptions::from_base(options.clone())),
+            None,
+        );
         let start = Instant::now();
         let mut stamped: Vec<(Duration, AssistantMessageEvent)> = Vec::new();
         for event in reader.by_ref() {
