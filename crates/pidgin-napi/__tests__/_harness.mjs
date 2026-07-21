@@ -1,3 +1,8 @@
+// straitjacket-allow-file:duplication — shared bridge-test scaffolding; the
+// import prologue + dispatcher plumbing it consolidates necessarily still
+// resembles the sibling `session-call-seam.mjs` harness (which carries the same
+// marker). This is the first-sorting file of each clone pair, so the marker
+// must live here to take effect.
 // Shared scaffolding for the agent-bridge-*.mjs tests.
 //
 // These bridge tests each drove the native `AgentBridge` addon with the same
