@@ -123,17 +123,53 @@ impl Provider for GoogleGenerativeAiBackend {
         options: Option<&SimpleStreamOptions>,
         _signal: Option<&AbortSignal>,
     ) -> AssistantEventReader<'a> {
-        // The incremental driver path cannot lower `reasoning` yet (per-driver
-        // incremental lowering is a follow-up, tracked with the buffered
-        // `stream_simple` override for this dialect), so guard against silently
-        // dropping a reasoning request before streaming on the base options.
-        crate::seams::provider::debug_assert_incremental_reasoning_unlowered(options, self.api());
-        let options = options.map(|o| &o.base);
+        // Reasoning requested: lower it onto the incremental request exactly as the
+        // buffered `stream_simple` does (via the shared `lower_simple_options`),
+        // then run the driver's incremental `stream_streaming` entry point. This is
+        // full pi parity — pi has a single streaming path whose `streamSimple`
+        // thinking shaping (`google-generative-ai.ts:284-320`) is applied
+        // regardless of buffered vs incremental. The gen-ai driver already reads
+        // `request_options.thinking` off `GoogleRequestOptions` in both `stream`
+        // and `stream_streaming`, so the lowering lives in the backend as it does
+        // for the buffered path (#340) — no driver change is needed.
+        if let Some(simple) = options.filter(|o| o.reasoning.is_some()) {
+            let mut typed_model: GoogleModel = match reserialize_model(model) {
+                Ok(typed_model) => typed_model,
+                Err(error) => {
+                    return AssistantEventReader::from_buffered(error_result(
+                        model,
+                        self.clock.now_ms(),
+                        format!(
+                            "Google model is not compatible with google-generative-ai: {error}"
+                        ),
+                    ));
+                }
+            };
+            if let Some(base_url) = simple.base.base_url.as_ref() {
+                typed_model.base_url = base_url.clone();
+            }
+            let api_key = simple.base.api_key.clone();
+            let headers = simple.base.headers.clone().unwrap_or_default();
+            let request_options = lower_simple_options(model, &typed_model, Some(simple));
+            let timestamp = self.clock.now_ms();
+            return driver::stream_streaming(
+                self.transport.as_ref(),
+                &typed_model,
+                context,
+                api_key.as_deref(),
+                &headers,
+                &request_options,
+                timestamp,
+            );
+        }
+
+        // No reasoning: byte-identical to the pre-widening base incremental path.
         // Same model/options assembly as `stream`, but the request runs through
         // the driver's incremental `stream_streaming` entry point: the returned
         // reader pulls one chunk at a time off the transport, so a streaming
         // transport surfaces real per-frame timing while the buffered `stream`
         // path is left untouched.
+        let options = options.map(|o| &o.base);
         let mut typed_model: GoogleModel = match reserialize_model(model) {
             Ok(typed_model) => typed_model,
             Err(error) => {
@@ -206,20 +242,7 @@ impl Provider for GoogleGenerativeAiBackend {
         let api_key = base.and_then(|b| b.api_key.clone());
         let headers = base.and_then(|b| b.headers.clone()).unwrap_or_default();
 
-        let mut request_options = request_options_from(model, base);
-        request_options.thinking = Some(match options.and_then(|o| o.reasoning) {
-            Some(reasoning) => {
-                let clamped = clamp_thinking_level(model, widen_thinking_level(reasoning));
-                let effort = GoogleEffort::from_clamped(clamped);
-                gen_ai_thinking_option(
-                    &typed_model.id,
-                    effort,
-                    options.and_then(|o| o.thinking_budgets.as_ref()),
-                )
-            }
-            // No reasoning: pi's `thinking: { enabled: false }`.
-            None => GoogleThinkingOption::default(),
-        });
+        let request_options = lower_simple_options(model, &typed_model, options);
 
         let timestamp = self.clock.now_ms();
         driver::stream(
@@ -232,6 +255,47 @@ impl Provider for GoogleGenerativeAiBackend {
             timestamp,
         )
     }
+}
+
+/// Lower the simple, level-based options onto the driver's
+/// [`GoogleRequestOptions`], setting the `thinking` field per pi's `streamSimple`
+/// (`google-generative-ai.ts:284-320`).
+///
+/// Shared by the buffered [`GoogleGenerativeAiBackend::stream_simple`] and the
+/// incremental [`GoogleGenerativeAiBackend::stream_incremental`] reasoning path so
+/// both lower reasoning identically — the single source of truth pi keeps in its
+/// one `streamSimple` path (pi applies the same shaping regardless of buffered vs
+/// incremental, having a single streaming path).
+///
+/// The seam's `reasoning` level is model-clamped (pi's `clampThinkingLevel`), then
+/// mapped `off ⇒ high` (google-specific: thinking stays ON, unlike the openai
+/// dialects that omit) and lowered by [`gen_ai_thinking_option`] into either the
+/// `thinkingLevel` path (Gemini-3-Pro/Flash/Gemma-4) or the `thinkingBudget` path
+/// (every other model, incl. the `2.5-flash-lite` budget table). When no
+/// `reasoning` is requested, this sets `thinking: { enabled: false }`
+/// (pi `:295-296`): for a non-reasoning model that emits no `thinkingConfig`
+/// (byte-identical to the raw request), and for a reasoning model it emits pi's
+/// `getDisabledThinkingConfig`.
+fn lower_simple_options(
+    model: &Model,
+    typed_model: &GoogleModel,
+    options: Option<&SimpleStreamOptions>,
+) -> GoogleRequestOptions {
+    let mut request_options = request_options_from(model, options.map(|o| &o.base));
+    request_options.thinking = Some(match options.and_then(|o| o.reasoning) {
+        Some(reasoning) => {
+            let clamped = clamp_thinking_level(model, widen_thinking_level(reasoning));
+            let effort = GoogleEffort::from_clamped(clamped);
+            gen_ai_thinking_option(
+                &typed_model.id,
+                effort,
+                options.and_then(|o| o.thinking_budgets.as_ref()),
+            )
+        }
+        // No reasoning: pi's `thinking: { enabled: false }`.
+        None => GoogleThinkingOption::default(),
+    });
+    request_options
 }
 
 /// Widen a caller's [`ThinkingLevel`] to the model-level [`ModelThinkingLevel`]
@@ -952,6 +1016,162 @@ mod tests {
             request_body(&scripted)["config"]["thinkingConfig"],
             json!({ "thinkingBudget": 0 }),
         );
+    }
+
+    // --- incremental streamSimple reasoning lowering (mirrors the buffered
+    // `stream_simple` lowering above; pi applies the same shaping on its single
+    // streaming path regardless of buffered vs incremental) ---
+
+    /// Drive `stream_incremental` to completion so the request is placed on the
+    /// scripted transport, discarding the streamed events.
+    fn drain_incremental(reader: &mut AssistantEventReader<'_>) {
+        reader.by_ref().for_each(drop);
+    }
+
+    // Incremental: a reasoning level on a budget model lowers to
+    // `thinkingConfig.thinkingBudget` = pi's `getGoogleBudget` (2.5-flash / high =
+    // 24576) with `includeThoughts: true`, exactly as the buffered path.
+    #[test]
+    fn stream_incremental_budget_model_lowers_thinking_budget() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        let model = reasoning_model("gemini-2.5-flash");
+
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::High)),
+            None,
+        );
+        drain_incremental(&mut reader);
+
+        let thinking = &request_body(&scripted)["config"]["thinkingConfig"];
+        assert_eq!(thinking["includeThoughts"], json!(true));
+        assert_eq!(thinking["thinkingBudget"], json!(24576));
+        assert!(thinking.get("thinkingLevel").is_none());
+    }
+
+    // Incremental: the gen-ai `2.5-flash-lite` budget table is distinct from
+    // `2.5-flash` (minimal: 512 vs 128) and is selected ahead of it.
+    #[test]
+    fn stream_incremental_flash_lite_uses_flash_lite_budget_table() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        let model = reasoning_model("gemini-2.5-flash-lite");
+
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::Minimal)),
+            None,
+        );
+        drain_incremental(&mut reader);
+
+        assert_eq!(
+            request_body(&scripted)["config"]["thinkingConfig"]["thinkingBudget"],
+            json!(512),
+        );
+    }
+
+    // Incremental: a reasoning level on a gemini-3/level model lowers to
+    // `thinkingConfig.thinkingLevel` (pi's `getThinkingLevel` enum), not a budget.
+    #[test]
+    fn stream_incremental_level_model_lowers_thinking_level() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        let model = reasoning_model("gemini-3-flash-preview");
+
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::High)),
+            None,
+        );
+        drain_incremental(&mut reader);
+
+        let thinking = &request_body(&scripted)["config"]["thinkingConfig"];
+        assert_eq!(thinking["includeThoughts"], json!(true));
+        assert_eq!(thinking["thinkingLevel"], json!("HIGH"));
+        assert!(thinking.get("thinkingBudget").is_none());
+    }
+
+    // Incremental google-specific: a clamp to `off` maps `off ⇒ high` rather than
+    // omitting — the streamed request carries the HIGH budget, NOT a
+    // disabled/omitted thinking config (same as the buffered path).
+    #[test]
+    fn stream_incremental_off_clamp_maps_to_high_not_omitted() {
+        let (scripted, transport) = scripted_hello();
+        let backend = GoogleGenerativeAiBackend::new(transport, fake_clock());
+        let model: Model = serde_json::from_value(json!({
+            "id": "gemini-2.5-flash",
+            "name": "Gemini 2.5 Flash",
+            "api": "google-generative-ai",
+            "provider": "google",
+            "baseUrl": "https://generativelanguage.googleapis.test/v1beta",
+            "reasoning": true,
+            "thinkingLevelMap": {
+                "minimal": null, "low": null, "medium": null, "high": null,
+            },
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 1000000,
+            "maxTokens": 8192,
+        }))
+        .unwrap();
+
+        let mut reader = backend.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&simple_with_reasoning(ThinkingLevel::Minimal)),
+            None,
+        );
+        drain_incremental(&mut reader);
+
+        let thinking = &request_body(&scripted)["config"]["thinkingConfig"];
+        assert_eq!(thinking["includeThoughts"], json!(true));
+        // high budget for 2.5-flash, proving off => high (not omitted).
+        assert_eq!(thinking["thinkingBudget"], json!(24576));
+    }
+
+    // Incremental: no reasoning is byte-identical to the raw incremental path (no
+    // `thinkingConfig` emitted), so the widening is inert absent a reasoning level.
+    #[test]
+    fn stream_incremental_no_reasoning_is_byte_identical_to_raw() {
+        let model = google_model("https://generativelanguage.googleapis.test/v1beta");
+        let base = StreamOptions {
+            api_key: Some("AIza-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        // Raw incremental over the base options (reasoning None).
+        let (scripted_raw, transport_raw) = scripted_hello();
+        let backend_raw = GoogleGenerativeAiBackend::new(transport_raw, fake_clock());
+        let mut reader_raw = backend_raw.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(base.clone())),
+            None,
+        );
+        drain_incremental(&mut reader_raw);
+
+        // Same, exercised through the widened options (still reasoning None).
+        let (scripted_simple, transport_simple) = scripted_hello();
+        let backend_simple = GoogleGenerativeAiBackend::new(transport_simple, fake_clock());
+        let mut reader_simple = backend_simple.stream_incremental(
+            &model,
+            &user_context(),
+            Some(&SimpleStreamOptions::from_base(base.clone())),
+            None,
+        );
+        drain_incremental(&mut reader_simple);
+
+        assert_eq!(
+            scripted_raw.requests()[0].body,
+            scripted_simple.requests()[0].body,
+        );
+        assert!(request_body(&scripted_simple)["config"]
+            .get("thinkingConfig")
+            .is_none());
     }
 }
 
