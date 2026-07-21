@@ -33,6 +33,12 @@
 ///   native `word-navigation.ts` shim. Cursors are UTF-16 string indices crossing
 ///   as `int32` (JS `number`) and widened to the engine's `usize` at the seam —
 ///   the JS-visible cursor values are identical to the pre-swap wrappers.
+/// - the tui fuzzy ops (`fuzzyMatch`, `fuzzyFilter`) route into `pidgin_tui`'s
+///   fuzzy layer, backing the native `fuzzy.ts` shim. `fuzzyMatch` returns
+///   `FuzzyMatchResult { matches, score }` with the score crossing as `float64`
+///   (JS `number`); `fuzzyFilter` returns the surviving indices as `uint32` (JS
+///   `number`), widened from the engine's `usize` at the seam — the JS-visible
+///   scores and indices are identical to the pre-swap wrappers.
 pub struct PidginImpl;
 
 impl crate::generated::PidginCore for PidginImpl {
@@ -261,6 +267,22 @@ impl crate::generated::PidginCore for PidginImpl {
         pidgin_coding::core::trust_manager::has_trust_requiring_project_resources_with_home(
             &cwd, &home_dir,
         )
+    }
+
+    fn fuzzy_match(query: String, text: String) -> crate::generated::FuzzyMatchResult {
+        let m = pidgin_tui::fuzzy_match(&query, &text);
+        crate::generated::FuzzyMatchResult {
+            matches: m.matches,
+            score: m.score,
+        }
+    }
+
+    fn fuzzy_filter(texts: Vec<String>, query: String) -> Vec<u32> {
+        let text_refs: Vec<&str> = texts.iter().map(String::as_str).collect();
+        pidgin_tui::fuzzy_filter_indices(&text_refs, &query)
+            .into_iter()
+            .map(|i| i as u32)
+            .collect()
     }
 }
 

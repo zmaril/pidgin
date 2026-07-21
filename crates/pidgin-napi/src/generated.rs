@@ -53,6 +53,14 @@ pub struct SessionCwdIssueJs {
     pub fallback_cwd: String,
 }
 
+/// Result of [`fuzzy_match`]; serialized to pi's `{ matches, score }`.
+#[napi(object)]
+#[derive(Clone)]
+pub struct FuzzyMatchResult {
+    pub matches: bool,
+    pub score: f64,
+}
+
 /// The `Pidgin` contract — implement over the engine in `crate::core_impl`.
 pub trait PidginCore: Sized + Send + Sync + 'static {
     fn version() -> String;
@@ -100,6 +108,8 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn is_newer_package_version(candidate_version: String, current_version: String) -> bool;
     fn get_project_trust_parent_path(cwd: String) -> Option<String>;
     fn has_trust_requiring_project_resources(cwd: String, home_dir: String) -> bool;
+    fn fuzzy_match(query: String, text: String) -> FuzzyMatchResult;
+    fn fuzzy_filter(texts: Vec<String>, query: String) -> Vec<u32>;
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -422,6 +432,22 @@ pub fn has_trust_requiring_project_resources(cwd: String, home_dir: String) -> b
     <crate::core_impl::PidginImpl as PidginCore>::has_trust_requiring_project_resources(
         cwd, home_dir,
     )
+}
+
+/// `fuzzyMatch` (fuzzy.ts): fuzzy-match `query` against `text`, returning pi's
+/// `{ matches, score }` (lower score = better).
+#[napi(js_name = "fuzzyMatch")]
+pub fn fuzzy_match(query: String, text: String) -> FuzzyMatchResult {
+    <crate::core_impl::PidginImpl as PidginCore>::fuzzy_match(query, text)
+}
+
+/// `fuzzyFilter` (fuzzy.ts): run pi's whole filter orchestration in Rust. Given
+/// each candidate's already-materialized text and the query, return the
+/// surviving candidates' original indices ranked best-match-first. The shim
+/// maps these indices back to items, so pi's `getText` callback stays in JS.
+#[napi(js_name = "fuzzyFilter")]
+pub fn fuzzy_filter(texts: Vec<String>, query: String) -> Vec<u32> {
+    <crate::core_impl::PidginImpl as PidginCore>::fuzzy_filter(texts, query)
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as
