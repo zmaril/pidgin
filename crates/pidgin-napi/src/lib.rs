@@ -807,44 +807,17 @@ pub fn migrate_keybindings_config(raw_json: String) -> napi::Result<String> {
 
 // --- tui fuzzy layer (packages/tui/src/fuzzy.ts) ---------------------------
 //
-// Thin wrappers over `pidgin_tui::fuzzy`, backing the hand-written native
-// `fuzzy.ts` shim. `fuzzyMatch` crosses as a plain `{ matches, score }`
-// object. `fuzzyFilter` crosses as `(texts, query) -> ranked indices`: the
-// shim materializes each item's text via its `getText` callback in JS, calls
-// this, and maps the returned indices back to items — so pi's `getText` stays
-// on the JS side while the whole tokenize/AND-gate/score-sum/sort orchestration
-// runs in Rust.
-
-/// Result of [`fuzzy_match`]; serialized to pi's `{ matches, score }`.
-#[napi(object)]
-pub struct FuzzyMatchResult {
-    pub matches: bool,
-    pub score: f64,
-}
-
-/// `fuzzyMatch` (fuzzy.ts): fuzzy-match `query` against `text`, returning pi's
-/// `{ matches, score }` (lower score = better).
-#[napi(js_name = "fuzzyMatch")]
-pub fn fuzzy_match(query: String, text: String) -> FuzzyMatchResult {
-    let m = pidgin_tui::fuzzy_match(&query, &text);
-    FuzzyMatchResult {
-        matches: m.matches,
-        score: m.score,
-    }
-}
-
-/// `fuzzyFilter` (fuzzy.ts): run pi's whole filter orchestration in Rust. Given
-/// each candidate's already-materialized text and the query, return the
-/// surviving candidates' original indices ranked best-match-first. The shim
-/// maps these indices back to items, so pi's `getText` callback stays in JS.
-#[napi(js_name = "fuzzyFilter")]
-pub fn fuzzy_filter(texts: Vec<String>, query: String) -> Vec<u32> {
-    let text_refs: Vec<&str> = texts.iter().map(String::as_str).collect();
-    pidgin_tui::fuzzy_filter_indices(&text_refs, &query)
-        .into_iter()
-        .map(|i| i as u32)
-        .collect()
-}
+// The two fuzzy ops (`fuzzyMatch`, `fuzzyFilter`) now generate from the fluessig
+// api schema through `crate::generated` + `crate::core_impl`, routing into
+// `pidgin_tui`'s fuzzy layer. `fuzzyMatch` returns `FuzzyMatchResult`, whose
+// `score` crosses as `float64` (JS `number`); `fuzzyFilter` returns the ranked
+// surviving indices as `uint32` (JS `number`), widened from the engine's `usize`
+// at the core seam. `fuzzyFilter`'s shim materializes each item's text via its
+// `getText` callback in JS and maps the returned indices back to items, so pi's
+// `getText` stays JS-side while the whole tokenize/AND-gate/score-sum/sort
+// orchestration runs in Rust. The hand-written `#[napi]` exports that lived here
+// were deleted; edit `schema/api.json` and rerun `regen.sh` instead of re-adding
+// them.
 
 // --- tui word-navigation layer (packages/tui/src/word-navigation.ts) --------
 //

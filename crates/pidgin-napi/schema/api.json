@@ -84,6 +84,22 @@
           "nullable": false
         }
       ]
+    },
+    {
+      "name": "FuzzyMatchResult",
+      "doc": "Result of [`fuzzy_match`]; serialized to pi's `{ matches, score }`.",
+      "fields": [
+        {
+          "name": "matches",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "score",
+          "type": "float64",
+          "nullable": false
+        }
+      ]
     }
   ],
   "unions": [],
@@ -868,6 +884,58 @@
           "bindings": {
             "node": {
               "name": "hasTrustRequiringProjectResources"
+            }
+          }
+        },
+        {
+          "name": "fuzzyMatch",
+          "doc": "`fuzzyMatch` (fuzzy.ts): fuzzy-match `query` against `text`, returning pi's\n`{ matches, score }` (lower score = better).",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "query",
+              "type": "string"
+            },
+            {
+              "name": "text",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "model": "FuzzyMatchResult"
+          },
+          "bindings": {
+            "node": {
+              "name": "fuzzyMatch"
+            }
+          }
+        },
+        {
+          "name": "fuzzyFilter",
+          "doc": "`fuzzyFilter` (fuzzy.ts): run pi's whole filter orchestration in Rust. Given\neach candidate's already-materialized text and the query, return the\nsurviving candidates' original indices ranked best-match-first. The shim\nmaps these indices back to items, so pi's `getText` callback stays in JS.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "texts",
+              "type": {
+                "list": "string"
+              }
+            },
+            {
+              "name": "query",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "list": "uint32"
+          },
+          "bindings": {
+            "node": {
+              "name": "fuzzyFilter"
             }
           }
         }
