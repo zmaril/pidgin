@@ -36,6 +36,7 @@ use serde_json::Value;
 
 use pidgin_coding::core::extensions::notify::NotifySink;
 use pidgin_coding::core::extensions::types::NotifyLevel;
+use pidgin_coding::core::tools::bash_host::{BashRunOutcome, BashToolHost};
 
 use crate::inventory::{
     CommandRecord, FlagRecord, HookRecord, Inventory, ProviderRecord, RendererRecord,
@@ -271,6 +272,60 @@ fn op_notify(state: &mut OpState, #[string] message: String, #[string] level: St
     }
 }
 
+/// Flatten a [`BashRunOutcome`] into the JSON the JS `createBashTool` wrapper
+/// reads: `{ ok, output, details, error }`. `details` is `null` unless the host
+/// supplied truncation accounting, in which case it carries `truncated` and the
+/// `full_output_path`. Kept pure (no `OpState`) so it is unit-testable without V8.
+fn bash_outcome_to_json(outcome: &BashRunOutcome) -> Value {
+    let details = outcome.details.as_ref().map(|details| {
+        serde_json::json!({
+            "truncated": details.truncation.is_some(),
+            "full_output_path": details.full_output_path,
+        })
+    });
+    serde_json::json!({
+        "ok": outcome.ok,
+        "output": outcome.output,
+        "details": details,
+        "error": outcome.error,
+    })
+}
+
+/// `createBashTool(...).execute(...)` — run `command` in `cwd` through the host
+/// [`BashToolHost`] bound in `OpState` (via `JsPlaneHandle::set_bash_host`), and
+/// return the flat [`BashRunOutcome`] as JSON (see [`bash_outcome_to_json`]).
+///
+/// Run-to-completion and blocking: [`BashToolHost::run`] drives
+/// `create_bash_tool(...).execute()` to a final outcome on its own runtime and
+/// this op blocks the plane worker thread until it returns. A non-zero exit and
+/// a bad `cwd` both come back as `ok == false` with the pi-exact message in
+/// `error` (the JS wrapper turns that into a `throw`). When no host is bound the
+/// op returns an `ok:false` "not bound" outcome, so the JS side throws faithfully
+/// instead of hanging.
+// The `#[serde]` return type must be spelled fully-qualified `serde_json::Value`:
+// the deno_ops macro pattern-matches on the literal path tokens and rejects the
+// imported `Value` alias ("Invalid or deprecated #[serde] type").
+#[op2]
+#[serde]
+fn op_run_bash(
+    state: &mut OpState,
+    #[string] command: String,
+    #[string] cwd: String,
+) -> serde_json::Value {
+    // Clone the Arc out so the OpState borrow is not held across the blocking run.
+    let host = state.try_borrow::<Arc<dyn BashToolHost>>().cloned();
+    let outcome = match host {
+        Some(host) => host.run(&command, &cwd),
+        None => BashRunOutcome {
+            ok: false,
+            output: String::new(),
+            details: None,
+            error: Some("bash host is not bound".to_string()),
+        },
+    };
+    bash_outcome_to_json(&outcome)
+}
+
 extension!(
     pidgin_api_ops,
     ops = [
@@ -285,6 +340,7 @@ extension!(
         op_register_provider,
         op_unregister_provider,
         op_notify,
+        op_run_bash,
     ],
 );
 
@@ -448,6 +504,47 @@ const pi = {
 };
 
 globalThis.__pi = pi;
+
+// ---- createBashTool (pi's bash tool factory, host-backed) --------------
+// pi extensions build a bash tool with `createBashTool(options)` and register it
+// via `pi.registerTool(...)`. The returned tool's async `execute` runs the
+// command through the host BashToolHost bound in OpState (the `op_run_bash` op),
+// faithful to pi's shape: it RESOLVES with `{ content, details }` on a zero exit,
+// and THROWS on any failure — a non-zero exit (whose `Command exited with code N`
+// footer rides inside the thrown message), a bad cwd, or an unbound host. Live
+// `onUpdate` streaming and `signal` abort are documented-deferred at the sync
+// host, so this wrapper accepts but ignores them.
+globalThis.createBashTool = (options) => {
+  options = options ?? {};
+  const defaultCwd = options.cwd ?? "";
+  return {
+    name: options.name ?? "bash",
+    label: options.label ?? "Bash",
+    description: options.description ?? "Run a bash command and return its output.",
+    parameters: options.parameters ?? {
+      type: "object",
+      properties: { command: { type: "string" } },
+      required: ["command"],
+    },
+    // pi's execute signature is (toolCallId, params, signal, onUpdate, ctx).
+    async execute(toolCallId, params, signal, onUpdate, ctx) {
+      // Accept either a `{ command, cwd? }` params object or a bare command
+      // string; resolve cwd from params, then the factory default, then ctx.cwd.
+      const command =
+        typeof params === "string" ? params : (params && params.command) || "";
+      const cwd =
+        (params && typeof params === "object" && params.cwd) ||
+        defaultCwd ||
+        (ctx && ctx.cwd) ||
+        "";
+      const outcome = ops.op_run_bash(String(command), String(cwd));
+      if (!outcome || outcome.ok !== true) {
+        throw new Error((outcome && outcome.error) || "bash host is not bound");
+      }
+      return { content: outcome.output, details: outcome.details ?? undefined };
+    },
+  };
+};
 
 // ---- Hook DISPATCH surface (PR-F) --------------------------------------
 // The Rust ExtensionRunner drives the dispatch loop and result-shaping; JS only
@@ -615,3 +712,54 @@ globalThis.__pidgin.invokeStored = async (kind, name, argsJson) => {
   }
 };
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A zero-exit outcome maps to `ok:true` with the raw output in `output` and
+    /// no `error`; `details` stays `null` when the host supplied none.
+    #[test]
+    fn success_outcome_maps_output_into_output_slot() {
+        let outcome = BashRunOutcome {
+            ok: true,
+            output: "hi\n".to_string(),
+            details: None,
+            error: None,
+        };
+        let json = bash_outcome_to_json(&outcome);
+        assert_eq!(json["ok"], serde_json::json!(true));
+        assert_eq!(json["output"], serde_json::json!("hi\n"));
+        assert_eq!(json["error"], Value::Null);
+        assert_eq!(json["details"], Value::Null);
+    }
+
+    /// Assert an error-path outcome flattens with `ok:false`, an EMPTY `output`
+    /// (the footer/message never rides in `output`), and `message` verbatim in the
+    /// `error` slot — the shape the JS wrapper turns into a `throw`.
+    fn assert_error_path(message: &str) {
+        let outcome = BashRunOutcome {
+            ok: false,
+            output: String::new(),
+            details: None,
+            error: Some(message.to_string()),
+        };
+        let json = bash_outcome_to_json(&outcome);
+        assert_eq!(json["ok"], serde_json::json!(false));
+        assert_eq!(json["output"], serde_json::json!(""));
+        assert_eq!(json["error"], serde_json::json!(message));
+    }
+
+    /// A non-zero exit is an error in this port: the `Command exited with code N`
+    /// footer lands in the `error` slot, not `output`. The critical semantic.
+    #[test]
+    fn non_zero_exit_footer_lands_in_error_not_output() {
+        assert_error_path("...\nCommand exited with code 3");
+    }
+
+    /// A bad cwd surfaces the pi-exact message in `error` with an empty `output`.
+    #[test]
+    fn bad_cwd_message_lands_in_error() {
+        assert_error_path("Working directory does not exist: /nope\nCannot execute bash commands.");
+    }
+}

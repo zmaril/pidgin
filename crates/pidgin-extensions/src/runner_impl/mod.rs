@@ -62,6 +62,7 @@ use pidgin_coding::core::extensions::runner::{
 };
 use pidgin_coding::core::model_registry::ModelRegistry;
 use pidgin_coding::core::session_manager::SessionManager;
+use pidgin_coding::core::tools::bash_host::BashToolHost;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -198,6 +199,20 @@ impl DenoExtensionRunner {
     /// The per-extension inventories (for the sync-query helpers).
     pub(crate) fn inventories(&self) -> &[ExtensionInventory] {
         &self.inventories
+    }
+
+    /// Bind a host [`BashToolHost`] into the plane's `OpState`, so a
+    /// `createBashTool(...)`-created tool's `execute` (the `op_run_bash` op) runs
+    /// each command through it.
+    ///
+    /// Mirrors [`bind_notify_sink`](ExtensionRunnerTrait::bind_notify_sink): it
+    /// fans the host out to the plane via
+    /// [`JsPlaneHandle::set_bash_host`](crate::runtime::JsPlaneHandle::set_bash_host),
+    /// a fire-and-forget, FIFO-ordered control command. Inherent (not on the
+    /// `ExtensionRunner` trait) because only the deno plane consumes it. Rebinding
+    /// replaces the prior host.
+    pub fn bind_bash_host(&self, host: Arc<dyn BashToolHost>) {
+        self.inner.plane().set_bash_host(host);
     }
 }
 

@@ -27,6 +27,7 @@ use tokio::sync::{mpsc, oneshot};
 
 use pidgin_coding::core::extensions::discovery::{DiscoveredExtension, ExtensionLanguage};
 use pidgin_coding::core::extensions::notify::NotifySink;
+use pidgin_coding::core::tools::bash_host::BashToolHost;
 
 use crate::api_ops::{self, SharedInventory};
 use crate::dispatch::{self, HookInvocation, StoredInvocation};
@@ -106,6 +107,12 @@ enum Command {
     /// channel, so a sink bound before a command dispatch is in place when the
     /// dispatch's `ctx.ui.notify` fires.
     SetNotifySink { sink: Arc<dyn NotifySink> },
+    /// Put a host [`BashToolHost`] into the runtime's `OpState`, so `op_run_bash`
+    /// (JS `createBashTool(...).execute()`) runs each command through it. Same
+    /// fire-and-forget, FIFO-ordered control-command shape as `SetNotifySink`: a
+    /// host bound before an `Invoke*`/`Eval` command is in `OpState` by the time
+    /// that dispatch's `op_run_bash` fires.
+    SetBashHost { host: Arc<dyn BashToolHost> },
     /// Drain in-flight work and stop the runtime thread.
     Shutdown { reply: oneshot::Sender<()> },
 }
@@ -284,6 +291,21 @@ impl JsPlaneHandle {
         let _ = self.tx.send(Command::SetNotifySink { sink });
     }
 
+    /// Bind a host [`BashToolHost`] into the runtime `OpState`, so JS
+    /// `createBashTool(...).execute()` (the `op_run_bash` op) runs each command
+    /// through it.
+    ///
+    /// Synchronous and fire-and-forget, exactly like
+    /// [`set_notify_sink`](Self::set_notify_sink): it enqueues a `SetBashHost`
+    /// control command and returns immediately. The plane services commands in
+    /// FIFO order on its owning thread, so a host bound before an
+    /// [`eval`](Self::eval) / [`invoke_stored`](Self::invoke_stored) call is in
+    /// `OpState` by the time that dispatch's `op_run_bash` fires. Rebinding
+    /// replaces the prior host (`OpState::put` overwrites by type).
+    pub fn set_bash_host(&self, host: Arc<dyn BashToolHost>) {
+        let _ = self.tx.send(Command::SetBashHost { host });
+    }
+
     /// Shut the runtime thread down cleanly, waiting for it to join.
     pub async fn shutdown(mut self) {
         let (reply, rx) = oneshot::channel();
@@ -376,6 +398,10 @@ fn js_plane_thread(mut rx: mpsc::UnboundedReceiver<Command>) {
                 Command::SetNotifySink { sink } => {
                     // Put the host sink into OpState; op_notify borrows it there.
                     runtime.op_state().borrow_mut().put(sink);
+                }
+                Command::SetBashHost { host } => {
+                    // Put the host into OpState; op_run_bash borrows it there.
+                    runtime.op_state().borrow_mut().put(host);
                 }
                 Command::Shutdown { reply } => {
                     let _ = reply.send(());
