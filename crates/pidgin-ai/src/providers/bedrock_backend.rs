@@ -17,9 +17,15 @@
 //!
 //! This backend drives the BEARER-TOKEN auth path (pi's Bedrock API-key bypass)
 //! over a buffered decode of the whole response body. The non-bearer
-//! AWS-credentials path (SigV4 signing) and true per-chunk incremental streaming
-//! are documented follow-ups on the driver; `stream_incremental` here inherits
-//! the default buffered wrapper.
+//! AWS-credentials path (SigV4 signing) and TRUE per-chunk incremental streaming
+//! are documented follow-ups on the driver. `stream_incremental` therefore
+//! replays the buffered result through
+//! [`AssistantEventReader::from_buffered`](crate::utils::sse::AssistantEventReader::from_buffered),
+//! but — unlike the default seam wrapper — it lowers `reasoning`/`thinking_budgets`
+//! through the same buffered [`stream_simple`](BedrockBackend::stream_simple) the
+//! buffered path uses, so a reasoning request reaches the incremental seam
+//! instead of being silently dropped (the guard the default seam trips is thereby
+//! satisfied with real lowering).
 
 // straitjacket-allow-file:duplication — the pre-start error-shell scaffolding
 // (empty `AssistantMessage` + zeroed `Usage`) and the `Model<Value>` -> typed
@@ -40,6 +46,7 @@ use crate::types::{
     UsageCost,
 };
 use crate::utils::provider_env::ProviderEnv;
+use crate::utils::sse::AssistantEventReader;
 
 /// The api id this backend serves, pi's `bedrock-converse-stream` [`Api`]
 /// discriminant.
@@ -174,6 +181,38 @@ impl Provider for BedrockBackend {
             &process_env,
             timestamp,
         )
+    }
+
+    /// Stream a Bedrock `ConverseStream` turn as an incremental pull reader,
+    /// lowering `reasoning`/`thinking_budgets` onto the request exactly as the
+    /// buffered [`stream_simple`](Self::stream_simple) does. This is full pi
+    /// parity: pi's single Bedrock streaming path (`bedrock-converse-stream.ts`)
+    /// applies the same reasoning/budget shaping regardless of whether the caller
+    /// consumes the turn buffered or incrementally, so the incremental seam honors
+    /// reasoning through the one `streamSimple` lowering rather than dropping it at
+    /// the provider boundary.
+    ///
+    /// The Bedrock driver is buffered-only — true per-chunk streaming is a
+    /// documented driver follow-up — so this replays the buffered result through
+    /// [`AssistantEventReader::from_buffered`]. Delegating to
+    /// [`stream_simple`](Self::stream_simple) keeps the reasoning-lowering
+    /// computation a single source of truth shared with the buffered path (no
+    /// near-clone): with `reasoning: None`, `stream_simple` falls back to the raw
+    /// [`stream`](Self::stream), so the outgoing request is byte-identical to the
+    /// pre-widening incremental path (the default seam behavior), and with a
+    /// reasoning level it runs the Claude-adaptive / Claude-budget / non-Claude
+    /// branches of `driver::stream_simple`.
+    ///
+    /// This override replaces the default seam's
+    /// `debug_assert_incremental_reasoning_unlowered` guard with real lowering.
+    fn stream_incremental<'a>(
+        &'a self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> AssistantEventReader<'a> {
+        AssistantEventReader::from_buffered(self.stream_simple(model, context, options, signal))
     }
 }
 
@@ -704,6 +743,175 @@ mod tests {
 
         assert_eq!(request_body(&raw_scripted), request_body(&simple_scripted));
         assert!(request_body(&simple_scripted)
+            .get("additionalModelRequestFields")
+            .is_none());
+    }
+
+    // -----------------------------------------------------------------------
+    // stream_incremental: reasoning lowering (pi single streaming path)
+    //
+    // FULL INCREMENTAL PARITY: the incremental seam carries the full
+    // `SimpleStreamOptions`, so a reasoning level lowers onto the request
+    // param-exactly, identically to the buffered `stream_simple` -- pi streams
+    // incrementally AND honors reasoning through one `streamSimple`. Because the
+    // Bedrock driver is buffered-only, the incremental reader is a
+    // `from_buffered` replay of `stream_simple`, so it must be DRAINED for the
+    // request to be issued.
+    // -----------------------------------------------------------------------
+
+    use crate::types::AssistantMessageEvent;
+
+    /// Drain the incremental reader so the underlying request is issued.
+    fn drain(reader: &mut AssistantEventReader<'_>) {
+        let _events: Vec<AssistantMessageEvent> = reader.by_ref().collect();
+    }
+
+    // Adaptive Claude (`anthropic.claude-opus-4-8`) + reasoning `high` on the
+    // INCREMENTAL path -> adaptive thinking with the mapped `effort` output_config,
+    // byte-identical to the buffered `stream_simple_adaptive_claude_passes_reasoning`.
+    #[test]
+    fn stream_incremental_adaptive_claude_passes_reasoning() {
+        let (scripted, transport) = scripted_eventstream(hello_eventstream());
+        let backend = BedrockBackend::new(transport, fake_clock());
+        let model =
+            bedrock_reasoning_model("anthropic.claude-opus-4-8-20250101-v1:0", 200_000, 32_000);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("bedrock-bearer-token".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&simple), None);
+        drain(&mut reader);
+
+        let fields = &request_body(&scripted)["additionalModelRequestFields"];
+        assert_eq!(fields["thinking"]["type"], json!("adaptive"));
+        assert_eq!(fields["output_config"], json!({ "effort": "high" }));
+    }
+
+    // Budget-based (non-adaptive) Claude + reasoning `medium` with an explicit
+    // caller cap on the INCREMENTAL path: same exact numbers as the buffered
+    // `stream_simple_budget_claude_adjusts_max_tokens_and_budget`. base =
+    // clamp(2000) = 2000; adjust(2000, model=32000, medium=8192) -> maxTokens =
+    // min(2000+8192, 32000) = 10192, budget = 8192; override = min(8192,
+    // 10192-1024) = 8192. So `inferenceConfig.maxTokens = 10192` and
+    // `thinking.budget_tokens = 8192`.
+    #[test]
+    fn stream_incremental_budget_claude_adjusts_max_tokens_and_budget() {
+        let (scripted, transport) = scripted_eventstream(hello_eventstream());
+        let backend = BedrockBackend::new(transport, fake_clock());
+        let model =
+            bedrock_reasoning_model("anthropic.claude-3-5-sonnet-20241022-v2:0", 200_000, 32_000);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("bedrock-bearer-token".to_string()),
+                max_tokens: Some(2000),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::Medium),
+            None,
+        );
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&simple), None);
+        drain(&mut reader);
+
+        let body = request_body(&scripted);
+        assert_eq!(body["inferenceConfig"]["maxTokens"], json!(10192));
+        assert_eq!(
+            body["additionalModelRequestFields"]["thinking"]["type"],
+            json!("enabled")
+        );
+        assert_eq!(
+            body["additionalModelRequestFields"]["thinking"]["budget_tokens"],
+            json!(8192)
+        );
+    }
+
+    // Budget-based Claude where the override `min(adjusted, maxTokens-1024)` bites,
+    // on the INCREMENTAL path: same exact numbers as the buffered
+    // `stream_simple_budget_claude_override_clamps_to_max_tokens_minus_1024`.
+    // model cap 16000, custom `medium` budget 20000, no caller cap ->
+    // `budget_tokens = 14976`, `maxTokens = 16000`.
+    #[test]
+    fn stream_incremental_budget_claude_override_clamps_to_max_tokens_minus_1024() {
+        let (scripted, transport) = scripted_eventstream(hello_eventstream());
+        let backend = BedrockBackend::new(transport, fake_clock());
+        let model =
+            bedrock_reasoning_model("anthropic.claude-3-5-sonnet-20241022-v2:0", 200_000, 16_000);
+        let budgets = SeamThinkingBudgets {
+            medium: Some(20_000),
+            ..SeamThinkingBudgets::default()
+        };
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("bedrock-bearer-token".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::Medium),
+            Some(budgets),
+        );
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&simple), None);
+        drain(&mut reader);
+
+        let body = request_body(&scripted);
+        assert_eq!(body["inferenceConfig"]["maxTokens"], json!(16000));
+        assert_eq!(
+            body["additionalModelRequestFields"]["thinking"]["budget_tokens"],
+            json!(14976)
+        );
+    }
+
+    // Non-Claude reasoning model (`meta.llama...`) + reasoning `high` on the
+    // INCREMENTAL path: pi's non-Claude passthrough. `reasoning` is present but the
+    // driver ignores it, so NO `additionalModelRequestFields` reaches the request,
+    // byte-identical to the buffered
+    // `stream_simple_non_claude_passthrough_omits_thinking_config`.
+    #[test]
+    fn stream_incremental_non_claude_passthrough_omits_thinking_config() {
+        let (scripted, transport) = scripted_eventstream(hello_eventstream());
+        let backend = BedrockBackend::new(transport, fake_clock());
+        let model = bedrock_reasoning_model("meta.llama3-1-405b-instruct-v1:0", 128_000, 8_192);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("bedrock-bearer-token".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+        let mut reader = backend.stream_incremental(&model, &user_context(), Some(&simple), None);
+        drain(&mut reader);
+
+        let body = request_body(&scripted);
+        assert!(body.get("additionalModelRequestFields").is_none());
+    }
+
+    // NO-REASONING zero-regression: `stream_incremental` with `reasoning: None`
+    // builds a request byte-identical to the raw `stream` path -- no thinking
+    // config is added, and the incremental request equals the buffered one. Guards
+    // that the incremental override does not perturb the non-reasoning path.
+    #[test]
+    fn stream_incremental_without_reasoning_matches_raw_stream() {
+        let model = bedrock_model("https://bedrock.test");
+        let base = StreamOptions {
+            api_key: Some("bedrock-bearer-token".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (raw_scripted, raw_transport) = scripted_eventstream(hello_eventstream());
+        let raw_backend = BedrockBackend::new(raw_transport, fake_clock());
+        raw_backend.stream(&model, &user_context(), Some(&base), None);
+
+        let (incr_scripted, incr_transport) = scripted_eventstream(hello_eventstream());
+        let incr_backend = BedrockBackend::new(incr_transport, fake_clock());
+        let simple = SimpleStreamOptions::from_base(base.clone());
+        let mut reader =
+            incr_backend.stream_incremental(&model, &user_context(), Some(&simple), None);
+        drain(&mut reader);
+
+        assert_eq!(request_body(&raw_scripted), request_body(&incr_scripted));
+        assert!(request_body(&incr_scripted)
             .get("additionalModelRequestFields")
             .is_none());
     }
