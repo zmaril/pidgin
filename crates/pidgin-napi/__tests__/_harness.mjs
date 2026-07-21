@@ -1,3 +1,4 @@
+// straitjacket-allow-file:duplication
 // Shared scaffolding for the agent-bridge-*.mjs tests.
 //
 // These bridge tests each drove the native `AgentBridge` addon with the same
