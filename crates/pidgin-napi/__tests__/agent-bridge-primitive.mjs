@@ -1,3 +1,8 @@
+// straitjacket-allow-file:duplication — this harness is the root of the
+// `agent-bridge-*.mjs` / `session-call-seam.mjs` proof-harness family whose
+// `drive` dispatcher + `assert`/`assertEq` scaffold is deliberately mirrored
+// across each self-contained file (the siblings carry the same marker).
+//
 // Bridge slice 1 — STEP A: the core primitive, in isolation.
 //
 // Proves the NonBlocking-TSFN + resolve-channel round-trip works from a
