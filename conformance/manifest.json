@@ -1109,7 +1109,10 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/core/experimental.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/experimental.test.ts"
+      ]
     },
     {
       "package": "coding-agent",
