@@ -4,14 +4,14 @@
 # Pipeline: schema/api.json + schema/catalog.json  --fluessig-gen-->  src/generated.rs
 # The generated file is do-not-edit; change the schema and rerun this script.
 #
-# fluessig is pinned to rev 1fed77aa37ad4bfc69954432777f5f5e0347e0b6
+# fluessig is pinned to rev e056bb966240be297cc9c60a32cf99436a54801f
 # (fluessig `main`, carrying the node backend + per-op export-name pins; the
 # whole-repo pin is shared with crates/pidgin-napi). Keep this in sync with the
 # `fluessig-runtime` rev in Cargo.toml — the generated code and the runtime
 # crate must come from the same fluessig revision.
 set -euo pipefail
 
-pinned_rev="1fed77aa37ad4bfc69954432777f5f5e0347e0b6"
+pinned_rev="e056bb966240be297cc9c60a32cf99436a54801f"
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
