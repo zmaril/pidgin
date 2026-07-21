@@ -39,6 +39,11 @@
 ///   (JS `number`); `fuzzyFilter` returns the surviving indices as `uint32` (JS
 ///   `number`), widened from the engine's `usize` at the seam — the JS-visible
 ///   scores and indices are identical to the pre-swap wrappers.
+/// - the coding-agent mime op (`detectSupportedImageMimeType`) routes into
+///   `pidgin_coding::utils::mime`, backing the native `utils/mime.ts` shim. The
+///   image byte prefix crosses as the `bytes` scalar — spelled `Uint8Array` on
+///   the JS side (a read-only view) — and the sniffed MIME type crosses back as
+///   `string | null`, identical to the pre-swap hand-written wrapper.
 pub struct PidginImpl;
 
 impl crate::generated::PidginCore for PidginImpl {
@@ -283,6 +288,12 @@ impl crate::generated::PidginCore for PidginImpl {
             .into_iter()
             .map(|i| i as u32)
             .collect()
+    }
+
+    fn detect_supported_image_mime_type(
+        buffer: napi::bindgen_prelude::Uint8Array,
+    ) -> Option<String> {
+        pidgin_coding::utils::mime::detect_supported_image_mime_type(&buffer).map(|s| s.to_string())
     }
 }
 

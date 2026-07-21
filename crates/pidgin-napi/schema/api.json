@@ -938,6 +938,27 @@
               "name": "fuzzyFilter"
             }
           }
+        },
+        {
+          "name": "detectSupportedImageMimeType",
+          "doc": "`detectSupportedImageMimeType` (utils/mime.ts): sniff a supported image MIME\ntype from magic bytes, or `null`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "buffer",
+              "type": "bytes"
+            }
+          ],
+          "returns": {
+            "nullable": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "detectSupportedImageMimeType"
+            }
+          }
         }
       ]
     },
