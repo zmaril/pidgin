@@ -30,6 +30,10 @@ use std::sync::Arc;
 
 use pidgin_model_catalog::{catalog, Modality as CatModality, Model as CatModel};
 
+use crate::images_models::{
+    create_images_models, CreateImagesModelsOptions, ImagesModelsImpl, ImagesProvider,
+    MutableImagesModels,
+};
 use crate::providers::anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
 use crate::providers::azure_openai_responses_backend::{
     AzureOpenAIResponsesBackend, AZURE_OPENAI_RESPONSES_API,
@@ -44,6 +48,9 @@ use crate::providers::openai_completions_backend::{
     OpenAICompletionsBackend, OPENAI_COMPLETIONS_API,
 };
 use crate::providers::openai_responses_backend::{OpenAIResponsesBackend, OPENAI_RESPONSES_API};
+use crate::providers::openrouter_images_backend::{
+    openrouter_images_provider, openrouter_images_provider_with_transport,
+};
 use crate::providers::registry::{
     create_provider, ApiRouting, CreateProviderOptions, Models, MutableModels, ProviderAuth,
     RefreshContext, RegistryProvider, StreamBackendRef,
@@ -431,6 +438,50 @@ pub fn builtin_providers_with_transport(
 pub fn builtin_models() -> Models {
     let mut models = Models::new();
     for provider in builtin_providers() {
+        models.set_provider(provider);
+    }
+    models
+}
+
+/// All built-in image-generation providers, freshly constructed, pi's
+/// `builtinImagesProviders` (`all.ts:129-131`).
+///
+/// Like [`builtin_providers`], the no-transport form leaves generation unwired
+/// (the openrouter provider carries an `UnimplementedImagesApi`); model listing,
+/// pricing, and auth are fully available.
+pub fn builtin_images_providers() -> Vec<Arc<dyn ImagesProvider>> {
+    vec![openrouter_images_provider()]
+}
+
+/// All built-in image-generation providers wired for real HTTP over `transport`,
+/// the transport-aware analog of [`builtin_images_providers`].
+pub fn builtin_images_providers_with_transport(
+    transport: Arc<dyn HttpTransport>,
+    clock: Arc<dyn Clock>,
+) -> Vec<Arc<dyn ImagesProvider>> {
+    vec![openrouter_images_provider_with_transport(transport, clock)]
+}
+
+/// An [`ImagesModelsImpl`] collection with every built-in image provider
+/// registered, pi's `builtinImagesModels` (`all.ts:134-140`).
+pub fn builtin_images_models(options: CreateImagesModelsOptions) -> ImagesModelsImpl {
+    let mut models = create_images_models(options);
+    for provider in builtin_images_providers() {
+        models.set_provider(provider);
+    }
+    models
+}
+
+/// An [`ImagesModelsImpl`] collection with every built-in image provider wired
+/// for real HTTP over `transport`, the transport-aware analog of
+/// [`builtin_images_models`].
+pub fn builtin_images_models_with_transport(
+    options: CreateImagesModelsOptions,
+    transport: Arc<dyn HttpTransport>,
+    clock: Arc<dyn Clock>,
+) -> ImagesModelsImpl {
+    let mut models = create_images_models(options);
+    for provider in builtin_images_providers_with_transport(transport, clock) {
         models.set_provider(provider);
     }
     models

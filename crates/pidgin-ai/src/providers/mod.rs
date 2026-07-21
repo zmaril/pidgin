@@ -13,23 +13,30 @@ pub mod builtins;
 pub mod faux;
 pub mod google_generative_ai_backend;
 pub mod google_vertex_backend;
+pub mod images;
 pub mod mistral_backend;
 pub mod openai_completions_backend;
 pub mod openai_responses_backend;
+pub mod openrouter_images_backend;
 pub mod registry;
 
 pub use anthropic_backend::{AnthropicMessagesBackend, ANTHROPIC_MESSAGES_API};
 pub use azure_openai_responses_backend::{AzureOpenAIResponsesBackend, AZURE_OPENAI_RESPONSES_API};
 pub use bedrock_backend::{BedrockBackend, BEDROCK_CONVERSE_STREAM_API};
 pub use builtins::{
-    builtin_models, builtin_providers, builtin_providers_with_transport, catalog_model_to_ai,
-    provider_from_catalog, provider_from_catalog_with_transport, radius_provider,
+    builtin_images_models, builtin_images_models_with_transport, builtin_images_providers,
+    builtin_images_providers_with_transport, builtin_models, builtin_providers,
+    builtin_providers_with_transport, catalog_model_to_ai, provider_from_catalog,
+    provider_from_catalog_with_transport, radius_provider,
 };
 pub use google_generative_ai_backend::{GoogleGenerativeAiBackend, GOOGLE_GENERATIVE_AI_API};
 pub use google_vertex_backend::{GoogleVertexBackend, GOOGLE_VERTEX_API};
 pub use mistral_backend::{MistralBackend, MISTRAL_CONVERSATIONS_API};
 pub use openai_completions_backend::{OpenAICompletionsBackend, OPENAI_COMPLETIONS_API};
 pub use openai_responses_backend::{OpenAIResponsesBackend, OPENAI_RESPONSES_API};
+pub use openrouter_images_backend::{
+    openrouter_images_provider, openrouter_images_provider_with_transport, UnimplementedImagesApi,
+};
 pub use registry::{
     clamp_thinking_level, create_models, create_provider, get_supported_thinking_levels,
     models_are_equal, ApiRouting, CreateProviderOptions, FilterModels, Models, MutableModels,

@@ -16,6 +16,11 @@ pub mod auth;
 pub mod compat;
 pub mod cost;
 pub mod env_api_keys;
+pub mod image_models;
+pub mod image_models_generated;
+pub mod images;
+pub mod images_api_registry;
+pub mod images_models;
 pub mod models_store;
 pub mod providers;
 pub mod seams;
@@ -31,13 +36,27 @@ pub use compat::{
 };
 pub use cost::{calculate_cost, calculate_cost_with};
 pub use env_api_keys::{find_env_keys, get_api_key_env_vars, get_env_api_key, AMBIENT_SENTINEL};
+pub use image_models::{get_image_model, get_image_models, get_image_providers};
+pub use image_models_generated::image_models;
+pub use images::{generate_images, GenerateImagesError};
+pub use images_api_registry::{
+    get_images_api_provider, register_images_api_provider, ImagesApiError, ImagesApiProvider,
+};
+pub use images_models::{
+    create_images_models, create_images_provider, CreateImagesModelsOptions,
+    CreateImagesProviderOptions, ImagesModelsImpl, ImagesProvider, MutableImagesModels,
+    ProviderRefreshError,
+};
 pub use models_store::{InMemoryModelsStore, ModelsStore, ModelsStoreEntry, ProviderModelsStore};
 pub use providers::{
-    builtin_models, builtin_providers, builtin_providers_with_transport, clamp_thinking_level,
-    create_models, create_provider, get_supported_thinking_levels, models_are_equal,
-    provider_from_catalog_with_transport, radius_provider, AnthropicMessagesBackend, ApiRouting,
-    CreateProviderOptions, FilterModels, Models, MutableModels, ProviderAuth, ProviderHeaders,
-    ProviderSnapshot, RefreshContext, RefreshOptions, RefreshResult, RegistryProvider,
+    builtin_images_models, builtin_images_models_with_transport, builtin_images_providers,
+    builtin_images_providers_with_transport, builtin_models, builtin_providers,
+    builtin_providers_with_transport, clamp_thinking_level, create_models, create_provider,
+    get_supported_thinking_levels, models_are_equal, openrouter_images_provider,
+    openrouter_images_provider_with_transport, provider_from_catalog_with_transport,
+    radius_provider, AnthropicMessagesBackend, ApiRouting, CreateProviderOptions, FilterModels,
+    Models, MutableModels, ProviderAuth, ProviderHeaders, ProviderSnapshot, RefreshContext,
+    RefreshOptions, RefreshResult, RegistryProvider, UnimplementedImagesApi,
     ANTHROPIC_MESSAGES_API,
 };
 pub use session_resources::{

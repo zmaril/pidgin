@@ -443,9 +443,10 @@ pub struct StreamOptions {
 //   - `ProviderResponse` (types.ts:108): the callback argument shape, deferred
 //     with the callbacks it serves.
 //   - Function/callback aliases `ProviderResponse`, `ProviderStreams`,
-//     `ProviderImages`, `StreamFunction`, `ImagesFunction` (types.ts:108-244,
-//     309-319): behavior contracts modeled by the provider trait seams, not by
-//     serializable data.
+//     `StreamFunction` (types.ts:108-244, 309-319): behavior contracts modeled
+//     by the provider trait seams, not by serializable data. (The image-side
+//     `ProviderImages` / `ImagesFunction` are ported below the image-generation
+//     types — see [`ProviderImages`] and [`ImagesFunction`].)
 //   - Mapped/conditional type aliases `ApiOptionsMap`, `ApiStreamOptions`,
 //     `ProviderStreamOptions` (types.ts:191-217): TypeScript mapped/conditional
 //     types keyed by API string with no faithful Rust analog; the per-provider
@@ -991,3 +992,57 @@ pub struct ImagesOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<BTreeMap<String, Value>>,
 }
+
+/// pi's known image-generation api discriminant (`KnownImagesApi`,
+/// `types.ts:32`). The single value the [`ImagesApi`] string union carries today.
+pub const KNOWN_IMAGES_API: &str = "openrouter-images";
+
+/// pi's known image-generation provider id (`KnownImagesProvider`,
+/// `types.ts:73`). The single value the [`ImagesProviderId`] union carries today.
+pub const KNOWN_IMAGES_PROVIDER: &str = "openrouter";
+
+/// The uniform contract of an image-generation API implementation module
+/// (`ProviderImages`, `types.ts:238`).
+///
+/// Every image API module under `api/` exports exactly one image-generation
+/// entry point, so the module itself satisfies this interface; the lazy wrappers
+/// and image-provider factories pass these around as values. pi types the sole
+/// method as an async function returning `Promise<AssistantImages>`; the sync
+/// port returns [`AssistantImages`] directly and threads network I/O through the
+/// injected [`HttpTransport`](crate::seams::http::HttpTransport) inside the
+/// concrete implementation.
+///
+/// # Port note — `signal`
+///
+/// pi carries the per-request `AbortSignal` inside `ImagesOptions.signal`. The
+/// serializable [`ImagesOptions`] port defers that field (see the deferral note
+/// above), so — exactly as the chat [`StreamOptions`] defers `signal` and the
+/// [`Provider::stream`](crate::seams::provider::Provider::stream) seam takes it
+/// as a separate parameter — this trait carries `signal` as its own parameter
+/// and threads it end-to-end through the dispatch layers to the concrete HTTP
+/// entry point ([`crate::api::openrouter_images::generate_images`]).
+pub trait ProviderImages: Send + Sync {
+    /// Generate images for `model` from `context`, applying the plain-data
+    /// `options` and honoring `signal` for cooperative abort. Must not throw:
+    /// request/model/runtime failures are encoded in the returned
+    /// [`AssistantImages`] with a `stopReason` of `error`/`aborted`.
+    fn generate_images(
+        &self,
+        model: &ImagesModel,
+        context: &ImagesContext,
+        options: Option<&ImagesOptions>,
+        signal: Option<&crate::seams::provider::AbortSignal>,
+    ) -> AssistantImages;
+}
+
+/// pi's `ImagesFunction` value-level contract (`types.ts:315`): the callable an
+/// image API module exports and the image-provider factories pass around.
+///
+/// pi expresses it as `type ImagesFunction = (model, context, options?) =>
+/// Promise<AssistantImages>`. The Rust analog is a shareable boxed closure of the
+/// same shape; the runtime dispatch prefers the [`ProviderImages`] trait object,
+/// so this alias is the faithful value-level mirror for callers that hold the
+/// bare function.
+pub type ImagesFunction = std::sync::Arc<
+    dyn Fn(&ImagesModel, &ImagesContext, Option<&ImagesOptions>) -> AssistantImages + Send + Sync,
+>;
