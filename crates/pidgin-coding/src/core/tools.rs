@@ -9,6 +9,7 @@
 //! placeholders until the surrounding agent runtime is ported.
 
 pub mod bash;
+pub mod bash_host;
 pub mod definitions;
 pub mod diff_render;
 pub mod edit;
