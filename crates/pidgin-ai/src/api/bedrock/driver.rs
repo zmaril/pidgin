@@ -62,6 +62,7 @@ use std::collections::BTreeMap;
 
 use serde_json::Value;
 
+use crate::api::anthropic::simple_options::{adjust_max_tokens_for_thinking, clamp_reasoning};
 use crate::seams::http::{HttpRequest, HttpTransport};
 use crate::seams::provider::StreamResult;
 use crate::types::{
@@ -70,8 +71,10 @@ use crate::types::{
 use crate::utils::provider_env::ProviderEnv;
 
 use super::{
-    apply_custom_headers, build_client_config, build_command_input, custom_headers_record,
-    decode_event_stream, parse_converse_stream, sigv4, BedrockModel, BedrockOptions,
+    apply_custom_headers, build_client_config, build_command_input, clamp_max_tokens_to_context,
+    custom_headers_record, decode_event_stream, is_anthropic_claude_model, parse_converse_stream,
+    sigv4, supports_adaptive_thinking, to_adjust_budgets, BedrockModel, BedrockOptions,
+    ThinkingBudgets,
 };
 
 /// Upper bound on the error-body text folded into a non-2xx error message,
@@ -423,6 +426,109 @@ pub fn stream<T: HttpTransport + ?Sized>(
         events: outcome.events,
         message: outcome.message,
     }
+}
+
+/// pi's `streamSimple` (`bedrock-converse-stream.ts:392`): lower the unified
+/// `reasoning`/`thinkingBudgets` controls into a shaped [`BedrockOptions`], then
+/// run the turn through [`stream`].
+///
+/// The branching is model-family-aware, mirroring pi exactly:
+///
+/// - **No reasoning** (`:398`): passthrough with `reasoning` cleared — no thinking
+///   config is emitted. (The backend short-circuits to the raw [`stream`] before
+///   reaching here, so this branch keeps the function a total faithful port.)
+/// - **Claude + adaptive** (`:403-408`): pass `reasoning` + `thinkingBudgets`
+///   straight through; the driver's [`build_additional_model_request_fields`]
+///   (`super`) emits `thinking.type = "adaptive"` + `output_config.effort`.
+/// - **Claude, non-adaptive** (`:413-430`): fit thinking inside the output cap via
+///   the shared `adjustMaxTokensForThinking`, re-clamp to the context window, and
+///   override the clamped level's budget with
+///   `min(adjusted, max(0, maxTokens - 1024))`.
+/// - **Non-Claude** (`:433-437`): pass `reasoning` through; the driver ignores it
+///   (`build_additional_model_request_fields` returns `None` for non-Claude), so
+///   no thinking config reaches the request.
+///
+/// `base` is pi's `buildBaseOptions` output: `maxTokens` is clamped to the context
+/// window (`simple-options.ts:29`) in every branch.
+pub fn stream_simple<T: HttpTransport + ?Sized>(
+    transport: &T,
+    model: &BedrockModel,
+    context: &Context,
+    options: &BedrockOptions,
+    process_env: &ProviderEnv,
+    timestamp: i64,
+) -> StreamResult {
+    // pi's `buildBaseOptions` clamps `options.maxTokens ?? model.maxTokens` to the
+    // context window (`simple-options.ts:29`); every branch below streams off this
+    // clamped base cap.
+    let base_max_tokens = clamp_max_tokens_to_context(
+        model,
+        context,
+        options.max_tokens.unwrap_or(model.max_tokens),
+    );
+
+    let Some(reasoning) = options.reasoning else {
+        // `:398-400` — passthrough, reasoning cleared.
+        let shaped = BedrockOptions {
+            max_tokens: Some(base_max_tokens),
+            reasoning: None,
+            ..options.clone()
+        };
+        return stream(transport, model, context, &shaped, process_env, timestamp);
+    };
+
+    if is_anthropic_claude_model(model) {
+        if supports_adaptive_thinking(&model.id, model.name_ref()) {
+            // `:403-408` — adaptive Claude: reasoning + budgets pass through.
+            let shaped = BedrockOptions {
+                max_tokens: Some(base_max_tokens),
+                reasoning: Some(reasoning),
+                thinking_budgets: options.thinking_budgets.clone(),
+                ..options.clone()
+            };
+            return stream(transport, model, context, &shaped, process_env, timestamp);
+        }
+
+        // `:413-430` — budget-based Claude: fit thinking inside the output cap,
+        // re-clamp to context, and override the clamped level's budget.
+        let adjusted = adjust_max_tokens_for_thinking(
+            Some(base_max_tokens),
+            model.max_tokens,
+            reasoning,
+            options
+                .thinking_budgets
+                .as_ref()
+                .map(to_adjust_budgets)
+                .as_ref(),
+        );
+        let max_tokens = clamp_max_tokens_to_context(model, context, adjusted.max_tokens);
+        // `Math.min(adjusted.thinkingBudget, Math.max(0, maxTokens - 1024))` (`:428`).
+        let budget = adjusted
+            .thinking_budget
+            .min(max_tokens.saturating_sub(1024));
+
+        // `{ ...(options.thinkingBudgets || {}), [clampReasoning(reasoning)!]: budget }` (`:426-428`).
+        let mut thinking_budgets: ThinkingBudgets =
+            options.thinking_budgets.clone().unwrap_or_default();
+        thinking_budgets.insert(clamp_reasoning(reasoning), budget);
+
+        let shaped = BedrockOptions {
+            max_tokens: Some(max_tokens),
+            reasoning: Some(reasoning),
+            thinking_budgets: Some(thinking_budgets),
+            ..options.clone()
+        };
+        return stream(transport, model, context, &shaped, process_env, timestamp);
+    }
+
+    // `:433-437` — non-Claude passthrough (the driver ignores reasoning).
+    let shaped = BedrockOptions {
+        max_tokens: Some(base_max_tokens),
+        reasoning: Some(reasoning),
+        thinking_budgets: options.thinking_budgets.clone(),
+        ..options.clone()
+    };
+    stream(transport, model, context, &shaped, process_env, timestamp)
 }
 
 #[cfg(test)]

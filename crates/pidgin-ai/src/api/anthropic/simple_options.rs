@@ -70,7 +70,12 @@ pub fn clamp_max_tokens_to_context(
 
 /// pi's `clampReasoning` (`simple-options.ts:45`): `xhigh`/`max` collapse to
 /// `high` so the level maps onto a budget key.
-fn clamp_reasoning(effort: ThinkingLevel) -> ThinkingLevel {
+///
+/// `pub(crate)` so the sibling Bedrock `stream_simple` port can override the
+/// clamped level's budget with the same collapse pi's `bedrock-converse-stream.ts`
+/// applies (`:428`); this promotion is behavior-preserving for Anthropic, which
+/// keeps calling it unchanged from [`adjust_max_tokens_for_thinking`].
+pub(crate) fn clamp_reasoning(effort: ThinkingLevel) -> ThinkingLevel {
     match effort {
         ThinkingLevel::Xhigh | ThinkingLevel::Max => ThinkingLevel::High,
         other => other,
