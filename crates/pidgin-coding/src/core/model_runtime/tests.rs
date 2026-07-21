@@ -1275,3 +1275,84 @@ fn filter_models_narrows_get_available() {
         .collect();
     assert_eq!(available, vec!["keep".to_string()]);
 }
+
+// Buffered stream_fn slice: the shared attribution-header injection the sdk
+// `stream_fn` closure and `ModelRuntime::stream_simple` both delegate to.
+
+/// The header-inject step layers attribution headers into `opts.headers` and
+/// keeps the caller's own headers, with the caller winning on a name collision
+/// (pi's `mergeProviderAttributionHeaders` ordering: attribution defaults, then
+/// the caller's `requestHeaders` last).
+#[test]
+fn inject_attribution_headers_merges_attribution_under_caller_headers() {
+    // An openrouter model triggers the default attribution headers.
+    let model = crate::core::test_model("m", "openrouter");
+
+    let mut opts = StreamOptions::default();
+    opts.headers = Some(BTreeMap::from([
+        // Collides with an attribution key: the caller must win.
+        ("X-OpenRouter-Title".to_string(), "caller-wins".to_string()),
+        // A caller-only header: must survive untouched.
+        ("X-Caller".to_string(), "kept".to_string()),
+    ]));
+
+    inject_attribution_headers(&model, true, None, &mut opts);
+
+    let headers = opts.headers.expect("attribution injected some headers");
+    // Attribution header the caller did not set is present.
+    assert_eq!(
+        headers.get("HTTP-Referer").map(String::as_str),
+        Some("https://pi.dev")
+    );
+    assert_eq!(
+        headers.get("X-OpenRouter-Categories").map(String::as_str),
+        Some("cli-agent")
+    );
+    // On a name collision the caller's value overrides the attribution default.
+    assert_eq!(
+        headers.get("X-OpenRouter-Title").map(String::as_str),
+        Some("caller-wins")
+    );
+    // The caller-only header survives.
+    assert_eq!(headers.get("X-Caller").map(String::as_str), Some("kept"));
+}
+
+/// With telemetry disabled the attribution defaults are dropped, leaving only the
+/// caller's own headers (pi's `default_attribution_headers` returns `None`).
+#[test]
+fn inject_attribution_headers_respects_disabled_telemetry() {
+    let model = crate::core::test_model("m", "openrouter");
+    let mut opts = StreamOptions::default();
+    opts.headers = Some(BTreeMap::from([(
+        "X-Caller".to_string(),
+        "kept".to_string(),
+    )]));
+
+    inject_attribution_headers(&model, false, None, &mut opts);
+
+    let headers = opts.headers.expect("caller header preserved");
+    assert_eq!(headers.get("X-Caller").map(String::as_str), Some("kept"));
+    // No attribution headers layered in.
+    assert!(!headers.contains_key("HTTP-Referer"));
+    assert!(!headers.contains_key("X-OpenRouter-Title"));
+}
+
+/// The shared helper delegates through the ai `Models::stream_simple`: with no
+/// providers registered it yields the pre-dispatch `Unknown provider` error
+/// result (proving the delegate is reached without a network call).
+#[test]
+fn stream_simple_with_attribution_delegates_to_models() {
+    let models = Models::with_auth_context(Arc::new(DefaultAuthContext::new(SystemEnv::new())));
+    let model = crate::core::test_model("m", "openrouter");
+    let context = Context::default();
+
+    let result = stream_simple_with_attribution(&models, true, None, &model, &context, None, None);
+
+    // Empty Models -> require_provider fails -> single error result (pi's lazyStream catch).
+    assert!(result
+        .message
+        .error_message
+        .as_deref()
+        .unwrap_or_default()
+        .contains("Unknown provider"));
+}

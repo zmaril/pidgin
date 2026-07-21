@@ -58,8 +58,13 @@
 //! - the models.json-configured-key and OAuth **rich-handler read paths** (the
 //!   auth values resolve to the ambient/keyless result; pidgin-ai's own residual
 //!   deferral, not re-portable here without modifying that crate);
-//! - **streaming**: `stream`/`stream_simple`/`complete`/`complete_simple`,
-//!   `prepare_request`, header transforms;
+//! - **streaming (buffered)**: [`ModelRuntime::stream_simple`] is wired — a
+//!   faithful port of pi's `modelRuntime.streamSimple` that folds in the
+//!   provider-attribution header injection (via [`stream_simple_with_attribution`])
+//!   and delegates to the ai [`Models::stream_simple`]. The remaining streaming
+//!   surface stays deferred: incremental streaming (`stream_incremental`), the raw
+//!   `stream`/`complete`/`complete_simple` entry points, and pi's explicit
+//!   `prepare_request` (the ai [`Models`] seam applies auth internally);
 //! - **login/logout** and the credential-mutation refresh side effects;
 //! - **catalog persistence**: `refresh` drives `refreshModels` but does not yet
 //!   persist the fetched catalogs to the [`ModelsStore`] (the store is wired and
@@ -83,12 +88,14 @@ use pidgin_ai::providers::registry::{
     ProviderAuth, RefreshOptions, RegistryProvider,
 };
 use pidgin_ai::seams::storage::SystemEnv;
-use pidgin_ai::{builtin_providers, Model};
+use pidgin_ai::seams::{AbortSignal, StreamResult};
+use pidgin_ai::{builtin_providers, Context, Model, StreamOptions};
 
 use super::auth::auth_storage::AuthStorage;
 use super::auth::runtime_credentials::RuntimeCredentials;
 use super::model_config::ModelConfig;
 use super::models_store::{FileModelsStore, InMemoryCodingAgentModelsStore, ModelsStore};
+use super::provider_attribution::merge_provider_attribution_headers;
 use super::provider_composer::{
     compose_model_provider, configured_request_auth_status, extension_auth_config,
     provider_auth_config, resolve_compatibility_request_config, resolve_configured_model_headers,
@@ -164,7 +171,7 @@ pub struct ModelRuntime {
     models_path: Option<String>,
     allow_model_network: bool,
     config: ModelConfig,
-    models: Models,
+    pub(super) models: Models,
     snapshot: ModelRuntimeSnapshot,
 }
 
@@ -476,6 +483,41 @@ impl ModelRuntime {
     /// The credential list from the underlying store (pi's `listCredentials`).
     pub fn list_credentials(&self) -> Vec<CredentialInfo> {
         self.credentials.list().unwrap_or_default()
+    }
+
+    /// Stream a response for `model` from the runtime's composed providers, pi's
+    /// `modelRuntime.streamSimple` (`model-runtime.ts:485-491`).
+    ///
+    /// pi's `streamSimple` is attribution-agnostic — it runs `prepareRequest`
+    /// (auth resolution + `mergeHeaders`) and whatever `transformHeaders` hook its
+    /// caller (the sdk `streamFn`) supplies. The ai [`Models`] seam applies auth
+    /// internally and exposes no `transformHeaders` hook, so this wrapper folds the
+    /// provider-attribution injection in through the shared
+    /// [`stream_simple_with_attribution`] helper — the same helper the sdk
+    /// `stream_fn` closure calls, so the two paths cannot drift. The attribution
+    /// session id is read from the caller's `options.session_id` (pi threads
+    /// `options?.sessionId` into `mergeProviderAttributionHeaders`); telemetry
+    /// defaults to enabled here, since this lower-level primitive holds no
+    /// [`SettingsManager`](super::settings_manager::SettingsManager). The
+    /// settings-driven telemetry-disable and the retry/timeout snapshotting live on
+    /// the sdk layer, which snapshots the flags and calls the shared helper directly.
+    pub fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&StreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        let session_id = options.and_then(|o| o.session_id.as_deref());
+        stream_simple_with_attribution(
+            &self.models,
+            true,
+            session_id,
+            model,
+            context,
+            options,
+            signal,
+        )
     }
 
     /// Whether a provider resolves to an OAuth credential (pi's `isUsingOAuth`,
@@ -806,6 +848,56 @@ fn merge_model_headers(
         }
     }
     Some(merged)
+}
+
+/// Inject provider-attribution headers into the caller's [`StreamOptions`] and
+/// delegate to the ai [`Models::stream_simple`] — pi's sdk `streamFn`
+/// `transformHeaders` (`sdk.ts:313-323`) folded into `modelRuntime.streamSimple`.
+///
+/// pi threads attribution through a `transformHeaders` hook that runs inside
+/// `prepareRequest`, layered over `mergeHeaders(auth.headers, options.headers)`.
+/// The ai [`Models`] seam has no transform hook, so attribution is layered into
+/// the caller's `options.headers` override slot here: [`merge_provider_attribution_headers`]
+/// merges session-affinity + attribution headers under the caller's own headers
+/// (caller wins on a name collision, pi's ordering), and the merged set becomes
+/// `options.headers`, which wins over the resolved auth headers in the ai
+/// `apply_auth` override-merge. The attribution set therefore survives to the
+/// wire — the same end state pi's post-`mergeHeaders` transform reaches.
+///
+/// Shared by [`ModelRuntime::stream_simple`] and the sdk factory's `stream_fn`
+/// closure so the header-inject + delegate cannot drift between the two.
+pub(crate) fn stream_simple_with_attribution(
+    models: &Models,
+    telemetry_enabled: bool,
+    session_id: Option<&str>,
+    model: &Model,
+    context: &Context,
+    options: Option<&StreamOptions>,
+    signal: Option<&AbortSignal>,
+) -> StreamResult {
+    let mut opts = options.cloned().unwrap_or_default();
+    inject_attribution_headers(model, telemetry_enabled, session_id, &mut opts);
+    models.stream_simple(model, context, Some(&opts), signal)
+}
+
+/// Layer session-affinity + attribution headers into `opts.headers`, under the
+/// caller's own headers (caller wins on a name collision, pi's ordering). The
+/// merged set replaces `opts.headers`, becoming the override slot the ai
+/// `apply_auth` merge lets win over the resolved auth headers. Split out of
+/// [`stream_simple_with_attribution`] purely so the header wiring is unit-testable
+/// without dispatching a stream.
+fn inject_attribution_headers(
+    model: &Model,
+    telemetry_enabled: bool,
+    session_id: Option<&str>,
+    opts: &mut StreamOptions,
+) {
+    opts.headers = merge_provider_attribution_headers(
+        model,
+        telemetry_enabled,
+        session_id,
+        &[opts.headers.take()],
+    );
 }
 
 /// The default `models-store.json` path: alongside `models.json`
