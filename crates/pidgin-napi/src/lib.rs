@@ -40,6 +40,9 @@ pub mod terminal_colors;
 // delegates only `serializeConversation` to Rust. Additive.
 pub mod compaction_utils;
 
+// Coding-agent CLI args (`parseArgsNative`): pi's `parseArgs` argv loop, native.
+pub mod cli_args;
+
 // TUI terminal-image surface (`isImageLine`, `encodeKitty`, `renderImage`, the
 // image-header parsers, capability/cell-dimension state, and `hyperlink`):
 // drives pi's `terminal-image.ts` graphics helpers natively. Every export the
