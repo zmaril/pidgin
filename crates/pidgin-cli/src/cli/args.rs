@@ -4,6 +4,8 @@
 //! a manual argv loop (not a clap derive) so the exact flag semantics,
 //! diagnostics, and `printHelp` layout match pi byte-for-byte.
 
+// straitjacket-allow-file:duplication — faithful parallel port of pi's arg parser; the unknown-flags loop is mirrored in the napi cli_args re-port by design.
+
 use std::collections::BTreeMap;
 
 use crate::cli::config::{APP_NAME, CONFIG_DIR_NAME, ENV_AGENT_DIR, ENV_SESSION_DIR};
