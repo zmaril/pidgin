@@ -135,6 +135,12 @@ mod agent_bridge;
 // as dead code in the lib-test target.
 pub mod agent;
 
+// Agent-core session storage (`jsonl-storage.ts` / `memory-storage.ts`).
+// `pub` so the module's free `#[napi]` function (`loadJsonlSessionMetadataNative`)
+// registers as crate-reachable; otherwise `--all-targets` clippy reads it as
+// dead code in the lib-test target.
+pub mod agent_session;
+
 /// Returns the crate version. Proves the native addon builds and loads.
 ///
 /// Exported to JavaScript as `pidginNativeVersion`.

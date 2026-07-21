@@ -63,7 +63,10 @@
     {
       "package": "agent",
       "src": "packages/agent/src/harness/session/jsonl-storage.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "packages/agent/test/harness/storage.test.ts"
+      ]
     },
     {
       "package": "agent",
@@ -73,7 +76,10 @@
     {
       "package": "agent",
       "src": "packages/agent/src/harness/session/memory-storage.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "packages/agent/test/harness/storage.test.ts"
+      ]
     },
     {
       "package": "agent",
