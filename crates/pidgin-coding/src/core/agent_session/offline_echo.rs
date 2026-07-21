@@ -58,7 +58,7 @@
 use std::sync::{Arc, Mutex};
 
 use pidgin_agent::agent::{Agent, AgentOptions, InitialAgentState};
-use pidgin_agent::types::StreamFn;
+use pidgin_agent::types::{AgentTool, StreamFn};
 use pidgin_ai::providers::faux::{faux_assistant_message, FauxAssistantOptions};
 use pidgin_ai::seams::{AbortSignal, StreamResult};
 use pidgin_ai::{
@@ -67,6 +67,7 @@ use pidgin_ai::{
 };
 
 use crate::core::extensions::events::session::SessionStartEvent;
+use crate::core::extensions::runner::ExtensionRunner;
 use crate::core::model_runtime::{CreateModelRuntimeOptions, ModelRuntime, ModelsPath};
 use crate::core::provider_composer::{ExtensionModelConfig, ProviderConfigInput};
 use crate::core::resource_loader_orchestrator::{
@@ -139,7 +140,14 @@ impl std::error::Error for OfflineEchoError {}
 /// not be wired into a live model path.
 pub fn build_offline_echo_session(cwd: String) -> Result<AgentSession, OfflineEchoError> {
     let session_manager = SessionManager::in_memory(&cwd);
-    build_offline_session(cwd, echo_stream_fn(), session_manager, None)
+    build_offline_session(
+        cwd,
+        echo_stream_fn(),
+        session_manager,
+        None,
+        Vec::new(),
+        None,
+    )
 }
 
 /// The default faux [`StreamFn`] shared by [`build_offline_echo_session`] and
@@ -183,6 +191,8 @@ pub fn build_offline_echo_runtime_factory() -> CreateAgentSessionRuntimeFactory 
             echo_stream_fn(),
             options.session_manager,
             options.session_start_event,
+            Vec::new(),
+            None,
         )
         .expect("offline echo faux provider registers");
         AgentSessionRuntimeResult {
@@ -205,8 +215,51 @@ pub fn build_faux_session(
     cwd: String,
     responses: Vec<FauxResponse>,
 ) -> Result<AgentSession, OfflineEchoError> {
+    let session_manager = SessionManager::in_memory(&cwd);
+    build_offline_session(
+        cwd,
+        faux_stream_fn(responses),
+        session_manager,
+        None,
+        Vec::new(),
+        None,
+    )
+}
+
+/// Build a faux session (scripted `responses`) with a caller-supplied
+/// `extension_runner` and `tools` registered on the agent. Unlike
+/// [`build_faux_session`], this installs a real extension runner so that a
+/// `tool_call` guardrail's block decision is enforced end-to-end through the
+/// agent loop, and registers `tools` so the loop actually reaches the
+/// before-tool-call hook (an unregistered tool short-circuits as "not found"
+/// before any hook runs). Intended for offline extension-enforcement tests.
+///
+/// **Offline only.** See the module docs: the returned session is faux and must
+/// not be wired into a live model path.
+pub fn build_faux_session_with_runner(
+    cwd: String,
+    responses: Vec<FauxResponse>,
+    tools: Vec<AgentTool>,
+    extension_runner: Box<dyn ExtensionRunner>,
+) -> Result<AgentSession, OfflineEchoError> {
+    let session_manager = SessionManager::in_memory(&cwd);
+    build_offline_session(
+        cwd,
+        faux_stream_fn(responses),
+        session_manager,
+        None,
+        tools,
+        Some(extension_runner),
+    )
+}
+
+/// The faux [`StreamFn`] both faux-session builders share: it walks `responses`
+/// in order (one per turn), returning a fixed message, one computed from the
+/// request [`Context`], or the exhausted-list error once the script runs out
+/// (matching the harness / pi's faux provider).
+fn faux_stream_fn(responses: Vec<FauxResponse>) -> StreamFn {
     let scripted: Arc<Mutex<(Vec<FauxResponse>, usize)>> = Arc::new(Mutex::new((responses, 0)));
-    let stream_fn: StreamFn = Arc::new(
+    Arc::new(
         move |_model: &Model,
               context: &Context,
               _options: Option<&StreamOptions>,
@@ -229,9 +282,7 @@ pub fn build_faux_session(
             };
             mock_stream(message)
         },
-    );
-    let session_manager = SessionManager::in_memory(&cwd);
-    build_offline_session(cwd, stream_fn, session_manager, None)
+    )
 }
 
 /// The shared offline construction every builder calls: wire `stream_fn` into a
@@ -244,6 +295,10 @@ pub fn build_faux_session(
 /// hardcoded to [`SessionManager::in_memory`] / `None`) so the runtime factory
 /// ([`build_offline_echo_runtime_factory`]) can hand the runtime-opened manager and
 /// `session_start` metadata straight through for `/new`, `/resume`, and `/fork`.
+/// The `tools` and `extension_runner` are likewise parameterized so the extension
+/// enforcement lane ([`build_faux_session_with_runner`]) can register real tools and
+/// install a runner whose `tool_call` guardrail is enforced end-to-end, while the
+/// echo/faux builders pass an empty tool list and no runner.
 /// The `agent_dir` is derived from `cwd` (`{cwd}/.agent`), matching the harness this
 /// builder lifts.
 fn build_offline_session(
@@ -251,6 +306,8 @@ fn build_offline_session(
     stream_fn: StreamFn,
     session_manager: SessionManager,
     session_start_event: Option<SessionStartEvent>,
+    tools: Vec<AgentTool>,
+    extension_runner: Option<Box<dyn ExtensionRunner>>,
 ) -> Result<AgentSession, OfflineEchoError> {
     let agent_dir = format!("{cwd}/.agent");
     let model_runtime = build_offline_model_runtime()?;
@@ -265,7 +322,7 @@ fn build_offline_session(
         system_prompt: Some(OFFLINE_SYSTEM_PROMPT.to_string()),
         model: Some(offline_faux_model()),
         thinking_level: None,
-        tools: Some(Vec::new()),
+        tools: Some(tools),
         messages: None,
     };
     let agent = Agent::new(AgentOptions {
@@ -289,8 +346,9 @@ fn build_offline_session(
         allowed_tool_names: None,
         excluded_tool_names: None,
         base_tools_override: None,
-        // `None` selects the default `StubExtensionRunner` (no extensions).
-        extension_runner: None,
+        // `None` selects the default `StubExtensionRunner` (no extensions); a
+        // `Some` runner is installed so its `tool_call` guardrail is enforced.
+        extension_runner,
         session_start_event,
         summarization_models: None,
     }))
