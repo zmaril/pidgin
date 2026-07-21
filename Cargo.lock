@@ -1211,6 +1211,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "fluessig-runtime"
+version = "0.1.0"
+source = "git+https://github.com/zmaril/fluessig?rev=1fed77aa37ad4bfc69954432777f5f5e0347e0b6#1fed77aa37ad4bfc69954432777f5f5e0347e0b6"
+
+[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2564,6 +2569,7 @@ dependencies = [
 name = "pidgin-napi"
 version = "0.1.0"
 dependencies = [
+ "fluessig-runtime",
  "indexmap",
  "napi",
  "napi-build",

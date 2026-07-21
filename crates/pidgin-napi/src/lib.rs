@@ -158,13 +158,18 @@ pub mod agent;
 // dead code in the lib-test target.
 pub mod agent_session;
 
-/// Returns the crate version. Proves the native addon builds and loads.
-///
-/// Exported to JavaScript as `pidginNativeVersion`.
-#[napi(js_name = "pidginNativeVersion")]
-pub fn pidgin_native_version() -> String {
-    env!("CARGO_PKG_VERSION").to_string()
-}
+// The fluessig-generated napi surface (`crate::generated`) + its hand-written
+// engine seam (`crate::core_impl`). The `version/core` export
+// (`pidginNativeVersion`) is generated from `schema/api.json` and routes through
+// the `PidginCore` trait — do not add hand-written `#[napi]` exports here that a
+// schema op can describe; edit the schema and rerun `regen.sh` instead.
+//
+// `pub mod` so the generated free `#[napi]` functions register as crate-reachable
+// (matching the other flipped modules). The generated file's own banner carries
+// `#![allow(unused_imports)]`, and fluessig's napi-2 prelude now emits only the
+// imports the surface actually uses, so no module-level allow is needed here.
+mod core_impl;
+pub mod generated;
 
 /// Parse an Anthropic Messages SSE body into the uniform assistant-message event
 /// stream and final message, backed by

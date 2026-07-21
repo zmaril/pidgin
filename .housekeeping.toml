@@ -18,6 +18,7 @@ allow = [
     "bindings/php/regen.sh",
     "crates/pidgin-tui/vectors/gen/gen_eaw_table.sh",
     "bindings/php/demo/serve.sh",
+    "crates/pidgin-napi/regen.sh",
 ]
 
 [stray-todos]
