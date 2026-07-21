@@ -1,0 +1,103 @@
+# straitjacket-allow-file[:duplication] — the two expect-fail steps share the
+# same invert-the-exit-code shape by necessity (one per seeded-bug spec).
+#
+# Machine-checks the code-derived Quint model of the async-oneshot bridge
+# (specs/bridge_async.qnt) — Phases B+C of the code-derived verification
+# pipeline (Phase A = the `hinzu model --emit quint` derive step, hinzu #43).
+#
+# A single green run is the evidence for all three acceptance items:
+#   1. `quint verify` PASSES on the finished bridge spec (the real design).
+#   2. The seeded double-resolve and lost-reply bugs each make `quint verify`
+#      FAIL with a counterexample (the expect-fail steps below).
+#   3. The exported ITF trace replays GREEN as a cargo test driving the real
+#      bridge registry — that runs in ci.yml's `rust` job (cargo test), which
+#      this PR also triggers.
+name: quint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "specs/**"
+      - ".github/workflows/quint.yml"
+      - "scripts/quint-verify.sh"
+      - "crates/pidgin-napi/src/bridge_async.rs"
+
+jobs:
+  quint:
+    name: quint model-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # `quint verify` runs Apalache on the JVM.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Pin the version Phase A validated against.
+      - name: Install Quint
+        run: npm install -g @informalsystems/quint@0.32.0
+
+      # Apalache is auto-downloaded on the first `quint verify`; cache it so
+      # reruns skip the ~50 MB GitHub-release fetch.
+      - name: Cache Apalache distribution
+        uses: actions/cache@v4
+        with:
+          path: ~/.quint
+          key: quint-apalache-${{ runner.os }}-quint-0.32.0
+
+      - name: Typecheck the finished model
+        run: quint typecheck specs/bridge_async.qnt
+
+      # The TypeScript backend is built-in (no extra evaluator download), so the
+      # randomized simulation is self-contained and deterministic to run.
+      - name: Randomized simulation — invariants must hold
+        run: >-
+          quint run --backend typescript --invariant allInvariants
+          --max-samples 200 --max-steps 12 specs/bridge_async.qnt
+
+      # ---- Acceptance #1: the good spec PASSES all three invariants. ----
+      # Apalache serves each verify over a gRPC server on a fixed port, so these
+      # MUST stay SEQUENTIAL — parallel verifies collide on the port. `--max-
+      # steps` keeps each solve fast; the helper retries once on download/JVM
+      # flakiness (a passing spec can never be flipped green by a retry).
+      - name: verify atMostOnceInv (single resolution)
+        run: ./scripts/quint-verify.sh atMostOnceInv specs/bridge_async.qnt
+
+      - name: verify registryAccountingInv (pending <=> Pending)
+        run: ./scripts/quint-verify.sh registryAccountingInv specs/bridge_async.qnt
+
+      - name: verify abortDrainsInv (abort empties the registry)
+        run: ./scripts/quint-verify.sh abortDrainsInv specs/bridge_async.qnt
+
+      # ---- Acceptance #2: the seeded-bug specs MUST produce counterexamples. ----
+      # Expect-FAIL: a green `quint verify` here means the checker missed the bug,
+      # which is itself a failure. This proves the spec is load-bearing without
+      # turning the job red.
+      - name: double-resolve bug must be caught (atMostOnceInv)
+        run: |
+          if quint verify --invariant atMostOnceInv --max-steps 5 \
+              specs/bridge_async_buggy_double_resolve.qnt; then
+            echo "BUG NOT CAUGHT: a double resolve slipped past atMostOnceInv"
+            exit 1
+          else
+            echo "counterexample found (expected)"
+          fi
+
+      - name: lost-reply bug must be caught (abortDrainsInv)
+        run: |
+          if quint verify --invariant abortDrainsInv --max-steps 5 \
+              specs/bridge_async_buggy_lost_reply.qnt; then
+            echo "BUG NOT CAUGHT: a lost reply slipped past abortDrainsInv"
+            exit 1
+          else
+            echo "counterexample found (expected)"
+          fi

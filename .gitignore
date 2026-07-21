@@ -22,3 +22,6 @@ target
 
 # Per-session Claude Code worktrees
 .claude/worktrees/
+
+# Apalache model-checker output (created by `quint verify`)
+_apalache-out/

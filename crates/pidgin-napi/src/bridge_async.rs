@@ -617,3 +617,190 @@ fn extract_error_message(raw: &str) -> String {
         })
         .unwrap_or_else(|| raw.to_string())
 }
+
+/// ITF trace-replay: prove the Quint model in `specs/bridge_async.qnt` is
+/// LOAD-BEARING against this real registry code.
+///
+/// The formal model (Phase B/C of the code-derived verification pipeline; Phase
+/// A = `hinzu model --emit quint`) exports a machine-checked happy-path trace to
+/// `specs/traces/bridge_ok.itf.json`. This test replays that trace step by step
+/// against the REAL [`BridgeShared`] — the same private `pending` registry,
+/// [`BridgeShared::deliver`], and [`BridgeShared::abort`] the addon uses — and,
+/// after EVERY step, asserts the real registry keyset equals the model's
+/// `pending` set. If the model and the code ever disagree about what is pending,
+/// this test fails. A minimal hand-rolled reader over `serde_json::Value` decodes
+/// the ITF subset the spec emits (`{"#bigint":"N"}`, `{"#set":[...]}`, a string
+/// `tag` for the `Event`), so no heavy new dependency is added.
+#[cfg(test)]
+mod itf_replay {
+    use std::collections::{BTreeSet, HashMap};
+
+    use serde_json::Value;
+    use tokio::sync::oneshot;
+
+    use super::{BridgeOutcome, BridgeShared};
+
+    /// One replayable step distilled from an ITF state: the `lastEvent` tag, the
+    /// `lastId` it acted on, and the model's `pending` keyset in that state.
+    struct Step {
+        event: String,
+        id: i64,
+        pending: BTreeSet<u64>,
+    }
+
+    /// Decode `{"#bigint":"N"}` (or a bare JSON number) to i64.
+    fn bigint(v: &Value) -> i64 {
+        if let Some(s) = v.get("#bigint").and_then(Value::as_str) {
+            s.parse().expect("ITF #bigint must be an integer")
+        } else if let Some(n) = v.as_i64() {
+            n
+        } else {
+            panic!("not an ITF integer: {v}");
+        }
+    }
+
+    /// Decode `{"#set":[...]}` of bigints into a set of ids.
+    fn idset(v: &Value) -> BTreeSet<u64> {
+        v.get("#set")
+            .and_then(Value::as_array)
+            .expect("ITF set must be {\"#set\":[...]}")
+            .iter()
+            .map(|e| bigint(e) as u64)
+            .collect()
+    }
+
+    /// Parse the committed ITF trace into replayable steps.
+    fn load_trace() -> Vec<Step> {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../specs/traces/bridge_ok.itf.json"
+        );
+        let raw = std::fs::read_to_string(path)
+            .unwrap_or_else(|e| panic!("cannot read ITF trace at {path}: {e}"));
+        let doc: Value = serde_json::from_str(&raw).expect("ITF must be valid JSON");
+        doc["states"]
+            .as_array()
+            .expect("ITF must have a states array")
+            .iter()
+            .map(|st| Step {
+                event: st["lastEvent"]["tag"]
+                    .as_str()
+                    .expect("lastEvent.tag must be a string")
+                    .to_string(),
+                id: bigint(&st["lastId"]),
+                pending: idset(&st["pending"]),
+            })
+            .collect()
+    }
+
+    /// The real registry's current keyset, for the load-bearing equality check.
+    fn real_pending(shared: &BridgeShared) -> BTreeSet<u64> {
+        shared.pending.lock().unwrap().keys().copied().collect()
+    }
+
+    /// A short label for an unexpected `try_recv` outcome, for panic messages.
+    fn describe(r: &Result<BridgeOutcome, oneshot::error::TryRecvError>) -> String {
+        match r {
+            Ok(BridgeOutcome::Value(_)) => "Ok(Value)".to_string(),
+            Ok(BridgeOutcome::Error(_)) => "Ok(Error)".to_string(),
+            Ok(BridgeOutcome::Aborted) => "Ok(Aborted)".to_string(),
+            Err(e) => format!("Err({e:?})"),
+        }
+    }
+
+    #[test]
+    fn replays_bridge_ok_trace_against_real_registry() {
+        let steps = load_trace();
+        assert!(
+            steps.len() >= 4,
+            "trace is unexpectedly short: {}",
+            steps.len()
+        );
+
+        // A real BridgeShared — the same struct the addon drives. `js_thread` is
+        // this test thread; we never touch the JS-thread deadlock guard here.
+        let shared = BridgeShared::new(std::thread::current().id());
+
+        // The receiver half of each outstanding call, keyed by id — the worker
+        // side that `call_async` would be awaiting.
+        let mut rxs: HashMap<u64, oneshot::Receiver<BridgeOutcome>> = HashMap::new();
+
+        for (i, step) in steps.iter().enumerate() {
+            match step.event.as_str() {
+                "EvInit" => {}
+                "EvCall" => {
+                    let id = step.id as u64;
+                    // The model's `pending` for this state tells us whether this
+                    // was a real registering call (callAsync) or the aborted
+                    // fast-path (callWhenAborted, no insert).
+                    if step.pending.contains(&id) {
+                        // Replicate call_async's registry insert exactly.
+                        let (tx, rx) = oneshot::channel::<BridgeOutcome>();
+                        shared.pending.lock().unwrap().insert(id, tx);
+                        rxs.insert(id, rx);
+                    }
+                }
+                "EvResolveValue" => {
+                    let id = step.id as u64;
+                    // Drive the REAL deliver(); the awaiter must observe Value.
+                    shared.deliver(id, BridgeOutcome::Value("\"ok\"".to_string()));
+                    let mut rx = rxs.remove(&id).expect("resolve of an un-called id");
+                    match rx.try_recv() {
+                        Ok(BridgeOutcome::Value(s)) => assert_eq!(s, "\"ok\""),
+                        other => panic!("expected Value, got {}", describe(&other)),
+                    }
+                }
+                "EvResolveError" => {
+                    let id = step.id as u64;
+                    shared.deliver(id, BridgeOutcome::Error("boom".to_string()));
+                    let mut rx = rxs.remove(&id).expect("resolve of an un-called id");
+                    match rx.try_recv() {
+                        Ok(BridgeOutcome::Error(_)) => {}
+                        other => panic!("expected Error, got {}", describe(&other)),
+                    }
+                }
+                "EvAbort" => {
+                    // Drive the REAL abort(): every outstanding awaiter must wake
+                    // with Aborted, and the registry must be emptied (drain).
+                    shared.abort();
+                    for (id, mut rx) in rxs.drain() {
+                        match rx.try_recv() {
+                            Ok(BridgeOutcome::Aborted) => {}
+                            other => panic!(
+                                "id {id}: abort must deliver Aborted, got {}",
+                                describe(&other)
+                            ),
+                        }
+                    }
+                    assert!(
+                        real_pending(&shared).is_empty(),
+                        "abort must drain the registry"
+                    );
+                }
+                "EvLoseReply" => {
+                    // The worker drops the sender with no send: remove it from the
+                    // registry and drop it. The awaiter observes a closed channel
+                    // (-> BridgeError::Disconnected in call_async).
+                    let id = step.id as u64;
+                    let tx = shared.pending.lock().unwrap().remove(&id);
+                    drop(tx);
+                    let mut rx = rxs.remove(&id).expect("lose-reply of an un-called id");
+                    assert!(
+                        matches!(rx.try_recv(), Err(oneshot::error::TryRecvError::Closed)),
+                        "a lost reply must close the channel (Disconnected)"
+                    );
+                }
+                other => panic!("unknown ITF event: {other}"),
+            }
+
+            // THE load-bearing check: after every step the REAL registry keyset
+            // must equal the model's `pending` set for that state.
+            assert_eq!(
+                real_pending(&shared),
+                step.pending,
+                "state {i} ({}): real registry keyset diverged from the model",
+                step.event
+            );
+        }
+    }
+}
