@@ -1175,3 +1175,300 @@ impl crate::generated::TuiCoreCore for TuiCoreImpl {
         self.tui.max_lines_rendered()
     }
 }
+
+// --- agent harness: nodejs execution env (`NodeExecutionEnvCore`) -----------
+//
+// The engine-backed implementation of the generated `NodeExecutionEnvCore`
+// contract: a host-backed `pidgin_agent::harness::env::NodeExecutionEnv` that the
+// generated handle owns as `Arc<NodeExecutionEnvCoreImpl>`, backing the native
+// `harness/env/nodejs.ts` shim for the non-streaming, non-abort call paths (15 of
+// the 20 pi cases). The five cases that need pi's async streaming/`AbortSignal`/
+// large-output-capture behaviour (which the sync Rust port drops) stay on a
+// private pi-original instance in the shim.
+//
+// Every fallible method crosses its `Result` as a JSON string
+// `{"ok":true,"value":...}` or `{"ok":false,"error":{code,message,path?}}`; the
+// shim `JSON.parse`s it and rebuilds pi's `Result`/`FileError`/`ExecutionError`
+// shapes. `readBinaryFile` is the one exception: raw bytes cross as a `Buffer`
+// (never routed through a Rust `String`), and its error rides the trait's
+// `anyhow::Result` seam carrying the same `{code,message,path?}` JSON, so the
+// generated `map_err(err)` throw reason is byte-for-byte the pre-swap one.
+
+use pidgin_agent::harness::env::{
+    ExecutionError, FileContent, FileError, FileInfo, FileSystem, NodeExecutionEnv, Shell,
+    ShellExecOptions,
+};
+
+/// Serialize a slice of `serde`-able items (e.g. loader diagnostics) to a
+/// `Vec<Value>`, mapping any per-item serialization failure to `Value::Null`.
+/// Shared by the `loadSkills` / `loadPromptTemplates` loaders below, whose
+/// diagnostics arrays are otherwise identical.
+fn to_json_values<T: serde::Serialize>(items: &[T]) -> Vec<serde_json::Value> {
+    items
+        .iter()
+        .map(|item| serde_json::to_value(item).unwrap_or(serde_json::Value::Null))
+        .collect()
+}
+
+/// Serialize a [`Skill`](pidgin_agent::harness::skills::Skill) to pi's `Skill`
+/// JSON shape, always emitting `disableModelInvocation` (pi's loader tests
+/// compare against an explicit `false`, but the Rust serde derive skips the
+/// default, so it is written unconditionally here).
+fn skill_to_value(skill: &pidgin_agent::harness::skills::Skill) -> serde_json::Value {
+    serde_json::json!({
+        "name": skill.name,
+        "description": skill.description,
+        "content": skill.content,
+        "filePath": skill.file_path,
+        "disableModelInvocation": skill.disable_model_invocation,
+    })
+}
+
+/// Serialize a [`PromptTemplate`](pidgin_agent::harness::prompt_templates::PromptTemplate)
+/// to pi's `PromptTemplate` JSON shape. The Rust loader always sets
+/// `description` (falling back to the empty string), matching pi.
+fn prompt_template_to_value(
+    template: &pidgin_agent::harness::prompt_templates::PromptTemplate,
+) -> serde_json::Value {
+    serde_json::json!({
+        "name": template.name,
+        "description": template.description,
+        "content": template.content,
+    })
+}
+
+/// JSON shape of pi's `exec` options for the native (non-streaming, non-abort)
+/// path. The shim only forwards `cwd`/`env`/`timeout`; `onStdout`/`onStderr`/
+/// `abortSignal` route to the pi-original instance instead of here.
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct ExecOptionsJson {
+    cwd: Option<String>,
+    env: Option<std::collections::BTreeMap<String, String>>,
+    timeout: Option<f64>,
+}
+
+/// Serialize a [`FileInfo`] to pi's `FileInfo` JSON shape.
+fn file_info_value(info: &FileInfo) -> serde_json::Value {
+    serde_json::json!({
+        "name": info.name,
+        "path": info.path,
+        "kind": info.kind.as_str(),
+        "size": info.size,
+        "mtimeMs": info.mtime_ms,
+    })
+}
+
+/// Wrap a success value as `{"ok":true,"value":...}`.
+fn ok_json(value: serde_json::Value) -> String {
+    serde_json::json!({ "ok": true, "value": value }).to_string()
+}
+
+/// The `{code,message,path?}` object pi rebuilds into a `FileError`.
+fn file_error_value(error: &FileError) -> serde_json::Value {
+    serde_json::json!({ "code": error.code.as_str(), "message": error.message, "path": error.path })
+}
+
+/// Wrap a [`FileError`] as `{"ok":false,"error":{...}}`.
+fn file_err_json(error: &FileError) -> String {
+    serde_json::json!({ "ok": false, "error": file_error_value(error) }).to_string()
+}
+
+/// Wrap an [`ExecutionError`] as `{"ok":false,"error":{...}}`.
+fn exec_err_json(error: &ExecutionError) -> String {
+    serde_json::json!({
+        "ok": false,
+        "error": { "code": error.code.as_str(), "message": error.message },
+    })
+    .to_string()
+}
+
+/// Marshal a `Result<T, FileError>` whose `Ok` maps to `to_value`.
+fn file_result_json<T>(
+    result: Result<T, FileError>,
+    to_value: impl FnOnce(T) -> serde_json::Value,
+) -> String {
+    match result {
+        Ok(value) => ok_json(to_value(value)),
+        Err(error) => file_err_json(&error),
+    }
+}
+
+/// The engine-backed host execution environment behind the generated
+/// `NodeExecutionEnvCore` handle. Owns the host-backed `NodeExecutionEnv`; every
+/// `&self` method delegates straight through, reaching the SAME `pidgin_agent`
+/// logic the pre-swap hand-written `#[napi]` class called, so the JS-visible
+/// behavior is byte-for-byte unchanged.
+pub struct NodeExecutionEnvCoreImpl {
+    inner: NodeExecutionEnv,
+}
+
+impl crate::generated::NodeExecutionEnvCoreCore for NodeExecutionEnvCoreImpl {
+    fn new(
+        cwd: String,
+        shell_path: Option<String>,
+        shell_env_json: Option<String>,
+    ) -> anyhow::Result<Self> {
+        let mut inner = NodeExecutionEnv::new(cwd);
+        if let Some(shell_path) = shell_path {
+            inner = inner.with_shell_path(shell_path);
+        }
+        if let Some(shell_env_json) = shell_env_json {
+            let map: std::collections::BTreeMap<String, String> =
+                serde_json::from_str(&shell_env_json)
+                    .map_err(|e| anyhow::anyhow!("invalid shellEnv: {e}"))?;
+            inner = inner.with_shell_env(map);
+        }
+        Ok(Self { inner })
+    }
+
+    fn cwd(&self) -> String {
+        self.inner.cwd()
+    }
+
+    fn absolute_path(&self, path: String) -> String {
+        file_result_json(
+            self.inner.absolute_path(&path, None),
+            serde_json::Value::from,
+        )
+    }
+
+    fn join_path(&self, parts: Vec<String>) -> String {
+        let refs: Vec<&str> = parts.iter().map(String::as_str).collect();
+        file_result_json(self.inner.join_path(&refs, None), serde_json::Value::from)
+    }
+
+    fn read_text_file(&self, path: String) -> String {
+        file_result_json(
+            self.inner.read_text_file(&path, None),
+            serde_json::Value::from,
+        )
+    }
+
+    fn read_text_lines(&self, path: String, max_lines: Option<i64>) -> String {
+        let max = max_lines.and_then(|n| if n < 0 { None } else { Some(n as usize) });
+        file_result_json(
+            self.inner.read_text_lines(&path, max, None),
+            serde_json::Value::from,
+        )
+    }
+
+    fn read_binary_file(&self, path: String) -> anyhow::Result<napi::bindgen_prelude::Buffer> {
+        match self.inner.read_binary_file(&path, None) {
+            Ok(bytes) => Ok(napi::bindgen_prelude::Buffer::from(bytes)),
+            Err(error) => Err(anyhow::anyhow!("{}", file_error_value(&error))),
+        }
+    }
+
+    fn write_file(&self, path: String, content: String) -> String {
+        file_result_json(
+            self.inner
+                .write_file(&path, FileContent::Text(&content), None),
+            |()| serde_json::Value::Null,
+        )
+    }
+
+    fn append_file(&self, path: String, content: String) -> String {
+        file_result_json(
+            self.inner
+                .append_file(&path, FileContent::Text(&content), None),
+            |()| serde_json::Value::Null,
+        )
+    }
+
+    fn file_info(&self, path: String) -> String {
+        file_result_json(self.inner.file_info(&path, None), |info| {
+            file_info_value(&info)
+        })
+    }
+
+    fn list_dir(&self, path: String) -> String {
+        file_result_json(self.inner.list_dir(&path, None), |infos| {
+            serde_json::Value::Array(infos.iter().map(file_info_value).collect())
+        })
+    }
+
+    fn canonical_path(&self, path: String) -> String {
+        file_result_json(
+            self.inner.canonical_path(&path, None),
+            serde_json::Value::from,
+        )
+    }
+
+    fn exists(&self, path: String) -> String {
+        file_result_json(self.inner.exists(&path, None), serde_json::Value::from)
+    }
+
+    fn create_dir(&self, path: String, recursive: bool) -> String {
+        file_result_json(self.inner.create_dir(&path, recursive, None), |()| {
+            serde_json::Value::Null
+        })
+    }
+
+    fn remove(&self, path: String, recursive: bool, force: bool) -> String {
+        file_result_json(self.inner.remove(&path, recursive, force, None), |()| {
+            serde_json::Value::Null
+        })
+    }
+
+    fn create_temp_dir(&self, prefix: String) -> String {
+        file_result_json(
+            self.inner.create_temp_dir(&prefix, None),
+            serde_json::Value::from,
+        )
+    }
+
+    fn create_temp_file(&self, prefix: String, suffix: String) -> String {
+        file_result_json(
+            self.inner.create_temp_file(&prefix, &suffix, None),
+            serde_json::Value::from,
+        )
+    }
+
+    fn exec(&self, command: String, options_json: Option<String>) -> anyhow::Result<String> {
+        let parsed: ExecOptionsJson = match options_json {
+            None => ExecOptionsJson::default(),
+            Some(json) if json.trim().is_empty() || json == "null" => ExecOptionsJson::default(),
+            Some(json) => serde_json::from_str(&json)
+                .map_err(|e| anyhow::anyhow!("invalid exec options: {e}"))?,
+        };
+        let options = ShellExecOptions {
+            cwd: parsed.cwd,
+            env: parsed.env,
+            timeout: parsed.timeout,
+            abort_signal: None,
+            on_stdout: None,
+            on_stderr: None,
+        };
+        Ok(match self.inner.exec(&command, options) {
+            Ok(output) => ok_json(serde_json::json!({
+                "stdout": output.stdout,
+                "stderr": output.stderr,
+                "exitCode": output.exit_code,
+            })),
+            Err(error) => exec_err_json(&error),
+        })
+    }
+
+    fn load_skills(&self, dirs: Vec<String>) -> String {
+        let refs: Vec<&str> = dirs.iter().map(String::as_str).collect();
+        let loaded = pidgin_agent::harness::skills::load_skills(&self.inner, &refs);
+        let skills: Vec<serde_json::Value> = loaded.skills.iter().map(skill_to_value).collect();
+        let diagnostics = to_json_values(&loaded.diagnostics);
+        serde_json::json!({ "skills": skills, "diagnostics": diagnostics }).to_string()
+    }
+
+    fn load_prompt_templates(&self, paths: Vec<String>) -> String {
+        let refs: Vec<&str> = paths.iter().map(String::as_str).collect();
+        let loaded =
+            pidgin_agent::harness::prompt_templates::load_prompt_templates(&self.inner, &refs);
+        let prompt_templates: Vec<serde_json::Value> = loaded
+            .prompt_templates
+            .iter()
+            .map(prompt_template_to_value)
+            .collect();
+        let diagnostics = to_json_values(&loaded.diagnostics);
+        serde_json::json!({ "promptTemplates": prompt_templates, "diagnostics": diagnostics })
+            .to_string()
+    }
+}
