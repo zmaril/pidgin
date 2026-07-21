@@ -474,6 +474,37 @@ pub struct SimpleStreamOptions {
     pub thinking_budgets: Option<ThinkingBudgets>,
 }
 
+impl SimpleStreamOptions {
+    /// Build simple stream options from a base [`StreamOptions`] and the requested
+    /// reasoning controls (pi's `{ ...options, reasoning, thinkingBudgets }`).
+    ///
+    /// A constructor is provided because the struct is `#[non_exhaustive]`, so
+    /// downstream crates (the agent tier, the coding SDK) cannot build it with a
+    /// struct literal.
+    pub fn new(
+        base: StreamOptions,
+        reasoning: Option<ThinkingLevel>,
+        thinking_budgets: Option<ThinkingBudgets>,
+    ) -> Self {
+        Self {
+            base,
+            reasoning,
+            thinking_budgets,
+        }
+    }
+
+    /// Build simple stream options from a base [`StreamOptions`] with no reasoning
+    /// controls — the byte-identical raw-path options (pi's `options` with
+    /// `reasoning`/`thinkingBudgets` absent).
+    pub fn from_base(base: StreamOptions) -> Self {
+        Self {
+            base,
+            reasoning: None,
+            thinking_budgets: None,
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Streaming event union (`types.ts:464-476`)
 // ---------------------------------------------------------------------------

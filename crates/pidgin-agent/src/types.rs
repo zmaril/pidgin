@@ -52,7 +52,7 @@ use serde_json::Value;
 use pidgin_ai::seams::{AbortSignal, StreamResult};
 use pidgin_ai::{
     AssistantMessage, AssistantMessageEvent, ContentBlock, Context, Message, Model,
-    ModelThinkingLevel, StreamOptions, ToolResultMessage,
+    ModelThinkingLevel, SimpleStreamOptions, StreamOptions, ToolResultMessage,
 };
 
 // ---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ use pidgin_ai::{
 /// `stopReason` `error`/`aborted` and an `errorMessage`), never surfaced as a
 /// panic.
 pub type StreamFn = Arc<
-    dyn Fn(&Model, &Context, Option<&StreamOptions>, Option<&AbortSignal>) -> StreamResult
+    dyn Fn(&Model, &Context, Option<&SimpleStreamOptions>, Option<&AbortSignal>) -> StreamResult
         + Send
         + Sync,
 >;
@@ -97,7 +97,7 @@ pub type IncrementalStreamFn = Arc<
     dyn Fn(
             &Model,
             &Context,
-            Option<&StreamOptions>,
+            Option<&SimpleStreamOptions>,
             Option<&AbortSignal>,
             &mut dyn FnMut(&AssistantMessageEvent),
         ) -> StreamResult

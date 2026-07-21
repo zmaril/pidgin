@@ -40,7 +40,9 @@ use std::sync::Arc;
 
 use serde::Serialize;
 
-use crate::types::{AssistantMessage, AssistantMessageEvent, Context, Model, StreamOptions};
+use crate::types::{
+    AssistantMessage, AssistantMessageEvent, Context, Model, SimpleStreamOptions, StreamOptions,
+};
 use crate::utils::sse::AssistantEventReader;
 
 /// The eager result of a provider stream: the full event sequence and the final
@@ -114,6 +116,32 @@ pub trait Provider: Send + Sync {
         options: Option<&StreamOptions>,
         signal: Option<&AbortSignal>,
     ) -> StreamResult;
+
+    /// Stream a response from the simple, level-based options, pi's
+    /// `streamSimple` (`ai/src/types.ts:228`). This is the entry point the agent
+    /// tier drives: it carries the base [`StreamOptions`] plus the requested
+    /// `reasoning` level and per-level `thinking_budgets`.
+    ///
+    /// # Compatibility default: reasoning dropped, base options unchanged
+    ///
+    /// The default extracts the base [`StreamOptions`] and runs the raw
+    /// [`stream`](Self::stream), so a non-overriding provider produces a request
+    /// byte-identical to the pre-seam path (no thinking configuration). Reasoning
+    /// lowering is wired per-driver: the Anthropic and Mistral backends override
+    /// this method to map `reasoning` onto their request. The remaining drivers
+    /// (openai-completions, openai-responses, azure-responses, bedrock, google
+    /// gen-ai/vertex) inherit this default and ignore `reasoning` for now; wiring
+    /// each is a per-driver follow-up, mirroring the seam note. This keeps the raw
+    /// path behavior identical to today (no new deviation).
+    fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        self.stream(model, context, options.map(|o| &o.base), signal)
+    }
 
     /// Stream a response for `model` as an incremental pull reader, the additive
     /// per-frame counterpart to [`stream`](Self::stream).

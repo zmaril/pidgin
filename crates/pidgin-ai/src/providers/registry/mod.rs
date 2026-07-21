@@ -36,7 +36,7 @@ use crate::seams::provider::{AbortSignal, Provider as StreamBackend, StreamResul
 use crate::seams::storage::SystemEnv;
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, ModelThinkingLevel,
-    StopReason, StreamOptions, Usage, UsageCost,
+    SimpleStreamOptions, StopReason, StreamOptions, Usage, UsageCost,
 };
 use crate::utils::sse::AssistantEventReader;
 
@@ -346,6 +346,24 @@ impl RegistryProvider {
         match self.api.backend_for(&model.api) {
             Some(backend) => backend.stream_incremental(model, context, options, signal),
             None => AssistantEventReader::from_buffered(no_api_implementation(&self.id, model)),
+        }
+    }
+
+    /// The simple, level-based counterpart to [`stream`](Self::stream): dispatch
+    /// to the backend for `model.api` via its
+    /// [`stream_simple`](StreamBackend::stream_simple), carrying the requested
+    /// `reasoning`/`thinking_budgets`. A model whose api has no backend yields the
+    /// "no API implementation" stream error.
+    pub fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        match self.api.backend_for(&model.api) {
+            Some(backend) => backend.stream_simple(model, context, options, signal),
+            None => no_api_implementation(&self.id, model),
         }
     }
 }
@@ -761,22 +779,40 @@ impl Models {
     }
 
     /// Stream a response from the simple, level-based options, pi's
-    /// `Models.streamSimple` (`models.ts:512`).
+    /// `Models.streamSimple` (`models.ts:512`): resolve the owning provider, apply
+    /// auth, and delegate to the provider's
+    /// [`stream_simple`](RegistryProvider::stream_simple), carrying the requested
+    /// `reasoning`/`thinking_budgets` so the drivers that consume them (Anthropic,
+    /// Mistral) can lower reasoning onto the request. A pre-dispatch failure
+    /// (unknown provider, unconfigured auth) becomes a single-`error`
+    /// [`StreamResult`], matching [`stream`](Self::stream)'s error shape.
     ///
-    /// pi's provider exposes distinct `stream`/`streamSimple` entry points; the
-    /// Rust provider seam ([`crate::seams::provider::Provider`]) unifies them
-    /// into one eager [`stream`](RegistryProvider::stream) (the faux and real
-    /// drivers each implement a single method), so this shares
-    /// [`stream`](Models::stream)'s body. The simple/raw split is preserved at
-    /// the `Models` surface for call-site parity with pi.
+    /// Auth resolution runs against the base [`StreamOptions`] (auth carries no
+    /// reasoning), and the resolved base is recombined with the caller's
+    /// `reasoning`/`thinking_budgets` before dispatch, so the two-field simple
+    /// distinction pi keeps survives the seam.
     pub fn stream_simple(
         &self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         signal: Option<&AbortSignal>,
     ) -> StreamResult {
-        self.stream(model, context, options, signal)
+        let provider = match self.require_provider(model) {
+            Ok(provider) => provider.clone(),
+            Err(message) => return error_result(model, message),
+        };
+        let base = options.map(|o| &o.base);
+        let (request_model, request_base) = match self.apply_auth(model, base) {
+            Ok(resolved) => resolved,
+            Err(message) => return error_result(model, message),
+        };
+        let request_options = SimpleStreamOptions {
+            base: request_base,
+            reasoning: options.and_then(|o| o.reasoning),
+            thinking_budgets: options.and_then(|o| o.thinking_budgets),
+        };
+        provider.stream_simple(&request_model, context, Some(&request_options), signal)
     }
 
     /// Stream and resolve the final message, pi's `Models.completeSimple`
@@ -785,7 +821,7 @@ impl Models {
         &self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         signal: Option<&AbortSignal>,
     ) -> AssistantMessage {
         self.stream_simple(model, context, options, signal).message

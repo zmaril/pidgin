@@ -27,15 +27,15 @@ use serde_json::{json, Value};
 use pidgin_ai::providers::faux::{faux_assistant_message, faux_tool_call, FauxAssistantOptions};
 use pidgin_ai::seams::provider::{AbortSignal, StreamResult};
 use pidgin_ai::{
-    AssistantMessage, AssistantMessageEvent, ContentBlock, Message, StopReason, StreamOptions,
-    UserContent,
+    AssistantMessage, AssistantMessageEvent, ContentBlock, Message, SimpleStreamOptions,
+    StopReason, StreamOptions, UserContent,
 };
 
 use super::*;
 use crate::types::{
     AfterToolCallResult, AgentContext, AgentLoopConfig, AgentMessage, AgentTool, AgentToolResult,
     BeforeToolCallResult, ConvertToLlm, GetFollowUpMessages, GetSteeringMessages, PrepareArguments,
-    ToolExecutionMode,
+    ThinkingLevel, ToolExecutionMode,
 };
 
 mod incremental;
@@ -275,6 +275,53 @@ fn should_emit_events_with_agent_message_types() {
     ] {
         assert!(types.contains(&expected), "missing event {expected}");
     }
+}
+
+#[test]
+fn threads_reasoning_into_simple_stream_options() {
+    // Seam regression guard: `AgentLoopConfig.reasoning` must reach the StreamFn
+    // as pi's per-call `SimpleStreamOptions.reasoning`, with the base
+    // [`StreamOptions`] preserved. Before this the loop passed only
+    // `stream_options` at agent_loop.rs and dropped `config.reasoning` here, so
+    // the drivers never saw the requested thinking level.
+    let captured: Arc<Mutex<Option<SimpleStreamOptions>>> = Arc::new(Mutex::new(None));
+    let slot = captured.clone();
+    let stream_fn: StreamFn = Arc::new(move |_model, _ctx, opts, _signal| {
+        *slot.lock().unwrap() = opts.cloned();
+        mock_stream(assistant_message(vec![text_block("ok")], StopReason::Stop))
+    });
+
+    let mut stream_options = StreamOptions::default();
+    stream_options.session_id = Some("seam-guard".to_string());
+
+    let context = AgentContext {
+        system_prompt: "You are helpful.".into(),
+        messages: vec![],
+        tools: Some(vec![]),
+    };
+    let mut config = base_config();
+    config.stream_options = stream_options.clone();
+    config.reasoning = Some(ThinkingLevel::High);
+
+    agent_loop(
+        vec![user_message("Hello")],
+        context,
+        config,
+        None,
+        &stream_fn,
+    );
+
+    let seen = captured
+        .lock()
+        .unwrap()
+        .clone()
+        .expect("stream fn was invoked");
+    // `reasoning` is narrowed from the agent-tier `ModelThinkingLevel` to the base
+    // `ThinkingLevel` the seam carries.
+    assert_eq!(seen.reasoning, Some(pidgin_ai::ThinkingLevel::High));
+    // The base options survive untouched alongside the reasoning level.
+    assert_eq!(seen.base, stream_options);
+    assert!(seen.thinking_budgets.is_none());
 }
 
 #[test]

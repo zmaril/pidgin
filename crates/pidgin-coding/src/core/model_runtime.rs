@@ -84,7 +84,7 @@ use pidgin_ai::providers::registry::{
 };
 use pidgin_ai::seams::storage::SystemEnv;
 use pidgin_ai::seams::{AbortSignal, StreamResult};
-use pidgin_ai::{builtin_providers, Context, Model, StreamOptions};
+use pidgin_ai::{builtin_providers, Context, Model, SimpleStreamOptions, StreamOptions};
 
 use super::auth::auth_storage::AuthStorage;
 use super::auth::runtime_credentials::RuntimeCredentials;
@@ -500,10 +500,10 @@ impl ModelRuntime {
         &self,
         model: &Model,
         context: &Context,
-        options: Option<&StreamOptions>,
+        options: Option<&SimpleStreamOptions>,
         signal: Option<&AbortSignal>,
     ) -> StreamResult {
-        let session_id = options.and_then(|o| o.session_id.as_deref());
+        let session_id = options.and_then(|o| o.base.session_id.as_deref());
         stream_simple_with_attribution(
             &self.models,
             true,
@@ -867,12 +867,14 @@ pub(crate) fn stream_simple_with_attribution(
     session_id: Option<&str>,
     model: &Model,
     context: &Context,
-    options: Option<&StreamOptions>,
+    options: Option<&SimpleStreamOptions>,
     signal: Option<&AbortSignal>,
 ) -> StreamResult {
-    let mut opts = options.cloned().unwrap_or_default();
-    inject_attribution_headers(model, telemetry_enabled, session_id, &mut opts);
-    models.stream_simple(model, context, Some(&opts), signal)
+    // Attribution headers layer onto the base StreamOptions; the reasoning/thinking
+    // controls carried alongside them survive to the driver via `stream_simple`.
+    let mut simple = options.cloned().unwrap_or_default();
+    inject_attribution_headers(model, telemetry_enabled, session_id, &mut simple.base);
+    models.stream_simple(model, context, Some(&simple), signal)
 }
 
 /// Layer session-affinity + attribution headers into `opts.headers`, under the

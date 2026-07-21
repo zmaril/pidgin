@@ -61,8 +61,8 @@ use serde_json::{json, Value};
 use pidgin_ai::seams::clock::{Clock, SystemClock};
 use pidgin_ai::seams::provider::AbortSignal;
 use pidgin_ai::{
-    AssistantMessage, AssistantMessageEvent, ContentBlock, Context, Message, StopReason,
-    ToolResultMessage, ToolResultRole,
+    AssistantMessage, AssistantMessageEvent, ContentBlock, Context, Message, SimpleStreamOptions,
+    StopReason, ToolResultMessage, ToolResultRole,
 };
 
 use crate::types::{
@@ -481,6 +481,24 @@ fn run_loop(
 /// Stream an assistant response from the LLM (pi's `streamAssistantResponse`,
 /// `agent-loop.ts:281`). This is where `AgentMessage[]` gets transformed to
 /// `Message[]` for the LLM.
+/// Narrow the agent-tier reasoning level ([`ModelThinkingLevel`], which carries
+/// `off`) to the base [`pidgin_ai::ThinkingLevel`] the `SimpleStreamOptions` seam
+/// carries: `off` means "no reasoning requested" and maps to `None`, exactly as
+/// pi's `SimpleStreamOptions.reasoning` (`types.ts:296`) — a `ThinkingLevel` that
+/// is absent when thinking is off — rather than the model-level ladder.
+fn reasoning_from_model_level(level: ThinkingLevel) -> Option<pidgin_ai::ThinkingLevel> {
+    use pidgin_ai::ThinkingLevel as Reasoning;
+    match level {
+        ThinkingLevel::Off => None,
+        ThinkingLevel::Minimal => Some(Reasoning::Minimal),
+        ThinkingLevel::Low => Some(Reasoning::Low),
+        ThinkingLevel::Medium => Some(Reasoning::Medium),
+        ThinkingLevel::High => Some(Reasoning::High),
+        ThinkingLevel::Xhigh => Some(Reasoning::Xhigh),
+        ThinkingLevel::Max => Some(Reasoning::Max),
+    }
+}
+
 fn stream_assistant_response(
     context: &mut AgentContext,
     config: &AgentLoopConfig,
@@ -516,6 +534,23 @@ fn stream_assistant_response(
     let mut partial_message: Option<AssistantMessage> = None;
     let mut added_partial = false;
 
+    // Fold `config.reasoning` back into the per-call options pi threads as
+    // `SimpleStreamOptions` (`agent/src/types.ts:27-31`): the base
+    // [`StreamOptions`] plus the requested `reasoning` level. This is the seam
+    // that carries reasoning to the provider drivers; before this the loop passed
+    // only `stream_options` and `config.reasoning` was dropped here.
+    //
+    // `thinking_budgets` is not yet carried on `AgentLoopConfig` (the struct doc
+    // notes it as additive future work), so it is left `None`; wiring a source for
+    // it is a documented follow-up. A `None` reasoning yields a request
+    // byte-identical to the pre-seam path (the drivers fall back to the raw
+    // stream).
+    let stream_options = SimpleStreamOptions::new(
+        config.stream_options.clone(),
+        config.reasoning.and_then(reasoning_from_model_level),
+        None,
+    );
+
     // Incremental path: DRIVE the provider one event at a time. Each event is
     // pushed through `sink` as it is pulled, so downstream subscribers observe
     // real inter-event timing. The per-event dispatch bodies are the SAME shared
@@ -542,7 +577,7 @@ fn stream_assistant_response(
             incremental(
                 &config.model,
                 &llm_context,
-                Some(&config.stream_options),
+                Some(&stream_options),
                 signal,
                 &mut sink,
             )
@@ -559,12 +594,7 @@ fn stream_assistant_response(
 
     // Buffered path (unchanged behavior): the provider hands back a fully
     // materialized `StreamResult` and the loop iterates its events.
-    let response = stream_fn(
-        &config.model,
-        &llm_context,
-        Some(&config.stream_options),
-        signal,
-    );
+    let response = stream_fn(&config.model, &llm_context, Some(&stream_options), signal);
 
     for event in &response.events {
         if let Some(final_message) = handle_stream_event(

@@ -20,12 +20,15 @@ use std::sync::Arc;
 
 use crate::api::anthropic::driver;
 use crate::api::anthropic::request::AnthropicOptions;
+use crate::api::anthropic::simple_options::{
+    SimpleStreamOptions as DriverSimpleOptions, ThinkingBudgets as DriverThinkingBudgets,
+};
 use crate::seams::clock::Clock;
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
 use crate::types::{
     AnthropicMessagesCompat, AssistantMessage, AssistantMessageEvent, AssistantRole, Context,
-    Model, StopReason, StreamOptions, Usage, UsageCost,
+    Model, SimpleStreamOptions, StopReason, StreamOptions, Usage, UsageCost,
 };
 use crate::utils::sse::AssistantEventReader;
 
@@ -153,6 +156,82 @@ impl Provider for AnthropicMessagesBackend {
             &anthropic_options,
             timestamp,
         )
+    }
+
+    /// Route the simple, level-based options through the driver's
+    /// `stream_simple` so `reasoning`/`thinking_budgets` reach the request,
+    /// mirroring pi's `streamSimple` (`anthropic-messages.ts:786`).
+    ///
+    /// When no `reasoning` level is requested, this falls back to the raw
+    /// [`stream`](Self::stream) on the base options, so the outgoing request is
+    /// byte-identical to the pre-seam path (no `thinking` block is added).
+    fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        // No reasoning: keep the raw request unchanged (map None -> base options).
+        let simple = match options {
+            Some(simple) if simple.reasoning.is_some() => simple,
+            other => return self.stream(model, context, other.map(|o| &o.base), signal),
+        };
+
+        let mut typed_model: Model<AnthropicMessagesCompat> = match reserialize_model(model) {
+            Ok(typed_model) => typed_model,
+            Err(error) => {
+                return error_result(
+                    model,
+                    self.clock.now_ms(),
+                    format!("Anthropic model is not compatible with anthropic-messages: {error}"),
+                )
+            }
+        };
+
+        if let Some(base_url) = simple.base.base_url.as_ref() {
+            typed_model.base_url = base_url.clone();
+        }
+
+        let driver_options = driver_simple_options(simple);
+        let timestamp = self.clock.now_ms();
+        driver::stream_simple(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            &driver_options,
+            timestamp,
+        )
+    }
+}
+
+/// Map the seam-level [`SimpleStreamOptions`] onto the Anthropic driver's local
+/// simple-options struct (the reasoning-lowering input pi's `streamSimple`
+/// reads). The base [`StreamOptions`] fields are projected across; `reasoning`
+/// and the per-level `thinking_budgets` carry the thinking configuration.
+fn driver_simple_options(simple: &SimpleStreamOptions) -> DriverSimpleOptions {
+    let base = &simple.base;
+    DriverSimpleOptions {
+        reasoning: simple.reasoning,
+        thinking_budgets: simple
+            .thinking_budgets
+            .map(|budgets| DriverThinkingBudgets {
+                minimal: budgets.minimal,
+                low: budgets.low,
+                medium: budgets.medium,
+                high: budgets.high,
+            }),
+        temperature: base.temperature,
+        max_tokens: base.max_tokens,
+        api_key: base.api_key.clone(),
+        cache_retention: base.cache_retention,
+        session_id: base.session_id.clone(),
+        headers: base.headers.clone(),
+        env: base.env.clone(),
+        metadata: base
+            .metadata
+            .as_ref()
+            .map(|m| m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()),
     }
 }
 
@@ -331,6 +410,109 @@ mod tests {
             AssistantMessageEvent::Error { .. }
         ));
         assert!(scripted.requests().is_empty());
+    }
+
+    // -----------------------------------------------------------------------
+    // streamSimple: reasoning lowering (pi `anthropic-messages.ts:786`)
+    // -----------------------------------------------------------------------
+
+    use crate::types::{SimpleStreamOptions, ThinkingLevel};
+
+    /// A reasoning-capable anthropic `Model<Value>` (maxTokens 32000, so the
+    /// default medium thinking budget fits), with the adaptive-thinking flag set
+    /// to `force_adaptive`.
+    fn anthropic_reasoning_model(force_adaptive: bool) -> Model {
+        serde_json::from_value(json!({
+            "id": "claude-opus-4-8",
+            "name": "Claude Opus 4.8",
+            "api": "anthropic-messages",
+            "provider": "anthropic",
+            "baseUrl": "https://api.anthropic.test",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 32000,
+            "compat": { "forceAdaptiveThinking": force_adaptive },
+        }))
+        .unwrap()
+    }
+
+    /// The decoded JSON body of the single request the transport recorded.
+    fn request_body(scripted: &ScriptedTransport) -> Value {
+        let requests = scripted.requests();
+        serde_json::from_str(requests[0].body.as_deref().unwrap()).unwrap()
+    }
+
+    // NO-REASONING zero-regression: `stream_simple` with `reasoning: None` builds
+    // a request byte-identical to the raw `stream` path -- no `thinking` block is
+    // added. Guards the None -> base mapping the providers lane co-signed.
+    #[test]
+    fn stream_simple_without_reasoning_matches_raw_stream() {
+        let model = anthropic_model("https://api.anthropic.test");
+        let base = StreamOptions {
+            api_key: Some("sk-test-key".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (raw_scripted, raw_transport) = scripted_hello();
+        let raw_backend = AnthropicMessagesBackend::new(raw_transport, fake_clock());
+        raw_backend.stream(&model, &user_context(), Some(&base), None);
+
+        let (simple_scripted, simple_transport) = scripted_hello();
+        let simple_backend = AnthropicMessagesBackend::new(simple_transport, fake_clock());
+        let simple = SimpleStreamOptions::from_base(base.clone());
+        simple_backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        assert_eq!(request_body(&raw_scripted), request_body(&simple_scripted));
+        assert!(request_body(&simple_scripted).get("thinking").is_none());
+    }
+
+    // Adaptive model + reasoning `high` -> adaptive thinking with the mapped
+    // `effort` output_config (cf. pi `anthropic-messages.ts:794-807`).
+    #[test]
+    fn stream_simple_adaptive_reasoning_sets_effort() {
+        let model = anthropic_reasoning_model(true);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+
+        let (scripted, transport) = scripted_hello();
+        let backend = AnthropicMessagesBackend::new(transport, fake_clock());
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let body = request_body(&scripted);
+        assert_eq!(body["thinking"]["type"], json!("adaptive"));
+        assert_eq!(body["output_config"], json!({ "effort": "high" }));
+    }
+
+    // Non-adaptive model + reasoning `medium` -> budget-based thinking with the
+    // default medium budget (8192, fits under maxTokens 32000), cf. pi
+    // `anthropic-messages.ts:811-825`.
+    #[test]
+    fn stream_simple_budget_reasoning_sets_budget_tokens() {
+        let model = anthropic_reasoning_model(false);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("sk-test-key".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::Medium),
+            None,
+        );
+
+        let (scripted, transport) = scripted_hello();
+        let backend = AnthropicMessagesBackend::new(transport, fake_clock());
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let body = request_body(&scripted);
+        assert_eq!(body["thinking"]["type"], json!("enabled"));
+        assert_eq!(body["thinking"]["budget_tokens"], json!(8192));
     }
 
     /// A `Models` collection whose sole provider (`anthropic`) routes through the

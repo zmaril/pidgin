@@ -192,7 +192,7 @@ impl WorkerState {
             ProviderKind::Faux(provider) => {
                 let provider = Arc::clone(provider);
                 let stream_fn: StreamFn = Arc::new(move |model, context, options, signal| {
-                    provider.stream(model, context, options, signal)
+                    provider.stream_simple(model, context, options, signal)
                 });
                 (stream_fn, StreamOptions::default())
             }
@@ -200,7 +200,7 @@ impl WorkerState {
             ProviderKind::Live { provider, api_key } => {
                 let provider = Arc::clone(provider);
                 let stream_fn: StreamFn = Arc::new(move |model, context, options, signal| {
-                    provider.stream(model, context, options, signal)
+                    provider.stream_simple(model, context, options, signal)
                 });
                 // StreamOptions is #[non_exhaustive], so it can't be built with a
                 // struct literal here; mutate a default instead.

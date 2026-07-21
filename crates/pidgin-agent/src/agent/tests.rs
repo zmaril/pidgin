@@ -26,8 +26,8 @@ use serde_json::{json, Value};
 use pidgin_ai::providers::faux::{faux_assistant_message, faux_tool_call, FauxAssistantOptions};
 use pidgin_ai::seams::{AbortSignal, StreamResult};
 use pidgin_ai::{
-    AssistantMessage, AssistantMessageEvent, ContentBlock, Model, ModelCost, StopReason,
-    StreamOptions,
+    AssistantMessage, AssistantMessageEvent, ContentBlock, Model, ModelCost, SimpleStreamOptions,
+    StopReason,
 };
 
 use super::*;
@@ -832,11 +832,12 @@ fn prefers_prepare_next_turn_with_context() {
 fn forwards_session_id_to_stream_options() {
     let received: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
     let slot = received.clone();
-    let stream_fn: StreamFn =
-        Arc::new(move |_model, _ctx, opts: Option<&StreamOptions>, _signal| {
-            *slot.lock().unwrap() = opts.and_then(|o| o.session_id.clone());
+    let stream_fn: StreamFn = Arc::new(
+        move |_model, _ctx, opts: Option<&SimpleStreamOptions>, _signal| {
+            *slot.lock().unwrap() = opts.and_then(|o| o.base.session_id.clone());
             mock_stream(assistant_text("ok"))
-        });
+        },
+    );
 
     let agent = Agent::new(AgentOptions {
         session_id: Some("session-abc".into()),
@@ -861,11 +862,12 @@ fn forwards_max_retry_delay_ms_to_stream_options() {
     // `StreamOptions.max_retry_delay_ms`.
     let received: Arc<Mutex<Option<u64>>> = Arc::new(Mutex::new(None));
     let slot = received.clone();
-    let stream_fn: StreamFn =
-        Arc::new(move |_model, _ctx, opts: Option<&StreamOptions>, _signal| {
-            *slot.lock().unwrap() = opts.and_then(|o| o.max_retry_delay_ms);
+    let stream_fn: StreamFn = Arc::new(
+        move |_model, _ctx, opts: Option<&SimpleStreamOptions>, _signal| {
+            *slot.lock().unwrap() = opts.and_then(|o| o.base.max_retry_delay_ms);
             mock_stream(assistant_text("ok"))
-        });
+        },
+    );
 
     let agent = Agent::new(AgentOptions {
         max_retry_delay_ms: Some(12_000),
@@ -883,11 +885,12 @@ fn max_retry_delay_ms_defaults_to_none_on_stream_options() {
     // default (60000) stays in effect rather than being overridden.
     let received: Arc<Mutex<Option<u64>>> = Arc::new(Mutex::new(Some(1)));
     let slot = received.clone();
-    let stream_fn: StreamFn =
-        Arc::new(move |_model, _ctx, opts: Option<&StreamOptions>, _signal| {
-            *slot.lock().unwrap() = opts.and_then(|o| o.max_retry_delay_ms);
+    let stream_fn: StreamFn = Arc::new(
+        move |_model, _ctx, opts: Option<&SimpleStreamOptions>, _signal| {
+            *slot.lock().unwrap() = opts.and_then(|o| o.base.max_retry_delay_ms);
             mock_stream(assistant_text("ok"))
-        });
+        },
+    );
 
     let agent = Agent::new(AgentOptions {
         stream_fn: Some(stream_fn),

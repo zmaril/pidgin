@@ -55,8 +55,9 @@ fn faux_with(
     faux.set_responses(responses);
     let model = faux.get_model(None).expect("a faux model");
     let stream_faux = faux.clone();
-    let stream_fn: StreamFn =
-        Arc::new(move |model, ctx, opts, signal| stream_faux.stream(model, ctx, opts, signal));
+    let stream_fn: StreamFn = Arc::new(move |model, ctx, opts, signal| {
+        stream_faux.stream_simple(model, ctx, opts, signal)
+    });
     (faux, model, stream_fn)
 }
 
