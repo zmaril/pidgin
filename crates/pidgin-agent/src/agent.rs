@@ -304,13 +304,23 @@ pub struct InitialAgentState {
 ///
 /// # Omitted parity fields
 ///
-/// pi's `AgentOptions` also carries `onPayload`, `onResponse`, `transport`,
-/// `thinkingBudgets`, and `maxRetryDelayMs`. These are `SimpleStreamOptions`
-/// pass-throughs that the ported [`AgentLoopConfig`] / [`StreamOptions`] do not
-/// yet model (Wave 0 documented them as additive future work in
-/// [`crate::types`]). They are omitted here rather than accepted-and-dropped;
-/// `session_id`, `reasoning` (via `thinking_level`), and `tool_execution` — the
-/// stream options that *do* have a destination — are threaded through.
+/// pi's `AgentOptions` also carries `onPayload`, `onResponse`, `transport`, and
+/// `thinkingBudgets`. These remain omitted here rather than accepted-and-dropped:
+///
+/// - `onPayload` / `onResponse` are function-typed provider callbacks modeled by
+///   the `seams/provider.rs` trait seam, not by [`AgentLoopConfig`] data; and
+///   `transport` is owned by the providers lane (see the port-deferral note in
+///   [`crate::types`] / `pidgin_ai` `StreamOptions`).
+/// - `thinkingBudgets` lives on pi's `SimpleStreamOptions`, but the ported stream
+///   seam ([`StreamFn`] / [`crate::types::IncrementalStreamFn`]) currently passes
+///   only [`StreamOptions`] — the `SimpleStreamOptions` extras (`reasoning`,
+///   `thinking_budgets`) do not yet reach the stream function. Threading it
+///   faithfully needs the `SimpleStreamOptions`-aware stream-seam step; until
+///   then it stays documented-omitted rather than stored-and-dropped.
+///
+/// `session_id`, `reasoning` (via `thinking_level`), `tool_execution`, and
+/// `max_retry_delay_ms` — the stream options that *do* have a destination — are
+/// threaded through.
 #[derive(Default)]
 pub struct AgentOptions {
     /// Seed state for the new agent.
@@ -340,6 +350,11 @@ pub struct AgentOptions {
     pub session_id: Option<String>,
     /// Tool-execution strategy (default `parallel`).
     pub tool_execution: Option<ToolExecutionMode>,
+    /// Cap in milliseconds on a server-requested retry delay, forwarded to the
+    /// stream via [`StreamOptions::max_retry_delay_ms`](pidgin_ai::StreamOptions)
+    /// (pi's `AgentOptions.maxRetryDelayMs`, `agent.ts:119`). `None` leaves the
+    /// provider default (60000; `0` disables the cap) in effect.
+    pub max_retry_delay_ms: Option<u64>,
 }
 
 // ---------------------------------------------------------------------------
@@ -433,6 +448,7 @@ struct AgentShared {
     prepare_next_turn: Option<PrepareNextTurnSignal>,
     prepare_next_turn_with_context: Mutex<Option<PrepareNextTurnWithContext>>,
     tool_execution: ToolExecutionMode,
+    max_retry_delay_ms: Option<u64>,
     clock: Arc<dyn Clock>,
 }
 
@@ -508,6 +524,7 @@ impl Agent {
             tool_execution: options
                 .tool_execution
                 .unwrap_or(ToolExecutionMode::Parallel),
+            max_retry_delay_ms: options.max_retry_delay_ms,
             clock,
         };
         Self {
@@ -948,6 +965,10 @@ impl Agent {
         // struct literal from this crate; set the fields on a default value.
         let mut stream_options = StreamOptions::default();
         stream_options.session_id = session_id;
+        // pi spreads `AgentLoopConfig.maxRetryDelayMs` into the stream options
+        // (`agent.ts:441`, `...config` in agent-loop.ts). Forward the Option as-is
+        // — `None` leaves the provider-side default (60000) in effect.
+        stream_options.max_retry_delay_ms = self.shared.max_retry_delay_ms;
 
         AgentLoopConfig {
             stream_options,

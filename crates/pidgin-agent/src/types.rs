@@ -493,10 +493,12 @@ pub type AfterToolCall = Arc<
 ///
 /// pi's `AgentLoopConfig extends SimpleStreamOptions`. pidgin-ai ports a subset
 /// of `SimpleStreamOptions` as [`StreamOptions`] (`sessionId`, `cacheRetention`);
-/// its `reasoning` field is surfaced here as [`reasoning`](Self::reasoning). The
+/// its `reasoning` field is surfaced here as [`reasoning`](Self::reasoning), and
+/// its `maxRetryDelayMs` rides on [`stream_options`](Self::stream_options)
+/// ([`StreamOptions::max_retry_delay_ms`](pidgin_ai::StreamOptions)). The
 /// remaining pi stream-option fields (temperature, maxTokens, signal, headers,
-/// retry/timeout tuning, transport, callbacks, metadata, env, thinkingBudgets)
-/// are additive future work. Runtime-only (carries closures); not serde.
+/// timeout tuning, transport, callbacks, metadata, env, thinkingBudgets) are
+/// additive future work. Runtime-only (carries closures); not serde.
 #[derive(Clone)]
 pub struct AgentLoopConfig {
     /// Inherited [`SimpleStreamOptions`](pidgin_ai::StreamOptions) subset.

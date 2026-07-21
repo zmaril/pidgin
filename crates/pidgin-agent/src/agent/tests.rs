@@ -854,6 +854,50 @@ fn forwards_session_id_to_stream_options() {
     assert_eq!(received.lock().unwrap().as_deref(), Some("session-def"));
 }
 
+#[test]
+fn forwards_max_retry_delay_ms_to_stream_options() {
+    // pi spreads `AgentLoopConfig.maxRetryDelayMs` into the stream options
+    // (`agent.ts:441`); the port forwards the `AgentOptions` field onto
+    // `StreamOptions.max_retry_delay_ms`.
+    let received: Arc<Mutex<Option<u64>>> = Arc::new(Mutex::new(None));
+    let slot = received.clone();
+    let stream_fn: StreamFn =
+        Arc::new(move |_model, _ctx, opts: Option<&StreamOptions>, _signal| {
+            *slot.lock().unwrap() = opts.and_then(|o| o.max_retry_delay_ms);
+            mock_stream(assistant_text("ok"))
+        });
+
+    let agent = Agent::new(AgentOptions {
+        max_retry_delay_ms: Some(12_000),
+        stream_fn: Some(stream_fn),
+        ..Default::default()
+    });
+
+    agent.prompt_text("hello", Vec::new()).unwrap();
+    assert_eq!(*received.lock().unwrap(), Some(12_000));
+}
+
+#[test]
+fn max_retry_delay_ms_defaults_to_none_on_stream_options() {
+    // When unset on `AgentOptions`, the stream sees `None` — the provider-side
+    // default (60000) stays in effect rather than being overridden.
+    let received: Arc<Mutex<Option<u64>>> = Arc::new(Mutex::new(Some(1)));
+    let slot = received.clone();
+    let stream_fn: StreamFn =
+        Arc::new(move |_model, _ctx, opts: Option<&StreamOptions>, _signal| {
+            *slot.lock().unwrap() = opts.and_then(|o| o.max_retry_delay_ms);
+            mock_stream(assistant_text("ok"))
+        });
+
+    let agent = Agent::new(AgentOptions {
+        stream_fn: Some(stream_fn),
+        ..Default::default()
+    });
+
+    agent.prompt_text("hello", Vec::new()).unwrap();
+    assert_eq!(*received.lock().unwrap(), None);
+}
+
 // ---------------------------------------------------------------------------
 // Supplementary: queue-drain modes, reset, abort edge branches
 // ---------------------------------------------------------------------------
