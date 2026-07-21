@@ -18,6 +18,10 @@
 ///   `PathError`'s `Display` is its message and the generated wrapper throws
 ///   `napi::Error::from_reason(e.to_string())`, the thrown message is identical to
 ///   the pre-swap hand-written `map_err(|e| Error::from_reason(e.to_string()))`.
+/// - the `keys` ops (`parseKey`, `matchesKey`, the two decoders, and
+///   `setKittyProtocolActive`) route into `pidgin_tui::keys`. The kitty-protocol
+///   flag lives in a Rust static, so the setter and readers share one addon
+///   instance and stay consistent — identical to the pre-swap hand-written pair.
 pub struct PidginImpl;
 
 impl crate::generated::PidginCore for PidginImpl {
@@ -44,5 +48,25 @@ impl crate::generated::PidginCore for PidginImpl {
 
     fn path_try_curly_quote_variant(file_path: String) -> String {
         pidgin_coding::core::tools::path_utils::try_curly_quote_variant(&file_path)
+    }
+
+    fn parse_key(data: String) -> Option<String> {
+        pidgin_tui::parse_key(&data)
+    }
+
+    fn matches_key(data: String, key_id: String) -> bool {
+        pidgin_tui::matches_key(&data, &key_id)
+    }
+
+    fn decode_kitty_printable(data: String) -> Option<String> {
+        pidgin_tui::decode_kitty_printable(&data)
+    }
+
+    fn decode_printable_key(data: String) -> Option<String> {
+        pidgin_tui::decode_printable_key(&data)
+    }
+
+    fn set_kitty_protocol_active(active: bool) {
+        pidgin_tui::set_kitty_protocol_active(active);
     }
 }

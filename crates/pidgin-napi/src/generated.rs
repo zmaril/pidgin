@@ -19,6 +19,11 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn path_try_macos_screenshot_path(file_path: String) -> String;
     fn path_try_nfd_variant(file_path: String) -> String;
     fn path_try_curly_quote_variant(file_path: String) -> String;
+    fn parse_key(data: String) -> Option<String>;
+    fn matches_key(data: String, key_id: String) -> bool;
+    fn decode_kitty_printable(data: String) -> Option<String>;
+    fn decode_printable_key(data: String) -> Option<String>;
+    fn set_kitty_protocol_active(active: bool) -> ();
 }
 
 /// Returns the crate version. Proves the native addon builds and loads.
@@ -61,4 +66,34 @@ pub fn path_try_nfd_variant(file_path: String) -> String {
 #[napi(js_name = "pathTryCurlyQuoteVariant")]
 pub fn path_try_curly_quote_variant(file_path: String) -> String {
     <crate::core_impl::PidginImpl as PidginCore>::path_try_curly_quote_variant(file_path)
+}
+
+/// `parseKey` (keys.ts): decode a raw key sequence to its canonical id.
+#[napi(js_name = "parseKey")]
+pub fn parse_key(data: String) -> Option<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::parse_key(data)
+}
+
+/// `matchesKey` (keys.ts): does `data` decode to `key_id`?
+#[napi(js_name = "matchesKey")]
+pub fn matches_key(data: String, key_id: String) -> bool {
+    <crate::core_impl::PidginImpl as PidginCore>::matches_key(data, key_id)
+}
+
+/// `decodeKittyPrintable` (keys.ts): printable char from a kitty sequence.
+#[napi(js_name = "decodeKittyPrintable")]
+pub fn decode_kitty_printable(data: String) -> Option<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::decode_kitty_printable(data)
+}
+
+/// `decodePrintableKey` (keys.ts): printable char from a key sequence.
+#[napi(js_name = "decodePrintableKey")]
+pub fn decode_printable_key(data: String) -> Option<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::decode_printable_key(data)
+}
+
+/// `setKittyProtocolActive` (keys.ts): toggle kitty-protocol decoding.
+#[napi(js_name = "setKittyProtocolActive")]
+pub fn set_kitty_protocol_active(active: bool) -> () {
+    <crate::core_impl::PidginImpl as PidginCore>::set_kitty_protocol_active(active)
 }

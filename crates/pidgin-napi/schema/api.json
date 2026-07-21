@@ -124,6 +124,111 @@
               "name": "pathTryCurlyQuoteVariant"
             }
           }
+        },
+        {
+          "name": "parseKey",
+          "doc": "`parseKey` (keys.ts): decode a raw key sequence to its canonical id.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "data",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "parseKey"
+            }
+          }
+        },
+        {
+          "name": "matchesKey",
+          "doc": "`matchesKey` (keys.ts): does `data` decode to `key_id`?",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "data",
+              "type": "string"
+            },
+            {
+              "name": "keyId",
+              "type": "string"
+            }
+          ],
+          "returns": "boolean",
+          "bindings": {
+            "node": {
+              "name": "matchesKey"
+            }
+          }
+        },
+        {
+          "name": "decodeKittyPrintable",
+          "doc": "`decodeKittyPrintable` (keys.ts): printable char from a kitty sequence.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "data",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "decodeKittyPrintable"
+            }
+          }
+        },
+        {
+          "name": "decodePrintableKey",
+          "doc": "`decodePrintableKey` (keys.ts): printable char from a key sequence.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "data",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "decodePrintableKey"
+            }
+          }
+        },
+        {
+          "name": "setKittyProtocolActive",
+          "doc": "`setKittyProtocolActive` (keys.ts): toggle kitty-protocol decoding.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "active",
+              "type": "boolean"
+            }
+          ],
+          "returns": "void",
+          "bindings": {
+            "node": {
+              "name": "setKittyProtocolActive"
+            }
+          }
         }
       ]
     }
