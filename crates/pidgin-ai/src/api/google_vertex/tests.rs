@@ -233,3 +233,58 @@ fn adc_reads_project_location_and_credentials_from_env() {
         json!({ "keyFilename": "/creds/key.json" })
     );
 }
+
+// ---------------------------------------------------------------------------
+// ADC / service-account request assembly (the Bearer wire format the driver
+// puts on the wire once `super::adc` has minted a token)
+// ---------------------------------------------------------------------------
+
+#[test]
+fn assemble_adc_request_targets_regional_endpoint_with_bearer() {
+    let request = client::assemble_adc_request(
+        &default_model(),
+        "{}".to_string(),
+        "ya29.minted-token",
+        "test-project",
+        "us-central1",
+        &BTreeMap::new(),
+    );
+
+    assert_eq!(request.method, "POST");
+    // No apiKey => the regional `{location}-aiplatform` host with the full
+    // `projects/{project}/locations/{location}` resource prefix.
+    assert_eq!(
+        request.url,
+        "https://us-central1-aiplatform.googleapis.com/v1/projects/test-project/locations/us-central1/publishers/google/models/gemini-3-flash-preview:streamGenerateContent?alt=sse"
+    );
+    // The minted token is sent as `Authorization: Bearer`, not `x-goog-api-key`.
+    assert_eq!(
+        request.headers.get("authorization").map(String::as_str),
+        Some("Bearer ya29.minted-token")
+    );
+    assert!(!request.headers.contains_key("x-goog-api-key"));
+    assert_eq!(
+        request.headers.get("content-type").map(String::as_str),
+        Some("application/json")
+    );
+}
+
+#[test]
+fn assemble_adc_request_honors_custom_base_url_over_regional_host() {
+    // A custom `model.baseUrl` (no `{location}` placeholder) overrides the host
+    // but keeps the ADC `projects/{project}/locations/{location}` prefix and the
+    // appended `v1` version (COLLECTION scope).
+    let request = client::assemble_adc_request(
+        &vertex_model("https://proxy.example.com"),
+        "{}".to_string(),
+        "ya29.minted-token",
+        "test-project",
+        "us-central1",
+        &BTreeMap::new(),
+    );
+
+    assert_eq!(
+        request.url,
+        "https://proxy.example.com/v1/projects/test-project/locations/us-central1/publishers/google/models/gemini-3-flash-preview:streamGenerateContent?alt=sse"
+    );
+}

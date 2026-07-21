@@ -27,12 +27,15 @@
 //!
 //! # Auth scope
 //!
-//! This PR ports the **Vertex Express (API-key) path** only. `api_key` is the
-//! already-resolved Vertex key ([`super::resolve_api_key`], applied by the
-//! backend so the `gcp-vertex-credentials` marker / `<placeholder>` are discarded
-//! to `None`). A `None` key is pi's ADC path — the service-account OAuth2 token
-//! acquisition — which is a documented follow-up; here it surfaces as a pre-start
-//! error rather than a live request.
+//! Both Vertex auth paths run here, selected by the resolved `credential` the
+//! backend hands in ([`VertexRequestCredential`]):
+//! [`ApiKey`](VertexRequestCredential::ApiKey) drives the Express request
+//! (`x-goog-api-key`); [`Bearer`](VertexRequestCredential::Bearer) drives the
+//! ADC / service-account request (`Authorization: Bearer <token>` against the
+//! regional `projects/{project}/locations/{location}` endpoint), the token having
+//! been minted by [`super::adc`] and cached in the backend. A `None` credential
+//! (neither an API key nor a resolvable service-account keyfile) surfaces the
+//! same pre-start "No API key" error pi's direct-Gemini driver uses.
 //!
 //! # Streaming model
 //!
@@ -58,7 +61,7 @@ use std::ops::ControlFlow;
 
 use serde_json::Value;
 
-use crate::seams::http::HttpTransport;
+use crate::seams::http::{HttpRequest, HttpTransport};
 use crate::seams::provider::StreamResult;
 use crate::types::{
     AssistantMessage, AssistantMessageEvent, AssistantRole, Context, StopReason, Usage, UsageCost,
@@ -66,8 +69,8 @@ use crate::types::{
 use crate::utils::sse::{AssistantEventReader, ServerSentEvent, SseEventDecoder};
 
 use super::super::google_shared::{build_params, GoogleModel, GoogleRequestOptions};
-use super::client::{assemble_request, serialize_body};
-use super::{parse_sse_stream, GoogleVertexSseDecoder, API};
+use super::client::{assemble_adc_request, assemble_request, serialize_body};
+use super::{parse_sse_stream, GoogleVertexSseDecoder, VertexRequestCredential, API};
 
 /// The empty assistant output shell pi seeds before streaming
 /// (`google-vertex.ts:74-90`).
@@ -112,12 +115,34 @@ fn error_result(model: &GoogleModel, timestamp: i64, message: String) -> StreamR
     }
 }
 
-/// The pre-start error message for an unresolvable API key. The Express path
-/// requires a Vertex API key; the ADC / service-account path is a deferred
-/// follow-up, so an absent key surfaces the same shape pi's direct-Gemini driver
-/// uses for a missing credential.
+/// The pre-start error message for an unresolvable credential — neither a Vertex
+/// API key nor a service-account keyfile (+ project + location) is available, so
+/// an absent credential surfaces the same shape pi's direct-Gemini driver uses
+/// for a missing credential.
 fn missing_api_key_message(model: &GoogleModel) -> String {
     format!("No API key for provider: {}", model.provider)
+}
+
+/// Dispatch to the credential-appropriate request assembler: the Express
+/// (API-key, `x-goog-api-key`) path or the ADC / service-account (Bearer,
+/// regional `projects/locations`) path. Shared by the buffered and incremental
+/// drivers so both paths run byte-identical request assembly.
+fn assemble_credentialed_request(
+    model: &GoogleModel,
+    body: String,
+    credential: &VertexRequestCredential<'_>,
+    options_headers: &BTreeMap<String, String>,
+) -> HttpRequest {
+    match credential {
+        VertexRequestCredential::ApiKey(api_key) => {
+            assemble_request(model, body, api_key, options_headers)
+        }
+        VertexRequestCredential::Bearer {
+            token,
+            project,
+            location,
+        } => assemble_adc_request(model, body, token, project, location, options_headers),
+    }
 }
 
 /// Format a non-2xx create response into the terminal error message. pi surfaces
@@ -155,15 +180,16 @@ pub fn stream<T: HttpTransport + ?Sized>(
     transport: &T,
     model: &GoogleModel,
     context: &Context,
-    api_key: Option<&str>,
+    credential: Option<VertexRequestCredential<'_>>,
     options_headers: &BTreeMap<String, String>,
     request_options: &GoogleRequestOptions,
     timestamp: i64,
 ) -> StreamResult {
-    // The Express path requires a resolved API key; the ADC path is a deferred
-    // follow-up. A failure is caught as an error event with no preceding `start`.
-    let api_key = match api_key {
-        Some(api_key) => api_key,
+    // A resolved credential is required. The backend collapses an unresolvable
+    // credential (no API key and no service-account keyfile + project + location)
+    // to `None`, surfaced here as an error event with no preceding `start`.
+    let credential = match credential {
+        Some(credential) => credential,
         None => return error_result(model, timestamp, missing_api_key_message(model)),
     };
 
@@ -174,7 +200,8 @@ pub fn stream<T: HttpTransport + ?Sized>(
         Err(message) => return error_result(model, timestamp, message),
     };
 
-    let request = assemble_request(model, serialize_body(&body), api_key, options_headers);
+    let request =
+        assemble_credentialed_request(model, serialize_body(&body), &credential, options_headers);
 
     match transport.send(&request) {
         Ok(response) if response.is_ok() => {
@@ -271,15 +298,16 @@ pub fn stream_streaming<'a, T: HttpTransport + ?Sized>(
     transport: &'a T,
     model: &GoogleModel,
     context: &Context,
-    api_key: Option<&str>,
+    credential: Option<VertexRequestCredential<'_>>,
     options_headers: &BTreeMap<String, String>,
     request_options: &GoogleRequestOptions,
     timestamp: i64,
 ) -> AssistantEventReader<'a> {
-    // The Express path requires a resolved API key; the ADC path is a deferred
-    // follow-up. A failure is caught as an error event with no preceding `start`.
-    let api_key = match api_key {
-        Some(api_key) => api_key,
+    // A resolved credential is required. The backend collapses an unresolvable
+    // credential (no API key and no service-account keyfile + project + location)
+    // to `None`, surfaced here as an error event with no preceding `start`.
+    let credential = match credential {
+        Some(credential) => credential,
         None => return error_reader(model, timestamp, missing_api_key_message(model)),
     };
 
@@ -290,7 +318,8 @@ pub fn stream_streaming<'a, T: HttpTransport + ?Sized>(
         Err(message) => return error_reader(model, timestamp, message),
     };
 
-    let request = assemble_request(model, serialize_body(&body), api_key, options_headers);
+    let request =
+        assemble_credentialed_request(model, serialize_body(&body), &credential, options_headers);
 
     // Status + headers arrive up front, so the error-vs-parse decision is made
     // before the body streams -- exactly as the buffered path decides on
