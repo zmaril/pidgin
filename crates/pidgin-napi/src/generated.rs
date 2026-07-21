@@ -69,6 +69,7 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     ) -> ExtractSegmentsResult;
     fn find_word_backward(text: String, cursor: i32) -> i32;
     fn find_word_forward(text: String, cursor: i32) -> i32;
+    fn parse_git_url(source: String) -> Option<String>;
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -253,6 +254,14 @@ pub fn find_word_backward(text: String, cursor: i32) -> i32 {
 #[napi(js_name = "findWordForward")]
 pub fn find_word_forward(text: String, cursor: i32) -> i32 {
     <crate::core_impl::PidginImpl as PidginCore>::find_word_forward(text, cursor)
+}
+
+/// `parseGitUrl` (utils/git.ts): parse a git source string into pi's `GitSource`
+/// JSON shape (`{ type, repo, host, path, ref?, pinned }`), or `null`. The shim
+/// `JSON.parse`s the result.
+#[napi(js_name = "parseGitUrl")]
+pub fn parse_git_url(source: String) -> Option<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::parse_git_url(source)
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as

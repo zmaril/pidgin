@@ -148,6 +148,20 @@ impl crate::generated::PidginCore for PidginImpl {
             &pidgin_tui::WordNavOptions::default(),
         ) as i32
     }
+
+    fn parse_git_url(source: String) -> Option<String> {
+        let parsed = pidgin_coding::utils::git_url::parse_git_url(&source)?;
+        let mut obj = serde_json::Map::new();
+        obj.insert("type".to_string(), serde_json::json!(parsed.kind));
+        obj.insert("repo".to_string(), serde_json::json!(parsed.repo));
+        obj.insert("host".to_string(), serde_json::json!(parsed.host));
+        obj.insert("path".to_string(), serde_json::json!(parsed.path));
+        if let Some(git_ref) = parsed.git_ref {
+            obj.insert("ref".to_string(), serde_json::json!(git_ref));
+        }
+        obj.insert("pinned".to_string(), serde_json::json!(parsed.pinned));
+        Some(serde_json::Value::Object(obj).to_string())
+    }
 }
 
 // --- tui keybindings layer (packages/tui/src/keybindings.ts) ----------------
