@@ -652,3 +652,88 @@ impl crate::generated::FauxCoreCore for FauxCoreImpl {
         serde_json::to_string(&result).map_err(anyhow::Error::from)
     }
 }
+
+// --- tui stdin-buffer surface (tui/src/stdin-buffer.ts) ---------------------
+//
+// The engine-backed implementation behind the generated `StdinBufferCore` handle
+// class (its ctor + `process`/`flush`/`getBuffer`/`clear` methods). Wraps one
+// `pidgin_tui::StdinBuffer` — the SAME escape-sequence splitter / bracketed-paste
+// / Kitty-dedup state machine the hand-written `#[napi]` class drove before the
+// fluessig swap. The splitter's stepping methods take `&mut self`, so — like
+// `CommandCore`/`TuiCore` — the core holds it behind a `Mutex` to supply the
+// interior mutability the generated `&self` receivers need; a single JS caller
+// never contends, so the lock is uncontended in practice. Strings/plain objects
+// cross in/out exactly as the pre-swap class defined (the ctor is infallible and
+// no method is fallible, so there are no error messages to reproduce), leaving
+// the JS-visible behavior byte-for-byte unchanged.
+
+use crate::generated::StdinEventJs;
+use pidgin_tui::{StdinBuffer, StdinBufferOptions, StdinEvent};
+
+impl From<StdinEvent> for StdinEventJs {
+    fn from(event: StdinEvent) -> Self {
+        match event {
+            StdinEvent::Data(value) => Self {
+                kind: "data".to_string(),
+                value,
+            },
+            StdinEvent::Paste(value) => Self {
+                kind: "paste".to_string(),
+                value,
+            },
+        }
+    }
+}
+
+/// The engine-backed implementation of the generated `StdinBufferCore` contract.
+/// Holds one [`StdinBuffer`] behind a `Mutex`; the generated handle class owns it
+/// as `Arc<StdinBufferCoreImpl>` and delegates each `&self` method straight
+/// through, so the JS-visible behavior is byte-for-byte unchanged from the
+/// pre-swap hand-written class.
+pub struct StdinBufferCoreImpl {
+    inner: std::sync::Mutex<StdinBuffer>,
+}
+
+impl crate::generated::StdinBufferCoreCore for StdinBufferCoreImpl {
+    fn new(timeout_ms: Option<i64>) -> anyhow::Result<Self> {
+        let options = match timeout_ms {
+            Some(ms) => StdinBufferOptions {
+                timeout_ms: ms.max(0) as u64,
+            },
+            None => StdinBufferOptions::default(),
+        };
+        Ok(Self {
+            inner: std::sync::Mutex::new(StdinBuffer::new(options)),
+        })
+    }
+
+    fn process(&self, data: String) -> Vec<StdinEventJs> {
+        self.inner
+            .lock()
+            .unwrap()
+            .process(&data)
+            .into_iter()
+            .map(StdinEventJs::from)
+            .collect()
+    }
+
+    fn flush(&self) -> Vec<String> {
+        self.inner
+            .lock()
+            .unwrap()
+            .flush()
+            .into_iter()
+            .map(|event| match event {
+                StdinEvent::Data(value) | StdinEvent::Paste(value) => value,
+            })
+            .collect()
+    }
+
+    fn get_buffer(&self) -> String {
+        self.inner.lock().unwrap().buffer().to_string()
+    }
+
+    fn clear(&self) {
+        self.inner.lock().unwrap().clear();
+    }
+}

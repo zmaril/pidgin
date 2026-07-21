@@ -25,8 +25,10 @@ mod tui;
 // TUI stdin-buffer surface (`StdinBufferCore`): drives pi's `StdinBuffer`
 // escape-sequence splitter / bracketed-paste / Kitty-dedup state machine
 // natively. The JS shim keeps only pi's EventEmitter plumbing, the completion
-// timer, and Buffer adaptation; every splitting decision runs in Rust. Additive.
-mod stdin_buffer;
+// timer, and Buffer adaptation; every splitting decision runs in Rust. Now
+// generated from the fluessig api schema through `crate::generated` +
+// `crate::core_impl` (the `StdinBufferCoreImpl` engine seam) — see
+// src/generated.rs and schema/api.json. Additive.
 
 // TUI terminal-colors surface (`isOsc11BackgroundColorResponse`,
 // `parseOsc11BackgroundColor`, `parseTerminalColorSchemeReport`): pi's pure
