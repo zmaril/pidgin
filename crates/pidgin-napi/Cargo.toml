@@ -16,7 +16,7 @@ pidgin-coding = { path = "../pidgin-coding" }
 pidgin-tui = { path = "../pidgin-tui" }
 indexmap = { version = "2", features = ["serde"] }
 napi = { version = "2", default-features = false, features = ["napi9"] }
-napi-derive = "2"
+napi-derive = "3"
 serde = { workspace = true }
 serde_json = { workspace = true }
 # The exec-tool run layer (ls/write/bash) is async (tokio). The tool bindings
