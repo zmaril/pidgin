@@ -236,6 +236,22 @@ impl crate::generated::PidginCore for PidginImpl {
             )),
         }
     }
+
+    fn compare_package_versions(left_version: String, right_version: String) -> Option<i32> {
+        pidgin_coding::utils::version_check::compare_package_versions(&left_version, &right_version)
+            .map(|ordering| match ordering {
+                std::cmp::Ordering::Less => -1,
+                std::cmp::Ordering::Equal => 0,
+                std::cmp::Ordering::Greater => 1,
+            })
+    }
+
+    fn is_newer_package_version(candidate_version: String, current_version: String) -> bool {
+        pidgin_coding::utils::version_check::is_newer_package_version(
+            &candidate_version,
+            &current_version,
+        )
+    }
 }
 
 // --- coding-agent session-cwd seam (core/session-cwd.ts) --------------------

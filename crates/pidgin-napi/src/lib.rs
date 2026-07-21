@@ -199,30 +199,6 @@ pub fn detect_supported_image_mime_type(
     pidgin_coding::utils::mime::detect_supported_image_mime_type(&buffer).map(|s| s.to_string())
 }
 
-/// `comparePackageVersions` (utils/version-check.ts): compare two semver
-/// strings, mapping `Ordering` to `-1`/`0`/`1`. `None` (incomparable) crosses as
-/// JS `null`; the shim converts it to `undefined` to match pi's `number |
-/// undefined`.
-#[napi(js_name = "comparePackageVersions")]
-pub fn compare_package_versions(left_version: String, right_version: String) -> Option<i32> {
-    pidgin_coding::utils::version_check::compare_package_versions(&left_version, &right_version)
-        .map(|ordering| match ordering {
-            std::cmp::Ordering::Less => -1,
-            std::cmp::Ordering::Equal => 0,
-            std::cmp::Ordering::Greater => 1,
-        })
-}
-
-/// `isNewerPackageVersion` (utils/version-check.ts): is `candidate` strictly
-/// newer than `current`?
-#[napi(js_name = "isNewerPackageVersion")]
-pub fn is_newer_package_version(candidate_version: String, current_version: String) -> bool {
-    pidgin_coding::utils::version_check::is_newer_package_version(
-        &candidate_version,
-        &current_version,
-    )
-}
-
 // --- coding-agent http-dispatcher layer -------------------------------------
 //
 // Thin wrappers over `pidgin_coding::core::http_dispatcher`, backing the native
