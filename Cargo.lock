@@ -2510,6 +2510,7 @@ dependencies = [
  "nix",
  "pidgin-agent",
  "pidgin-ai",
+ "pidgin-testkit",
  "pidgin-tui",
  "regex",
  "semver",
@@ -2543,6 +2544,7 @@ dependencies = [
  "pidgin-agent",
  "pidgin-ai",
  "pidgin-coding",
+ "pidgin-testkit",
  "pyo3",
  "serde",
  "serde_json",
@@ -2589,6 +2591,10 @@ dependencies = [
  "tempfile",
  "tokio",
 ]
+
+[[package]]
+name = "pidgin-testkit"
+version = "0.1.0"
 
 [[package]]
 name = "pidgin-tui"

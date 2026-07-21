@@ -1,0 +1,9 @@
+[package]
+name = "pidgin-testkit"
+description = "Shared filesystem/path test-fixture helpers for pidgin's integration test suites (dev-only)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
