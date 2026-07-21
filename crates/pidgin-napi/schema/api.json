@@ -778,6 +778,54 @@
               "name": "normalizeChangelogLinks"
             }
           }
+        },
+        {
+          "name": "comparePackageVersions",
+          "doc": "`comparePackageVersions` (utils/version-check.ts): compare two semver\nstrings, mapping `Ordering` to `-1`/`0`/`1`. `None` (incomparable) crosses as\nJS `null`; the shim converts it to `undefined` to match pi's `number |\nundefined`.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "leftVersion",
+              "type": "string"
+            },
+            {
+              "name": "rightVersion",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "nullable": "int32"
+          },
+          "bindings": {
+            "node": {
+              "name": "comparePackageVersions"
+            }
+          }
+        },
+        {
+          "name": "isNewerPackageVersion",
+          "doc": "`isNewerPackageVersion` (utils/version-check.ts): is `candidate` strictly\nnewer than `current`?",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "candidateVersion",
+              "type": "string"
+            },
+            {
+              "name": "currentVersion",
+              "type": "string"
+            }
+          ],
+          "returns": "boolean",
+          "bindings": {
+            "node": {
+              "name": "isNewerPackageVersion"
+            }
+          }
         }
       ]
     },

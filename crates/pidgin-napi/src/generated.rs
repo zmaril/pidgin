@@ -96,6 +96,8 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn is_command_config_value(config: String) -> bool;
     fn clear_config_value_cache() -> ();
     fn normalize_changelog_links(markdown: String, version_json: String) -> anyhow::Result<String>;
+    fn compare_package_versions(left_version: String, right_version: String) -> Option<i32>;
+    fn is_newer_package_version(candidate_version: String, current_version: String) -> bool;
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -379,6 +381,28 @@ pub fn clear_config_value_cache() -> () {
 pub fn normalize_changelog_links(markdown: String, version_json: String) -> Result<String> {
     <crate::core_impl::PidginImpl as PidginCore>::normalize_changelog_links(markdown, version_json)
         .map_err(err)
+}
+
+/// `comparePackageVersions` (utils/version-check.ts): compare two semver
+/// strings, mapping `Ordering` to `-1`/`0`/`1`. `None` (incomparable) crosses as
+/// JS `null`; the shim converts it to `undefined` to match pi's `number |
+/// undefined`.
+#[napi(js_name = "comparePackageVersions")]
+pub fn compare_package_versions(left_version: String, right_version: String) -> Option<i32> {
+    <crate::core_impl::PidginImpl as PidginCore>::compare_package_versions(
+        left_version,
+        right_version,
+    )
+}
+
+/// `isNewerPackageVersion` (utils/version-check.ts): is `candidate` strictly
+/// newer than `current`?
+#[napi(js_name = "isNewerPackageVersion")]
+pub fn is_newer_package_version(candidate_version: String, current_version: String) -> bool {
+    <crate::core_impl::PidginImpl as PidginCore>::is_newer_package_version(
+        candidate_version,
+        current_version,
+    )
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as
