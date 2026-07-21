@@ -1,0 +1,1003 @@
+{
+ "functions": [
+  {
+   "id": "pidgin_napi::bridge_async::BridgeShared::deliver",
+   "display": "pidgin_napi::bridge_async::BridgeShared::deliver",
+   "file": "crates/pidgin-napi/src/bridge_async.rs",
+   "line": 226,
+   "arg_count": 3,
+   "locals": [
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "uint"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "int"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "bool"
+    },
+    {
+     "kind": "bool"
+    },
+    {
+     "kind": "int"
+    }
+   ],
+   "blocks": [
+    {
+     "stmts": [
+      {
+       "place": 15,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": false
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 227,
+        "col": 13
+       }
+      },
+      {
+       "place": 16,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": false
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 227,
+        "col": 13
+       }
+      },
+      {
+       "place": 15,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": true
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 227,
+        "col": 13
+       }
+      },
+      {
+       "place": 9,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 227,
+        "col": 18
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 8,
+      "target": 1
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Call",
+      "destination": 7,
+      "target": 2
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 6,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 227,
+        "col": 18
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 5,
+      "target": 3
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 10,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 227,
+        "col": 54
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 4,
+      "target": 4
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 16,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": true
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 227,
+        "col": 57
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       5
+      ]
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 11,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 228,
+        "col": 27
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "SwitchInt",
+      "discr": {
+       "kind": "Local",
+       "local": 11
+      },
+      "targets": [
+       {
+        "value": 1,
+        "block": 6
+       },
+       {
+        "value": 0,
+        "block": 8
+       }
+      ],
+      "otherwise": 18
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 16,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": false
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 228,
+        "col": 21
+       }
+      },
+      {
+       "place": 12,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Unknown"
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 228,
+        "col": 21
+       }
+      },
+      {
+       "place": 15,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": false
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 231,
+        "col": 29
+       }
+      },
+      {
+       "place": 14,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Local",
+         "local": 3
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 231,
+        "col": 29
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 13,
+      "target": 7
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       8
+      ]
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 16,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": false
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 233,
+        "col": 5
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "SwitchInt",
+      "discr": {
+       "kind": "Local",
+       "local": 15
+      },
+      "targets": [
+       {
+        "value": 0,
+        "block": 9
+       }
+      ],
+      "otherwise": 12
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Return"
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       17
+      ]
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": []
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       9
+      ]
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "SwitchInt",
+      "discr": {
+       "kind": "Local",
+       "local": 16
+      },
+      "targets": [
+       {
+        "value": 0,
+        "block": 17
+       }
+      ],
+      "otherwise": 14
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       17
+      ]
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 17,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 233,
+        "col": 5
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "SwitchInt",
+      "discr": {
+       "kind": "Local",
+       "local": 17
+      },
+      "targets": [
+       {
+        "value": 1,
+        "block": 13
+       }
+      ],
+      "otherwise": 17
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       11
+      ]
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "SwitchInt",
+      "discr": {
+       "kind": "Local",
+       "local": 15
+      },
+      "targets": [
+       {
+        "value": 0,
+        "block": 11
+       }
+      ],
+      "otherwise": 16
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Unreachable"
+     }
+    }
+   ]
+  },
+  {
+   "id": "pidgin_napi::bridge_async::BridgeShared::abort",
+   "display": "pidgin_napi::bridge_async::BridgeShared::abort",
+   "file": "crates/pidgin-napi/src/bridge_async.rs",
+   "line": 237,
+   "arg_count": 1,
+   "locals": [
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "int"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "bool"
+    }
+   ],
+   "blocks": [
+    {
+     "stmts": [
+      {
+       "place": 21,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": false
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 238,
+        "col": 9
+       }
+      },
+      {
+       "place": 3,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 238,
+        "col": 9
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 2,
+      "target": 1
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 11,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 239,
+        "col": 60
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 10,
+      "target": 2
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Call",
+      "destination": 9,
+      "target": 3
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 8,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 239,
+        "col": 60
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 7,
+      "target": 4
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Call",
+      "destination": 6,
+      "target": 5
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Call",
+      "destination": 5,
+      "target": 6
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Call",
+      "destination": 4,
+      "target": 7
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 21,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": true
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 245,
+        "col": 22
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       8
+      ]
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 21,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": false
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 246,
+        "col": 19
+       }
+      },
+      {
+       "place": 13,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Local",
+         "local": 4
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 246,
+        "col": 19
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 12,
+      "target": 9
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 14,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Local",
+         "local": 12
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 246,
+        "col": 19
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Goto",
+      "block": 10
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 16,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 246,
+        "col": 19
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 15,
+      "target": 11
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 17,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 246,
+        "col": 19
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "SwitchInt",
+      "discr": {
+       "kind": "Local",
+       "local": 17
+      },
+      "targets": [
+       {
+        "value": 0,
+        "block": 14
+       },
+       {
+        "value": 1,
+        "block": 13
+       }
+      ],
+      "otherwise": 12
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Unreachable"
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 18,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Unknown"
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 246,
+        "col": 13
+       }
+      },
+      {
+       "place": 20,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 249,
+        "col": 29
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Call",
+      "destination": 19,
+      "target": 15
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       16
+      ]
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       10
+      ]
+     }
+    },
+    {
+     "stmts": [
+      {
+       "place": 21,
+       "rvalue": {
+        "op": "Use",
+        "operand": {
+         "kind": "Const",
+         "value": {
+          "ty": "Bool",
+          "v": false
+         }
+        }
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 251,
+        "col": 5
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Return"
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       21
+      ]
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       19
+      ]
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": []
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "Other",
+      "successors": [
+       19
+      ]
+     }
+    },
+    {
+     "stmts": [],
+     "terminator": {
+      "kind": "SwitchInt",
+      "discr": {
+       "kind": "Local",
+       "local": 21
+      },
+      "targets": [
+       {
+        "value": 0,
+        "block": 19
+       }
+      ],
+      "otherwise": 20
+     }
+    }
+   ]
+  },
+  {
+   "id": "pidgin_napi::bridge_async::AsyncChannel::call_async",
+   "display": "pidgin_napi::bridge_async::AsyncChannel::call_async",
+   "file": "crates/pidgin-napi/src/bridge_async.rs",
+   "line": 278,
+   "arg_count": 3,
+   "locals": [
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    },
+    {
+     "kind": "other"
+    }
+   ],
+   "blocks": [
+    {
+     "stmts": [
+      {
+       "place": 0,
+       "rvalue": {
+        "op": "Unknown"
+       },
+       "loc": {
+        "file": "crates/pidgin-napi/src/bridge_async.rs",
+        "line": 282,
+        "col": 50
+       }
+      }
+     ],
+     "terminator": {
+      "kind": "Return"
+     }
+    }
+   ]
+  }
+ ]
+}
