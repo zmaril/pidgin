@@ -56,6 +56,9 @@ use regex::Regex;
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
+use crate::api::anthropic::simple_options::{
+    clamp_max_tokens_to_context_window, ThinkingBudgets as AdjustThinkingBudgets,
+};
 use crate::types::{
     CacheRetention, ContentBlock, Message, Modality, ModelCost, ThinkingLevel, ThinkingLevelMap,
     ToolResultMessage, UserContent,
@@ -123,6 +126,10 @@ pub struct BedrockModel {
     pub base_url: Option<String>,
     #[serde(default)]
     pub max_tokens: u64,
+    /// The model's context window in tokens, read by the `streamSimple`
+    /// context-clamp (pi's `clampMaxTokensToContext`, `simple-options.ts:15`).
+    #[serde(default)]
+    pub context_window: u64,
 }
 
 impl BedrockModel {
@@ -130,7 +137,7 @@ impl BedrockModel {
         self.input.contains(&Modality::Image)
     }
 
-    fn name_ref(&self) -> Option<&str> {
+    pub(crate) fn name_ref(&self) -> Option<&str> {
         self.name.as_deref()
     }
 }
@@ -227,7 +234,10 @@ fn to_model_thinking_level(level: ThinkingLevel) -> crate::types::ModelThinkingL
 
 /// Whether the model supports adaptive thinking (Opus 4.6+, Sonnet 4.6, Claude 5)
 /// (`supportsAdaptiveThinking`, `bedrock-converse-stream.ts:577`).
-fn supports_adaptive_thinking(model_id: &str, model_name: Option<&str>) -> bool {
+///
+/// `pub(crate)` so the sibling `driver::stream_simple` port can take pi's
+/// adaptive-vs-budget Claude sub-branch (`:403`).
+pub(crate) fn supports_adaptive_thinking(model_id: &str, model_name: Option<&str>) -> bool {
     let candidates = get_model_match_candidates(model_id, model_name);
     candidates.iter().any(|s| {
         s.contains("opus-4-6")
@@ -280,7 +290,10 @@ fn map_thinking_level_to_effort(model: &BedrockModel, level: Option<ThinkingLeve
 
 /// Whether the model is an Anthropic Claude model on Bedrock
 /// (`isAnthropicClaudeModel`, `bedrock-converse-stream.ts:638`).
-fn is_anthropic_claude_model(model: &BedrockModel) -> bool {
+///
+/// `pub(crate)` so the sibling `driver::stream_simple` port can branch Claude vs
+/// non-Claude exactly as pi's `streamSimple` does (`:402`).
+pub(crate) fn is_anthropic_claude_model(model: &BedrockModel) -> bool {
     let id = model.id.to_lowercase();
     let name = model.name_ref().unwrap_or("").to_lowercase();
     id.contains("anthropic.claude")
@@ -743,6 +756,35 @@ fn is_gov_cloud_bedrock_target(
     }
     let model_id = model.id.to_lowercase();
     model_id.starts_with("us-gov.") || model_id.starts_with("arn:aws-us-gov:")
+}
+
+// ---------------------------------------------------------------------------
+// streamSimple support (`bedrock-converse-stream.ts:392`, `simple-options.ts`)
+// ---------------------------------------------------------------------------
+
+/// pi's `clampMaxTokensToContext` (`simple-options.ts:15`) for a [`BedrockModel`],
+/// delegating to the shared window-keyed core (`api/anthropic/simple_options.rs`)
+/// so pi's single helper stays a single implementation across dialects.
+pub(crate) fn clamp_max_tokens_to_context(
+    model: &BedrockModel,
+    context: &Context,
+    max_tokens: u64,
+) -> u64 {
+    clamp_max_tokens_to_context_window(model.context_window, context, max_tokens)
+}
+
+/// Project the Bedrock per-level budget map onto the struct shape pi's shared
+/// `adjustMaxTokensForThinking` (`simple-options.ts:50`) reads, so the Bedrock
+/// `streamSimple` port can reuse the Anthropic-hosted helper unchanged. Only the
+/// token-based levels (through `high`) carry a budget; `xhigh`/`max` collapse to
+/// `high` before the lookup (`clampReasoning`).
+pub(crate) fn to_adjust_budgets(budgets: &ThinkingBudgets) -> AdjustThinkingBudgets {
+    AdjustThinkingBudgets {
+        minimal: budgets.get(&ThinkingLevel::Minimal).copied(),
+        low: budgets.get(&ThinkingLevel::Low).copied(),
+        medium: budgets.get(&ThinkingLevel::Medium).copied(),
+        high: budgets.get(&ThinkingLevel::High).copied(),
+    }
 }
 
 /// `buildAdditionalModelRequestFields` (`bedrock-converse-stream.ts:1014`).

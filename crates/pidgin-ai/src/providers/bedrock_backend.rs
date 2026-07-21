@@ -30,13 +30,14 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use crate::api::bedrock::driver;
-use crate::api::bedrock::{BedrockModel, BedrockOptions};
+use crate::api::bedrock::{BedrockModel, BedrockOptions, ThinkingBudgets};
 use crate::seams::clock::Clock;
 use crate::seams::http::HttpTransport;
 use crate::seams::provider::{AbortSignal, Provider, StreamResult};
 use crate::types::{
-    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, StopReason,
-    StreamOptions, Usage, UsageCost,
+    AssistantMessage, AssistantMessageEvent, AssistantRole, Context, Model, SimpleStreamOptions,
+    StopReason, StreamOptions, ThinkingBudgets as SeamThinkingBudgets, ThinkingLevel, Usage,
+    UsageCost,
 };
 use crate::utils::provider_env::ProviderEnv;
 
@@ -124,6 +125,98 @@ impl Provider for BedrockBackend {
             timestamp,
         )
     }
+
+    /// Route the simple, level-based options through the driver's
+    /// `stream_simple` so `reasoning`/`thinking_budgets` reach the request,
+    /// mirroring pi's `streamSimple` (`bedrock-converse-stream.ts:392`).
+    ///
+    /// When no `reasoning` level is requested, this falls back to the raw
+    /// [`stream`](Self::stream) on the base options, so the outgoing request is
+    /// byte-identical to the pre-seam path (no thinking config is added).
+    fn stream_simple(
+        &self,
+        model: &Model,
+        context: &Context,
+        options: Option<&SimpleStreamOptions>,
+        signal: Option<&AbortSignal>,
+    ) -> StreamResult {
+        // No reasoning: keep the raw request unchanged (map None -> base options).
+        let simple = match options {
+            Some(simple) if simple.reasoning.is_some() => simple,
+            other => return self.stream(model, context, other.map(|o| &o.base), signal),
+        };
+
+        let mut typed_model: BedrockModel = match reserialize_model(model) {
+            Ok(typed_model) => typed_model,
+            Err(error) => {
+                return error_result(
+                    model,
+                    self.clock.now_ms(),
+                    format!(
+                        "Bedrock model is not compatible with bedrock-converse-stream: {error}"
+                    ),
+                )
+            }
+        };
+
+        if let Some(base_url) = simple.base.base_url.as_ref() {
+            typed_model.base_url = Some(base_url.clone());
+        }
+
+        let bedrock_options = bedrock_simple_options_from(simple);
+        let process_env = ProviderEnv::new();
+        let timestamp = self.clock.now_ms();
+        driver::stream_simple(
+            self.transport.as_ref(),
+            &typed_model,
+            context,
+            &bedrock_options,
+            &process_env,
+            timestamp,
+        )
+    }
+}
+
+/// Map the seam-level [`SimpleStreamOptions`] onto the driver's [`BedrockOptions`]
+/// (the reasoning-lowering input pi's `streamSimple` reads). The base
+/// [`StreamOptions`] fields are projected as in [`bedrock_options_from`], plus the
+/// `reasoning` level and the per-level `thinking_budgets` carried into the request.
+fn bedrock_simple_options_from(simple: &SimpleStreamOptions) -> BedrockOptions {
+    let base = &simple.base;
+    BedrockOptions {
+        api_key: base.api_key.clone(),
+        temperature: base.temperature,
+        max_tokens: base.max_tokens,
+        cache_retention: base.cache_retention,
+        headers: base.headers.as_ref().map(to_provider_headers),
+        env: base.env.clone(),
+        reasoning: simple.reasoning,
+        thinking_budgets: simple
+            .thinking_budgets
+            .as_ref()
+            .map(to_bedrock_thinking_budgets),
+        ..BedrockOptions::default()
+    }
+}
+
+/// Convert the seam's struct-shaped [`SeamThinkingBudgets`] into the driver's
+/// per-level budget map (pi's `ThinkingBudgets`, `Partial<Record<ThinkingLevel,
+/// number>>`), keying only the levels the caller set.
+fn to_bedrock_thinking_budgets(budgets: &SeamThinkingBudgets) -> ThinkingBudgets {
+    let mut map = ThinkingBudgets::new();
+    if let Some(minimal) = budgets.minimal {
+        map.insert(ThinkingLevel::Minimal, minimal);
+    }
+    if let Some(low) = budgets.low {
+        map.insert(ThinkingLevel::Low, low);
+    }
+    if let Some(medium) = budgets.medium {
+        map.insert(ThinkingLevel::Medium, medium);
+    }
+    if let Some(high) = budgets.high {
+        map.insert(ThinkingLevel::High, high);
+    }
+    map
 }
 
 /// Bridge the generic [`StreamOptions`] onto the driver's [`BedrockOptions`].
@@ -441,6 +534,178 @@ mod tests {
             requests[0].headers.get("authorization").map(String::as_str),
             Some("Bearer env-bearer-secret")
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // streamSimple: reasoning lowering (pi `bedrock-converse-stream.ts:392`)
+    // -----------------------------------------------------------------------
+
+    use crate::types::SimpleStreamOptions;
+
+    /// A reasoning-capable bedrock `Model<Value>` at `model_id`, with the given
+    /// context window and output cap so the streamSimple budget/clamp math is
+    /// exercisable with exact numbers.
+    fn bedrock_reasoning_model(model_id: &str, context_window: u64, max_tokens: u64) -> Model {
+        serde_json::from_value(json!({
+            "id": model_id,
+            "name": model_id,
+            "api": "bedrock-converse-stream",
+            "provider": "amazon-bedrock",
+            "baseUrl": "https://bedrock.test",
+            "reasoning": true,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": context_window,
+            "maxTokens": max_tokens,
+        }))
+        .unwrap()
+    }
+
+    /// The decoded JSON body of the single request the transport recorded.
+    fn request_body(scripted: &ScriptedBytesTransport) -> Value {
+        serde_json::from_str(scripted.requests()[0].body.as_deref().unwrap()).unwrap()
+    }
+
+    // Adaptive Claude (`anthropic.claude-opus-4-8`) + reasoning `high` -> pi's
+    // adaptive sub-branch (`:403-408`): reasoning passes through and the driver
+    // emits `thinking.type = "adaptive"` + `output_config.effort` (no budget math).
+    #[test]
+    fn stream_simple_adaptive_claude_passes_reasoning() {
+        let (scripted, transport) = scripted_eventstream(hello_eventstream());
+        let backend = BedrockBackend::new(transport, fake_clock());
+        let model =
+            bedrock_reasoning_model("anthropic.claude-opus-4-8-20250101-v1:0", 200_000, 32_000);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("bedrock-bearer-token".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let fields = &request_body(&scripted)["additionalModelRequestFields"];
+        assert_eq!(fields["thinking"]["type"], json!("adaptive"));
+        assert_eq!(fields["output_config"], json!({ "effort": "high" }));
+    }
+
+    // Budget-based (non-adaptive) Claude + reasoning `medium` with an explicit
+    // caller cap: pi's `:413-430` path. base = clamp(maxTokens=2000) = 2000;
+    // adjust(base=2000, model=32000, medium=8192) -> maxTokens = min(2000+8192,
+    // 32000) = 10192, budget = 8192 (fits, no shrink); re-clamp(10192) = 10192;
+    // budget override = min(8192, 10192-1024=9168) = 8192. So the request carries
+    // `inferenceConfig.maxTokens = 10192` and `thinking.budget_tokens = 8192`.
+    #[test]
+    fn stream_simple_budget_claude_adjusts_max_tokens_and_budget() {
+        let (scripted, transport) = scripted_eventstream(hello_eventstream());
+        let backend = BedrockBackend::new(transport, fake_clock());
+        let model =
+            bedrock_reasoning_model("anthropic.claude-3-5-sonnet-20241022-v2:0", 200_000, 32_000);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("bedrock-bearer-token".to_string()),
+                max_tokens: Some(2000),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::Medium),
+            None,
+        );
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let body = request_body(&scripted);
+        assert_eq!(body["inferenceConfig"]["maxTokens"], json!(10192));
+        assert_eq!(
+            body["additionalModelRequestFields"]["thinking"]["type"],
+            json!("enabled")
+        );
+        assert_eq!(
+            body["additionalModelRequestFields"]["thinking"]["budget_tokens"],
+            json!(8192)
+        );
+    }
+
+    // Budget-based Claude where the override `min(adjusted, maxTokens-1024)` bites:
+    // model cap 16000, custom `medium` budget 20000, no caller cap. base =
+    // clamp(model.maxTokens=16000) = 16000; adjust -> maxTokens = min(16000+20000,
+    // 16000) = 16000, and since 16000 <= 20000 the helper shrinks budget to
+    // max(0, 16000-1024) = 14976; re-clamp(16000) = 16000; override = min(14976,
+    // 16000-1024=14976) = 14976. So `budget_tokens = 14976`, `maxTokens = 16000`.
+    #[test]
+    fn stream_simple_budget_claude_override_clamps_to_max_tokens_minus_1024() {
+        let (scripted, transport) = scripted_eventstream(hello_eventstream());
+        let backend = BedrockBackend::new(transport, fake_clock());
+        let model =
+            bedrock_reasoning_model("anthropic.claude-3-5-sonnet-20241022-v2:0", 200_000, 16_000);
+        let budgets = SeamThinkingBudgets {
+            medium: Some(20_000),
+            ..SeamThinkingBudgets::default()
+        };
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("bedrock-bearer-token".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::Medium),
+            Some(budgets),
+        );
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let body = request_body(&scripted);
+        assert_eq!(body["inferenceConfig"]["maxTokens"], json!(16000));
+        assert_eq!(
+            body["additionalModelRequestFields"]["thinking"]["budget_tokens"],
+            json!(14976)
+        );
+    }
+
+    // Non-Claude reasoning model (`meta.llama...`) + reasoning `high`: pi's
+    // non-Claude passthrough (`:433-437`). `reasoning` is present but the driver
+    // ignores it (`build_additional_model_request_fields` returns None for
+    // non-Claude), so NO `additionalModelRequestFields` reaches the request.
+    #[test]
+    fn stream_simple_non_claude_passthrough_omits_thinking_config() {
+        let (scripted, transport) = scripted_eventstream(hello_eventstream());
+        let backend = BedrockBackend::new(transport, fake_clock());
+        let model = bedrock_reasoning_model("meta.llama3-1-405b-instruct-v1:0", 128_000, 8_192);
+        let simple = SimpleStreamOptions::new(
+            StreamOptions {
+                api_key: Some("bedrock-bearer-token".to_string()),
+                ..StreamOptions::default()
+            },
+            Some(ThinkingLevel::High),
+            None,
+        );
+        backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        let body = request_body(&scripted);
+        assert!(body.get("additionalModelRequestFields").is_none());
+    }
+
+    // NO-REASONING zero-regression: `stream_simple` with `reasoning: None` builds
+    // a request byte-identical to the raw `stream` path -- no thinking config is
+    // added. Guards the None -> base mapping.
+    #[test]
+    fn stream_simple_without_reasoning_matches_raw_stream() {
+        let model = bedrock_model("https://bedrock.test");
+        let base = StreamOptions {
+            api_key: Some("bedrock-bearer-token".to_string()),
+            ..StreamOptions::default()
+        };
+
+        let (raw_scripted, raw_transport) = scripted_eventstream(hello_eventstream());
+        let raw_backend = BedrockBackend::new(raw_transport, fake_clock());
+        raw_backend.stream(&model, &user_context(), Some(&base), None);
+
+        let (simple_scripted, simple_transport) = scripted_eventstream(hello_eventstream());
+        let simple_backend = BedrockBackend::new(simple_transport, fake_clock());
+        let simple = SimpleStreamOptions::from_base(base.clone());
+        simple_backend.stream_simple(&model, &user_context(), Some(&simple), None);
+
+        assert_eq!(request_body(&raw_scripted), request_body(&simple_scripted));
+        assert!(request_body(&simple_scripted)
+            .get("additionalModelRequestFields")
+            .is_none());
     }
 
     // Unconfigured provider: applyAuth gates before dispatch with the exact

@@ -52,25 +52,46 @@ pub struct SimpleStreamOptions {
 // api/simple-options.ts
 // ---------------------------------------------------------------------------
 
-/// pi's `clampMaxTokensToContext` (`simple-options.ts:15`).
+/// pi's `clampMaxTokensToContext` (`simple-options.ts:15`), keyed on a raw
+/// `context_window`.
+///
+/// pi has a single generic `clampMaxTokensToContext(model, ...)`; Rust's typed
+/// models (`Model<AnthropicMessagesCompat>`, `BedrockModel`, ...) each expose
+/// their own `context_window`, so the shared arithmetic lives here as one
+/// window-keyed core that every dialect's typed wrapper delegates to (rather than
+/// re-transcribing pi's body per model type).
+pub(crate) fn clamp_max_tokens_to_context_window(
+    context_window: u64,
+    context: &Context,
+    max_tokens: u64,
+) -> u64 {
+    let max_tokens = max_tokens as i64;
+    if context_window == 0 {
+        return MIN_MAX_TOKENS.max(max_tokens) as u64;
+    }
+    let available =
+        context_window as i64 - estimate_context_tokens(context).tokens - CONTEXT_SAFETY_TOKENS;
+    max_tokens.min(MIN_MAX_TOKENS.max(available)) as u64
+}
+
+/// pi's `clampMaxTokensToContext` (`simple-options.ts:15`) for an
+/// `Model<AnthropicMessagesCompat>`.
 pub fn clamp_max_tokens_to_context(
     model: &Model<AnthropicMessagesCompat>,
     context: &Context,
     max_tokens: u64,
 ) -> u64 {
-    let max_tokens = max_tokens as i64;
-    if model.context_window == 0 {
-        return MIN_MAX_TOKENS.max(max_tokens) as u64;
-    }
-    let available = model.context_window as i64
-        - estimate_context_tokens(context).tokens
-        - CONTEXT_SAFETY_TOKENS;
-    max_tokens.min(MIN_MAX_TOKENS.max(available)) as u64
+    clamp_max_tokens_to_context_window(model.context_window, context, max_tokens)
 }
 
 /// pi's `clampReasoning` (`simple-options.ts:45`): `xhigh`/`max` collapse to
 /// `high` so the level maps onto a budget key.
-fn clamp_reasoning(effort: ThinkingLevel) -> ThinkingLevel {
+///
+/// `pub(crate)` so the sibling Bedrock `stream_simple` port can override the
+/// clamped level's budget with the same collapse pi's `bedrock-converse-stream.ts`
+/// applies (`:428`); this promotion is behavior-preserving for Anthropic, which
+/// keeps calling it unchanged from [`adjust_max_tokens_for_thinking`].
+pub(crate) fn clamp_reasoning(effort: ThinkingLevel) -> ThinkingLevel {
     match effort {
         ThinkingLevel::Xhigh | ThinkingLevel::Max => ThinkingLevel::High,
         other => other,
