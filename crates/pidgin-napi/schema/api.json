@@ -634,6 +634,52 @@
               "name": "formatMissingSessionCwdPrompt"
             }
           }
+        },
+        {
+          "name": "parseCommandArgs",
+          "doc": "`parseCommandArgs` (harness/prompt-templates.ts): split an argument string\nusing simple shell-style single and double quotes.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "argsString",
+              "type": "string"
+            }
+          ],
+          "returns": {
+            "list": "string"
+          },
+          "bindings": {
+            "node": {
+              "name": "parseCommandArgs"
+            }
+          }
+        },
+        {
+          "name": "substituteArgs",
+          "doc": "`substituteArgs` (harness/prompt-templates.ts): substitute prompt-template\nplaceholders (`$1`, `$@`, `$ARGUMENTS`, `${@:N}`, `${@:N:L}`) with args.",
+          "shape": "unary",
+          "infallible": true,
+          "readonly": true,
+          "params": [
+            {
+              "name": "content",
+              "type": "string"
+            },
+            {
+              "name": "args",
+              "type": {
+                "list": "string"
+              }
+            }
+          ],
+          "returns": "string",
+          "bindings": {
+            "node": {
+              "name": "substituteArgs"
+            }
+          }
         }
       ]
     },

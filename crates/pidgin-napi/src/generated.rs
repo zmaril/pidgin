@@ -89,6 +89,8 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     ) -> Option<SessionCwdIssueJs>;
     fn format_missing_session_cwd_error(issue: SessionCwdIssueJs) -> String;
     fn format_missing_session_cwd_prompt(issue: SessionCwdIssueJs) -> String;
+    fn parse_command_args(args_string: String) -> Vec<String>;
+    fn substitute_args(content: String, args: Vec<String>) -> String;
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -320,6 +322,20 @@ pub fn format_missing_session_cwd_error(issue: SessionCwdIssueJs) -> String {
 #[napi(js_name = "formatMissingSessionCwdPrompt")]
 pub fn format_missing_session_cwd_prompt(issue: SessionCwdIssueJs) -> String {
     <crate::core_impl::PidginImpl as PidginCore>::format_missing_session_cwd_prompt(issue)
+}
+
+/// `parseCommandArgs` (harness/prompt-templates.ts): split an argument string
+/// using simple shell-style single and double quotes.
+#[napi(js_name = "parseCommandArgs")]
+pub fn parse_command_args(args_string: String) -> Vec<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::parse_command_args(args_string)
+}
+
+/// `substituteArgs` (harness/prompt-templates.ts): substitute prompt-template
+/// placeholders (`$1`, `$@`, `$ARGUMENTS`, `${@:N}`, `${@:N:L}`) with args.
+#[napi(js_name = "substituteArgs")]
+pub fn substitute_args(content: String, args: Vec<String>) -> String {
+    <crate::core_impl::PidginImpl as PidginCore>::substitute_args(content, args)
 }
 
 /// The Rust-backed keybindings core, exposed to JavaScript as
