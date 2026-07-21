@@ -5,6 +5,13 @@
 // part-building JSON by design; the clone detector reads them as duplicates.
 // They are distinct, load-bearing transcriptions kept verbatim to mirror the
 // upstream wire behaviour exactly.
+// straitjacket-allow-file:file-size — TODO(straitjacket): this file is 1632 lines, over
+// the 1500-line ceiling. Declared explicitly so it suppresses only file-size, not every
+// rule (the old bracket form was a silent catch-all). The overrun is the streamSimple
+// reasoning-lowering helpers ported alongside the shared model/build_params slice; pi keeps
+// the per-dialect getThinkingLevel/getGemini3ThinkingLevel/getGoogleBudget in separate
+// files, so they are not collapsible. Remove once the file is split into a directory module
+// (see PR follow-up).
 //! Shared helpers for the Google Generative AI and Google Vertex drivers, ported
 //! from pi-ai's `packages/ai/src/api/google-shared.ts` at pinned commit
 //! `3da591ab`, together with a Google-specific port of
