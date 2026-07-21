@@ -698,13 +698,6 @@ fn trust_option_to_json(option: &pidgin_coding::core::trust_manager::ProjectTrus
     Value::Object(obj)
 }
 
-/// `getProjectTrustParentPath` (trust-manager.ts): the nearest ancestor path, or
-/// `null` at a filesystem root (pi's `undefined`).
-#[napi(js_name = "getProjectTrustParentPath")]
-pub fn get_project_trust_parent_path(cwd: String) -> Option<String> {
-    pidgin_coding::core::trust_manager::get_project_trust_parent_path(&cwd)
-}
-
 /// `getProjectTrustOptions` (trust-manager.ts): the ordered trust options for
 /// `cwd`, as a JSON array. The shim supplies pi's `{ includeSessionOnly }` default.
 #[napi(js_name = "getProjectTrustOptions")]
@@ -713,16 +706,6 @@ pub fn get_project_trust_options(cwd: String, include_session_only: bool) -> nap
         pidgin_coding::core::trust_manager::get_project_trust_options(&cwd, include_session_only);
     let array: Vec<Value> = options.iter().map(trust_option_to_json).collect();
     serde_json::to_string(&Value::Array(array)).map_err(|e| napi::Error::from_reason(e.to_string()))
-}
-
-/// `hasTrustRequiringProjectResources` (trust-manager.ts): whether `cwd` carries
-/// project-local resources that must be gated by trust. The shim passes pi's
-/// `process.env.HOME || homedir()` as `home_dir`.
-#[napi(js_name = "hasTrustRequiringProjectResources")]
-pub fn has_trust_requiring_project_resources(cwd: String, home_dir: String) -> bool {
-    pidgin_coding::core::trust_manager::has_trust_requiring_project_resources_with_home(
-        &cwd, &home_dir,
-    )
 }
 
 /// `ProjectTrustStore.getEntry` (trust-manager.ts): the nearest recorded trust

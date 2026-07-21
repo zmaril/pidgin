@@ -98,6 +98,8 @@ pub trait PidginCore: Sized + Send + Sync + 'static {
     fn normalize_changelog_links(markdown: String, version_json: String) -> anyhow::Result<String>;
     fn compare_package_versions(left_version: String, right_version: String) -> Option<i32>;
     fn is_newer_package_version(candidate_version: String, current_version: String) -> bool;
+    fn get_project_trust_parent_path(cwd: String) -> Option<String>;
+    fn has_trust_requiring_project_resources(cwd: String, home_dir: String) -> bool;
 }
 
 /// The `KeybindingsManagerCore` contract — implement over the engine in `crate::core_impl`.
@@ -402,6 +404,23 @@ pub fn is_newer_package_version(candidate_version: String, current_version: Stri
     <crate::core_impl::PidginImpl as PidginCore>::is_newer_package_version(
         candidate_version,
         current_version,
+    )
+}
+
+/// `getProjectTrustParentPath` (trust-manager.ts): the nearest ancestor path, or
+/// `null` at a filesystem root (pi's `undefined`).
+#[napi(js_name = "getProjectTrustParentPath")]
+pub fn get_project_trust_parent_path(cwd: String) -> Option<String> {
+    <crate::core_impl::PidginImpl as PidginCore>::get_project_trust_parent_path(cwd)
+}
+
+/// `hasTrustRequiringProjectResources` (trust-manager.ts): whether `cwd` carries
+/// project-local resources that must be gated by trust. The shim passes pi's
+/// `process.env.HOME || homedir()` as `home_dir`.
+#[napi(js_name = "hasTrustRequiringProjectResources")]
+pub fn has_trust_requiring_project_resources(cwd: String, home_dir: String) -> bool {
+    <crate::core_impl::PidginImpl as PidginCore>::has_trust_requiring_project_resources(
+        cwd, home_dir,
     )
 }
 
