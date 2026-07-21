@@ -40,6 +40,13 @@ pub mod terminal_colors;
 // delegates only `serializeConversation` to Rust. Additive.
 pub mod compaction_utils;
 
+// TUI terminal-image surface (`isImageLine`, `encodeKitty`, `renderImage`, the
+// image-header parsers, capability/cell-dimension state, and `hyperlink`):
+// drives pi's `terminal-image.ts` graphics helpers natively. Every export the
+// suite touches runs in Rust; only `detectCapabilities` (which takes a JS
+// closure) stays in pi's TS. Additive.
+pub mod terminal_image;
+
 // The OAuth flow surface (`OAuthFlowCore`, `DeviceCodePollCore`), driving the
 // Rust OAuth login/refresh and device-code poll state machines from JS. Additive.
 mod oauth;
