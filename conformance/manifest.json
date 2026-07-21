@@ -980,7 +980,10 @@
     {
       "package": "coding-agent",
       "src": "packages/coding-agent/src/cli/args.ts",
-      "status": "original"
+      "status": "native",
+      "tests": [
+        "test/args.test.ts"
+      ]
     },
     {
       "package": "coding-agent",
