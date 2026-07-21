@@ -1062,7 +1062,7 @@ dependencies = [
 [[package]]
 name = "fluessig-runtime"
 version = "0.1.0"
-source = "git+https://github.com/zmaril/fluessig?rev=1fed77aa37ad4bfc69954432777f5f5e0347e0b6#1fed77aa37ad4bfc69954432777f5f5e0347e0b6"
+source = "git+https://github.com/zmaril/fluessig?rev=e056bb966240be297cc9c60a32cf99436a54801f#e056bb966240be297cc9c60a32cf99436a54801f"
 
 [[package]]
 name = "fnv"
