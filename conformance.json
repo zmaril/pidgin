@@ -1,11 +1,11 @@
 {
   "pi_sha": "3da591ab74ab9ab407e72ed882600b2c851fae21",
   "generated_by": "scripts/conformance.sh",
-  "manifest_native_modules": 52,
+  "manifest_native_modules": 55,
   "rust_backed": {
-    "passing": 881,
+    "passing": 886,
     "total": 3776,
-    "percent": 23.3
+    "percent": 23.5
   },
   "total": 3776,
   "passing": 2919,
@@ -24,13 +24,13 @@
       "note": "vitest run, exit 0"
     },
     "ai": {
-      "rust_backed_passing": 79,
-      "rust_backed_percent": 6.1,
+      "rust_backed_passing": 84,
+      "rust_backed_percent": 6.5,
       "total": 1293,
       "passing": 556,
       "failing": 0,
       "skipped": 737,
-      "native": 9,
+      "native": 12,
       "status": "ok",
       "note": "vitest run, exit 1"
     },
